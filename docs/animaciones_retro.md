@@ -18,6 +18,10 @@ El navegador de pruebas tiene movimiento reducido activo: se comprobaron las cif
 
 ![Spoiler revelado conservando el formato](evidence/animaciones-spoiler.png)
 
-Estado de despliegue: pendiente de publicar.
+Publicado el 7 de octubre de 2026 con `npx --no-install vercel --prod --yes`, commit `6db56b1`. Vercel confirmó READY, Next.js 16.4.0 y build remoto correcto (11 s).
+
+URL de producción: https://savestate-eight.vercel.app. Despliegue: `dpl_92uQc9aWW6677EMRgSja3d3229uz`.
+
+Comprobación posterior: inicio y `/players/ilhamelin` responden HTTP 200 con CSP y nonce; el perfil sirve el terminal accesible y los contadores del nuevo build. La revisión inicial de registros del despliegue no encontró errores. Las comprobaciones autenticadas de spoiler y cifras se realizaron localmente con la cuenta privada temporal indicada arriba.
 
 Referencia de inspiración: https://reactbits.dev/c/text-animations.
