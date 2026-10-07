@@ -17,17 +17,29 @@ export async function libraryMutation(input: unknown) {
   const data = object(input);
   switch (data.action) {
     case 'save': {
-      const { data: row, error } = await db
+      const gameId = uuid(data.game_id);
+      const changes = { status: status(data.status), rating: rating(data.rating) };
+      // Ownership columns cannot be updated. Insert first without modifying conflicts,
+      // then update only the editable columns when the library record already exists.
+      const { data: inserted, error: insertError } = await db
         .from('user_games')
         .upsert(
           {
             user_id: user.id,
-            game_id: uuid(data.game_id),
-            status: status(data.status),
-            rating: rating(data.rating),
+            game_id: gameId,
+            ...changes,
           },
-          { onConflict: 'user_id,game_id' },
+          { onConflict: 'user_id,game_id', ignoreDuplicates: true },
         )
+        .select()
+        .maybeSingle();
+      dbCheck(insertError);
+      if (inserted) return inserted;
+      const { data: row, error } = await db
+        .from('user_games')
+        .update(changes)
+        .eq('user_id', user.id)
+        .eq('game_id', gameId)
         .select()
         .single();
       dbCheck(error);

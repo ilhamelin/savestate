@@ -28,6 +28,30 @@ reset role;
 select set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',true);
 set local role authenticated;
 insert into public.follows(follower_id,followed_id) values('22222222-2222-4222-8222-222222222222','11111111-1111-4111-8111-111111111111');
+-- Library saves must respect column-level ownership protection, including conflicts.
+do $$ begin
+  begin
+    insert into public.user_games(user_id,game_id,status,rating)
+    values(auth.uid(),'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1','playing',9.5)
+    on conflict(user_id,game_id) do update set user_id = excluded.user_id, game_id = excluded.game_id, rating = excluded.rating;
+    raise exception 'Ownership columns became editable through upsert';
+  exception when insufficient_privilege then null; end;
+end $$;
+insert into public.user_games(user_id,game_id,status,rating)
+values(auth.uid(),'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2','playing',9.5)
+on conflict(user_id,game_id) do nothing;
+insert into public.user_games(user_id,game_id,status,rating)
+values(auth.uid(),'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2','cleared',9)
+on conflict(user_id,game_id) do nothing;
+do $$ begin
+  if (select rating from public.user_games where user_id = auth.uid() and game_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2') <> 9.5 then raise exception 'Insert conflict changed the existing rating'; end if;
+end $$;
+update public.user_games set status = 'cleared', rating = 9
+where user_id = auth.uid() and game_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2';
+do $$ begin
+  if (select rating from public.user_games where user_id = auth.uid() and game_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2') <> 9 then raise exception 'Editable library columns cannot be saved'; end if;
+  if not exists(select 1 from public.activity_logs where user_id = auth.uid() and target_game_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2' and event_data->>'rating' = '9') then raise exception 'Library edit did not emit activity'; end if;
+end $$;
 do $$ begin
   if public.can_view_library('11111111-1111-4111-8111-111111111111') then raise exception 'Following grants private access'; end if;
   begin
