@@ -13,10 +13,8 @@ export async function catalogue(filters: CatalogueFilters) {
       message: 'El catálogo estará disponible cuando conectes Supabase e IGDB.',
     };
   let source: 'igdb' | 'local' = 'local';
-  const local = await localCatalogue(filters);
-  if (local.length && local.every((game) => Date.now() - Date.parse(game.cached_at) < 86400000)) {
-    return { games: local, source: 'cache' as const, message: null };
-  }
+  // The 24h cache in fetchCatalogue is keyed by the complete query. Fresh local
+  // rows alone cannot establish that a broader or different search is complete.
   if (
     process.env.TWITCH_CLIENT_ID &&
     process.env.TWITCH_CLIENT_SECRET &&
