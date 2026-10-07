@@ -19,7 +19,7 @@ async function accessToken() {
       method: 'POST',
       body: params,
       cache: 'no-store',
-      signal: AbortSignal.timeout(2500),
+      signal: AbortSignal.timeout(7000),
     });
     if (!response.ok) throw new AppError('No se pudo conectar al catálogo.', 503);
     const data = (await response.json()) as { access_token?: string; expires_in?: number };
@@ -51,7 +51,7 @@ export const fetchCatalogue = unstable_cache(
       },
       body: igdbQuery(filters),
       cache: 'no-store',
-      signal: AbortSignal.timeout(2500),
+      signal: AbortSignal.timeout(7000),
     });
     if (response.status === 401) token = null;
     if (!response.ok)
