@@ -7,6 +7,7 @@ import { api } from '@/lib/client-api';
 import { browserClient } from '@/integrations/supabase/browser';
 import type { Profile } from '@/domain/model';
 import { ProfileIdentity } from '@/components/profile-identity';
+import { AudioToggle } from '@/components/ui/audio-toggle';
 
 export function Settings({ profile }: { profile: Profile }) {
   const [avatar, setAvatar] = useState(profile.avatar_url),
@@ -211,6 +212,9 @@ export function Settings({ profile }: { profile: Profile }) {
         </Link>
       </div>
       <div className="panel">
+        <h2>Accesibilidad y sonido</h2>
+        <p className="muted">Los sonidos retro son opcionales y se guardan en este navegador.</p>
+        <AudioToggle />
         <h2>Seguridad y sesiones</h2>
         <Link className="accent" href="/login">
           Recuperar contraseña por correo →

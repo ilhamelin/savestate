@@ -1,10 +1,23 @@
 import Link from 'next/link';
 import { Gamepad2, ArrowUpRight } from 'lucide-react';
 import { CrtToggle } from '@/components/ui/crt-toggle';
-import { HeaderSearch } from '@/components/header-search';
+import { CommandMenu } from '@/components/command-menu';
+import { AudioToggle } from '@/components/ui/audio-toggle';
 import { currentUser } from '@/lib/session';
+import { serverClient } from '@/integrations/supabase/server';
 export async function Header() {
   const user = await currentUser();
+  const profile = user
+    ? (
+        await (
+          await serverClient()
+        )
+          .from('profiles')
+          .select('username')
+          .eq('id', user.id)
+          .maybeSingle()
+      ).data
+    : null;
   return (
     <header className="site-header">
       <Link href="/" className="brand" aria-label="Savestate, inicio">
@@ -22,8 +35,9 @@ export async function Header() {
         <Link href="/players">Jugadores</Link>
       </nav>
       <div className="header-actions">
-        <HeaderSearch />
+        <CommandMenu authenticated={Boolean(user)} username={profile?.username ?? null} />
         <CrtToggle />
+        <AudioToggle />
         <Link className="button small" href={user ? '/settings' : '/login'}>
           {user ? 'Mi cuenta' : 'Conectar'}
           <ArrowUpRight size={15} />

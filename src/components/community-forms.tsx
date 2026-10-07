@@ -3,6 +3,7 @@ import { MutationForm, ActionButton } from '@/components/ui/form';
 import { api } from '@/lib/client-api';
 import { REACTIONS, type ReviewReaction, type ReviewComment } from '@/domain/model';
 import Link from 'next/link';
+import { soundFx, unlockAudio } from '@/lib/sound';
 export function SuggestGame() {
   return (
     <details className="panel">
@@ -54,13 +55,15 @@ export function ReviewActions({
           userId ? (
             <ActionButton
               key={value}
-              action={() =>
-                api('community', {
+              action={async () => {
+                unlockAudio();
+                await api('community', {
                   action: selected === value ? 'unreact' : 'reaction',
                   review_id: id,
                   reaction_type: value,
-                })
-              }
+                });
+                if (value === 'critical_hit' && selected !== value) soundFx.criticalHit();
+              }}
             >
               {labels[value]} {reactions.filter((r) => r.reaction_type === value).length}
               {selected === value ? ' ✓' : ''}

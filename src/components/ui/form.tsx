@@ -1,6 +1,7 @@
 'use client';
 import { useState, type ReactNode, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { soundFx, unlockAudio } from '@/lib/sound';
 export function MutationForm({
   children,
   submit,
@@ -19,6 +20,7 @@ export function MutationForm({
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (pending) return;
+    unlockAudio();
     const data = new FormData(event.currentTarget);
     setPending(true);
     setMessage('');
@@ -28,6 +30,7 @@ export function MutationForm({
       setMessage('Guardado.');
       router.refresh();
     } catch (error) {
+      soundFx.error();
       setError(true);
       setMessage(error instanceof Error ? error.message : 'No se pudo guardar.');
     } finally {
@@ -67,12 +70,14 @@ export function ActionButton({
         className={`button ${danger ? 'danger' : 'secondary'}`}
         disabled={pending}
         onClick={async () => {
+          unlockAudio();
           setPending(true);
           setError('');
           try {
             await action();
             router.refresh();
           } catch (error) {
+            soundFx.error();
             setError(error instanceof Error ? error.message : 'Error al guardar.');
           } finally {
             setPending(false);

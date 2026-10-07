@@ -45,14 +45,6 @@ export function Explore({
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('focus') === 'search')
       input.current?.focus();
-    function shortcut(event: KeyboardEvent) {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault();
-        input.current?.focus();
-      }
-    }
-    window.addEventListener('keydown', shortcut);
-    return () => window.removeEventListener('keydown', shortcut);
   }, []);
   useEffect(() => {
     const controller = new AbortController();

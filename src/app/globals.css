@@ -221,6 +221,65 @@ nav a:hover,
   opacity: 0.11;
   background: repeating-linear-gradient(transparent 0 2px, #000 2px 4px);
 }
+[cmdk-overlay] {
+  position: fixed;
+  inset: 0;
+  background: #000b;
+  z-index: 110;
+}
+[cmdk-dialog] {
+  position: fixed;
+  top: 12vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(600px, calc(100vw - 32px));
+  max-height: 80vh;
+  overflow: auto;
+  z-index: 111;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  padding: 20px;
+  box-shadow: 0 0 30px #00f0ff18;
+}
+.command-title {
+  font-family: var(--font-pixel), monospace;
+  font-size: 16px;
+  margin-bottom: 16px;
+}
+.command-help {
+  font-size: 11px;
+  margin: 10px 0;
+}
+[cmdk-list] {
+  max-height: 48vh;
+  overflow-y: auto;
+  margin-bottom: 16px;
+}
+[cmdk-group-heading] {
+  font-family: var(--font-pixel), monospace;
+  color: var(--muted);
+  font-size: 10px;
+  padding: 12px 8px;
+}
+[cmdk-item] {
+  padding: 10px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+[cmdk-item][data-selected='true'] {
+  border-color: var(--accent);
+  background: #00f0ff10;
+  color: var(--accent);
+}
+[cmdk-item] small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+}
+[cmdk-empty] {
+  padding: 12px;
+  color: var(--muted);
+}
 .skip-link {
   position: fixed;
   left: 12px;

@@ -2,6 +2,7 @@
 import { useRouter } from 'next/navigation';
 import { MutationForm, ActionButton } from '@/components/ui/form';
 import { api } from '@/lib/client-api';
+import { soundFx, unlockAudio } from '@/lib/sound';
 import {
   GAME_STATUSES,
   STATUS_LABELS,
@@ -39,6 +40,7 @@ export function LibraryForm({ game, entry }: { game: Game; entry?: UserGame }) {
     <MutationForm
       label={entry ? 'Actualizar checkpoint' : 'Agregar a biblioteca'}
       submit={async (form) => {
+        unlockAudio();
         const value = String(form.get('status'));
         await api('library', {
           action: 'save',
@@ -46,6 +48,8 @@ export function LibraryForm({ game, entry }: { game: Game; entry?: UserGame }) {
           status: value,
           rating: formRating(form),
         });
+        if ((value === 'platinum' || value === 'cleared') && entry?.status !== value)
+          soundFx.levelUp();
         if (
           value === 'platinum' &&
           entry?.status !== 'platinum' &&
