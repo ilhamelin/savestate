@@ -8,6 +8,6 @@ No cambia el modelo de datos, las reglas de privacidad ni el proceso de subida. 
 
 Verificación local: `npm run check` correcto (16 tests), build de producción correcto y comprobación visual con una cuenta temporal. Se confirmó que el banner guardado carga desde Supabase Storage (1600 píxeles), que el avatar de galería y el estado cambian en la vista previa y que Guardar finaliza correctamente. Las imágenes y la cuenta de prueba se eliminan al terminar.
 
-Pendiente de publicar mediante un nuevo despliegue de Vercel.
+Publicado en https://savestate-eight.vercel.app el 7 de octubre de 2026, junto con la paginación de Explorar, mediante el despliegue de producción del commit `f5be9b9`. La comprobación de imágenes y guardado autenticado descrita arriba se realizó localmente; el build de Vercel pasó correctamente.
 
 ![Vista previa del perfil en ajustes](evidence/ajustes-vista-previa.png)

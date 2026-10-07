@@ -27,7 +27,15 @@ $env:TEST_APP_URL = 'http://localhost:3004'
 node --env-file=.env.local --experimental-strip-types --test tests/integration/discovery.test.ts
 ```
 
-Las mejoras están verificadas localmente y pendientes de un nuevo despliegue de producción. No requieren variables nuevas ni cambios en Supabase.
+Las mejoras se publicaron en producción el 7 de octubre de 2026 mediante `npx --no-install vercel --prod --yes`, desde el commit `f5be9b9`, en https://savestate-eight.vercel.app. Vercel confirmó estado READY y build de producción correcto (11 s). No requieren variables nuevas ni cambios en Supabase.
+
+Comprobación posterior al despliegue: `/explore` devuelve HTTP 200 y CSP con nonce. La búsqueda Metroid con offsets 0, 24 y 48 devuelve 72 juegos distintos, todos desde IGDB, y la siguiente página usa offset 72. PostgreSQL también devolvió 48 títulos distintos en rangos 0–23 y 24–47. Los 16 tests unitarios, lint, TypeScript y formato pasan. La revisión inicial de registros de errores del despliegue no encontró entradas.
+
+El botón público se llama «Cargar más juegos». Cada página conserva los filtros y añade resultados sin reemplazar los juegos ya visibles; cambiar un filtro reinicia el offset. El tamaño de página de 24 es independiente del total de resultados accesibles.
+
+En el navegador de producción, pulsar «Cargar más juegos» elevó el contador de Metroid de 24 a 48 juegos visibles.
+
+![Paginación verificada en producción](evidence/paginacion-produccion.png)
 
 ![Selector del backlog verificado](evidence/que-juego-hoy.png)
 
