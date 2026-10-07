@@ -7,7 +7,8 @@ import { isConfigured } from '@/lib/env';
 import { currentUser } from '@/lib/session';
 import { dbCheck } from '@/lib/http';
 import { sanitizeHtml } from '@/services/markdown';
-import { LibraryForm, ReviewForm, DeleteReview } from '@/components/library-forms';
+import { LibraryForm, DeleteReview } from '@/components/library-forms';
+import { ReviewForm } from '@/components/review-form';
 import { ReviewCard } from '@/components/review-card';
 import { SetupNotice } from '@/components/setup-notice';
 const gameBySlug = cache(async (slug: string) => {
@@ -175,7 +176,8 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
         {user ? (
           <>
             <ReviewForm
-              key={own?.updated_at ?? 'new'}
+              key={`${user.id}-${own?.updated_at ?? 'new'}-${ownReviewResult.data?.updated_at ?? 'new'}`}
+              userId={user.id}
               gameId={game.id}
               entry={own}
               review={ownReviewResult.data ?? undefined}

@@ -680,6 +680,28 @@ nav a:hover,
 .library-item h2 {
   font-size: 20px;
 }
+.library-item:not(.library-compact) > div > .library-record-details > summary {
+  display: none;
+}
+.library-item:not(.library-compact) > div > .library-record-details {
+  margin-top: 0;
+}
+.library-compact {
+  grid-template-columns: 1fr;
+  padding: 16px 20px;
+  gap: 0;
+}
+.library-compact > .game-card {
+  display: none;
+}
+.library-compact .library-record-details {
+  margin-top: 6px;
+}
+.review-preview {
+  border: 1px solid var(--line);
+  padding: 16px;
+  overflow-wrap: anywhere;
+}
 .library-item details {
   margin-top: 18px;
 }

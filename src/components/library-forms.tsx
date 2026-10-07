@@ -9,19 +9,32 @@ import {
   type Game,
   type UserGame,
   type PlayLog,
-  type Review,
 } from '@/domain/model';
 export function RatingInput({
   value = null,
   required = false,
+  selected,
+  onChange,
 }: {
   value?: number | null;
   required?: boolean;
+  selected?: string;
+  onChange?: (value: string) => void;
 }) {
   return (
     <label>
       Puntuación / 10
-      <select name="rating" defaultValue={value ?? ''} required={required}>
+      <select
+        name="rating"
+        {...(onChange
+          ? {
+              value: selected ?? '',
+              onChange: (event: React.ChangeEvent<HTMLSelectElement>) =>
+                onChange(event.target.value),
+            }
+          : { defaultValue: value ?? '' })}
+        required={required}
+      >
         <option value="">Sin nota</option>
         {Array.from({ length: 19 }, (_, i) => 1 + i * 0.5).map((n) => (
           <option value={n} key={n}>
@@ -161,61 +174,6 @@ export function PlayLogForm({ entryId, log }: { entryId: string; log?: PlayLog }
         Nota de esta partida
         <textarea name="note" defaultValue={log?.note ?? ''} maxLength={2000} />
       </label>
-    </MutationForm>
-  );
-}
-export function ReviewForm({
-  gameId,
-  entry,
-  review,
-}: {
-  gameId: string;
-  entry?: UserGame;
-  review?: Review;
-}) {
-  return (
-    <MutationForm
-      label={review ? 'Actualizar reseña' : 'Publicar reseña'}
-      submit={(form) =>
-        api('library', {
-          action: 'review',
-          game_id: gameId,
-          rating: formRating(form),
-          content: String(form.get('content')),
-          has_spoilers: form.get('spoilers') === 'yes',
-        })
-      }
-    >
-      <RatingInput value={entry?.rating} required />
-      <label>
-        Tu reseña · Markdown
-        <textarea
-          name="content"
-          defaultValue={review?.content_markdown ?? ''}
-          minLength={1}
-          maxLength={10000}
-          required
-          rows={8}
-          placeholder="¿Qué dejó esta aventura en ti? **Negritas**, *cursivas*, listas y citas."
-        />
-      </label>
-      <label>
-        ¿Contiene spoilers? · obligatorio
-        <select
-          name="spoilers"
-          required
-          defaultValue={review ? (review.has_spoilers ? 'yes' : 'no') : ''}
-        >
-          <option value="" disabled>
-            Elige una opción
-          </option>
-          <option value="no">No contiene spoilers</option>
-          <option value="yes">Sí, ocultar por defecto</option>
-        </select>
-      </label>
-      <p className="muted">
-        La nota se sincroniza con tu biblioteca. La privacidad sigue sus ajustes.
-      </p>
     </MutationForm>
   );
 }
