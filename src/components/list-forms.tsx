@@ -3,6 +3,7 @@ import { MutationForm, ActionButton } from '@/components/ui/form';
 import { api } from '@/lib/client-api';
 import { useRouter } from 'next/navigation';
 import type { UserList, Game, ListItem } from '@/domain/model';
+import { CataloguePicker } from '@/components/catalogue-picker';
 export function ListForm({ list }: { list?: UserList }) {
   const router = useRouter();
   return (
@@ -59,19 +60,18 @@ export function ListItemForm({
       }
     >
       <div className="form-row">
-        <label>
-          Juego de mi biblioteca
-          <select name="game" required defaultValue={item?.game_id ?? ''}>
-            <option value="" disabled>
-              Selecciona un juego
-            </option>
-            {games.map((game) => (
-              <option value={game.id} key={game.id}>
-                {game.title}
-              </option>
-            ))}
-          </select>
-        </label>
+        {item ? (
+          <label>
+            Juego
+            <input
+              readOnly
+              value={games.find((game) => game.id === item.game_id)?.title ?? 'Juego de la lista'}
+            />
+            <input type="hidden" name="game" value={item.game_id} />
+          </label>
+        ) : (
+          <CataloguePicker games={games} />
+        )}
         <label>
           Posición (desde 0)
           <input

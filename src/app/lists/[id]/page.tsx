@@ -69,12 +69,7 @@ export default async function ListDetail({ params }: { params: Promise<{ id: str
               {editable ? (
                 <details className="panel">
                   <summary>Editar posición y nota</summary>
-                  <ListItemForm
-                    listId={id}
-                    games={library?.games ?? []}
-                    nextPosition={0}
-                    item={item}
-                  />
+                  <ListItemForm listId={id} games={games ?? []} nextPosition={0} item={item} />
                   <RemoveListItem id={item.id} />
                 </details>
               ) : null}

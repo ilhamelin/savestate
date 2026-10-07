@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { GameCard } from '@/components/game-card';
+import { BacklogPicker } from '@/components/backlog-picker';
 import {
   LibraryForm,
   PlayLogForm,
@@ -31,6 +32,7 @@ export function Library({
   const gameMap = new Map(games.map((game) => [game.id, game]));
   return (
     <>
+      {editable ? <BacklogPicker entries={entries} games={games} /> : null}
       {editable ? (
         <details className="panel">
           <summary>Editar mis Top 4 favoritos</summary>
