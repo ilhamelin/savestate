@@ -1,6 +1,6 @@
 'use client';
 import { Command } from 'cmdk';
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
 import type { Game } from '@/domain/model';
@@ -22,6 +22,16 @@ export function CommandMenu({
     [error, setError] = useState('');
   const enabled = useSyncExternalStore(subscribeAudio, isAudioEnabled, () => false);
   const router = useRouter();
+  const trigger = useRef<HTMLButtonElement>(null);
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    const restoreFocus = wasOpen.current && !open;
+    wasOpen.current = open;
+    if (restoreFocus) {
+      const frame = requestAnimationFrame(() => trigger.current?.focus());
+      return () => cancelAnimationFrame(frame);
+    }
+  }, [open]);
   function changeOpen(value: boolean) {
     setOpen(value);
     setQuery('');
@@ -95,6 +105,7 @@ export function CommandMenu({
   return (
     <>
       <button
+        ref={trigger}
         type="button"
         className="crt-toggle"
         aria-label="Buscar juegos, Control o Comando K"
