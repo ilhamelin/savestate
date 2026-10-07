@@ -33,4 +33,10 @@ Los formularios compartidos declaran `method="post"`. Antes de la hidratación, 
 - Navegador con una cuenta privada desechable: filtros combinados, orden por nota, vista compacta y despliegue de acciones; una sesión de 90 minutos llevó 20 h a 21.5 h en UI y PostgreSQL; borrador recuperado tras recarga con nota/spoilers; vista previa con negritas y lista, sin script; publicación sincronizó la nota a 9 y eliminó el borrador. Consola sin errores/advertencias en ese recorrido. No se modificaron bibliotecas o reseñas de usuarios reales.
 - Evidencias: `docs/evidence/biblioteca-filtros.png`, `docs/evidence/sesion-rapida.png`, `docs/evidence/resena-vista-previa.png`.
 
-No hay migraciones, dependencias ni variables de entorno nuevas. La publicación se registra tras comprobar el despliegue.
+No hay migraciones, dependencias ni variables de entorno nuevas.
+
+## Publicación
+
+Publicado desde `39e1b22` mediante `npx vercel --prod --yes`. Despliegue `dpl_EzquEoXGo84evwYJBPj5iKgQCyGm`, estado READY, alias https://savestate-eight.vercel.app. Build remoto aprobado.
+
+Producción: inicio, acceso y perfil público devuelven HTTP 200; CSP con nonce; formulario de acceso declara POST. Las nuevas operaciones `preview_review` y `quick_session` rechazan anónimos con 401. En el navegador de producción se verificaron búsqueda y vista compacta sobre una biblioteca pública, con un resultado de dos al buscar Grand Theft. Consola y consulta de logs de errores sin entradas en la ventana comprobada. Evidencia: `docs/evidence/biblioteca-produccion.png`. Los recorridos autenticados de borradores y sesiones fueron comprobados con el build local y Supabase real, como se detalla arriba.
