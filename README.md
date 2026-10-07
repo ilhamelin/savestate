@@ -18,6 +18,8 @@ Abre `http://localhost:3000`. La [guía de configuración](docs/configuracion.md
 ## Alcance implementado
 
 - Catálogo IGDB con búsqueda por título/estudio/saga, filtros, fichas SSR, caché de metadatos y contingencia con PostgreSQL.
+- Explorar con orden, páginas de 24 juegos, filtros en la URL y agregado rápido a biblioteca sin sobrescribir entradas existentes.
+- Buscador de catálogo en listas y «Qué juego hoy» para elegir al azar entre juegos del backlog por plataforma/género.
 - Email/contraseña, recuperación, callbacks Discord/Google y cierre de sesiones.
 - Seis estados de biblioteca, múltiples Play Logs y Top 4 ordenado.
 - Una puntuación por usuario/juego, de 1 a 10 en medios puntos, compartida por biblioteca y reseña mediante una transacción.
@@ -29,7 +31,7 @@ Abre `http://localhost:3000`. La [guía de configuración](docs/configuracion.md
 
 Steam, chat privado, emulación web y avatares modulares no forman parte de esta entrega.
 
-La implementación local no equivale a lanzamiento: OAuth, datos IGDB, Storage, Realtime y el flujo completo contra Supabase requieren configurar y verificar los servicios reales. El Hito 6 queda pendiente de auditorías finales, medición de latencia y despliegue autorizado.
+La aplicación cuenta con despliegue en [Vercel](https://savestate-eight.vercel.app) y comprobaciones reales de IGDB, Supabase y sesión documentadas en `docs/`. Las nuevas mejoras de descubrimiento y sus verificaciones se detallan en [docs/mejoras_descubrimiento.md](docs/mejoras_descubrimiento.md). Storage, Realtime, ambos accesos OAuth completos y la latencia objetivo deben certificarse por separado; un build correcto no certifica esos flujos.
 
 ## Stack y organización
 

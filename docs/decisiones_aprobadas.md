@@ -26,12 +26,16 @@ Complemento autorizado por el usuario a los siete documentos originales. Los ori
 - server-only evita importar credenciales de servidor al cliente. ESLint y Prettier satisfacen lint/formatting solicitados.
 - Se utilizan versiones compatibles dentro de los majors documentados y un lockfile reproducible.
 
+## Extensión aprobada: descubrimiento (7 de octubre de 2026)
+
+El usuario aprueba implementar las cuatro recomendaciones: orden y paginación en Explorar con filtros conservados al volver; agregado rápido a Backlog/Wishlist/Playing desde tarjetas; listas con cualquier juego del catálogo; y «Qué juego hoy», selección aleatoria del backlog con filtros de plataforma y género. Los detalles y la verificación se registran en [mejoras_descubrimiento.md](mejoras_descubrimiento.md). Se conserva el stack y no se agregan dependencias.
+
 ## Fuentes técnicas verificadas
 
 - https://nextjs.org/docs/app/getting-started/installation
 - https://supabase.com/docs/guides/auth/server-side/creating-a-client
 - https://api-docs.igdb.com/
 
-## Verificación externa pendiente de configuración
+## Estado de verificación externa
 
-Para comprobar OAuth, persistencia real, RLS y datos IGDB se necesita un proyecto Supabase configurado y credenciales Twitch. Las verificaciones sin credenciales no certifican esos servicios externos.
+Supabase y Twitch/IGDB están configurados; las verificaciones reales de sesión, persistencia y catálogo se registran en los documentos de verificación de `docs/`. Los accesos OAuth completos, Storage, Realtime y la latencia objetivo requieren certificación específica. Las verificaciones sin credenciales no certifican esos servicios externos.
