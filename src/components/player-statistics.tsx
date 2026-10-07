@@ -1,5 +1,44 @@
 import { playerStatistics } from '@/domain/statistics';
 import type { UserGame, Game, PlayLog } from '@/domain/model';
+import { NumberTicker } from '@/components/ui/number-ticker';
+export function PlayerSummary({
+  count,
+  hours,
+  completed,
+  genre,
+}: {
+  count: number;
+  hours: number;
+  completed: number;
+  genre: string;
+}) {
+  return (
+    <section className="stats-grid">
+      <div className="stat">
+        <strong>
+          <NumberTicker value={count} />
+        </strong>
+        <span>Juegos</span>
+      </div>
+      <div className="stat">
+        <strong>
+          <NumberTicker value={hours} decimals={1} />
+        </strong>
+        <span>Horas registradas</span>
+      </div>
+      <div className="stat">
+        <strong>
+          <NumberTicker value={completed} />
+        </strong>
+        <span>Completados</span>
+      </div>
+      <div className="stat">
+        <strong style={{ fontSize: 15 }}>{genre}</strong>
+        <span>Género más jugado</span>
+      </div>
+    </section>
+  );
+}
 export function PlayerStatistics({
   entries,
   games,

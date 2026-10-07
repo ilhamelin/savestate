@@ -9,7 +9,7 @@ import { Library } from '@/components/library';
 import { GameCard } from '@/components/game-card';
 import { SocialControls } from '@/components/social-controls';
 import { SetupNotice } from '@/components/setup-notice';
-import { PlayerStatistics } from '@/components/player-statistics';
+import { PlayerStatistics, PlayerSummary } from '@/components/player-statistics';
 import { playerStatistics } from '@/domain/statistics';
 import { socialLinks } from '@/domain/validation';
 import { ProfileIdentity } from '@/components/profile-identity';
@@ -72,7 +72,7 @@ export default async function Player({ params }: { params: Promise<{ username: s
           </Link>
         ) : null}
       </div>
-      <ProfileIdentity profile={profile}>
+      <ProfileIdentity profile={profile} animateTerminal>
         <div className="tags">
           {Object.entries(links).map(([label, url]) => (
             <a className="tag" key={label} href={url} target="_blank" rel="noopener noreferrer">
@@ -116,24 +116,15 @@ export default async function Player({ params }: { params: Promise<{ username: s
             })}
           </div>
           {!favorites.length ? <p className="muted">Todavía no hay favoritos fijados.</p> : null}
-          <section className="stats-grid">
-            {[
-              [library.count, 'Juegos'],
-              [stats?.hours.toFixed(1) ?? '0', 'Horas registradas'],
-              [
-                library.entries.filter((e) => ['cleared', 'platinum'].includes(e.status)).length,
-                'Completados',
-              ],
-              [stats?.genres[0]?.[0] ?? '—', 'Género más jugado'],
-            ].map(([value, label]) => (
-              <div className="stat" key={label}>
-                <strong style={label === 'Género más jugado' ? { fontSize: 15 } : undefined}>
-                  {value}
-                </strong>
-                <span>{label}</span>
-              </div>
-            ))}
-          </section>
+          <PlayerSummary
+            count={library.count}
+            hours={stats?.hours ?? 0}
+            completed={
+              library.entries.filter((entry) => ['cleared', 'platinum'].includes(entry.status))
+                .length
+            }
+            genre={stats?.genres[0]?.[0] ?? '—'}
+          />
           {library.count > 500 ? (
             <p className="notice">
               Estados y géneros calculados sobre los 500 juegos recientes mostrados.

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { ReviewActions } from '@/components/community-forms';
 import type { Review, ReviewReaction, ReviewComment } from '@/domain/model';
+import { DecryptedText } from '@/components/ui/decrypted-text';
 export function ReviewCard({
   review,
   html,
@@ -45,7 +46,13 @@ export function ReviewCard({
         </div>
       ) : (
         <>
-          <div className="review-body" dangerouslySetInnerHTML={{ __html: html }} />
+          {review.has_spoilers ? (
+            <DecryptedText text={review.content_markdown}>
+              <div className="review-body" dangerouslySetInnerHTML={{ __html: html }} />
+            </DecryptedText>
+          ) : (
+            <div className="review-body" dangerouslySetInnerHTML={{ __html: html }} />
+          )}
           {review.has_spoilers ? (
             <button className="button secondary" onClick={() => setRevealed(false)}>
               Ocultar spoilers

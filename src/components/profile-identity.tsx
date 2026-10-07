@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import type { ReactNode } from 'react';
 import type { Profile } from '@/domain/model';
+import { DecryptedText } from '@/components/ui/decrypted-text';
 
 type Identity = Pick<Profile, 'username' | 'avatar_url' | 'banner_url' | 'terminal_status'>;
 
@@ -8,12 +9,15 @@ export function ProfileIdentity({
   profile,
   headingLevel = 1,
   children,
+  animateTerminal = false,
 }: {
   profile: Identity;
   headingLevel?: 1 | 2;
   children?: ReactNode;
+  animateTerminal?: boolean;
 }) {
   const Heading = headingLevel === 1 ? 'h1' : 'h2';
+  const terminal = `${profile.username}@savestate:~$ ${profile.terminal_status || 'Ready to play'}`;
   return (
     <>
       <div className="profile-banner">
@@ -45,7 +49,7 @@ export function ProfileIdentity({
           <p className="eyebrow">PLAYER PROFILE</p>
           <Heading>@{profile.username}</Heading>
           <p className="profile-terminal">
-            {profile.username}@savestate:~$ {profile.terminal_status || 'Ready to play'}
+            {animateTerminal ? <DecryptedText text={terminal} /> : terminal}
           </p>
           {children}
         </div>
