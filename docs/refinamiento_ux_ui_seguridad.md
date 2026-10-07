@@ -30,3 +30,11 @@ Implementación de la directiva `propuesta_mejoras_ux_ui_seguridad.md` de la ram
 - Consola del navegador sin errores. Durante la primera navegación local,
   Supabase descartó cookies de una cuenta de pruebas eliminada anteriormente;
   el navegador continuó como visitante y las comprobaciones pasaron.
+
+## Producción
+
+Desplegado con Vercel CLI en `https://savestate-eight.vercel.app`.
+Deployment: `dpl_4ZCDY4WbLjXV2pGv5Qt7E4kyFBMZ` (READY).
+Tras el despliegue, `/explore` y la ficha de The Witcher 3 respondieron 200;
+un año inválido en `/api/catalogue` respondió 400. Las tres respuestas
+incluyeron CSP con nonce y las cabeceras de seguridad verificadas localmente.
