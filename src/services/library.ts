@@ -12,10 +12,49 @@ import {
   bool,
 } from '@/domain/validation';
 import { cleanMarkdown, renderMarkdown } from '@/services/markdown';
+import { sessionMinutes, accumulatedHours } from '@/domain/quick-session';
 export async function libraryMutation(input: unknown) {
   const { db, user } = await authenticated();
   const data = object(input);
   switch (data.action) {
+    case 'preview_review': {
+      return renderMarkdown(text(data.content, 'Reseña', 10000));
+    }
+    case 'quick_session': {
+      const id = uuid(data.id),
+        minutes = sessionMinutes(data.minutes);
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const { data: log, error: readError } = await db
+          .from('play_logs')
+          .select('id,user_game_id,hours_played')
+          .eq('id', id)
+          .maybeSingle();
+        dbCheck(readError);
+        if (!log) throw new AppError('Partida no encontrada.', 404);
+        const { data: owner, error: ownerError } = await db
+          .from('user_games')
+          .select('id')
+          .eq('id', log.user_game_id)
+          .eq('user_id', user.id)
+          .maybeSingle();
+        dbCheck(ownerError);
+        if (!owner) throw new AppError('Partida no encontrada.', 404);
+        const { data: updated, error } = await db
+          .from('play_logs')
+          .update({ hours_played: accumulatedHours(Number(log.hours_played), minutes) })
+          .eq('id', id)
+          .eq('user_game_id', owner.id)
+          .eq('hours_played', log.hours_played)
+          .select()
+          .maybeSingle();
+        dbCheck(error);
+        if (updated) return updated;
+      }
+      throw new AppError(
+        'La partida cambió mientras guardabas. Revisa sus horas antes de volver a intentarlo.',
+        409,
+      );
+    }
     case 'add': {
       const gameId = uuid(data.game_id);
       const selectedStatus = status(data.status);

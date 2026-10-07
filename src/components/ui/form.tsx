@@ -38,7 +38,7 @@ export function MutationForm({
     }
   }
   return (
-    <form onSubmit={onSubmit} className={`form-stack ${className}`}>
+    <form method="post" onSubmit={onSubmit} className={`form-stack ${className}`}>
       <fieldset disabled={pending}>{children}</fieldset>
       <div className="form-footer">
         <button className="button" disabled={pending}>
