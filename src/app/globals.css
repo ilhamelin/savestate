@@ -578,6 +578,9 @@ nav a:hover,
   margin: 28px 0;
 }
 .game-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
   border: 1px solid var(--line);
   background: var(--surface);
   overflow: hidden;
@@ -598,6 +601,21 @@ nav a:hover,
 }
 .game-card-body {
   padding: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.game-grid > article {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.game-grid > article > .game-card {
+  flex: 1;
+}
+.game-card-body .card-link {
+  margin-top: auto;
+  padding-top: 12px;
 }
 .game-card .eyebrow {
   display: flex;
@@ -605,12 +623,87 @@ nav a:hover,
   letter-spacing: 1px;
 }
 .game-card h3 {
+  min-height: 2.5em;
+  overflow-wrap: anywhere;
   margin: 10px 0 8px;
   font-size: 15px;
 }
 .game-card p {
+  min-height: 3.4em;
   font-size: 10px;
   color: var(--muted);
+}
+.skeleton {
+  background: repeating-linear-gradient(transparent 0 3px, #00f0ff08 3px 4px), #13202b;
+  animation: checkpoint-scan 1.5s ease-in-out infinite;
+}
+.skeleton-line {
+  height: 16px;
+  margin: 10px 0;
+}
+.skeleton-short {
+  width: 65%;
+}
+.skeleton-title {
+  height: 42px;
+  width: 85%;
+}
+.skeleton-panel {
+  min-height: 150px;
+}
+.skeleton-heading {
+  margin: 32px 0 20px;
+}
+@keyframes checkpoint-scan {
+  50% {
+    opacity: 0.45;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+@media (max-width: 639px) {
+  .site-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .site-header .brand {
+    align-self: flex-start;
+  }
+  .header-actions {
+    margin-left: 0;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+    gap: 6px;
+  }
+  .header-actions .crt-toggle {
+    justify-content: center;
+    gap: 4px;
+    font-size: 9px;
+    min-width: 0;
+  }
+  .header-actions > .button {
+    padding: 8px 10px;
+    font-size: 10px;
+  }
+  .header-actions > .button svg {
+    display: none;
+  }
+  .site-header nav {
+    flex-basis: auto;
+    width: 100%;
+    min-width: 0;
+  }
+  .site-header nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    min-width: 44px;
+    flex-shrink: 0;
+  }
 }
 .auth-panel {
   max-width: 480px;

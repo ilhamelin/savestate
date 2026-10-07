@@ -77,7 +77,7 @@ export function CommandMenu({
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
-    }, 450);
+    }, 300);
     return () => {
       clearTimeout(timer);
       controller.abort();

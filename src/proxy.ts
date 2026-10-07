@@ -2,6 +2,13 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { isConfigured, publicEnv } from '@/lib/env';
 import type { Database } from '@/lib/database.types';
+function securityHeaders(response: NextResponse, csp: string) {
+  response.headers.set('Content-Security-Policy', csp);
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('X-Frame-Options', 'DENY');
+  return response;
+}
 
 export async function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
@@ -29,13 +36,16 @@ export async function proxy(request: NextRequest) {
     try {
       await db.auth.getClaims();
     } catch {
-      return new NextResponse('No se pudo verificar la sesión. Inténtalo de nuevo.', {
-        status: 503,
-        headers: { 'Cache-Control': 'no-store' },
-      });
+      return securityHeaders(
+        new NextResponse('No se pudo verificar la sesión. Inténtalo de nuevo.', {
+          status: 503,
+          headers: { 'Cache-Control': 'no-store' },
+        }),
+        csp,
+      );
     }
   }
-  response.headers.set('Content-Security-Policy', csp);
+  securityHeaders(response, csp);
   if (!request.nextUrl.pathname.startsWith('/api/catalogue'))
     response.headers.set('Cache-Control', 'private, no-store');
   return response;

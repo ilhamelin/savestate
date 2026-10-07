@@ -5,6 +5,7 @@ import { GameCard } from '@/components/game-card';
 import type { Game } from '@/domain/model';
 import { readJsonResponse } from '@/lib/api-response';
 import { QuickAdd } from '@/components/quick-add';
+import { CatalogueSkeleton } from '@/components/ui/loading-skeleton';
 interface Result {
   games: (Game & { community_rating: number | null })[];
   source: string;
@@ -167,6 +168,7 @@ export function Explore({
         </p>
       ) : null}
       {result.message ? <p className="notice">{result.message}</p> : null}
+      {loading && !result.games.length ? <CatalogueSkeleton /> : null}
       <div className="game-grid" aria-busy={loading}>
         {result.games.map((game) => (
           <article key={game.id}>
