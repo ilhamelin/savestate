@@ -193,7 +193,7 @@ export function Explore({
             setFilters((previous) => ({ ...previous, offset: result.nextOffset! }));
           }}
         >
-          {loading ? 'Cargando…' : 'Cargar más'}
+          {loading ? 'Cargando…' : 'Cargar más juegos'}
         </button>
       ) : null}
       {!loading && !result.games.length ? (
