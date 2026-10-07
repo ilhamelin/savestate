@@ -9,10 +9,12 @@ export async function catalogue(filters: CatalogueFilters) {
   if (!isConfigured())
     return {
       games: [],
+      nextOffset: null,
       source: 'unconfigured' as const,
       message: 'El catálogo estará disponible cuando conectes Supabase e IGDB.',
     };
   let source: 'igdb' | 'local' = 'local';
+  let igdbIds: number[] | undefined;
   // The 24h cache in fetchCatalogue is keyed by the complete query. Fresh local
   // rows alone cannot establish that a broader or different search is complete.
   if (
@@ -29,12 +31,21 @@ export async function catalogue(filters: CatalogueFilters) {
         dbCheck(error);
       }
       source = 'igdb';
+      igdbIds = games.map((game) => game.igdb_id);
     } catch (error) {
       console.warn('IGDB fallback', error instanceof Error ? error.name : 'unknown');
     }
   }
+  const page = await localCatalogue({ ...filters, minRating: null }, igdbIds);
+  const games = filters.minRating
+    ? page.filter(
+        (game) => game.community_rating !== null && game.community_rating >= filters.minRating!,
+      )
+    : page;
+  const pageSize = igdbIds?.length ?? page.length;
   return {
-    games: await localCatalogue(filters),
+    games,
+    nextOffset: pageSize === 24 && filters.offset < 960 ? filters.offset + 24 : null,
     source,
     message:
       source === 'local'

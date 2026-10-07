@@ -16,6 +16,30 @@ export async function libraryMutation(input: unknown) {
   const { db, user } = await authenticated();
   const data = object(input);
   switch (data.action) {
+    case 'add': {
+      const gameId = uuid(data.game_id);
+      const selectedStatus = status(data.status);
+      if (!['backlog', 'wishlist', 'playing'].includes(selectedStatus))
+        throw new AppError('Estado de agregado inválido.', 400);
+      const { data: row, error } = await db
+        .from('user_games')
+        .upsert(
+          { user_id: user.id, game_id: gameId, status: selectedStatus },
+          { onConflict: 'user_id,game_id', ignoreDuplicates: true },
+        )
+        .select()
+        .maybeSingle();
+      dbCheck(error);
+      if (row) return row;
+      const { data: existing, error: readError } = await db
+        .from('user_games')
+        .select()
+        .eq('user_id', user.id)
+        .eq('game_id', gameId)
+        .single();
+      dbCheck(readError);
+      return existing;
+    }
     case 'save': {
       const gameId = uuid(data.game_id);
       const changes = { status: status(data.status), rating: rating(data.rating) };

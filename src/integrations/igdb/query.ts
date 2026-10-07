@@ -5,6 +5,8 @@ export interface CatalogueFilters {
   genre: string;
   year: number | null;
   minRating: number | null;
+  sort: 'relevance' | 'recent' | 'classics';
+  offset: number;
 }
 export function parseFilters(params: URLSearchParams): CatalogueFilters {
   const q = text(params.get('q') ?? '', 'Búsqueda', 80, 0);
@@ -16,11 +18,20 @@ export function parseFilters(params: URLSearchParams): CatalogueFilters {
     throw new ValidationError('Año inválido.');
   if (minRating !== null && (!Number.isFinite(minRating) || minRating < 1 || minRating > 10))
     throw new ValidationError('Puntuación mínima inválida.');
-  return { q, platform, genre, year, minRating };
+  const sort = params.get('sort') || 'relevance';
+  const offset = Number(params.get('offset') || 0);
+  if (sort !== 'relevance' && sort !== 'recent' && sort !== 'classics')
+    throw new ValidationError('Orden inválido.');
+  if (!Number.isInteger(offset) || offset < 0 || offset > 960 || offset % 24 !== 0)
+    throw new ValidationError('Página inválida.');
+  return { q, platform, genre, year, minRating, sort, offset };
 }
 export function igdbQuery(filters: CatalogueFilters): string {
   const quote = (value: string) => JSON.stringify(value);
   const where: string[] = ['version_parent = null'];
+  if (filters.sort === 'recent')
+    where.push(`first_release_date <= ${Math.floor(Date.now() / 86400000) * 86400}`);
+  if (filters.sort === 'classics') where.push('first_release_date < 1262304000');
   if (filters.q) {
     const q = quote(filters.q.replace(/[\r\n]/g, ' '));
     where.push(
@@ -34,7 +45,8 @@ export function igdbQuery(filters: CatalogueFilters): string {
       end = Date.UTC(filters.year + 1, 0, 1) / 1000;
     where.push(`first_release_date >= ${start} & first_release_date < ${end}`);
   }
-  return `fields id,name,slug,cover.image_id,summary,first_release_date,platforms.name,genres.name,involved_companies.developer,involved_companies.publisher,involved_companies.company.name,collections.name; where ${where.join(' & ')}; sort first_release_date desc; limit 24;`;
+  const sort = filters.sort === 'recent' ? 'first_release_date desc' : 'total_rating_count desc';
+  return `fields id,name,slug,cover.image_id,summary,first_release_date,platforms.name,genres.name,involved_companies.developer,involved_companies.publisher,involved_companies.company.name,collections.name; where ${where.join(' & ')}; sort ${sort}; limit 24; offset ${filters.offset};`;
 }
 export interface IgdbGame {
   id: number;
