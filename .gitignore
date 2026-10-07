@@ -10,3 +10,6 @@ coverage/
 Thumbs.db
 .supabase/
 test-results/
+
+.vercel
+.env*
