@@ -714,8 +714,19 @@ nav a:hover,
 .avatar img {
   object-fit: cover;
 }
-.profile-heading h1 {
+.profile-heading h1,
+.profile-heading h2 {
   font-size: 27px;
+}
+.profile-preview {
+  margin-bottom: 28px;
+}
+.profile-heading > div:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.avatar {
+  flex-shrink: 0;
 }
 .profile-terminal {
   color: #00ff66;
@@ -926,7 +937,8 @@ nav a:hover,
     padding: 24px 20px;
     flex-direction: column;
   }
-  .profile-heading h1 {
+  .profile-heading h1,
+  .profile-heading h2 {
     font-size: 22px;
   }
   .list-row,

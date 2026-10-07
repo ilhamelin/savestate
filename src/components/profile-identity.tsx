@@ -1,0 +1,55 @@
+import Image from 'next/image';
+import type { ReactNode } from 'react';
+import type { Profile } from '@/domain/model';
+
+type Identity = Pick<Profile, 'username' | 'avatar_url' | 'banner_url' | 'terminal_status'>;
+
+export function ProfileIdentity({
+  profile,
+  headingLevel = 1,
+  children,
+}: {
+  profile: Identity;
+  headingLevel?: 1 | 2;
+  children?: ReactNode;
+}) {
+  const Heading = headingLevel === 1 ? 'h1' : 'h2';
+  return (
+    <>
+      <div className="profile-banner">
+        {profile.banner_url ? (
+          <Image
+            src={profile.banner_url}
+            alt={`Banner de ${profile.username}`}
+            fill
+            sizes="(max-width: 800px) 100vw, 1200px"
+            unoptimized
+          />
+        ) : null}
+      </div>
+      <div className="profile-heading">
+        <div className="avatar">
+          {profile.avatar_url ? (
+            <Image
+              src={profile.avatar_url}
+              alt={`Avatar de ${profile.username}`}
+              fill
+              sizes="80px"
+              unoptimized
+            />
+          ) : (
+            <span aria-hidden="true">▣</span>
+          )}
+        </div>
+        <div>
+          <p className="eyebrow">PLAYER PROFILE</p>
+          <Heading>@{profile.username}</Heading>
+          <p className="profile-terminal">
+            {profile.username}@savestate:~$ {profile.terminal_status || 'Ready to play'}
+          </p>
+          {children}
+        </div>
+      </div>
+    </>
+  );
+}

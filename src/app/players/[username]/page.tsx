@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { profileByName, libraryFor } from '@/repositories/player';
@@ -13,6 +12,7 @@ import { SetupNotice } from '@/components/setup-notice';
 import { PlayerStatistics } from '@/components/player-statistics';
 import { playerStatistics } from '@/domain/statistics';
 import { socialLinks } from '@/domain/validation';
+import { ProfileIdentity } from '@/components/profile-identity';
 export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
   return { title: `@${username}` };
@@ -72,40 +72,15 @@ export default async function Player({ params }: { params: Promise<{ username: s
           </Link>
         ) : null}
       </div>
-      <div className="profile-banner">
-        {profile.banner_url ? (
-          <Image src={profile.banner_url} alt="Banner del jugador" fill sizes="100vw" unoptimized />
-        ) : null}
-      </div>
-      <div className="profile-heading">
-        <div className="avatar">
-          {profile.avatar_url ? (
-            <Image
-              src={profile.avatar_url}
-              alt={`Avatar de ${profile.username}`}
-              fill
-              sizes="80px"
-              unoptimized
-            />
-          ) : (
-            <span aria-hidden="true">▣</span>
-          )}
+      <ProfileIdentity profile={profile}>
+        <div className="tags">
+          {Object.entries(links).map(([label, url]) => (
+            <a className="tag" key={label} href={url} target="_blank" rel="noopener noreferrer">
+              {label} ↗
+            </a>
+          ))}
         </div>
-        <div>
-          <p className="eyebrow">PLAYER PROFILE</p>
-          <h1>@{profile.username}</h1>
-          <p className="profile-terminal">
-            {profile.username}@savestate:~$ {profile.terminal_status || 'Ready to play'}
-          </p>
-          <div className="tags">
-            {Object.entries(links).map(([label, url]) => (
-              <a className="tag" key={label} href={url} target="_blank" rel="noopener noreferrer">
-                {label} ↗
-              </a>
-            ))}
-          </div>
-        </div>
-      </div>
+      </ProfileIdentity>
       {user ? (
         <SocialControls
           targetId={profile.id}

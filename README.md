@@ -24,7 +24,7 @@ Abre `http://localhost:3000`. La [guía de configuración](docs/configuracion.md
 - Seis estados de biblioteca, múltiples Play Logs y Top 4 ordenado.
 - Una puntuación por usuario/juego, de 1 a 10 en medios puntos, compartida por biblioteca y reseña mediante una transacción.
 - Markdown sanitizado, spoilers ocultos por defecto, reacciones gamer, comentarios y reportes.
-- Perfiles, galería de avatares, subida WebP limitada, temas, enlaces y estadísticas de partidas.
+- Perfiles, vista previa de avatar/banner en ajustes, galería de avatares, subida WebP limitada, temas, enlaces y estadísticas de partidas.
 - Seguimiento unilateral, solicitudes de amistad bidireccional y biblioteca privada para amigos aceptados.
 - Feed con suscripción Realtime, listas compartibles y notificaciones internas.
 - Panel de moderación para roles administrativos asignados en Supabase.

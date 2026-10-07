@@ -6,12 +6,16 @@ import { MutationForm, ActionButton } from '@/components/ui/form';
 import { api } from '@/lib/client-api';
 import { browserClient } from '@/integrations/supabase/browser';
 import type { Profile } from '@/domain/model';
+import { ProfileIdentity } from '@/components/profile-identity';
 
 export function Settings({ profile }: { profile: Profile }) {
   const [avatar, setAvatar] = useState(profile.avatar_url),
     [banner, setBanner] = useState(profile.banner_url),
     [uploadError, setUploadError] = useState(''),
     [uploading, setUploading] = useState(false);
+  const [username, setUsername] = useState(profile.username);
+  const [terminal, setTerminal] = useState(profile.terminal_status);
+  const [theme, setTheme] = useState(profile.theme_color);
   const router = useRouter();
   async function upload(file: File | undefined, kind: 'avatar' | 'banner') {
     if (!file) return;
@@ -63,6 +67,13 @@ export function Settings({ profile }: { profile: Profile }) {
   }
   return (
     <>
+      <section className={`profile-preview theme-${theme}`} aria-label="Vista previa de mi perfil">
+        <ProfileIdentity
+          profile={{ username, terminal_status: terminal, avatar_url: avatar, banner_url: banner }}
+          headingLevel={2}
+        />
+        <p className="muted">Vista previa de tu perfil. Guarda para aplicar los cambios.</p>
+      </section>
       <div className="panel">
         <h2>Identidad de jugador</h2>
         <MutationForm
@@ -86,6 +97,9 @@ export function Settings({ profile }: { profile: Profile }) {
             router.refresh();
             setAvatar(result.avatar_url);
             setBanner(result.banner_url);
+            setUsername(result.username);
+            setTerminal(result.terminal_status);
+            setTheme(result.theme_color);
           }}
         >
           <div className="form-row">
@@ -93,7 +107,8 @@ export function Settings({ profile }: { profile: Profile }) {
               Nombre de usuario
               <input
                 name="username"
-                defaultValue={profile.username}
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
                 pattern="[A-Za-z0-9_]{3,30}"
                 minLength={3}
                 maxLength={30}
@@ -102,7 +117,11 @@ export function Settings({ profile }: { profile: Profile }) {
             </label>
             <label>
               Color del perfil
-              <select name="theme" defaultValue={profile.theme_color}>
+              <select
+                name="theme"
+                value={theme}
+                onChange={(event) => setTheme(event.target.value as Profile['theme_color'])}
+              >
                 <option value="cyan">Cian neón</option>
                 <option value="green">Verde fósforo</option>
                 <option value="pink">Magenta</option>
@@ -114,7 +133,8 @@ export function Settings({ profile }: { profile: Profile }) {
             Estado de terminal
             <input
               name="terminal"
-              defaultValue={profile.terminal_status}
+              value={terminal}
+              onChange={(event) => setTerminal(event.target.value)}
               maxLength={160}
               placeholder="Playing Chrono Trigger"
             />
