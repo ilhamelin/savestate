@@ -11,7 +11,7 @@
 SaveState cuenta con una base de código funcional, coherente y sólidamente alineada con las decisiones aprobadas y el stack tecnológico seleccionado (**Next.js 16 App Router**, **React 19**, **TypeScript 5**, **Tailwind CSS v4**, **Supabase / PostgreSQL 16**, **Node.js 24**).
 
 El proyecto no requiere reinicio ni redefinición arquitectónica. Sin embargo, este análisis identifica:
-1. **Un riesgo técnico de alta prioridad:** La implementación del proxy de seguridad y sesión reside en `src/proxy.ts`, mientras que el estándar de Next.js App Router para ejecución de Edge/Node Middleware requiere el archivo canónico `src/middleware.ts`.
+1. **Convención de Proxy en Next.js 16 validada:** La intermediación de red opera en `src/proxy.ts` exportando `proxy`, convención canónica de Next.js 16.4.0 (verificada con éxito mediante tests HTTP con CSP nonce y Cache-Control).
 2. **Diferencias funcionales de alcance:** Ciertas capacidades periféricas (gestión detallada de sesiones activas, alta administrativa directa de sugerencias de catálogo, y búsqueda global de títulos al armar listas temáticas) presentan simplificaciones respecto a la especificación original.
 3. **Validaciones externas pendientes:** Las pruebas automatizadas actuales garantizan la lógica de dominio, restricciones SQL y comportamiento HTTP sin credenciales, pero las integraciones reales con Supabase Auth, Storage, Realtime y Twitch/IGDB permanecen condicionadas a la configuración de credenciales del usuario.
 4. **Oportunidades de optimización sin agregar dependencias:** Mejoras puntuales en el debounce del feed Realtime, la interfaz de moderación y la paginación de colecciones grandes.
@@ -95,17 +95,14 @@ Las decisiones aprobadas del 7 de octubre de 2026 prevalecen sobre la redacción
 
 ## 3. Hallazgos Críticos y Análisis de Arquitectura
 
-### 1. Convención de Middleware en Next.js App Router (`src/proxy.ts` vs. `src/middleware.ts`)
+### 1. Convención de Proxy en Next.js 16.4.0 (`src/proxy.ts` — Verificada)
 * **Ubicación actual:** [src/proxy.ts](file:///c:/Users/benja/OneDrive/Documentos/ChatGPT/savestate-research/src/proxy.ts)
-* **Situación técnica:** En Next.js (App Router), el archivo de middleware de red debe llamarse `middleware.ts` en la raíz del proyecto o en `src/middleware.ts`, exportando una función nombrada `middleware` (o `default`).
-* **Impacto potencial:** Si el runtime de Next.js no reconoce `src/proxy.ts` como entrypoint de middleware:
-  - Las cabeceras `Content-Security-Policy` dinámicas con `nonce` no se inyectan en las respuestas servidas.
-  - La renovación automática de sesiones SSR mediante `db.auth.getClaims()` y refresco de cookies en cada petición no se ejecutaría en la capa de borde antes de los Server Components.
-  - El encabezado `Cache-Control: private, no-store` para rutas privadas no se aplicaría a nivel de middleware.
-* **Propuesta recomendada:** Crear un archivo de entrada `src/middleware.ts` que reexporte la función `proxy` como `middleware` y la configuración de matcher:
-  ```typescript
-  export { proxy as middleware, config } from './proxy';
-  ```
+* **Situación técnica:** En Next.js 16.4.0, la convención nativa del framework para la capa de intermediación de red/Edge utiliza el archivo `src/proxy.ts` exportando la función `proxy` junto al matcher `config`.
+* **Estado de verificación:** La convención actual es la adecuada y no debe modificarse. Las comprobaciones en el servidor local confirman que:
+  - Los 3 tests HTTP pasan exitosamente contra el servidor local.
+  - La respuesta HTTP inyecta correctamente la directiva `Content-Security-Policy` con `nonce` aplicado a scripts.
+  - Se aplica `Cache-Control: private, no-store` en rutas protegidas.
+  - **Nota de compatibilidad:** Crear un archivo `src/middleware.ts` en paralelo provocaría un error de compilación, ya que Next.js 16 rechaza la coexistencia de ambos archivos. La implementación existente en `src/proxy.ts` es correcta.
 
 ### 2. Escalabilidad del Canal Realtime en el Feed Comunitario
 * **Ubicación:** [src/components/realtime-feed.tsx](file:///c:/Users/benja/OneDrive/Documentos/ChatGPT/savestate-research/src/components/realtime-feed.tsx)
@@ -135,7 +132,7 @@ Las decisiones aprobadas del 7 de octubre de 2026 prevalecen sobre la redacción
 
 | ID | Riesgo | Categoría | Probabilidad | Impacto | Estado de Mitigación / Validación Pendiente |
 |---|---|---|---|---|---|
-| **RSK-01** | Incompatibilidad del archivo de Middleware de Next.js | Arquitectura | Alta | Alto | Mitigable con un wrapper estándar `src/middleware.ts`. Requiere validación de cabeceras en entorno compilado. |
+| **RSK-01** | Intermediación de red y cabeceras de seguridad en Next.js 16 | Arquitectura | Baja | N/A | **Verificado y conforme:** `src/proxy.ts` opera con normalidad según la convención nativa de Next.js 16. Tests HTTP de CSP y caché aprobados. |
 | **RSK-02** | Latencia externa de IGDB superior a 1.5 s en ingesta fría | Rendimiento | Alta | Medio | Mitigado con timeout de 2.5 s y contingencia local. **Validación pendiente:** Medición de latencia real con credenciales Twitch activas. |
 | **RSK-03** | Frecuencia excesiva de refresh SSR por WebSockets en feed | Escalabilidad | Media | Medio | El debounce de 500 ms atenúa ráfagas inmediatas, pero requiere validación bajo múltiples usuarios activos emitiendo checkpoints. |
 | **RSK-04** | Variabilidad de soporte de `canvas.toBlob('image/webp')` | Compatibilidad | Baja | Medio | La compresión WebP en cliente funciona en navegadores modernos (Chromium, Firefox, Safari >=14). Validar fallback si el navegador falla la conversión. |
@@ -149,27 +146,19 @@ Las decisiones aprobadas del 7 de octubre de 2026 prevalecen sobre la redacción
 
 Todas las propuestas se mantienen estrictamente dentro del stack tecnológico aprobado y no incorporan dependencias externas ni redefiniciones arquitectónicas:
 
-### Propuesta 1: Formalización de `src/middleware.ts`
-* **Justificación:** Garantiza compatibilidad universal con el ciclo de vida de Next.js App Router para CSP, cabeceras de seguridad y renovación de sesiones SSR.
-* **Implementación:** Crear `src/middleware.ts` delegando en `src/proxy.ts`:
-  ```typescript
-  import { proxy, config } from './proxy';
-  export { proxy as middleware, config };
-  ```
-
-### Propuesta 2: Optimización del canal de feed en `RealtimeFeed`
+### Propuesta 1: Optimización del canal de feed en `RealtimeFeed`
 * **Justificación:** Evitar recargas completas SSR del feed ante cada inserción comunitaria global.
 * **Implementación:** Reemplazar el `router.refresh()` automático por un botón de estado flotante tipo terminal (*"◆ 1 nuevo checkpoint en transmisión · Presiona para actualizar"*) o incrementar el debounce a un intervalo controlado.
 
-### Propuesta 3: Desacoplar creación de listas de la biblioteca personal
+### Propuesta 2: Desacoplar creación de listas de la biblioteca personal
 * **Justificación:** Mejora la usabilidad de RF-14 permitiendo crear listas temáticas con cualquier juego del catálogo sin exigir que el creador lo tenga marcado en su biblioteca.
 * **Implementación:** Agregar un campo de búsqueda de títulos en `ListItemForm` que consulte `/api/catalogue` y enlace el `game_id` correspondiente.
 
-### Propuesta 4: Acción administrativa para aprobación de sugerencias
+### Propuesta 3: Acción administrativa para aprobación de sugerencias
 * **Justificación:** Cerrar el ciclo de vida de RF-09 en `/moderation` sin obligar al moderador a ejecutar sentencias SQL manuales para incorporar juegos retro sugeridos por los usuarios.
 * **Implementación:** En `src/app/moderation/page.tsx`, añadir un botón "Aceptar e indexar" que inserte el título en `games` con los metadatos suministrados.
 
-### Propuesta 5: Reintento con backoff en el presupuesto de IGDB
+### Propuesta 4: Reintento con backoff en el presupuesto de IGDB
 * **Justificación:** Reducir caídas prematuras al catálogo local cuando dos usuarios buscan títulos no cacheados en el mismo segundo.
 * **Implementación:** Si `claim_igdb_request` retorna `false`, esperar 300 ms y realizar un único segundo intento antes de arrojar el error de contingencia.
 
