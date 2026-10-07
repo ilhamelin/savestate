@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Search } from 'lucide-react';
 import { GameCard } from '@/components/game-card';
 import type { Game } from '@/domain/model';
+import { readJsonResponse } from '@/lib/api-response';
 interface Result {
   games: (Game & { community_rating: number | null })[];
   source: string;
@@ -38,9 +39,8 @@ export function Explore() {
       try {
         const params = new URLSearchParams({ q, platform, genre, year, rating });
         const response = await fetch(`/api/catalogue?${params}`, { signal: controller.signal });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error ?? 'Error de catálogo.');
-        setResult(data as Result);
+        const data = await readJsonResponse<Result>(response);
+        if (!controller.signal.aborted) setResult(data);
       } catch (error) {
         if (!controller.signal.aborted) {
           setError(error instanceof Error ? error.message : 'No se pudo cargar el catálogo.');

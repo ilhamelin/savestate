@@ -1,4 +1,5 @@
 'use client';
+import { readJsonResponse } from './api-response.ts';
 export async function api<T = unknown>(
   resource: string,
   data: Record<string, unknown>,
@@ -8,7 +9,8 @@ export async function api<T = unknown>(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  const result = (await response.json()) as { data?: T; error?: string };
-  if (!response.ok) throw new Error(result.error ?? 'No se pudo guardar.');
+  const result = await readJsonResponse<{ data?: T }>(response);
+  if (!result || !('data' in result))
+    throw new Error('El servidor devolvió una respuesta incompleta. Inténtalo de nuevo.');
   return result.data as T;
 }
