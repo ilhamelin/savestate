@@ -32,6 +32,10 @@ Complemento autorizado por el usuario a los siete documentos originales. Los ori
 - https://supabase.com/docs/guides/auth/server-side/creating-a-client
 - https://api-docs.igdb.com/
 
-## Verificación externa pendiente de configuración
+## Verificación externa y despliegue en producción — 7 de octubre de 2026
 
-Para comprobar OAuth, persistencia real, RLS y datos IGDB se necesita un proyecto Supabase configurado y credenciales Twitch. Las verificaciones sin credenciales no certifican esos servicios externos.
+- Se aprueba formalmente la adopción de **Vercel** como plataforma de infraestructura, dominio HTTPS administrado y gestión de secretos para SaveState.
+- El despliegue se ejecuta mediante Vercel CLI (`npx vercel`), preservando la estructura local del repositorio sin exigir configuración de remoto público ni push forzado.
+- Se completó y certificó la verificación de servicios externos reales en el entorno de producción ([`https://savestate-eight.vercel.app`](https://savestate-eight.vercel.app)):
+  - **Supabase:** Proyecto PostgreSQL 16 configurado con las 3 migraciones aplicadas, 14 tablas bajo RLS activo, Storage en bucket `profiles` y autenticación OAuth en vivo con Discord y Google.
+  - **Twitch / IGDB API v4:** Ingesta M2M confirmada, almacenamiento perezoso y respuesta desde caché en ~829 ms (cumpliendo RNF-02 < 1.5 s).

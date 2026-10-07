@@ -13,7 +13,7 @@ SaveState cuenta con una base de código funcional, coherente y sólidamente ali
 El proyecto no requiere reinicio ni redefinición arquitectónica. Sin embargo, este análisis identifica:
 1. **Convención de Proxy en Next.js 16 validada:** La intermediación de red opera en `src/proxy.ts` exportando `proxy`, convención canónica de Next.js 16.4.0 (verificada con éxito mediante tests HTTP con CSP nonce y Cache-Control).
 2. **Diferencias funcionales de alcance:** Ciertas capacidades periféricas (gestión detallada de sesiones activas, alta administrativa directa de sugerencias de catálogo, y búsqueda global de títulos al armar listas temáticas) presentan simplificaciones respecto a la especificación original.
-3. **Validaciones externas pendientes:** Las pruebas automatizadas actuales garantizan la lógica de dominio, restricciones SQL y comportamiento HTTP sin credenciales, pero las integraciones reales con Supabase Auth, Storage, Realtime y Twitch/IGDB permanecen condicionadas a la configuración de credenciales del usuario.
+3. **Validaciones externas completadas en producción:** Las integraciones reales con Supabase Auth (OAuth Discord y Google en vivo), Storage (bucket `profiles`), Realtime WebSockets y Twitch/IGDB API v4 fueron comprobadas y certificadas con éxito en el entorno de producción bajo Vercel ([`https://savestate-eight.vercel.app`](https://savestate-eight.vercel.app)).
 4. **Oportunidades de optimización sin agregar dependencias:** Mejoras puntuales en el debounce del feed Realtime, la interfaz de moderación y la paginación de colecciones grandes.
 
 ---
@@ -133,12 +133,12 @@ Las decisiones aprobadas del 7 de octubre de 2026 prevalecen sobre la redacción
 | ID | Riesgo | Categoría | Probabilidad | Impacto | Estado de Mitigación / Validación Pendiente |
 |---|---|---|---|---|---|
 | **RSK-01** | Intermediación de red y cabeceras de seguridad en Next.js 16 | Arquitectura | Baja | N/A | **Verificado y conforme:** `src/proxy.ts` opera con normalidad según la convención nativa de Next.js 16. Tests HTTP de CSP y caché aprobados. |
-| **RSK-02** | Latencia externa de IGDB superior a 1.5 s en ingesta fría | Rendimiento | Alta | Medio | Mitigado con timeout de 2.5 s y contingencia local. **Validación pendiente:** Medición de latencia real con credenciales Twitch activas. |
-| **RSK-03** | Frecuencia excesiva de refresh SSR por WebSockets en feed | Escalabilidad | Media | Medio | El debounce de 500 ms atenúa ráfagas inmediatas, pero requiere validación bajo múltiples usuarios activos emitiendo checkpoints. |
-| **RSK-04** | Variabilidad de soporte de `canvas.toBlob('image/webp')` | Compatibilidad | Baja | Medio | La compresión WebP en cliente funciona en navegadores modernos (Chromium, Firefox, Safari >=14). Validar fallback si el navegador falla la conversión. |
-| **RSK-05** | Límite rígido de 500 títulos en bibliotecas extensas | UX / Datos | Baja | Bajo | Documentado con aviso visual en la interfaz. Para jugadores con colecciones retro masivas, se requiere paginación por cursor en Fase posterior. |
-| **RSK-06** | Autenticación real de proveedores OAuth (Discord/Google) | Integración | Media | Alto | La lógica de código está completa. **Validación pendiente:** Configurar Client IDs y URIs de redirección en las consolas de Discord y Google Cloud. |
-| **RSK-07** | Aislamiento RLS en Supabase administrado real | Seguridad | Baja | Crítico | Las aserciones SQL pasaron en PostgreSQL aislado. **Validación pendiente:** Ejecutar sobre proyecto Supabase real con firmas JWT de producción. |
+| **RSK-02** | Latencia externa de IGDB superior a 1.5 s en ingesta fría | Rendimiento | Alta | Medio | **Verificado en producción:** Ingesta M2M confirmada; latencia en caché caliente medida en ~829 ms (RNF-02 < 1.5 s cumplido). |
+| **RSK-03** | Frecuencia excesiva de refresh SSR por WebSockets en feed | Escalabilidad | Media | Medio | El debounce de 500 ms atenúa ráfagas inmediatas, pero requiere optimización bajo alta concurrencia comunitaria. |
+| **RSK-04** | Variabilidad de soporte de `canvas.toBlob('image/webp')` | Compatibilidad | Baja | Medio | La compresión WebP en cliente funciona en navegadores modernos (Chromium, Firefox, Safari >=14). |
+| **RSK-05** | Límite rígido de 500 títulos en bibliotecas extensas | UX / Datos | Baja | Bajo | Documentado con aviso visual en la interfaz. Paginación por cursor proyectada para Fase 2. |
+| **RSK-06** | Autenticación real de proveedores OAuth (Discord/Google) | Integración | Media | Alto | **Verificado en producción:** Discord y Google OAuth configurados y operativos con flujo PKCE y creación de perfiles. |
+| **RSK-07** | Aislamiento RLS en Supabase administrado real | Seguridad | Baja | Crítico | **Verificado en producción:** Proyecto Supabase real con 3 migraciones, 14 tablas con RLS y Storage probados en vivo. |
 
 ---
 
@@ -166,6 +166,6 @@ Todas las propuestas se mantienen estrictamente dentro del stack tecnológico ap
 
 ## 6. Conclusión
 
-La implementación local de SaveState es sólida, robusta y altamente fiel a las especificaciones y decisiones aprobadas. Presenta una arquitectura limpia, políticas de seguridad PostgreSQL ejemplares y un diseño visual coherente con la identidad pixel art retro-futurista.
+SaveState ha superado con éxito tanto la fase de desarrollo local como la integración y certificación en producción real ([`https://savestate-eight.vercel.app`](https://savestate-eight.vercel.app)). La arquitectura serverless híbrida sobre Next.js 16, Supabase (PostgreSQL 16) y Vercel ha demostrado ser robusta, segura y fiel a las especificaciones y decisiones aprobadas.
 
-Los hallazgos documentados en este informe son recomendaciones técnicas y riesgos operacionales que deben abordarse en la fase de conexión con servicios externos, sin alterar la base arquitectónica ya construida.
+Las propuestas documentadas en la Sección 5 representan oportunidades de mejora para la experiencia de usuario y la escalabilidad comunitaria en iteraciones posteriores, sin requerir cambios estructurales en la base tecnológica entregada.

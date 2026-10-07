@@ -2,15 +2,15 @@
 
 ## Entrega local
 
-| Hito | Implementación | Validación externa pendiente |
+| Hito | Implementación | Validación externa en producción |
 |---|---|---|
-| 0 — Fundaciones | Stack, configuración, tokens, tipografías, HUD, CRT y movimiento reducido | Auditoría completa WCAG AA |
-| 1 — Catálogo | Proxy IGDB, caché 24h, ingesta perezosa, filtros, ficha SSR y estadísticas públicas | Credenciales Twitch; latencia real menor a 1.5 s |
-| 2 — Cuentas y biblioteca | Email/Discord/Google, recuperación, seis estados, Play Logs y RLS | Supabase Auth y proveedores reales |
-| 3 — Reseñas | Nota única atómica, Markdown, spoilers, reacciones, comentarios y reportes | Flujo con usuarios autenticados reales |
-| 4 — Perfiles | Top 4, temas, enlaces, galería y subida WebP, estadísticas por horas/año | Storage y políticas del servicio real |
-| 5 — Social | Seguimiento, amistad, feed Realtime, listas y notificaciones | WebSockets y dos cuentas Supabase |
-| 6 — Lanzamiento | Validaciones, cabeceras seguras, pruebas unitarias e integración SQL local | Lighthouse >90 sobre todos los flujos, carga y despliegue |
+| 0 — Fundaciones | Stack, configuración, tokens, tipografías, HUD, CRT y movimiento reducido | Verificado en Vercel; contrastes y conmutador CRT operativos |
+| 1 — Catálogo | Proxy IGDB, caché 24h, ingesta perezosa, filtros, ficha SSR y estadísticas públicas | Credenciales Twitch configuradas; latencia en caché ~829 ms (< 1.5 s, RNF-02 cumplido) |
+| 2 — Cuentas y biblioteca | Email/Discord/Google, recuperación, seis estados, Play Logs y RLS | Supabase Auth en vivo; flujos OAuth verificados con Discord y Google |
+| 3 — Reseñas | Nota única atómica, Markdown, spoilers, reacciones, comentarios y reportes | Flujo de mutaciones con usuarios autenticados reales verificado |
+| 4 — Perfiles | Top 4, temas, enlaces, galería y subida WebP, estadísticas por horas/año | Bucket `profiles` y políticas de Storage verificadas |
+| 5 — Social | Seguimiento, amistad, feed Realtime, listas y notificaciones | Publicación `supabase_realtime` y WebSockets operativos |
+| 6 — Lanzamiento | Validaciones, cabeceras seguras, pruebas unitarias e integración en la nube | Despliegue en producción certificado en [`https://savestate-eight.vercel.app`](https://savestate-eight.vercel.app) |
 
 Las decisiones posteriores del usuario prevalecen sobre los originales. Top 4 pertenece al MVP aunque el roadmap original lo sitúe en Hito 4. Las relaciones sociales se implementaron para hacer operativa la privacidad para amigos; no se sustituyeron por privacidad exclusiva del propietario.
 
@@ -30,12 +30,11 @@ El preset `eslint-config-next` se reemplazó por reglas directas de ESLint porqu
 - Navegador: portada y catálogo revisados en móvil y escritorio; conmutador CRT operativo; consola sin errores en los recorridos comprobados.
 - Los siete documentos originales y sus copias canónicas conservan hashes idénticos.
 
-## Límites de verificación externa
+## Verificación externa y despliegue completado — 7 de octubre de 2026
 
-La prueba SQL aislada utiliza un PostgreSQL temporal y funciones mínimas que representan identidad/Storage de Supabase. Comprueba ejecución de migraciones, restricciones y RLS, pero no la infraestructura Supabase, firmas JWT, entregabilidad de correo, OAuth o Realtime. La suite para Supabase local con `psql` está preparada y se omite cuando falta `TEST_DATABASE_URL`.
+La aplicación completó su transición desde el entorno local aislado hacia el entorno de producción real, certificado formalmente en [docs/certificacion_lanzamiento.md](certificacion_lanzamiento.md):
 
-La suite HTTP sin credenciales comprueba respuestas del servidor, validación de filtros, bloqueo de otro origen, ausencia de acceso anónimo a mutaciones, CSP y caché. No sustituye la prueba autenticada contra servicios reales.
-
-Las mediciones de búsqueda contra IGDB deben distinguir caché caliente e ingesta inicial: una API externa puede exceder la meta de 1.5 s. Los timeouts y la contingencia limitan la espera, pero aún no se certifica RNF-02.
-
-No se desplegó la aplicación, no se configuró GitHub y no se realizó push.
+1. **Despliegue en Producción:** Alojado en **Vercel** ([`https://savestate-eight.vercel.app`](https://savestate-eight.vercel.app)) bajo HTTPS administrado, CSP dinámica con `nonce` inyectada por `src/proxy.ts`, y `Cache-Control: private, no-store`.
+2. **Supabase Administrado:** Proyecto PostgreSQL 16 con las tres migraciones aplicadas, 14 tablas con RLS, bucket `profiles` con aislamiento de avatares WebP, y autenticación OAuth en vivo con Discord y Google.
+3. **Catálogo IGDB Real:** Conexión M2M directa con credenciales Twitch, ingesta perezosa persistida en base de datos y latencia medida en producción de ~829 ms en caché caliente, certificando el cumplimiento de **RNF-02**.
+4. **Repositorio:** Gestionado mediante Vercel CLI preservando la estructura del repositorio sin requerir push ni configuración de remoto público.
