@@ -30,6 +30,10 @@ Complemento autorizado por el usuario a los siete documentos originales. Los ori
 
 El usuario aprueba implementar las cuatro recomendaciones: orden y paginación en Explorar con filtros conservados al volver; agregado rápido a Backlog/Wishlist/Playing desde tarjetas; listas con cualquier juego del catálogo; y «Qué juego hoy», selección aleatoria del backlog con filtros de plataforma y género. Los detalles y la verificación se registran en [mejoras_descubrimiento.md](mejoras_descubrimiento.md). Se conserva el stack y no se agregan dependencias.
 
+## Extensión aprobada: uso diario (7 de octubre de 2026)
+
+El usuario aprueba el bloque recomendado de tres mejoras: biblioteca con búsqueda por título, filtros de plataforma/género, ordenación y vista compacta; borradores locales de reseñas recuperables y vista previa sanitizada; registro rápido de minutos en partidas existentes. Se conserva el esquema actual y no se añaden dependencias. Las sesiones acumulan el total de horas de un Play Log, sin crear un historial diario adicional. Los borradores no cambian la nota ni publican texto hasta guardar la reseña. Los detalles y verificaciones se registran en [mejoras_uso_diario.md](mejoras_uso_diario.md).
+
 ## Fuentes técnicas verificadas
 
 - https://nextjs.org/docs/app/getting-started/installation
