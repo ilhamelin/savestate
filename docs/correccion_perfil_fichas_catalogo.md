@@ -26,4 +26,10 @@ Los clientes de perfil y catálogo ahora muestran errores comprensibles ante res
 
 Preview verificado: https://savestate-otu9dg6ii-ilhamelins-projects.vercel.app
 
-Los cambios todavía requieren publicación en producción. El guardado autenticado se comprobó localmente contra Supabase real; la prueba remota del endpoint comprobó su carga y su rechazo de acceso anónimo. No se afirma una prueba de edición sobre la cuenta del usuario.
+## Publicación y comprobación final
+
+Los cambios se publicaron en https://savestate-eight.vercel.app mediante Vercel CLI. Despliegue: `dpl_GUjqdB48wxohxpWAgxh6LLKiZFNe`, estado `READY`.
+
+En producción se verificaron el catálogo general (HTTP 200, 24 títulos incluyendo otras sagas), la ficha anteriormente fallida (HTTP 200) y el guardado autenticado de un perfil temporal (HTTP 200, datos persistidos en Supabase). La cuenta temporal se eliminó al finalizar. No se editó la cuenta del usuario.
+
+El navegador confirmó la búsqueda de Chrono Trigger y la navegación desde sus resultados a la ficha. La ficha publicada se revisó sin errores de consola. Evidencia: [ficha de Chrono Trigger](evidence/chrono-trigger-production.png).
