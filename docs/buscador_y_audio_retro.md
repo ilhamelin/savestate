@@ -23,4 +23,8 @@ El contexto se desbloquea durante una interacción, antes de las peticiones. Cri
 - Navegador local: Ctrl+K, búsqueda real de Chrono Trigger, navegación con flecha/Enter a una ficha, conmutador sincronizado y Escape con restauración de foco. No se modificaron biblioteca ni reseñas de usuarios durante estas verificaciones. No se realizó una evaluación auditiva del volumen.
 - Evidencia: `docs/evidence/buscador-global.png`.
 
-El despliegue y su comprobación se registran al publicar.
+## Publicación
+
+Publicado con `npx vercel --prod --yes` desde el commit `8fff68b`, incluyendo la implementación registrada en `a2b1b26`. Despliegue `dpl_GHugL1naUXeyqBUVG4V4bEsECPzC`, estado READY, alias https://savestate-eight.vercel.app.
+
+Build local y remoto aprobados. Producción devuelve HTTP 200 y CSP con nonce; búsqueda Chrono Trigger devuelve 15 títulos, origen IGDB, sin contingencia. En el navegador de producción Ctrl+K abre el modal y la búsqueda presenta sus primeros ocho títulos. Consola sin errores/advertencias y consulta de logs de errores sin entradas durante la ventana de verificación. Evidencia: `docs/evidence/buscador-produccion.png`.
