@@ -6,13 +6,7 @@ import { dbCheck } from '@/lib/http';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { ReadNotification } from '@/components/notification-button';
-const labels: Record<string, string> = {
-  follow: 'empezó a seguirte',
-  friend_request: 'te envió una solicitud de amistad',
-  friend_accepted: 'aceptó tu amistad',
-  comment: 'comentó tu reseña',
-  reaction: 'reaccionó a tu reseña',
-};
+import { NOTIFICATION_LABELS } from '@/domain/notifications';
 export default async function Notifications() {
   if (!isConfigured()) return <SetupNotice />;
   const user = await currentUser();
@@ -49,10 +43,10 @@ export default async function Notifications() {
           return (
             <div className="player-row" key={row.id}>
               <p>
-                <Link className="accent" href={`/players/${name}`}>
-                  @{name}
+                <Link className="accent" href={name ? `/players/${name}` : '/players'}>
+                  @{name ?? 'jugador'}
                 </Link>{' '}
-                {labels[row.kind] ?? 'envió una señal'}. {row.read_at ? '✓' : ''}
+                {NOTIFICATION_LABELS[row.kind] ?? 'envió una señal'}. {row.read_at ? '✓' : ''}
               </p>
               {!row.read_at ? <ReadNotification id={row.id} /> : null}
             </div>

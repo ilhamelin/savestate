@@ -3,6 +3,7 @@ import { Gamepad2, ArrowUpRight } from 'lucide-react';
 import { CrtToggle } from '@/components/ui/crt-toggle';
 import { CommandMenu } from '@/components/command-menu';
 import { AudioToggle } from '@/components/ui/audio-toggle';
+import { NotificationBell } from '@/components/notification-bell';
 import { currentUser } from '@/lib/session';
 import { serverClient } from '@/integrations/supabase/server';
 export async function Header() {
@@ -37,6 +38,7 @@ export async function Header() {
       </nav>
       <div className="header-actions">
         <CommandMenu authenticated={Boolean(user)} username={profile?.username ?? null} />
+        {user ? <NotificationBell key={user.id} userId={user.id} /> : null}
         <CrtToggle />
         <AudioToggle />
         <Link className="button small" href={user ? '/settings' : '/login'}>
