@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import './arcade.css';
 @import './badges.css';
+@import './evolution.css';
 @theme inline {
   --color-void-950: #08090c;
   --color-surface-900: #111319;

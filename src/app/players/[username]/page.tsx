@@ -88,6 +88,11 @@ export default async function Player({ params }: { params: Promise<{ username: s
         </ProfileIdentity>
       </GamerRoom>
       <BadgeGallery {...badges} />
+      <p>
+        <Link className="button secondary" href={`/players/${profile.username}/wrapped`}>
+          Ver SaveState Wrapped →
+        </Link>
+      </p>
       <nav className="tabs" aria-label="Momentos del jugador">
         <Link href={`/highlights?player=${profile.id}`}>Momentos</Link>
       </nav>

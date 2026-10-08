@@ -1,0 +1,98 @@
+.steam-studio {
+  display: grid;
+  gap: 24px;
+}
+.steam-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 16px;
+}
+.steam-grid article {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.steam-grid .check {
+  overflow-wrap: anywhere;
+}
+.steam-toolbar,
+.wrapped-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 20px 0;
+}
+.wrapped-console {
+  border: 2px solid var(--accent);
+  padding: clamp(16px, 4vw, 48px);
+  background: var(--surface);
+  box-shadow: inset 0 0 24px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.wrapped-screen {
+  min-height: 400px;
+  padding: 24px 0;
+  overflow-wrap: anywhere;
+}
+.wrapped-screen h2 {
+  margin-bottom: 32px;
+}
+.wrapped-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+.wrapped-metrics strong {
+  display: block;
+  font-size: clamp(30px, 5vw, 64px);
+  color: var(--accent);
+}
+.wrapped-goty {
+  font-size: clamp(28px, 5vw, 56px);
+  color: var(--accent);
+  margin: 40px 0;
+}
+.wrapped-genre {
+  display: grid;
+  grid-template-columns: minmax(80px, 1fr) minmax(60px, 2fr) 50px;
+  gap: 12px;
+  align-items: center;
+  margin: 16px 0;
+}
+.wrapped-genre progress {
+  width: 100%;
+  accent-color: var(--accent);
+}
+.wrapped-months {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+.wrapped-months div {
+  border: 1px solid var(--line);
+  padding: 12px 4px;
+  text-align: center;
+}
+.wrapped-months strong {
+  display: block;
+  color: var(--accent);
+  font-size: 24px;
+}
+.wrapped-notes {
+  margin-top: 24px;
+  font-size: 12px;
+}
+@media (max-width: 640px) {
+  .wrapped-months {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .wrapped-console > .button {
+    width: 100%;
+    white-space: normal;
+  }
+  .wrapped-genre {
+    font-size: 11px;
+  }
+}
