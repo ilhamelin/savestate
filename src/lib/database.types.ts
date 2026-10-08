@@ -14,6 +14,7 @@ import type {
 } from '@/domain/model';
 import type { Post, PostReaction, PostComment } from '@/domain/highlights';
 import type { GameDuel, DuelVote, PartyRequest } from '@/domain/arcade';
+import type { Badge, UserBadge } from '@/domain/badges';
 
 type Row<T> = { [K in keyof T]: T[K] };
 type Table<T, Relations = []> = {
@@ -32,6 +33,8 @@ type ForeignKey<Name extends string, Column extends string, Target extends strin
 export type Database = {
   public: {
     Tables: {
+      badges: Table<Badge>;
+      user_badges: Table<UserBadge>;
       game_duels: Table<GameDuel>;
       duel_votes: Table<DuelVote>;
       party_requests: Table<PartyRequest>;
@@ -71,6 +74,7 @@ export type Database = {
         created_at: string;
       }>;
       notifications: Table<{
+        badge_id: string | null;
         id: string;
         user_id: string;
         actor_id: string;
@@ -81,6 +85,7 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      check_user_badges: { Args: { p_user_id: string }; Returns: undefined };
       duel_results: {
         Args: { p_duel_id: string };
         Returns: { chosen_game_id: string; total: number }[];
