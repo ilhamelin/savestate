@@ -86,3 +86,5 @@ La [Fase 3: Sala Arcade, compañeros y habitaciones](docs/arcade_companeros_y_ha
 La [Entrega A de v2: PWA y medallas](docs/v2_entrega_a_pwa_y_badges.md) añade el manifiesto instalable, iconos móviles y una vitrina pública de siete logros con desbloqueo automático y notificaciones. Requiere `202610070009_badges.sql`; «100% Platino» cuenta exclusivamente juegos en `platinum`.
 
 La [Entrega B: importador Steam y Wrapped](docs/v2_entrega_b_steam_y_wrapped.md) incorpora `/library/import` y `/players/[username]/wrapped`, con confirmación previa, conservación de registros existentes y exportación PNG de 1080×1920. Requiere la migración `202610070010_steam_import.sql`; configurar `STEAM_API_KEY` únicamente en servidor para habilitar la consulta de bibliotecas públicas de Steam.
+
+[SaveState Boards](docs/foros_implementacion_y_verificacion.md) incorpora cinco canales en `/forum`, hilos y respuestas paginados, Markdown y spoilers, reacciones, notificaciones con destino al hilo y avisos Realtime. Requiere `202610080011_forum_boards.sql`.
