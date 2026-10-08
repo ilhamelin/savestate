@@ -33,6 +33,8 @@ La primera versión de la migración 014 utilizaba `40001` en la protección de 
 
 Una copia temporal de la prueba, omitiendo exclusivamente la comprobación bloqueada de cambio de cuenta, terminó correctamente en 14 segundos. Verificó nuevamente concurrencia y persistencia, además del reinicio por día UTC, consumo de un intento ante un fallo simulado de Valve y enlace de un juego existente con marcador de cero horas sin modificar su estado. Esto no equivale a una pasada integral completa. La copia temporal y las cuentas de prueba se eliminaron, y el servidor local se detuvo.
 
+La consulta de definición enviada por el usuario confirmó que el guard activo aún contiene `40001`. La migración `202610080015_steam_sync_account_guard.sql` sustituye únicamente esa sentencia por `P0001`, conservando el resto de la función y sus permisos. Es idempotente y rechaza una definición inesperada sin aplicar cambios. Pendiente de ejecución y repetición de la prueba integral.
+
 Capturas: `docs/evidence/steam-quick-sync.png`, `steam-quick-sync-exhausted.png`, `steam-quick-sync-mobile.png`.
 
 ## Repetir la prueba integral
