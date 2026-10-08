@@ -80,3 +80,5 @@ La documentación original numerada y el compilado permanecen en la raíz. Las s
 - Una biblioteca muestra hasta 500 registros recientes más sus favoritos; las estadísticas indican ese alcance. Las fichas muestran hasta 50 reseñas dentro de 200 fichas de biblioteca visibles y 300 comentarios. Las listas y señales tienen límites explícitos de consulta para la entrega inicial.
 
 Consulta [docs/estado_implementacion.md](docs/estado_implementacion.md) para resultados de verificación y pendientes. No hay remoto configurado y no se hizo push.
+
+La [Fase 3: Sala Arcade, compañeros y habitaciones](docs/arcade_companeros_y_habitaciones.md) incorpora duelos comunitarios en el inicio, convocatorias de 48 horas en `/parties` y tres temas de perfil seleccionables en `/settings`. Requiere la migración `202610070008_arcade_and_parties.sql`; los duelos se activan desde SQL con juegos existentes del catálogo.
