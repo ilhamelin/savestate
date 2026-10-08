@@ -22,8 +22,12 @@ Completa `.env.local` en tu editor. No pegues claves privadas en el chat, README
    - `supabase/migrations/202610070001_initial.sql`
    - `supabase/migrations/202610070002_notifications_moderation.sql`
    - `supabase/migrations/202610070003_hardening.sql`
+   - `supabase/migrations/202610070004_highlights.sql`
+   - `supabase/migrations/202610070005_highlights_privacy.sql`
+   - `supabase/migrations/202610070006_highlights_privacy_guard.sql`
 5. Confirma que todas las tablas tienen RLS habilitado, que existe el bucket `profiles` y que `activity_logs` pertenece a la publicación `supabase_realtime`.
 6. El bucket acepta únicamente WebP de hasta 512000 bytes. Las políticas limitan cada jugador a `SU_UUID/avatar.webp` y `SU_UUID/banner.webp`; no conceden escritura en carpetas ajenas.
+7. Para Momentos, confirma que `highlights` tiene `public = false`, admite únicamente WebP de hasta 1 MB y aplica la política restrictiva de lectura de la 006. Las capturas se consultan mediante URLs firmadas de cinco minutos; nunca mediante URLs públicas.
 
 Las migraciones se ejecutan con privilegios administrativos en un proyecto nuevo. No las ejecutes sobre un proyecto ajeno o una base con tablas del mismo nombre. Los archivos SQL se mantienen versionados; futuros cambios deben ser nuevas migraciones.
 

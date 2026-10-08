@@ -17,6 +17,7 @@ Abre `http://localhost:3000`. La [guía de configuración](docs/configuracion.md
 
 ## Alcance implementado
 
+- Momentos Gamer: publicaciones con Markdown, capturas WebP privadas o YouTube, categorías, comentarios y reacciones. Consulta [la guía del módulo](docs/momentos_gamer.md).
 - Catálogo IGDB con búsqueda por título/estudio/saga, filtros, fichas SSR, caché de metadatos y contingencia con PostgreSQL.
 - Explorar con orden, páginas de 24 juegos, filtros en la URL y agregado rápido a biblioteca sin sobrescribir entradas existentes.
 - Buscador de catálogo en listas y «Qué juego hoy» para elegir al azar entre juegos del backlog por plataforma/género.
