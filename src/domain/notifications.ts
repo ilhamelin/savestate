@@ -1,4 +1,5 @@
 export const NOTIFICATION_LABELS: Record<string, string> = {
+  badge_unlocked: 'desbloqueó un nuevo logro retro',
   follow: 'empezó a seguirte',
   friend_request: 'te envió una solicitud de amistad',
   friend_accepted: 'aceptó tu amistad',
@@ -16,6 +17,7 @@ export interface NotificationSummary {
     read_at: string | null;
     created_at: string;
     username: string | null;
+    badgeName?: string | null;
   }[];
 }
 export function notificationAge(createdAt: string, now: string) {

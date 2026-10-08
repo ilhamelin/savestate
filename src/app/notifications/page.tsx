@@ -29,6 +29,13 @@ export default async function Notifications() {
         )
     : { data: [], error: null };
   dbCheck(profileError);
+  const badgeIds = [
+    ...new Set((rows ?? []).flatMap((row) => (row.badge_id ? [row.badge_id] : []))),
+  ];
+  const badges = badgeIds.length
+    ? await db.from('badges').select('id,name').in('id', badgeIds)
+    : { data: [], error: null };
+  dbCheck(badges.error);
   return (
     <>
       <div className="page-heading">
@@ -43,10 +50,21 @@ export default async function Notifications() {
           return (
             <div className="player-row" key={row.id}>
               <p>
-                <Link className="accent" href={name ? `/players/${name}` : '/players'}>
+                <Link
+                  className="accent"
+                  href={
+                    name
+                      ? `/players/${name}${row.kind === 'badge_unlocked' ? '#player-badges' : ''}`
+                      : '/players'
+                  }
+                >
                   @{name ?? 'jugador'}
                 </Link>{' '}
-                {NOTIFICATION_LABELS[row.kind] ?? 'envió una señal'}. {row.read_at ? '✓' : ''}
+                {NOTIFICATION_LABELS[row.kind] ?? 'envió una señal'}
+                {row.badge_id
+                  ? `: ${badges.data?.find((badge) => badge.id === row.badge_id)?.name ?? 'Logro retro'}`
+                  : ''}
+                . {row.read_at ? '✓' : ''}
               </p>
               {!row.read_at ? <ReadNotification id={row.id} /> : null}
             </div>

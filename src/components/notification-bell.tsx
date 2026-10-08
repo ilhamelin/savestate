@@ -152,10 +152,15 @@ export function NotificationBell({ userId }: { userId: string }) {
           {summary?.items.map((item) => (
             <div key={item.id} className={`notification-item ${item.read_at ? '' : 'unread'}`}>
               <Link
-                href={item.username ? `/players/${item.username}` : '/notifications'}
+                href={
+                  item.username
+                    ? `/players/${item.username}${item.kind === 'badge_unlocked' ? '#player-badges' : ''}`
+                    : '/notifications'
+                }
                 onClick={() => setOpen(false)}
               >
                 @{item.username ?? 'jugador'} {NOTIFICATION_LABELS[item.kind] ?? 'envió una señal'}
+                {item.badgeName ? `: ${item.badgeName}` : ''}
               </Link>
               <time dateTime={item.created_at}>
                 {notificationAge(item.created_at, summary.generatedAt)}

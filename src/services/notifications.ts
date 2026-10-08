@@ -8,7 +8,7 @@ export async function notificationSummary(): Promise<NotificationSummary> {
   const [recent, unread] = await Promise.all([
     db
       .from('notifications')
-      .select('id,kind,read_at,created_at,actor_id')
+      .select('id,kind,read_at,created_at,actor_id,badge_id')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
@@ -29,12 +29,18 @@ export async function notificationSummary(): Promise<NotificationSummary> {
         .in('id', [...new Set(rows.map((n) => n.actor_id))])
     : { data: [], error: null };
   dbCheck(profiles.error);
+  const badgeIds = [...new Set(rows.flatMap((row) => (row.badge_id ? [row.badge_id] : [])))];
+  const badges = badgeIds.length
+    ? await db.from('badges').select('id,name').in('id', badgeIds)
+    : { data: [], error: null };
+  dbCheck(badges.error);
   return {
     unreadCount: unread.count ?? 0,
     generatedAt: new Date().toISOString(),
     items: rows.map(({ actor_id, ...row }) => ({
       ...row,
       username: profiles.data?.find((p) => p.id === actor_id)?.username ?? null,
+      badgeName: badges.data?.find((badge) => badge.id === row.badge_id)?.name ?? null,
     })),
   };
 }

@@ -14,6 +14,8 @@ import { playerStatistics } from '@/domain/statistics';
 import { socialLinks } from '@/domain/validation';
 import { ProfileIdentity } from '@/components/profile-identity';
 import { GamerRoom } from '@/components/gamer-room';
+import { BadgeGallery } from '@/components/badge-gallery';
+import { playerBadges } from '@/services/badges';
 export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
   return { title: `@${username}` };
@@ -26,7 +28,7 @@ export default async function Player({ params }: { params: Promise<{ username: s
   if (!profile) notFound();
   const user = await currentUser(),
     db = await serverClient();
-  const [access, following, friendship] = await Promise.all([
+  const [access, following, friendship, badges] = await Promise.all([
     db.rpc('can_view_library', { owner_id: profile.id }),
     user
       ? db
@@ -45,6 +47,7 @@ export default async function Player({ params }: { params: Promise<{ username: s
           )
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
+    playerBadges(profile.id),
   ]);
   [access, following, friendship].forEach((result) => dbCheck(result.error));
   const library = access.data ? await libraryFor(profile.id) : null;
@@ -84,6 +87,7 @@ export default async function Player({ params }: { params: Promise<{ username: s
           </div>
         </ProfileIdentity>
       </GamerRoom>
+      <BadgeGallery {...badges} />
       <nav className="tabs" aria-label="Momentos del jugador">
         <Link href={`/highlights?player=${profile.id}`}>Momentos</Link>
       </nav>

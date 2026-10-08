@@ -1,0 +1,61 @@
+.badge-showcase {
+  margin: 36px 0;
+}
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: 16px;
+}
+.badge-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  min-width: 0;
+  gap: 12px;
+}
+.badge-card h3 {
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+.badge-card p {
+  font-size: 12px;
+  color: var(--muted);
+}
+.badge-card time,
+.badge-lock {
+  font-size: 11px;
+  margin-top: auto;
+}
+.badge-earned {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 16px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.badge-earned svg,
+.badge-earned time {
+  color: var(--accent);
+}
+.badge-locked {
+  border-style: dashed;
+}
+.badge-locked svg {
+  color: var(--muted);
+  opacity: 0.5;
+}
+.badge-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+@media (display-mode: standalone) {
+  html .site-header {
+    padding-top: max(20px, env(safe-area-inset-top));
+  }
+  html .studio-dock {
+    bottom: calc(14px + env(safe-area-inset-bottom));
+  }
+}
