@@ -27,13 +27,13 @@ Fecha: 8 de octubre de 2026. Referencia: `docs/propuesta_steam_sync_rapido.md`, 
 - Móvil 375 px: documento 360 px, panel de sincronización 320 px; sin desbordamiento.
 - Cuentas temporales eliminadas y servidor de prueba detenido. El mock de Valve no se importa por la aplicación ni se activa en un inicio normal.
 
-## Protección de cambio de cuenta pendiente de diagnóstico
+## Protección de cambio de cuenta verificada
 
-La primera versión de la migración 014 utilizaba `40001` en la protección de cambio de cuenta, cuya prueba acababa en un timeout de Supabase. El archivo versionado usa ahora `P0001`, que el servicio traduce a HTTP 409. El usuario confirmó la ejecución del bloque de reemplazo de `apply_steam_sync`. Sin embargo, la repetición integral todavía falla al comprobar el rechazo de una cuenta diferente: no recibe el código esperado. Una llamada aislada a esa protección superó seis segundos, mientras que una entrada inválida en la misma función respondió con `P0001` en 436 ms. Se solicitó consultar `pg_get_functiondef` en el proyecto `pvrfiugmpiozteetjoym` para comprobar la definición activa; no se da esta protección por verificada.
+La migración `202610080015_steam_sync_account_guard.sql` cambia únicamente el código de error del rechazo de cuenta distinta a `P0001`, conservando la lógica y los permisos. Es idempotente y rechaza una definición inesperada sin aplicar cambios. El usuario confirmó su ejecución y que la consulta de definición devuelve `P0001`.
 
-Una copia temporal de la prueba, omitiendo exclusivamente la comprobación bloqueada de cambio de cuenta, terminó correctamente en 14 segundos. Verificó nuevamente concurrencia y persistencia, además del reinicio por día UTC, consumo de un intento ante un fallo simulado de Valve y enlace de un juego existente con marcador de cero horas sin modificar su estado. Esto no equivale a una pasada integral completa. La copia temporal y las cuentas de prueba se eliminaron, y el servidor local se detuvo.
+La prueba integral original `tests/integration/steam-sync.test.ts` pasó completa contra Supabase real (`pvrfiugmpiozteetjoym`) en 13.16 segundos, sin omitir comprobaciones. Verificó rechazo de cuenta distinta con `P0001`, concurrencia (tres éxitos y siete respuestas 429), actualización de horas una sola vez, conservación de datos, aislamiento entre propietarios y permisos. También comprobó reinicio por día UTC, consumo de un intento ante fallo simulado de Valve y enlace de un juego existente con marcador cero sin modificar su estado. El servicio implementa la traducción del mensaje de cambio de cuenta a HTTP 409; esta comprobación específica invocó la RPC directamente.
 
-La consulta de definición enviada por el usuario confirmó que el guard activo aún contiene `40001`. La migración `202610080015_steam_sync_account_guard.sql` sustituye únicamente esa sentencia por `P0001`, conservando el resto de la función y sus permisos. Es idempotente y rechaza una definición inesperada sin aplicar cambios. Pendiente de ejecución y repetición de la prueba integral.
+Las cuentas temporales se eliminaron y el servidor de prueba se detuvo. Esta corrección se aplica en Supabase y no requiere redesplegar la aplicación. Las respuestas de Valve fueron simuladas localmente; la prueba no certifica disponibilidad del proveedor ni acceso a una biblioteca Steam real.
 
 Capturas: `docs/evidence/steam-quick-sync.png`, `steam-quick-sync-exhausted.png`, `steam-quick-sync-mobile.png`.
 
