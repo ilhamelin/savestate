@@ -9,17 +9,19 @@ import { readJsonResponse } from '@/lib/api-response';
 export function ForumCreate({
   categories,
   initialCategory,
+  initialGame,
 }: {
   categories: ForumCategory[];
   initialCategory?: string;
+  initialGame?: Game | null;
 }) {
-  const [open, setOpen] = useState(false),
+  const [open, setOpen] = useState(Boolean(initialGame)),
     [category, setCategory] = useState(initialCategory ?? categories[0]?.id ?? 'general-gaming'),
     [title, setTitle] = useState(''),
     [content, setContent] = useState(''),
     [query, setQuery] = useState(''),
     [games, setGames] = useState<Game[]>([]),
-    [selected, setSelected] = useState<Game | null>(null),
+    [selected, setSelected] = useState<Game | null>(initialGame ?? null),
     [pending, setPending] = useState(false),
     [error, setError] = useState('');
   const router = useRouter();

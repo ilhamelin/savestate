@@ -154,6 +154,8 @@ export async function highlightFeed(filters: {
   game?: string;
   post?: string;
   page: number;
+  pageSize?: 6 | 12;
+  mediaOnly?: boolean;
 }) {
   const db = await serverClient(),
     viewer = await currentUser();
@@ -166,7 +168,9 @@ export async function highlightFeed(filters: {
   if (filters.player) query = query.eq('user_id', uuid(filters.player));
   if (filters.game) query = query.eq('game_id', uuid(filters.game));
   if (filters.post) query = query.eq('id', uuid(filters.post));
-  const result = await query.range((filters.page - 1) * 12, filters.page * 12 - 1);
+  if (filters.mediaOnly) query = query.neq('media_type', 'none');
+  const size = filters.pageSize ?? 12;
+  const result = await query.range((filters.page - 1) * size, filters.page * size - 1);
   dbCheck(result.error);
   const posts = result.data ?? [];
   if (!posts.length) return { posts: [], total: result.count ?? 0 };

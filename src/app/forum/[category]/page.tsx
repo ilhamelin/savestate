@@ -8,6 +8,8 @@ import { uuid } from '@/domain/validation';
 import { FORUM_CATEGORIES, forumPage } from '@/domain/forum';
 import { ForumCreate } from '@/components/forum-create';
 import { ForumThreadList, ForumPagination } from '@/components/forum-thread-list';
+import { serverClient } from '@/integrations/supabase/server';
+import { dbCheck } from '@/lib/http';
 export default async function CategoryPage({
   params,
   searchParams,
@@ -33,6 +35,10 @@ export default async function CategoryPage({
   ]);
   const channel = directory.find((c) => c.id === category);
   if (!channel) notFound();
+  const gameResult = search.game
+    ? await (await serverClient()).from('games').select('*').eq('id', search.game).maybeSingle()
+    : { data: null, error: null };
+  dbCheck(gameResult.error);
   return (
     <>
       <Link className="accent" href="/forum">
@@ -46,9 +52,17 @@ export default async function CategoryPage({
         </div>
       </div>
       {user ? (
-        <ForumCreate categories={directory} initialCategory={category} />
+        <ForumCreate
+          key={gameResult.data?.id ?? category}
+          categories={directory}
+          initialCategory={category}
+          initialGame={gameResult.data}
+        />
       ) : (
-        <Link className="button" href={`/login?next=/forum/${category}`}>
+        <Link
+          className="button"
+          href={`/login?next=${encodeURIComponent(`/forum/${category}${search.game ? '?game=' + search.game : ''}`)}`}
+        >
           Conectar para crear un hilo
         </Link>
       )}
