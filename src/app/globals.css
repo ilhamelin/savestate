@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './arcade.css';
 @theme inline {
   --color-void-950: #08090c;
   --color-surface-900: #111319;
@@ -1297,7 +1298,7 @@ nav a:hover,
 .header-actions > .button {
   white-space: nowrap;
 }
-@media (min-width: 640px) and (max-width: 1240px) {
+@media (min-width: 640px) and (max-width: 1399px) {
   .site-header {
     flex-wrap: wrap;
   }

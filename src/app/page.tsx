@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { ArrowUpRight, Library, NotebookPen, Users, Gamepad2 } from 'lucide-react';
 import { SetupNotice } from '@/components/setup-notice';
+import { Suspense } from 'react';
+import { ArcadeSection } from '@/components/arcade-section';
 export default function Home() {
   return (
     <>
@@ -63,6 +65,9 @@ export default function Home() {
         </div>
       </section>
       <SetupNotice />
+      <Suspense fallback={<div className="panel skeleton" aria-label="Cargando sala arcade" />}>
+        <ArcadeSection />
+      </Suspense>
       <section className="intro-strip">
         <div>
           <p className="eyebrow">TU PARTIDA, TUS REGLAS</p>

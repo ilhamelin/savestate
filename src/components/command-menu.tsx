@@ -93,6 +93,7 @@ export function CommandMenu({
     ['Mi biblioteca', '/library'],
     ['Mis listas', '/lists'],
     ['Transmisión', '/feed'],
+    ['Buscar compañeros de partida', '/parties'],
     ['Momentos Gamer', '/highlights'],
     [
       authenticated ? 'Mi perfil' : 'Iniciar sesión',

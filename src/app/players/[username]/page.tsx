@@ -13,6 +13,7 @@ import { PlayerStatistics, PlayerSummary } from '@/components/player-statistics'
 import { playerStatistics } from '@/domain/statistics';
 import { socialLinks } from '@/domain/validation';
 import { ProfileIdentity } from '@/components/profile-identity';
+import { GamerRoom } from '@/components/gamer-room';
 export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
   return { title: `@${username}` };
@@ -72,15 +73,17 @@ export default async function Player({ params }: { params: Promise<{ username: s
           </Link>
         ) : null}
       </div>
-      <ProfileIdentity profile={profile} animateTerminal>
-        <div className="tags">
-          {Object.entries(links).map(([label, url]) => (
-            <a className="tag" key={label} href={url} target="_blank" rel="noopener noreferrer">
-              {label} ↗
-            </a>
-          ))}
-        </div>
-      </ProfileIdentity>
+      <GamerRoom theme={profile.room_theme}>
+        <ProfileIdentity profile={profile} animateTerminal>
+          <div className="tags">
+            {Object.entries(links).map(([label, url]) => (
+              <a className="tag" key={label} href={url} target="_blank" rel="noopener noreferrer">
+                {label} ↗
+              </a>
+            ))}
+          </div>
+        </ProfileIdentity>
+      </GamerRoom>
       <nav className="tabs" aria-label="Momentos del jugador">
         <Link href={`/highlights?player=${profile.id}`}>Momentos</Link>
       </nav>
@@ -112,7 +115,7 @@ export default async function Player({ params }: { params: Promise<{ username: s
               <h2>Top 4 favoritos.</h2>
             </div>
           </div>
-          <div className="game-grid">
+          <div className={`game-grid ${profile.room_theme === 'retro_shelf' ? 'retro-shelf' : ''}`}>
             {favorites.map((entry) => {
               const game = library.games.find((g) => g.id === entry.game_id);
               return game ? <GameCard key={entry.id} game={game} score={entry.rating} /> : null;
@@ -139,7 +142,10 @@ export default async function Player({ params }: { params: Promise<{ username: s
             <Link href={`/lists?player=${profile.id}`}>Listas</Link>
           </nav>
           <PlayerStatistics {...library} />
-          <section id="player-library">
+          <section
+            id="player-library"
+            className={profile.room_theme === 'retro_shelf' ? 'retro-library' : undefined}
+          >
             <Library {...library} editable={user?.id === profile.id} />
           </section>
         </>

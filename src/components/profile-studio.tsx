@@ -13,6 +13,8 @@ import {
   type DraftProfile,
 } from '@/domain/profile-studio';
 import { ProfileIdentity } from '@/components/profile-identity';
+import { GamerRoom } from '@/components/gamer-room';
+import { ROOM_THEMES, ROOM_LABELS, roomTheme } from '@/domain/arcade';
 import { browserClient } from '@/integrations/supabase/browser';
 import { profileImage } from '@/lib/profile-image';
 import { api } from '@/lib/client-api';
@@ -147,6 +149,7 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
       next.username = username(next.username);
       next.terminal_status = text(next.terminal_status, 'Estado', 160, 0);
       next.social_links = socialLinks(next.social_links);
+      next.room_theme = roomTheme(next.room_theme);
       const hasMedia = Boolean(pendingMedia.current.avatar || pendingMedia.current.banner);
       const objects = hasMedia
         ? await db.storage.from('profiles').list(profile.id, { limit: 10 })
@@ -248,61 +251,63 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
       <form id={id} ref={form} method="post" onSubmit={save} className="form-stack">
         <fieldset disabled={blocked}>
           <div className={`studio-preview ${mobile ? 'studio-preview-mobile' : ''}`}>
-            <ProfileIdentity
-              profile={draft}
-              headingLevel={2}
-              avatarOverlay={
-                <button
-                  type="button"
-                  className="studio-camera studio-camera-avatar"
-                  disabled={blocked}
-                  onClick={() => avatarInput.current?.click()}
-                >
-                  <Camera size={16} aria-hidden="true" />
-                  <span>Cambiar avatar</span>
-                </button>
-              }
-              bannerOverlay={
-                <button
-                  type="button"
-                  className="studio-camera studio-camera-banner"
-                  disabled={blocked}
-                  onClick={() => bannerInput.current?.click()}
-                >
-                  <Camera size={16} aria-hidden="true" />
-                  <span>Cambiar banner</span>
-                </button>
-              }
-              usernameEditor={
-                <label className="studio-username">
-                  <span className="sr-only">Nombre de usuario</span>
-                  <span aria-hidden="true">@</span>
-                  <input
-                    name="username"
-                    aria-label="Nombre de usuario"
-                    value={draft.username}
-                    pattern="[A-Za-z0-9_]{3,30}"
-                    minLength={3}
-                    maxLength={30}
-                    required
-                    onChange={(event) => update('username', event.target.value)}
-                  />
-                </label>
-              }
-              terminalEditor={
-                <label className="studio-terminal">
-                  <span>{draft.username || 'player'}@savestate:~$</span>
-                  <input
-                    aria-label="Estado de terminal"
-                    name="terminal"
-                    value={draft.terminal_status}
-                    maxLength={160}
-                    placeholder="Ready to play"
-                    onChange={(event) => update('terminal_status', event.target.value)}
-                  />
-                </label>
-              }
-            />
+            <GamerRoom theme={draft.room_theme}>
+              <ProfileIdentity
+                profile={draft}
+                headingLevel={2}
+                avatarOverlay={
+                  <button
+                    type="button"
+                    className="studio-camera studio-camera-avatar"
+                    disabled={blocked}
+                    onClick={() => avatarInput.current?.click()}
+                  >
+                    <Camera size={16} aria-hidden="true" />
+                    <span>Cambiar avatar</span>
+                  </button>
+                }
+                bannerOverlay={
+                  <button
+                    type="button"
+                    className="studio-camera studio-camera-banner"
+                    disabled={blocked}
+                    onClick={() => bannerInput.current?.click()}
+                  >
+                    <Camera size={16} aria-hidden="true" />
+                    <span>Cambiar banner</span>
+                  </button>
+                }
+                usernameEditor={
+                  <label className="studio-username">
+                    <span className="sr-only">Nombre de usuario</span>
+                    <span aria-hidden="true">@</span>
+                    <input
+                      name="username"
+                      aria-label="Nombre de usuario"
+                      value={draft.username}
+                      pattern="[A-Za-z0-9_]{3,30}"
+                      minLength={3}
+                      maxLength={30}
+                      required
+                      onChange={(event) => update('username', event.target.value)}
+                    />
+                  </label>
+                }
+                terminalEditor={
+                  <label className="studio-terminal">
+                    <span>{draft.username || 'player'}@savestate:~$</span>
+                    <input
+                      aria-label="Estado de terminal"
+                      name="terminal"
+                      value={draft.terminal_status}
+                      maxLength={160}
+                      placeholder="Ready to play"
+                      onChange={(event) => update('terminal_status', event.target.value)}
+                    />
+                  </label>
+                }
+              />
+            </GamerRoom>
             <div className="studio-statuses" role="group" aria-label="Estados rápidos">
               {QUICK_STATUSES.map((status) => (
                 <button
@@ -359,6 +364,19 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
           />
           <div className="panel form-stack">
             <h2>Detalles y privacidad</h2>
+            <label>
+              Habitación gamer
+              <select
+                value={draft.room_theme}
+                onChange={(event) => update('room_theme', roomTheme(event.target.value))}
+              >
+                {ROOM_THEMES.map((theme) => (
+                  <option value={theme} key={theme}>
+                    {ROOM_LABELS[theme]}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label>
               Avatar de galería
               <select

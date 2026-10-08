@@ -1,0 +1,264 @@
+.arcade-section {
+  margin: 48px 0;
+  display: grid;
+  gap: 20px;
+}
+.duel-widget {
+  text-align: center;
+}
+.duel-arena {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  max-width: 680px;
+  margin: 24px auto;
+}
+.duel-contender {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+}
+.duel-contender h3 {
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+.duel-cover {
+  position: relative;
+  width: 100%;
+  max-width: 180px;
+  aspect-ratio: 3 / 4;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+}
+.duel-cover img {
+  object-fit: cover;
+}
+.duel-vs {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--accent);
+  font-weight: bold;
+  font-size: 32px;
+  text-shadow: 3px 3px #ff0055;
+  animation: arcade-vs 0.8s ease-out 1;
+}
+.duel-chosen {
+  border-color: var(--accent);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+.duel-meter {
+  width: 100%;
+  height: 16px;
+  background: #08090c;
+  border: 1px solid var(--accent);
+}
+.duel-meter span {
+  display: block;
+  height: 100%;
+  background: repeating-linear-gradient(90deg, var(--accent) 0 7px, transparent 7px 9px);
+  transition: width 0.3s ease-out;
+}
+@keyframes arcade-vs {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.7);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+.party-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin: 24px 0;
+}
+.party-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.party-game {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.party-game > div {
+  min-width: 0;
+}
+.party-game h2 {
+  font-size: 20px;
+  overflow-wrap: anywhere;
+}
+.party-cover {
+  position: relative;
+  flex: 0 0 80px;
+  aspect-ratio: 3 / 4;
+  display: grid;
+  place-items: center;
+}
+.party-cover img {
+  object-fit: cover;
+}
+.party-author {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.party-author img {
+  object-fit: cover;
+}
+.party-note {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.party-card > .inline-actions {
+  margin-top: auto;
+}
+.party-filters {
+  align-items: end;
+  margin-bottom: 24px;
+}
+.party-filters .button {
+  align-self: end;
+}
+.party-dialog {
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  color: #f2f4f8;
+  background: #111319;
+  margin: auto;
+}
+.party-dialog::backdrop {
+  background: #08090cdd;
+}
+.gamer-room {
+  position: relative;
+  min-width: 0;
+  margin-bottom: 24px;
+}
+.room-screen {
+  position: relative;
+  min-width: 0;
+}
+.room-crt_terminal {
+  border: 1px solid var(--profile-accent, var(--accent));
+  padding: 14px;
+  box-shadow: inset 0 0 24px
+    color-mix(in srgb, var(--profile-accent, var(--accent)) 10%, transparent);
+}
+.room-crt_terminal .room-screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, #0003 3px 4px);
+}
+.room-handheld_console {
+  background: linear-gradient(120deg, #424653, #1e222b);
+  border: 3px solid #656a79;
+  border-radius: 28px 28px 50px 28px;
+  padding: 18px;
+  box-shadow:
+    inset 0 0 0 3px #17191f,
+    0 12px 0 #08090c;
+}
+.room-handheld_console .room-screen {
+  border: 6px solid #13171e;
+  padding: 10px;
+  background: #08090c;
+  border-radius: 8px;
+}
+.room-console-brand {
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: #d2d7e1;
+  padding: 4px 12px 16px;
+}
+.room-console-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 12px 0;
+  color: #adb4c4;
+}
+.room-dpad {
+  font-size: 40px;
+  color: #101318;
+  text-shadow: 1px 1px #747987;
+}
+.room-buttons {
+  color: var(--profile-accent, var(--accent));
+  font-size: 28px;
+  letter-spacing: 8px;
+}
+.room-retro_shelf {
+  border-bottom: 10px solid #5b3d2c;
+  padding: 14px;
+  background: linear-gradient(90deg, #211a18, #151215);
+}
+.retro-shelf,
+.retro-library .game-grid {
+  padding: 20px 16px;
+  border-bottom: 12px solid #765039;
+  background: linear-gradient(#181316, #241b18);
+  box-shadow: 0 8px 0 #38261d;
+}
+.retro-shelf .game-card,
+.retro-library .game-card {
+  border-left: 8px solid #463942;
+  box-shadow:
+    -4px 2px 0 #09090b,
+    4px 6px 0 #0007;
+  transform: perspective(1000px) rotateY(-5deg);
+}
+@media (max-width: 639px) {
+  .party-grid {
+    grid-template-columns: 1fr;
+  }
+  .duel-arena {
+    gap: 30px;
+  }
+  .duel-vs {
+    font-size: 22px;
+  }
+  .duel-contender {
+    padding: 6px;
+  }
+  .duel-contender .button {
+    font-size: 11px;
+    padding: 8px;
+    width: 100%;
+  }
+  .room-handheld_console {
+    padding: 10px;
+  }
+  .room-handheld_console .room-screen {
+    border-width: 3px;
+    padding: 6px;
+  }
+  .room-crt_terminal,
+  .room-retro_shelf {
+    padding: 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .duel-vs {
+    animation: none;
+  }
+  .duel-meter span {
+    transition: none;
+  }
+}
