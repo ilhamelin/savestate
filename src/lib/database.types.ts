@@ -15,11 +15,18 @@ import type {
 import type { Post, PostReaction, PostComment } from '@/domain/highlights';
 
 type Row<T> = { [K in keyof T]: T[K] };
-type Table<T> = {
+type Table<T, Relations = []> = {
   Row: Row<T>;
   Insert: Partial<Row<T>>;
   Update: Partial<Row<T>>;
-  Relationships: [];
+  Relationships: Relations;
+};
+type ForeignKey<Name extends string, Column extends string, Target extends string> = {
+  foreignKeyName: Name;
+  columns: [Column];
+  isOneToOne: false;
+  referencedRelation: Target;
+  referencedColumns: ['id'];
 };
 export type Database = {
   public: {
@@ -36,7 +43,13 @@ export type Database = {
       follows: Table<Follow>;
       activity_logs: Table<Activity>;
       user_lists: Table<UserList>;
-      list_items: Table<ListItem>;
+      list_items: Table<
+        ListItem,
+        [
+          ForeignKey<'list_items_list_id_fkey', 'list_id', 'user_lists'>,
+          ForeignKey<'list_items_game_id_fkey', 'game_id', 'games'>,
+        ]
+      >;
       review_reactions: Table<ReviewReaction>;
       review_comments: Table<ReviewComment>;
       game_suggestions: Table<{

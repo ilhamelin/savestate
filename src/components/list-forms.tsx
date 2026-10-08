@@ -4,8 +4,12 @@ import { api } from '@/lib/client-api';
 import { useRouter } from 'next/navigation';
 import type { UserList, Game, ListItem } from '@/domain/model';
 import { CataloguePicker } from '@/components/catalogue-picker';
+import { useState } from 'react';
+import { LIST_TEMPLATES } from '@/domain/list-personality';
 export function ListForm({ list }: { list?: UserList }) {
   const router = useRouter();
+  const [title, setTitle] = useState(list?.title ?? '');
+  const [description, setDescription] = useState(list?.description ?? '');
   return (
     <MutationForm
       label={list ? 'Guardar lista' : 'Crear lista'}
@@ -20,13 +24,42 @@ export function ListForm({ list }: { list?: UserList }) {
         if (!list) router.push(`/lists/${saved.id}`);
       }}
     >
+      {!list ? (
+        <div className="list-templates" role="group" aria-label="Plantillas de listas">
+          <p className="muted">Una idea para empezar. Puedes cambiar el título y la descripción.</p>
+          {LIST_TEMPLATES.map((template) => (
+            <button
+              key={template.title}
+              type="button"
+              className="studio-chip"
+              onClick={() => {
+                setTitle(template.title);
+                setDescription(template.description);
+              }}
+            >
+              {template.title}
+            </button>
+          ))}
+        </div>
+      ) : null}
       <label>
         Título
-        <input name="title" defaultValue={list?.title} required maxLength={120} />
+        <input
+          name="title"
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          required
+          maxLength={120}
+        />
       </label>
       <label>
         Descripción
-        <textarea name="description" defaultValue={list?.description ?? ''} maxLength={2000} />
+        <textarea
+          name="description"
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
+          maxLength={2000}
+        />
       </label>
       <label className="checkbox-label">
         <input name="private" type="checkbox" defaultChecked={list?.is_private} />
@@ -85,8 +118,14 @@ export function ListItemForm({
         </label>
       </div>
       <label>
-        Nota
-        <input name="note" maxLength={1000} defaultValue={item?.note ?? ''} />
+        Nota del autor
+        <textarea
+          name="note"
+          maxLength={1000}
+          rows={4}
+          defaultValue={item?.note ?? ''}
+          placeholder="¿Por qué elegiste este juego? Hasta 1000 caracteres."
+        />
       </label>
     </MutationForm>
   );

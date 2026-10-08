@@ -8,6 +8,7 @@ import { dbCheck } from '@/lib/http';
 import { GameCard } from '@/components/game-card';
 import { ListForm, ListItemForm, DeleteList, RemoveListItem } from '@/components/list-forms';
 import { libraryFor } from '@/repositories/player';
+import { ListCover } from '@/components/list-cover';
 export default async function ListDetail({ params }: { params: Promise<{ id: string }> }) {
   if (!isConfigured()) return <SetupNotice />;
   const { id } = await params;
@@ -21,7 +22,8 @@ export default async function ListDetail({ params }: { params: Promise<{ id: str
     .from('list_items')
     .select('*')
     .eq('list_id', id)
-    .order('position_index');
+    .order('position_index')
+    .order('game_id');
   dbCheck(itemError);
   const { data: games, error: gameError } = items?.length
     ? await db
@@ -38,6 +40,12 @@ export default async function ListDetail({ params }: { params: Promise<{ id: str
   return (
     <>
       <div className="page-heading">
+        <ListCover
+          title={list.title}
+          games={(items ?? [])
+            .slice(0, 4)
+            .map((item) => games?.find((game) => game.id === item.game_id) ?? null)}
+        />
         <div>
           <Link className="text-link" href="/lists">
             ← Listas
@@ -64,8 +72,14 @@ export default async function ListDetail({ params }: { params: Promise<{ id: str
           const game = games?.find((g) => g.id === item.game_id);
           return game ? (
             <div key={item.id}>
+              <p className="tag">#{(items ?? []).indexOf(item) + 1}</p>
               <GameCard game={game} />
-              <p className="muted">{item.note}</p>
+              {item.note ? (
+                <blockquote className="list-author-note">
+                  <span>💬 Nota del autor:</span>
+                  <p>{item.note}</p>
+                </blockquote>
+              ) : null}
               {editable ? (
                 <details className="panel">
                   <summary>Editar posición y nota</summary>

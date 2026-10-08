@@ -9,4 +9,6 @@ test('formularios: límites de perfil y Markdown se validan también en servidor
   assert.equal(text('a'.repeat(10000), 'Reseña', 10000).length, 10000);
   assert.throws(() => text('a'.repeat(10001), 'Reseña', 10000));
   assert.throws(() => socialLinks({ github: `https://github.com/${'a'.repeat(300)}` }));
+  assert.equal(text('a'.repeat(1000), 'Nota', 1000, 0).length, 1000);
+  assert.throws(() => text('a'.repeat(1001), 'Nota', 1000, 0));
 });

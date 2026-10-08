@@ -5,6 +5,7 @@ import { isConfigured } from '@/lib/env';
 import { SetupNotice } from '@/components/setup-notice';
 import { dbCheck } from '@/lib/http';
 import { ListForm } from '@/components/list-forms';
+import { ListCover } from '@/components/list-cover';
 export const metadata = { title: 'Listas de juegos' };
 export default async function Lists({
   searchParams,
@@ -17,8 +18,11 @@ export default async function Lists({
     user = await currentUser();
   let query = db
     .from('user_lists')
-    .select('*')
+    .select('*,list_items(game_id,position_index,games(id,title,cover_url))')
     .order('created_at', { ascending: false })
+    .order('position_index', { referencedTable: 'list_items' })
+    .order('game_id', { referencedTable: 'list_items' })
+    .limit(4, { referencedTable: 'list_items' })
     .limit(100);
   if (player && /^[0-9a-f-]{36}$/i.test(player)) query = query.eq('user_id', player);
   const { data: lists, error } = await query;
@@ -45,6 +49,7 @@ export default async function Lists({
       <section className="panel">
         {lists?.map((list) => (
           <Link className="list-row" key={list.id} href={`/lists/${list.id}`}>
+            <ListCover title={list.title} games={list.list_items.map((item) => item.games)} />
             <div>
               <h3>{list.title}</h3>
               <p className="muted">{list.description}</p>
