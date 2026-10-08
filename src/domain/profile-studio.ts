@@ -5,6 +5,7 @@ export type DraftProfile = Pick<
   | 'avatar_url'
   | 'banner_url'
   | 'theme_color'
+  | 'room_theme'
   | 'terminal_status'
   | 'library_private'
   | 'social_links'
@@ -29,6 +30,7 @@ export function profileDraft(profile: DraftProfile): DraftProfile {
     avatar_url: profile.avatar_url,
     banner_url: profile.banner_url,
     theme_color: profile.theme_color,
+    room_theme: profile.room_theme ?? 'crt_terminal',
     terminal_status: profile.terminal_status,
     library_private: profile.library_private,
     social_links: Object.fromEntries(

@@ -19,6 +19,7 @@ export const REACTIONS = ['critical_hit', 'gg', 'game_over'] as const;
 export type Reaction = (typeof REACTIONS)[number];
 export type Theme = 'cyan' | 'green' | 'pink' | 'amber';
 export interface Profile {
+  room_theme: import('./arcade.ts').RoomTheme;
   username_normalized: string;
   id: string;
   username: string;

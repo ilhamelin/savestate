@@ -3,6 +3,7 @@ import { authenticated } from '@/lib/session';
 import { dbCheck, AppError } from '@/lib/http';
 import { object, username, text, bool, socialLinks } from '@/domain/validation';
 import { publicEnv } from '@/lib/env';
+import { roomTheme } from '@/domain/arcade';
 function mediaUrl(input: unknown, userId: string): string | null {
   if (input === null || input === '') return null;
   const value = text(input, 'Imagen', 500);
@@ -29,6 +30,7 @@ export async function profileMutation(input: unknown) {
       terminal_status: text(data.terminal_status ?? '', 'Estado', 160, 0),
       library_private: bool(data.library_private, 'Privacidad'),
       theme_color: data.theme_color as 'cyan' | 'green' | 'pink' | 'amber',
+      ...(data.room_theme === undefined ? {} : { room_theme: roomTheme(data.room_theme) }),
       social_links: socialLinks(data.social_links ?? {}),
       avatar_url: mediaUrl(data.avatar_url, user.id),
       banner_url: mediaUrl(data.banner_url, user.id),

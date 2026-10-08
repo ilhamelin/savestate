@@ -13,6 +13,7 @@ import type {
   ReviewComment,
 } from '@/domain/model';
 import type { Post, PostReaction, PostComment } from '@/domain/highlights';
+import type { GameDuel, DuelVote, PartyRequest } from '@/domain/arcade';
 
 type Row<T> = { [K in keyof T]: T[K] };
 type Table<T, Relations = []> = {
@@ -31,6 +32,9 @@ type ForeignKey<Name extends string, Column extends string, Target extends strin
 export type Database = {
   public: {
     Tables: {
+      game_duels: Table<GameDuel>;
+      duel_votes: Table<DuelVote>;
+      party_requests: Table<PartyRequest>;
       posts: Table<Post>;
       post_reactions: Table<PostReaction>;
       post_comments: Table<PostComment>;
@@ -77,6 +81,10 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      duel_results: {
+        Args: { p_duel_id: string };
+        Returns: { chosen_game_id: string; total: number }[];
+      };
       can_view_library: { Args: { owner_id: string }; Returns: boolean };
       claim_igdb_request: { Args: Record<string, never>; Returns: boolean };
       community_ratings: {
