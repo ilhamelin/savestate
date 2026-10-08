@@ -10,11 +10,19 @@ export function ProfileIdentity({
   headingLevel = 1,
   children,
   animateTerminal = false,
+  avatarOverlay,
+  bannerOverlay,
+  usernameEditor,
+  terminalEditor,
 }: {
   profile: Identity;
   headingLevel?: 1 | 2;
   children?: ReactNode;
   animateTerminal?: boolean;
+  avatarOverlay?: ReactNode;
+  bannerOverlay?: ReactNode;
+  usernameEditor?: ReactNode;
+  terminalEditor?: ReactNode;
 }) {
   const Heading = headingLevel === 1 ? 'h1' : 'h2';
   const terminal = `${profile.username}@savestate:~$ ${profile.terminal_status || 'Ready to play'}`;
@@ -30,6 +38,7 @@ export function ProfileIdentity({
             unoptimized
           />
         ) : null}
+        {bannerOverlay}
       </div>
       <div className="profile-heading">
         <div className="avatar">
@@ -44,12 +53,13 @@ export function ProfileIdentity({
           ) : (
             <span aria-hidden="true">▣</span>
           )}
+          {avatarOverlay}
         </div>
         <div>
           <p className="eyebrow">PLAYER PROFILE</p>
-          <Heading>@{profile.username}</Heading>
+          <Heading>{usernameEditor ?? <>@{profile.username}</>}</Heading>
           <p className="profile-terminal">
-            {animateTerminal ? <DecryptedText text={terminal} /> : terminal}
+            {terminalEditor ?? (animateTerminal ? <DecryptedText text={terminal} /> : terminal)}
           </p>
           {children}
         </div>

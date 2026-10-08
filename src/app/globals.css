@@ -1310,3 +1310,226 @@ nav a:hover,
     margin-left: auto;
   }
 }
+.profile-studio {
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+}
+.studio-toolbar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.studio-toolbar .button[aria-pressed='true'] {
+  color: #08090c;
+  background: var(--profile-accent);
+}
+.studio-preview {
+  container-type: inline-size;
+  border: 1px solid var(--profile-accent);
+  background: var(--surface);
+  padding: 18px;
+  width: 100%;
+  margin: 0 auto 24px;
+}
+.studio-preview-mobile {
+  width: 375px;
+  max-width: 100%;
+  max-height: 720px;
+  overflow-y: auto;
+  border-radius: 24px;
+  border-width: 5px;
+  padding: 12px;
+}
+.studio-preview .profile-banner {
+  background: linear-gradient(135deg, var(--profile-bg), #17203b);
+  border-color: var(--profile-accent);
+}
+.studio-preview .profile-heading > div:last-child {
+  flex: 1;
+}
+.studio-username {
+  display: flex;
+  align-items: center;
+  color: var(--profile-accent);
+  gap: 4px;
+}
+.studio-username input {
+  font-size: inherit;
+  font-weight: inherit;
+  min-width: 0;
+  padding: 4px;
+  border: 1px dashed var(--profile-accent);
+  background: transparent;
+}
+.studio-terminal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.studio-terminal input {
+  min-width: 0;
+  padding: 6px;
+  border: 1px dashed var(--profile-accent);
+  color: var(--profile-accent);
+}
+.studio-camera {
+  position: absolute;
+  z-index: 1;
+  bottom: 8px;
+  right: 8px;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  min-height: 36px;
+  background: #08090cd9;
+  color: var(--profile-accent);
+  border: 1px solid var(--profile-accent);
+  padding: 6px;
+  font-size: 11px;
+}
+.studio-camera-avatar {
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  justify-content: center;
+  min-height: 28px;
+  padding: 3px;
+}
+.studio-camera-avatar span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.studio-statuses,
+.studio-palette,
+.list-templates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+.list-templates p {
+  width: 100%;
+}
+.studio-chip {
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  padding: 8px 10px;
+  font-size: 11px;
+  text-align: left;
+}
+.studio-chip[aria-pressed='true'] {
+  background: var(--profile-bg);
+}
+.studio-swatch {
+  width: 36px;
+  height: 36px;
+  border: 3px solid transparent;
+  border-radius: 50%;
+  outline-offset: 4px;
+}
+.studio-swatch[aria-pressed='true'] {
+  border-color: #f2f4f8;
+  box-shadow: 0 0 0 2px var(--profile-accent);
+}
+.studio-dock {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: max(14px, env(safe-area-inset-bottom));
+  z-index: 75;
+  width: min(720px, calc(100% - 32px));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  background: #111319f5;
+  border: 1px solid var(--profile-accent);
+  box-shadow: 0 0 24px #0008;
+}
+.profile-studio:has(.studio-dock) {
+  padding-bottom: 120px;
+}
+.list-cover {
+  width: 180px;
+  aspect-ratio: 1;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  gap: 2px;
+  background: var(--line);
+}
+.list-cover-cell {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  background: var(--surface);
+  overflow: hidden;
+}
+.list-cover-cell img {
+  object-fit: cover;
+}
+.list-row .list-cover {
+  width: 100px;
+}
+.list-row > div:not(.list-cover) {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.list-author-note {
+  border-left: 2px solid var(--accent);
+  background: var(--surface);
+  padding: 14px;
+  margin: 14px 0;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.list-author-note span {
+  color: var(--accent);
+}
+.list-author-note p {
+  white-space: pre-wrap;
+  margin-bottom: 0;
+}
+@container (max-width: 420px) {
+  .studio-preview .profile-heading {
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .studio-preview .profile-heading > div:last-child {
+    flex-basis: 100%;
+  }
+  .studio-preview .profile-heading h2 {
+    font-size: 22px;
+  }
+}
+@media (max-width: 639px) {
+  .studio-dock {
+    gap: 8px;
+    padding: 10px;
+  }
+  .studio-dock .eyebrow {
+    width: 100%;
+    text-align: center;
+  }
+  .list-cover {
+    width: 140px;
+  }
+  .list-row .list-cover {
+    width: 84px;
+  }
+}
