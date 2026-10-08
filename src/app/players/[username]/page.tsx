@@ -74,20 +74,21 @@ export default async function Player({ params }: { params: Promise<{ username: s
     }
   }
   return (
-    <div className={`theme-${profile.theme_color}`}>
-      <div className="page-heading">
-        <Link href="/players" className="text-link">
-          ← Jugadores
-        </Link>
-        {user?.id === profile.id ? (
-          <Link className="button secondary" href="/settings">
-            Editar perfil
+    <ProfileWallpaper
+      fullScreen
+      url={wallpaperForDisplay(profile.wallpaper_url, profile.id, publicEnv().url)}
+    >
+      <div className={`theme-${profile.theme_color}`}>
+        <div className="page-heading">
+          <Link href="/players" className="text-link">
+            ← Jugadores
           </Link>
-        ) : null}
-      </div>
-      <ProfileWallpaper
-        url={wallpaperForDisplay(profile.wallpaper_url, profile.id, publicEnv().url)}
-      >
+          {user?.id === profile.id ? (
+            <Link className="button secondary" href="/settings">
+              Editar perfil
+            </Link>
+          ) : null}
+        </div>
         <GamerRoom theme={profile.room_theme}>
           <ProfileIdentity profile={profile} animateTerminal>
             <div className="tags">
@@ -99,104 +100,104 @@ export default async function Player({ params }: { params: Promise<{ username: s
             </div>
           </ProfileIdentity>
         </GamerRoom>
-      </ProfileWallpaper>
-      <HardwareBadges platforms={hardware} />
-      <BadgeGallery {...badges} />
-      <p>
-        <Link className="button secondary" href={`/players/${profile.username}/wrapped`}>
-          Ver SaveState Wrapped →
-        </Link>
-      </p>
-      <nav className="tabs" aria-label="Momentos del jugador">
-        <Link href={`/highlights?player=${profile.id}`}>Momentos</Link>
-      </nav>
-      {user ? (
-        <SocialControls
-          targetId={profile.id}
-          viewerId={user.id}
-          following={Boolean(following.data)}
-          friendship={friendship.data}
-        />
-      ) : (
-        <Link className="accent" href="/login">
-          Conecta para seguir o solicitar amistad.
-        </Link>
-      )}
-      {!library ? (
-        <div className="empty-state">
-          <h2>Biblioteca visible solo para amigos.</h2>
-          <p>
-            El seguimiento permite ver actividad pública. Una amistad aceptada concede acceso a esta
-            biblioteca.
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="page-heading">
-            <div>
-              <p className="eyebrow">FOUR GAMES. ONE PLAYER.</p>
-              <h2>Top 4 favoritos.</h2>
-            </div>
-          </div>
-          <Top4SlotSelector
-            favorites={favorites.flatMap((entry) => {
-              const game = library.games.find((g) => g.id === entry.game_id);
-              return game ? [{ game, entry }] : [];
-            })}
-            editable={user?.id === profile.id}
-            shelf={profile.room_theme === 'retro_shelf'}
+        <HardwareBadges platforms={hardware} />
+        <BadgeGallery {...badges} />
+        <p>
+          <Link className="button secondary" href={`/players/${profile.username}/wrapped`}>
+            Ver SaveState Wrapped →
+          </Link>
+        </p>
+        <nav className="tabs" aria-label="Momentos del jugador">
+          <Link href={`/highlights?player=${profile.id}`}>Momentos</Link>
+        </nav>
+        {user ? (
+          <SocialControls
+            targetId={profile.id}
+            viewerId={user.id}
+            following={Boolean(following.data)}
+            friendship={friendship.data}
           />
-          {!favorites.length ? <p className="muted">Todavía no hay favoritos fijados.</p> : null}
-          <PlayerSummary
-            count={library.count}
-            hours={dossier?.hours ?? 0}
-            completed={dossier?.completed ?? 0}
-            genre={stats?.genres[0]?.[0] ?? '—'}
-          />
-          {library.count > 500 ? (
-            <p className="notice">
-              La biblioteca y las estadísticas de géneros muestran los 500 juegos recientes. El
-              dossier calcula toda la biblioteca.
+        ) : (
+          <Link className="accent" href="/login">
+            Conecta para seguir o solicitar amistad.
+          </Link>
+        )}
+        {!library ? (
+          <div className="empty-state">
+            <h2>Biblioteca visible solo para amigos.</h2>
+            <p>
+              El seguimiento permite ver actividad pública. Una amistad aceptada concede acceso a
+              esta biblioteca.
             </p>
-          ) : null}
-          <nav className="tabs" aria-label="Secciones del perfil">
-            <a href="#player-library">Biblioteca</a>
-            <a href="#player-stats">Estadísticas</a>
-            <a href="#player-dossier">Dossier</a>
-            <Link href={`/lists?player=${profile.id}`}>Listas</Link>
-          </nav>
-          {dossier ? (
-            <>
-              <StatsDossier stats={dossier} />
-              <MemoryCardExport
-                data={{
-                  profile: {
-                    username: profile.username,
-                    avatar_url: profile.avatar_url,
-                    terminal_status: profile.terminal_status,
-                    owned_platforms: hardware,
-                  },
-                  clearRate: dossier.clearRate,
-                  hours: dossier.hours,
-                  favorites: favorites.flatMap((entry) => {
-                    const game = library.games.find((g) => g.id === entry.game_id);
-                    return game
-                      ? [{ id: game.id, title: game.title, cover_url: game.cover_url }]
-                      : [];
-                  }),
-                }}
-              />
-            </>
-          ) : null}
-          <PlayerStatistics {...library} />
-          <section
-            id="player-library"
-            className={profile.room_theme === 'retro_shelf' ? 'retro-library' : undefined}
-          >
-            <Library {...library} editable={user?.id === profile.id} />
-          </section>
-        </>
-      )}
-    </div>
+          </div>
+        ) : (
+          <>
+            <div className="page-heading">
+              <div>
+                <p className="eyebrow">FOUR GAMES. ONE PLAYER.</p>
+                <h2>Top 4 favoritos.</h2>
+              </div>
+            </div>
+            <Top4SlotSelector
+              favorites={favorites.flatMap((entry) => {
+                const game = library.games.find((g) => g.id === entry.game_id);
+                return game ? [{ game, entry }] : [];
+              })}
+              editable={user?.id === profile.id}
+              shelf={profile.room_theme === 'retro_shelf'}
+            />
+            {!favorites.length ? <p className="muted">Todavía no hay favoritos fijados.</p> : null}
+            <PlayerSummary
+              count={library.count}
+              hours={dossier?.hours ?? 0}
+              completed={dossier?.completed ?? 0}
+              genre={stats?.genres[0]?.[0] ?? '—'}
+            />
+            {library.count > 500 ? (
+              <p className="notice">
+                La biblioteca y las estadísticas de géneros muestran los 500 juegos recientes. El
+                dossier calcula toda la biblioteca.
+              </p>
+            ) : null}
+            <nav className="tabs" aria-label="Secciones del perfil">
+              <a href="#player-library">Biblioteca</a>
+              <a href="#player-stats">Estadísticas</a>
+              <a href="#player-dossier">Dossier</a>
+              <Link href={`/lists?player=${profile.id}`}>Listas</Link>
+            </nav>
+            {dossier ? (
+              <>
+                <StatsDossier stats={dossier} />
+                <MemoryCardExport
+                  data={{
+                    profile: {
+                      username: profile.username,
+                      avatar_url: profile.avatar_url,
+                      terminal_status: profile.terminal_status,
+                      owned_platforms: hardware,
+                    },
+                    clearRate: dossier.clearRate,
+                    hours: dossier.hours,
+                    favorites: favorites.flatMap((entry) => {
+                      const game = library.games.find((g) => g.id === entry.game_id);
+                      return game
+                        ? [{ id: game.id, title: game.title, cover_url: game.cover_url }]
+                        : [];
+                    }),
+                  }}
+                />
+              </>
+            ) : null}
+            <PlayerStatistics {...library} />
+            <section
+              id="player-library"
+              className={profile.room_theme === 'retro_shelf' ? 'retro-library' : undefined}
+            >
+              <Library {...library} editable={user?.id === profile.id} />
+            </section>
+          </>
+        )}
+      </div>
+    </ProfileWallpaper>
   );
 }
