@@ -1,0 +1,54 @@
+:root {
+  --accent-glow: rgb(0 240 255 / 25%);
+}
+:root[data-crt-theme='green'] {
+  --accent: #33ff66;
+  --accent-glow: rgb(51 255 102 / 25%);
+}
+:root[data-crt-theme='amber'] {
+  --accent: #ffb000;
+  --accent-glow: rgb(255 176 0 / 25%);
+}
+:root[data-crt-theme='dmg'] {
+  --accent: #8bac0f;
+  --accent-glow: rgb(139 172 15 / 25%);
+}
+.crt-palettes {
+  position: relative;
+  color: var(--accent);
+}
+.crt-palettes summary {
+  cursor: pointer;
+  padding: 8px;
+  min-height: 44px;
+  list-style: none;
+}
+.crt-palette-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 220px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 24px var(--accent-glow);
+  z-index: 105;
+}
+.backlog-result {
+  width: min(240px, 100%);
+  margin-top: 16px;
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+.game-moments {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 20px;
+  margin: 20px 0;
+}
+.game-moments article {
+  min-width: 0;
+}
+.game-moments h3 {
+  overflow-wrap: anywhere;
+}

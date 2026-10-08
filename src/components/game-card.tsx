@@ -2,9 +2,17 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Gamepad2, ArrowUpRight } from 'lucide-react';
 import type { Game } from '@/domain/model';
-export function GameCard({ game, score }: { game: Game; score?: number | null }) {
+export function GameCard({
+  game,
+  score,
+  prefetch,
+}: {
+  game: Game;
+  score?: number | null;
+  prefetch?: boolean;
+}) {
   return (
-    <Link href={`/games/${game.slug}`} className="game-card">
+    <Link href={`/games/${game.slug}`} className="game-card" prefetch={prefetch}>
       <div className="cover aspect-[3/4]">
         {game.cover_url ? (
           <Image

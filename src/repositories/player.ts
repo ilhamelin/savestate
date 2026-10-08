@@ -1,6 +1,23 @@
 import 'server-only';
 import { serverClient } from '@/integrations/supabase/server';
 import { dbCheck } from '@/lib/http';
+export async function libraryHoursFor(userId: string) {
+  const db = await serverClient();
+  let total = 0;
+  // Page every log, including games outside the visible 500-entry library window.
+  for (let offset = 0; ; offset += 1000) {
+    const result = await db
+      .from('play_logs')
+      .select('hours_played,user_games!inner(user_id)')
+      .eq('user_games.user_id', userId)
+      .order('id')
+      .range(offset, offset + 999);
+    dbCheck(result.error);
+    for (const log of result.data ?? []) total += Math.round(Number(log.hours_played) * 100);
+    if ((result.data?.length ?? 0) < 1000) break;
+  }
+  return total / 100;
+}
 export async function libraryFor(userId: string) {
   const db = await serverClient();
   const {

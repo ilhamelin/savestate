@@ -52,7 +52,10 @@ export type Database = {
       profiles: Table<Profile>;
       games: Table<Game>;
       user_games: Table<UserGame>;
-      play_logs: Table<PlayLog>;
+      play_logs: Table<
+        PlayLog,
+        [ForeignKey<'play_logs_user_game_id_fkey', 'user_game_id', 'user_games'>]
+      >;
       reviews: Table<Review>;
       friendships: Table<Friendship>;
       follows: Table<Follow>;

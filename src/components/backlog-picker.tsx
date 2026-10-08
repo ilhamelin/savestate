@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { backlogCandidates, chooseBacklog } from '@/domain/backlog';
 import { GameCard } from '@/components/game-card';
 import type { Game, UserGame } from '@/domain/model';
@@ -7,6 +7,9 @@ export function BacklogPicker({ entries, games }: { entries: UserGame[]; games: 
   const [platform, setPlatform] = useState('');
   const [genre, setGenre] = useState('');
   const [chosen, setChosen] = useState<Game | null>(null);
+  const [spinning, setSpinning] = useState(false);
+  const stop = useRef<(() => void) | null>(null);
+  useEffect(() => () => stop.current?.(), []);
   const all = backlogCandidates(entries, games);
   const candidates = backlogCandidates(entries, games, platform, genre);
   const visibleChoice = candidates.find((game) => game.id === chosen?.id);
@@ -21,6 +24,7 @@ export function BacklogPicker({ entries, games }: { entries: UserGame[]; games: 
           Plataforma
           <select
             value={platform}
+            disabled={spinning}
             onChange={(event) => {
               setPlatform(event.target.value);
               setChosen(null);
@@ -36,6 +40,7 @@ export function BacklogPicker({ entries, games }: { entries: UserGame[]; games: 
           Género
           <select
             value={genre}
+            disabled={spinning}
             onChange={(event) => {
               setGenre(event.target.value);
               setChosen(null);
@@ -54,14 +59,52 @@ export function BacklogPicker({ entries, games }: { entries: UserGame[]; games: 
       </p>
       <button
         className="button"
-        disabled={!candidates.length}
-        onClick={() => setChosen(chooseBacklog(candidates))}
+        disabled={!candidates.length || spinning}
+        onClick={() => {
+          stop.current?.();
+          const winner = chooseBacklog(candidates);
+          const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+          if (motion.matches || candidates.length === 1) {
+            setChosen(winner);
+            return;
+          }
+          setSpinning(true);
+          setChosen(chooseBacklog(candidates));
+          const interval = setInterval(() => setChosen(chooseBacklog(candidates)), 150);
+          const finish = () => {
+            stop.current?.();
+            setChosen(winner);
+            setSpinning(false);
+          };
+          const timer = setTimeout(finish, 1500);
+          const changed = () => {
+            if (motion.matches) finish();
+          };
+          motion.addEventListener('change', changed);
+          stop.current = () => {
+            clearInterval(interval);
+            clearTimeout(timer);
+            motion.removeEventListener('change', changed);
+            stop.current = null;
+          };
+        }}
       >
-        {chosen ? 'Elegir otra vez' : 'Elegir mi próxima partida'}
+        {spinning ? 'Barajando aventuras…' : '🎰 Elegir mi próxima aventura'}
       </button>
+      <p role="status">
+        {!spinning && visibleChoice
+          ? `La consola ha hablado: tu próxima partida es ${visibleChoice.title}.`
+          : spinning
+            ? 'La ruleta está girando.'
+            : ''}
+      </p>
       {visibleChoice ? (
-        <div className="game-grid" aria-live="polite">
-          <GameCard game={visibleChoice} />
+        <div
+          className="backlog-result"
+          aria-hidden={spinning || undefined}
+          inert={spinning || undefined}
+        >
+          <GameCard game={visibleChoice} prefetch={false} />
         </div>
       ) : null}
     </section>
