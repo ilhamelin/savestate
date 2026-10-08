@@ -1,4 +1,5 @@
 import type { Profile, Theme } from './model.ts';
+import { hardwareForDisplay } from './hardware.ts';
 export type DraftProfile = Pick<
   Profile,
   | 'username'
@@ -9,6 +10,7 @@ export type DraftProfile = Pick<
   | 'terminal_status'
   | 'library_private'
   | 'social_links'
+  | 'owned_platforms'
 >;
 export const SOCIAL_KEYS = ['steam', 'discord', 'twitch', 'github', 'x'] as const;
 export const PROFILE_COLORS: Record<Theme, string> = {
@@ -36,6 +38,7 @@ export function profileDraft(profile: DraftProfile): DraftProfile {
     social_links: Object.fromEntries(
       SOCIAL_KEYS.map((key) => [key, profile.social_links[key] ?? '']),
     ),
+    owned_platforms: hardwareForDisplay(profile.owned_platforms),
   };
 }
 export function profileChanged(draft: DraftProfile, saved: DraftProfile) {

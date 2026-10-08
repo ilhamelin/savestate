@@ -12,6 +12,7 @@ test('estudio: detecta cambios de identidad, imágenes, privacidad y enlaces; no
     terminal_status: '',
     library_private: false,
     social_links: {},
+    owned_platforms: [],
   });
   assert.equal(profileChanged(saved, profileDraft(saved)), false);
   assert.equal(profileChanged({ ...saved, social_links: {} }, saved), false);
@@ -24,10 +25,13 @@ test('estudio: detecta cambios de identidad, imágenes, privacidad y enlaces; no
     { terminal_status: 'En pausa' },
     { library_private: true },
     { social_links: { github: 'https://github.com/player' } },
+    { owned_platforms: ['PC / Steam'] },
   ])
     assert.equal(profileChanged({ ...saved, ...change }, saved), true);
   const draft = profileDraft(saved);
   draft.social_links.github = 'https://github.com/player';
   assert.equal(saved.social_links.github, '');
+  draft.owned_platforms.push('PS2');
+  assert.deepEqual(saved.owned_platforms, []);
   for (const status of QUICK_STATUSES) assert.equal(text(status, 'Estado', 160, 0), status);
 });

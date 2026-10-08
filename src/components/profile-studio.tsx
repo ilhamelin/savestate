@@ -19,6 +19,8 @@ import { browserClient } from '@/integrations/supabase/browser';
 import { profileImage } from '@/lib/profile-image';
 import { api } from '@/lib/client-api';
 import { username, text, socialLinks } from '@/domain/validation';
+import { HardwareSelector } from '@/components/hardware-selector';
+import { ownedPlatforms } from '@/domain/hardware';
 
 type Media = 'avatar' | 'banner';
 export function ProfileStudio({ profile }: { profile: Profile }) {
@@ -150,6 +152,7 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
       next.terminal_status = text(next.terminal_status, 'Estado', 160, 0);
       next.social_links = socialLinks(next.social_links);
       next.room_theme = roomTheme(next.room_theme);
+      next.owned_platforms = ownedPlatforms(next.owned_platforms);
       const hasMedia = Boolean(pendingMedia.current.avatar || pendingMedia.current.banner);
       const objects = hasMedia
         ? await db.storage.from('profiles').list(profile.id, { limit: 10 })
@@ -364,6 +367,10 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
           />
           <div className="panel form-stack">
             <h2>Detalles y privacidad</h2>
+            <HardwareSelector
+              value={draft.owned_platforms}
+              onChange={(value) => update('owned_platforms', value)}
+            />
             <label>
               Habitación gamer
               <select
