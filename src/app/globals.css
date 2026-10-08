@@ -659,6 +659,63 @@ nav a:hover,
     opacity: 0.45;
   }
 }
+.highlight-feed {
+  max-width: 850px;
+  margin: 28px auto;
+  display: grid;
+  gap: 24px;
+}
+.highlight-card {
+  min-width: 0;
+}
+.highlight-card h2,
+.highlight-comment-text {
+  overflow-wrap: anywhere;
+}
+.highlight-comment-text {
+  white-space: pre-wrap;
+}
+.highlight-form {
+  margin-top: 22px;
+}
+.highlight-filters,
+.highlight-actions,
+.highlight-carousel {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 18px 0;
+}
+.highlight-filters [aria-current='page'],
+.selected-reaction .button {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: #00f0ff12;
+}
+.highlight-video,
+.highlight-image {
+  width: 100%;
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #08090c;
+  margin: 20px 0;
+}
+.highlight-video iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.highlight-image img {
+  object-fit: contain;
+}
+.highlight-carousel {
+  justify-content: center;
+}
+.highlight-comments {
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+}
 @media (prefers-reduced-motion: reduce) {
   .skeleton {
     animation: none;

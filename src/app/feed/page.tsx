@@ -68,6 +68,7 @@ export default async function FeedPage() {
           const player = players.data?.find((p) => p.id === event.user_id),
             game = games.data?.find((g) => g.id === event.target_game_id);
           const state = STATUS_LABELS[event.event_data.status as GameStatus] ?? 'Actualizado';
+          const moment = event.event_type === 'moment_shared';
           return (
             <article className="feed-item" key={event.id}>
               <span className="accent" aria-hidden="true">
@@ -78,13 +79,23 @@ export default async function FeedPage() {
                   <Link className="accent" href={`/players/${player?.username}`}>
                     @{player?.username}
                   </Link>{' '}
-                  guardó un checkpoint en{' '}
+                  {moment ? 'compartió un momento en ' : 'guardó un checkpoint en '}
                   <Link className="accent" href={`/games/${game?.slug}`}>
                     {game?.title}
                   </Link>
                 </p>
+                {moment && typeof event.event_data.post_id === 'string' ? (
+                  <Link
+                    className="accent"
+                    href={`/highlights?post=${encodeURIComponent(event.event_data.post_id)}`}
+                  >
+                    {typeof event.event_data.title === 'string'
+                      ? event.event_data.title
+                      : 'Ver momento'}
+                  </Link>
+                ) : null}
                 <small>
-                  [{state}]{' '}
+                  [{moment ? 'Momento Gamer' : state}]{' '}
                   {typeof event.event_data.rating === 'number'
                     ? `· ★ ${event.event_data.rating}/10 `
                     : ''}

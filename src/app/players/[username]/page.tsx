@@ -81,6 +81,9 @@ export default async function Player({ params }: { params: Promise<{ username: s
           ))}
         </div>
       </ProfileIdentity>
+      <nav className="tabs" aria-label="Momentos del jugador">
+        <Link href={`/highlights?player=${profile.id}`}>Momentos</Link>
+      </nav>
       {user ? (
         <SocialControls
           targetId={profile.id}

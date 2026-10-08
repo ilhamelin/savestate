@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import type { Game } from '@/domain/model';
 import { readJsonResponse } from '@/lib/api-response';
-export function CataloguePicker({ games }: { games: Game[] }) {
+export function CataloguePicker({ games, required = true }: { games: Game[]; required?: boolean }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Game[]>([]);
   const [selected, setSelected] = useState('');
@@ -89,12 +89,12 @@ export function CataloguePicker({ games }: { games: Game[] }) {
         Juego
         <select
           name="game"
-          required
+          required={required}
           value={selected}
           onChange={(event) => setSelected(event.target.value)}
         >
-          <option value="" disabled>
-            Selecciona un juego
+          <option value="" disabled={required}>
+            {required ? 'Selecciona un juego' : 'Sin juego relacionado'}
           </option>
           {choices.map((game) => (
             <option key={game.id} value={game.id}>
@@ -107,7 +107,7 @@ export function CataloguePicker({ games }: { games: Game[] }) {
         {loading
           ? 'Buscando…'
           : query.trim().length >= 2
-            ? `${results.length} resultados. Agregar a la lista no cambia tu biblioteca.`
+            ? `${results.length} resultados. Seleccionar un juego no cambia tu biblioteca.`
             : 'Busca un título o elige uno de esta lista.'}
       </p>
       {error ? (

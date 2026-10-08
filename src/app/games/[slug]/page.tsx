@@ -172,6 +172,11 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
         <p className="muted">Las bibliotecas privadas se excluyen de estos cálculos.</p>
       </section>
       <section id="write-review" className="panel">
+        <p>
+          <Link className="accent" href={`/highlights?game=${game.id}`}>
+            Momentos de este juego ↗
+          </Link>
+        </p>
         <h2>Tu reseña, tu perspectiva.</h2>
         {user ? (
           <>

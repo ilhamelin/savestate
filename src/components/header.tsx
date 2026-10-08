@@ -31,6 +31,7 @@ export async function Header() {
         <Link href="/explore">Explorar</Link>
         <Link href="/library">Biblioteca</Link>
         <Link href="/feed">Transmisión</Link>
+        <Link href="/highlights">Momentos</Link>
         <Link href="/lists">Listas</Link>
         <Link href="/players">Jugadores</Link>
       </nav>
