@@ -95,6 +95,7 @@ export function CommandMenu({
     ['Transmisión', '/feed'],
     ['Buscar compañeros de partida', '/parties'],
     ['Momentos Gamer', '/highlights'],
+    ['Foro · SaveState Boards', '/forum'],
     [
       authenticated ? 'Mi perfil' : 'Iniciar sesión',
       authenticated

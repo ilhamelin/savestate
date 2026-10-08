@@ -1,0 +1,147 @@
+.forum-channels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 18px;
+  margin: 28px 0 48px;
+}
+.forum-channel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 2px solid var(--accent);
+}
+.forum-channel h2 {
+  font-size: 1.3rem;
+}
+.forum-channel .muted {
+  flex: 1;
+}
+.forum-icon {
+  font-size: 2rem;
+}
+.forum-create {
+  margin: 22px 0;
+}
+.forum-create form {
+  margin-top: 20px;
+}
+.forum-editor {
+  margin: 20px 0;
+}
+.forum-editor textarea {
+  width: 100%;
+  resize: vertical;
+}
+.forum-thread-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: center;
+  margin: 12px 0;
+}
+.forum-thread-row h3 {
+  margin: 12px 0;
+  overflow-wrap: anywhere;
+}
+.forum-pagination,
+.forum-live {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin: 20px 0;
+}
+.forum-message {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 26px;
+  margin: 16px 0;
+}
+.forum-author {
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+.forum-author .gamer-room {
+  margin: 0;
+  padding: 8px;
+}
+.forum-author img {
+  object-fit: cover;
+  aspect-ratio: 1;
+  display: block;
+  margin: 0 0 12px;
+}
+.forum-author .accent {
+  display: block;
+}
+.forum-author ul {
+  padding-left: 18px;
+  font-size: 0.7rem;
+}
+.forum-avatar {
+  display: block;
+  font-size: 2.5rem;
+  color: var(--accent);
+}
+.forum-message-body {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.forum-message-body pre {
+  overflow: auto;
+  max-width: 100%;
+  padding: 12px;
+  background: var(--bg);
+}
+.forum-message-body blockquote {
+  border-left: 2px solid var(--accent);
+  padding: 12px;
+  margin: 12px 0;
+}
+.forum-spoiler {
+  border: 1px dashed var(--accent);
+  padding: 8px;
+  margin: 8px 0;
+}
+.forum-spoiler summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+.forum-skeleton {
+  min-height: 70px;
+  margin: 12px 0;
+  background: linear-gradient(90deg, var(--bg), var(--surface));
+  border: 1px solid var(--line);
+}
+.forum-reply-editor {
+  margin-top: 24px;
+}
+@media (max-width: 640px) {
+  .forum-message {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .forum-author .gamer-room {
+    max-width: 260px;
+  }
+  .forum-author ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .forum-thread-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .forum-pagination {
+    font-size: 0.8rem;
+  }
+}
+.forum-author-mini img {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
+  object-fit: cover;
+  border: 1px solid var(--accent);
+}

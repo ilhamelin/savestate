@@ -36,6 +36,13 @@ export default async function Notifications() {
     ? await db.from('badges').select('id,name').in('id', badgeIds)
     : { data: [], error: null };
   dbCheck(badges.error);
+  const threadIds = [
+    ...new Set((rows ?? []).flatMap((row) => (row.forum_thread_id ? [row.forum_thread_id] : []))),
+  ];
+  const threads = threadIds.length
+    ? await db.from('forum_threads').select('id,category_id').in('id', threadIds)
+    : { data: [], error: null };
+  dbCheck(threads.error);
   return (
     <>
       <div className="page-heading">
@@ -47,15 +54,18 @@ export default async function Notifications() {
       <section className="panel">
         {rows?.map((row) => {
           const name = players?.find((p) => p.id === row.actor_id)?.username;
+          const thread = threads.data?.find((t) => t.id === row.forum_thread_id);
           return (
             <div className="player-row" key={row.id}>
               <p>
                 <Link
                   className="accent"
                   href={
-                    name
-                      ? `/players/${name}${row.kind === 'badge_unlocked' ? '#player-badges' : ''}`
-                      : '/players'
+                    thread
+                      ? `/forum/${thread.category_id}/${thread.id}`
+                      : name
+                        ? `/players/${name}${row.kind === 'badge_unlocked' ? '#player-badges' : ''}`
+                        : '/players'
                   }
                 >
                   @{name ?? 'jugador'}

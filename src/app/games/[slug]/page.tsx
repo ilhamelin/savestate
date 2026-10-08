@@ -1,4 +1,5 @@
 import { cache } from 'react';
+import { GameForum } from '@/components/game-forum';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -172,6 +173,7 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
         <p className="muted">Las bibliotecas privadas se excluyen de estos cálculos.</p>
       </section>
       <section id="write-review" className="panel">
+        <GameForum gameId={game.id} />
         <p>
           <Link className="accent" href={`/highlights?game=${game.id}`}>
             Momentos de este juego ↗

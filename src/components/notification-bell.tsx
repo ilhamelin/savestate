@@ -153,9 +153,10 @@ export function NotificationBell({ userId }: { userId: string }) {
             <div key={item.id} className={`notification-item ${item.read_at ? '' : 'unread'}`}>
               <Link
                 href={
-                  item.username
+                  item.forumHref ??
+                  (item.username
                     ? `/players/${item.username}${item.kind === 'badge_unlocked' ? '#player-badges' : ''}`
-                    : '/notifications'
+                    : '/notifications')
                 }
                 onClick={() => setOpen(false)}
               >

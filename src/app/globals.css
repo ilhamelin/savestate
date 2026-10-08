@@ -2,6 +2,7 @@
 @import './arcade.css';
 @import './badges.css';
 @import './evolution.css';
+@import './forum.css';
 @theme inline {
   --color-void-950: #08090c;
   --color-surface-900: #111319;
