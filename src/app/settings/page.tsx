@@ -42,6 +42,13 @@ export default async function SettingsPage() {
       </div>
       <Settings key={profileResult.data.username} profile={profileResult.data} />
       <section className="panel">
+        <h2>Biblioteca de Steam</h2>
+        <p>Revisa títulos y horas antes de añadirlos a SaveState.</p>
+        <Link className="button secondary" href="/library/import">
+          Importar desde Steam →
+        </Link>
+      </section>
+      <section className="panel">
         <h2>Amistades y solicitudes</h2>
         {friends.map((friend) => {
           const target = friend.sender_id === user.id ? friend.receiver_id : friend.sender_id;

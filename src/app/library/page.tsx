@@ -4,6 +4,7 @@ import { SetupNotice } from '@/components/setup-notice';
 import { libraryFor } from '@/repositories/player';
 import { Library } from '@/components/library';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 export const metadata = { title: 'Mi biblioteca' };
 export default async function LibraryPage() {
   if (!isConfigured())
@@ -33,6 +34,11 @@ export default async function LibraryPage() {
       {library.count > 500 ? (
         <p className="notice">Se muestran los 500 juegos actualizados más recientemente.</p>
       ) : null}
+      <p>
+        <Link className="button secondary" href="/library/import">
+          Importar biblioteca de Steam →
+        </Link>
+      </p>
       <Library {...library} editable />
     </>
   );
