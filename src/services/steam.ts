@@ -3,7 +3,7 @@ import { authenticated } from '@/lib/session';
 import { AppError, dbCheck } from '@/lib/http';
 import { object, uuid } from '@/domain/validation';
 import { matchingTitle, steamStatus } from '@/domain/steam';
-import { ownedSteamGames, steamTicket, readSteamTicket } from '@/integrations/steam/server';
+import { ownedSteamLibrary, steamTicket, readSteamTicket } from '@/integrations/steam/server';
 import { catalogue } from '@/services/catalogue';
 import { parseFilters } from '@/integrations/igdb/query';
 
@@ -14,16 +14,35 @@ export async function steamMutation(input: unknown) {
     const offset = data.offset === undefined ? 0 : Number(data.offset);
     if (!Number.isInteger(offset) || offset < 0 || offset > 10000 || offset % 250 !== 0)
       throw new AppError('Página de Steam inválida.', 400);
-    const games = await ownedSteamGames(data.profile);
+    const { games, steamid } = await ownedSteamLibrary(data.profile);
     return {
       games: games
         .slice(offset, offset + 250)
-        .map((game) => ({ ...game, ticket: steamTicket(game, user.id) })),
+        .map((game) => ({ ...game, ticket: steamTicket(game, user.id, steamid) })),
+      steamId: steamid,
+      linkTicket: steamTicket(
+        { appid: 1, name: 'Steam account', minutes: 0 },
+        user.id,
+        steamid,
+        'account',
+      ),
       total: games.length,
       nextOffset: offset + 250 < games.length ? offset + 250 : null,
     };
   }
-  const source = readSteamTicket(data.ticket, user.id);
+  const source = readSteamTicket(data.ticket, user.id, data.action === 'link' ? 'account' : 'game');
+  async function linkAccount() {
+    if (!source.steamid)
+      throw new AppError('Vuelve a consultar Steam para vincular esta cuenta.', 400);
+    const linked = await db.from('profiles').update({ steam_id: source.steamid }).eq('id', user.id);
+    if (linked.error?.code === '42703' || linked.error?.code === 'PGRST204')
+      throw new AppError('Aplica la migración 014 para activar la sincronización de Steam.', 503);
+    dbCheck(linked.error);
+  }
+  if (data.action === 'link') {
+    await linkAccount();
+    return { message: 'Cuenta vinculada para sincronización rápida. La cuota diaria se conserva.' };
+  }
   const search = async () => {
     const q = source.name.slice(0, 80);
     const result = await catalogue(
@@ -65,12 +84,13 @@ export async function steamMutation(input: unknown) {
   if (result.error?.code === 'PGRST202')
     throw new AppError('Aplica la migración 010 para activar el guardado de importaciones.', 503);
   dbCheck(result.error);
+  if (source.steamid) await linkAccount();
   return {
     state: result.data,
     appid: source.appid,
     message:
       result.data === 'existing'
-        ? 'Ya estaba en tu biblioteca; se conservó intacto.'
+        ? 'Ya estaba en tu biblioteca; se conservaron sus datos y quedó enlazado a Steam.'
         : 'Importado con sus horas acumuladas.',
   };
 }

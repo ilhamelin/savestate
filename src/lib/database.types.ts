@@ -97,6 +97,18 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      claim_steam_sync_slot: {
+        Args: Record<string, never>;
+        Returns: { allowed: boolean; remaining_slots: number; message: string }[];
+      };
+      apply_steam_sync: {
+        Args: {
+          p_user_id: string;
+          p_steam_id: string;
+          p_games: { appid: number; minutes: number }[];
+        };
+        Returns: { updated_count: number; hours_added: number }[];
+      };
       increment_thread_views: { Args: { p_thread_id: string }; Returns: undefined };
       forum_category_stats: {
         Args: Record<string, never>;
