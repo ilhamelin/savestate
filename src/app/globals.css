@@ -4,6 +4,7 @@
 @import './evolution.css';
 @import './forum.css';
 @import './qol.css';
+@import './dossier.css';
 @theme inline {
   --color-void-950: #08090c;
   --color-surface-900: #111319;

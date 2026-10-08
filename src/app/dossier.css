@@ -1,0 +1,97 @@
+.hardware-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--accent);
+  border-left-width: 5px;
+  background: var(--surface);
+  box-shadow: 3px 3px 0 var(--line);
+  overflow-wrap: anywhere;
+}
+.hardware-selector > * + * {
+  margin-top: 12px;
+}
+.metrics-dossier .stats-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  margin: 20px 0;
+}
+.metrics-dossier h3 {
+  margin-top: 24px;
+}
+.metrics-dossier meter {
+  width: 100%;
+  height: 12px;
+  appearance: none;
+  border: 0;
+  background: var(--line);
+}
+.metrics-dossier meter::-webkit-meter-bar {
+  background: var(--line);
+  border: 0;
+  border-radius: 0;
+}
+.metrics-dossier meter::-webkit-meter-optimum-value {
+  background: repeating-linear-gradient(to right, var(--accent) 0 12px, var(--line) 12px 15px);
+}
+.metrics-dossier meter::-moz-meter-bar {
+  background: repeating-linear-gradient(to right, var(--accent) 0 12px, var(--line) 12px 15px);
+}
+.metrics-dossier .stat strong {
+  font-size: clamp(20px, 3vw, 28px);
+}
+.backlog-thermometer {
+  display: flex;
+  height: 24px;
+  margin: 16px 0;
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.dossier-legend {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 10px 20px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+.state-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 8px;
+}
+.state-cleared {
+  background: #33ff66;
+}
+.state-platinum {
+  background: #b99bff;
+}
+.state-playing {
+  background: #00f0ff;
+}
+.state-backlog {
+  background: #ffb000;
+}
+.state-dropped {
+  background: #ff719b;
+}
+.state-wishlist {
+  background: #8792a5;
+}
+.memory-card {
+  border-width: 3px;
+  box-shadow: inset 0 0 0 4px var(--line);
+}
+.memory-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.memory-card-heading > div {
+  min-width: 0;
+}
+.memory-card-heading h2 {
+  overflow-wrap: anywhere;
+}

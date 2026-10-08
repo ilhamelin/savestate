@@ -16,6 +16,10 @@ import { ProfileIdentity } from '@/components/profile-identity';
 import { GamerRoom } from '@/components/gamer-room';
 import { BadgeGallery } from '@/components/badge-gallery';
 import { playerBadges } from '@/services/badges';
+import { dossierFor } from '@/repositories/dossier';
+import { hardwareForDisplay } from '@/domain/hardware';
+import { StatsDossier, HardwareBadges } from '@/components/profile-dossier';
+import { MemoryCardExport } from '@/components/memory-card-export';
 export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
   return { title: `@${username}` };
@@ -50,7 +54,10 @@ export default async function Player({ params }: { params: Promise<{ username: s
     playerBadges(profile.id),
   ]);
   [access, following, friendship].forEach((result) => dbCheck(result.error));
-  const library = access.data ? await libraryFor(profile.id) : null;
+  const [library, dossier] = access.data
+    ? await Promise.all([libraryFor(profile.id), dossierFor(profile.id)])
+    : [null, null];
+  const hardware = hardwareForDisplay(profile.owned_platforms);
   const favorites =
     library?.entries
       .filter((e) => e.favorite_position)
@@ -87,6 +94,7 @@ export default async function Player({ params }: { params: Promise<{ username: s
           </div>
         </ProfileIdentity>
       </GamerRoom>
+      <HardwareBadges platforms={hardware} />
       <BadgeGallery {...badges} />
       <p>
         <Link className="button secondary" href={`/players/${profile.username}/wrapped`}>
@@ -133,23 +141,45 @@ export default async function Player({ params }: { params: Promise<{ username: s
           {!favorites.length ? <p className="muted">Todavía no hay favoritos fijados.</p> : null}
           <PlayerSummary
             count={library.count}
-            hours={stats?.hours ?? 0}
-            completed={
-              library.entries.filter((entry) => ['cleared', 'platinum'].includes(entry.status))
-                .length
-            }
+            hours={dossier?.hours ?? 0}
+            completed={dossier?.completed ?? 0}
             genre={stats?.genres[0]?.[0] ?? '—'}
           />
           {library.count > 500 ? (
             <p className="notice">
-              Estados y géneros calculados sobre los 500 juegos recientes mostrados.
+              La biblioteca y las estadísticas de géneros muestran los 500 juegos recientes. El
+              dossier calcula toda la biblioteca.
             </p>
           ) : null}
           <nav className="tabs" aria-label="Secciones del perfil">
             <a href="#player-library">Biblioteca</a>
             <a href="#player-stats">Estadísticas</a>
+            <a href="#player-dossier">Dossier</a>
             <Link href={`/lists?player=${profile.id}`}>Listas</Link>
           </nav>
+          {dossier ? (
+            <>
+              <StatsDossier stats={dossier} />
+              <MemoryCardExport
+                data={{
+                  profile: {
+                    username: profile.username,
+                    avatar_url: profile.avatar_url,
+                    terminal_status: profile.terminal_status,
+                    owned_platforms: hardware,
+                  },
+                  clearRate: dossier.clearRate,
+                  hours: dossier.hours,
+                  favorites: favorites.flatMap((entry) => {
+                    const game = library.games.find((g) => g.id === entry.game_id);
+                    return game
+                      ? [{ id: game.id, title: game.title, cover_url: game.cover_url }]
+                      : [];
+                  }),
+                }}
+              />
+            </>
+          ) : null}
           <PlayerStatistics {...library} />
           <section
             id="player-library"
