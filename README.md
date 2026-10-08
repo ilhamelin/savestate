@@ -84,3 +84,5 @@ Consulta [docs/estado_implementacion.md](docs/estado_implementacion.md) para res
 La [Fase 3: Sala Arcade, compañeros y habitaciones](docs/arcade_companeros_y_habitaciones.md) incorpora duelos comunitarios en el inicio, convocatorias de 48 horas en `/parties` y tres temas de perfil seleccionables en `/settings`. Requiere la migración `202610070008_arcade_and_parties.sql`; los duelos se activan desde SQL con juegos existentes del catálogo.
 
 La [Entrega A de v2: PWA y medallas](docs/v2_entrega_a_pwa_y_badges.md) añade el manifiesto instalable, iconos móviles y una vitrina pública de siete logros con desbloqueo automático y notificaciones. Requiere `202610070009_badges.sql`; «100% Platino» cuenta exclusivamente juegos en `platinum`.
+
+La [Entrega B: importador Steam y Wrapped](docs/v2_entrega_b_steam_y_wrapped.md) incorpora `/library/import` y `/players/[username]/wrapped`, con confirmación previa, conservación de registros existentes y exportación PNG de 1080×1920. Requiere la migración `202610070010_steam_import.sql`; configurar `STEAM_API_KEY` únicamente en servidor para habilitar la consulta de bibliotecas públicas de Steam.
