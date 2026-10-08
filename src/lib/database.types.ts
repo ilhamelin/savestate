@@ -85,6 +85,10 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      import_steam_game: {
+        Args: { p_game_id: string; p_status: string; p_minutes: number; p_appid: number };
+        Returns: string;
+      };
       check_user_badges: { Args: { p_user_id: string }; Returns: undefined };
       duel_results: {
         Args: { p_duel_id: string };
