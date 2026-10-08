@@ -82,3 +82,5 @@ La documentación original numerada y el compilado permanecen en la raíz. Las s
 Consulta [docs/estado_implementacion.md](docs/estado_implementacion.md) para resultados de verificación y pendientes. No hay remoto configurado y no se hizo push.
 
 La [Fase 3: Sala Arcade, compañeros y habitaciones](docs/arcade_companeros_y_habitaciones.md) incorpora duelos comunitarios en el inicio, convocatorias de 48 horas en `/parties` y tres temas de perfil seleccionables en `/settings`. Requiere la migración `202610070008_arcade_and_parties.sql`; los duelos se activan desde SQL con juegos existentes del catálogo.
+
+La [Entrega A de v2: PWA y medallas](docs/v2_entrega_a_pwa_y_badges.md) añade el manifiesto instalable, iconos móviles y una vitrina pública de siete logros con desbloqueo automático y notificaciones. Requiere `202610070009_badges.sql`; «100% Platino» cuenta exclusivamente juegos en `platinum`.
