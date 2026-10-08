@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Silkscreen, JetBrains_Mono } from 'next/font/google';
 import { Header } from '@/components/header';
 import './globals.css';
@@ -12,6 +12,19 @@ const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono', displ
 export const metadata: Metadata = {
   title: { default: 'Savestate — Tu diario gamer', template: '%s | Savestate' },
   description: 'Explora videojuegos, registra tus partidas y comparte tu odisea gamer.',
+  applicationName: 'SaveState',
+  appleWebApp: { capable: true, title: 'SaveState', statusBarStyle: 'black-translucent' },
+  other: { 'apple-mobile-web-app-capable': 'yes' },
+  icons: {
+    icon: '/icons/icon-192.png',
+    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
+};
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#00f0ff',
 };
 export const dynamic = 'force-dynamic';
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
