@@ -3,10 +3,12 @@ import { notFound } from 'next/navigation';
 import { profileByName, libraryFor } from '@/repositories/player';
 import { serverClient } from '@/integrations/supabase/server';
 import { currentUser } from '@/lib/session';
-import { isConfigured } from '@/lib/env';
+import { isConfigured, publicEnv } from '@/lib/env';
+import { wallpaperForDisplay } from '@/domain/wallpaper';
 import { dbCheck } from '@/lib/http';
 import { Library } from '@/components/library';
-import { GameCard } from '@/components/game-card';
+import { Top4SlotSelector } from '@/components/top4-slot-selector';
+import { ProfileWallpaper } from '@/components/profile-wallpaper';
 import { SocialControls } from '@/components/social-controls';
 import { SetupNotice } from '@/components/setup-notice';
 import { PlayerStatistics, PlayerSummary } from '@/components/player-statistics';
@@ -83,17 +85,21 @@ export default async function Player({ params }: { params: Promise<{ username: s
           </Link>
         ) : null}
       </div>
-      <GamerRoom theme={profile.room_theme}>
-        <ProfileIdentity profile={profile} animateTerminal>
-          <div className="tags">
-            {Object.entries(links).map(([label, url]) => (
-              <a className="tag" key={label} href={url} target="_blank" rel="noopener noreferrer">
-                {label} ↗
-              </a>
-            ))}
-          </div>
-        </ProfileIdentity>
-      </GamerRoom>
+      <ProfileWallpaper
+        url={wallpaperForDisplay(profile.wallpaper_url, profile.id, publicEnv().url)}
+      >
+        <GamerRoom theme={profile.room_theme}>
+          <ProfileIdentity profile={profile} animateTerminal>
+            <div className="tags">
+              {Object.entries(links).map(([label, url]) => (
+                <a className="tag" key={label} href={url} target="_blank" rel="noopener noreferrer">
+                  {label} ↗
+                </a>
+              ))}
+            </div>
+          </ProfileIdentity>
+        </GamerRoom>
+      </ProfileWallpaper>
       <HardwareBadges platforms={hardware} />
       <BadgeGallery {...badges} />
       <p>
@@ -132,12 +138,14 @@ export default async function Player({ params }: { params: Promise<{ username: s
               <h2>Top 4 favoritos.</h2>
             </div>
           </div>
-          <div className={`game-grid ${profile.room_theme === 'retro_shelf' ? 'retro-shelf' : ''}`}>
-            {favorites.map((entry) => {
+          <Top4SlotSelector
+            favorites={favorites.flatMap((entry) => {
               const game = library.games.find((g) => g.id === entry.game_id);
-              return game ? <GameCard key={entry.id} game={game} score={entry.rating} /> : null;
+              return game ? [{ game, entry }] : [];
             })}
-          </div>
+            editable={user?.id === profile.id}
+            shelf={profile.room_theme === 'retro_shelf'}
+          />
           {!favorites.length ? <p className="muted">Todavía no hay favoritos fijados.</p> : null}
           <PlayerSummary
             count={library.count}

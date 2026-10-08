@@ -1,5 +1,8 @@
 'use client';
-export async function profileImage(file: File, kind: 'avatar' | 'banner'): Promise<Blob> {
+export async function profileImage(
+  file: File,
+  kind: 'avatar' | 'banner' | 'wallpaper',
+): Promise<Blob> {
   if (
     !['image/png', 'image/jpeg', 'image/webp'].includes(file.type) ||
     file.size > 10 * 1024 * 1024

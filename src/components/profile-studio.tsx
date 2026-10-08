@@ -21,8 +21,15 @@ import { api } from '@/lib/client-api';
 import { username, text, socialLinks } from '@/domain/validation';
 import { HardwareSelector } from '@/components/hardware-selector';
 import { ownedPlatforms } from '@/domain/hardware';
+import { WALLPAPERS } from '@/domain/wallpaper';
+import { ProfileWallpaper } from '@/components/profile-wallpaper';
 
-type Media = 'avatar' | 'banner';
+type Media = 'avatar' | 'banner' | 'wallpaper';
+const MEDIA_KEYS = {
+  avatar: 'avatar_url',
+  banner: 'banner_url',
+  wallpaper: 'wallpaper_url',
+} as const;
 export function ProfileStudio({ profile }: { profile: Profile }) {
   const [saved, setSaved] = useState(() => profileDraft(profile));
   const [draft, setDraft] = useState(() => profileDraft(profile));
@@ -33,7 +40,8 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
     [error, setError] = useState(false);
   const form = useRef<HTMLFormElement>(null),
     avatarInput = useRef<HTMLInputElement>(null),
-    bannerInput = useRef<HTMLInputElement>(null);
+    bannerInput = useRef<HTMLInputElement>(null),
+    wallpaperInput = useRef<HTMLInputElement>(null);
   const pendingMedia = useRef<Partial<Record<Media, Blob>>>({});
   const previews = useRef<Partial<Record<Media, string>>>({});
   const busy = useRef(false),
@@ -118,7 +126,7 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
       pendingMedia.current[kind] = blob;
       const url = URL.createObjectURL(blob);
       previews.current[kind] = url;
-      update(kind === 'avatar' ? 'avatar_url' : 'banner_url', url);
+      update(MEDIA_KEYS[kind], url);
       setError(false);
     } catch (failure) {
       setError(true);
@@ -131,11 +139,13 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
   function discard() {
     clearMedia('avatar');
     clearMedia('banner');
+    clearMedia('wallpaper');
     setDraft(profileDraft(saved));
     setMessage('Cambios descartados.');
     setError(false);
     if (avatarInput.current) avatarInput.current.value = '';
     if (bannerInput.current) bannerInput.current.value = '';
+    if (wallpaperInput.current) wallpaperInput.current.value = '';
   }
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -153,13 +163,13 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
       next.social_links = socialLinks(next.social_links);
       next.room_theme = roomTheme(next.room_theme);
       next.owned_platforms = ownedPlatforms(next.owned_platforms);
-      const hasMedia = Boolean(pendingMedia.current.avatar || pendingMedia.current.banner);
+      const hasMedia = Object.keys(pendingMedia.current).length > 0;
       const objects = hasMedia
         ? await db.storage.from('profiles').list(profile.id, { limit: 10 })
         : { data: [], error: null };
       if (objects.error)
         throw new Error('No se pudo comprobar el archivo anterior. Reintenta guardar.');
-      for (const kind of ['avatar', 'banner'] as const) {
+      for (const kind of ['avatar', 'banner', 'wallpaper'] as const) {
         const blob = pendingMedia.current[kind];
         if (!blob) continue;
         const path = `${profile.id}/${kind}.webp`;
@@ -179,12 +189,13 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
             'No se pudo subir la imagen. Tu borrador sigue disponible para reintentar.',
           );
         const url = db.storage.from('profiles').getPublicUrl(path).data.publicUrl;
-        next[kind === 'avatar' ? 'avatar_url' : 'banner_url'] = `${url}?v=${Date.now()}`;
+        next[MEDIA_KEYS[kind]] = `${url}?v=${Date.now()}`;
       }
       const result = await api<Profile>('profile', next);
       committed = true;
       clearMedia('avatar');
       clearMedia('banner');
+      clearMedia('wallpaper');
       const persisted = profileDraft(result);
       setSaved(persisted);
       setDraft(profileDraft(persisted));
@@ -254,63 +265,65 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
       <form id={id} ref={form} method="post" onSubmit={save} className="form-stack">
         <fieldset disabled={blocked}>
           <div className={`studio-preview ${mobile ? 'studio-preview-mobile' : ''}`}>
-            <GamerRoom theme={draft.room_theme}>
-              <ProfileIdentity
-                profile={draft}
-                headingLevel={2}
-                avatarOverlay={
-                  <button
-                    type="button"
-                    className="studio-camera studio-camera-avatar"
-                    disabled={blocked}
-                    onClick={() => avatarInput.current?.click()}
-                  >
-                    <Camera size={16} aria-hidden="true" />
-                    <span>Cambiar avatar</span>
-                  </button>
-                }
-                bannerOverlay={
-                  <button
-                    type="button"
-                    className="studio-camera studio-camera-banner"
-                    disabled={blocked}
-                    onClick={() => bannerInput.current?.click()}
-                  >
-                    <Camera size={16} aria-hidden="true" />
-                    <span>Cambiar banner</span>
-                  </button>
-                }
-                usernameEditor={
-                  <label className="studio-username">
-                    <span className="sr-only">Nombre de usuario</span>
-                    <span aria-hidden="true">@</span>
-                    <input
-                      name="username"
-                      aria-label="Nombre de usuario"
-                      value={draft.username}
-                      pattern="[A-Za-z0-9_]{3,30}"
-                      minLength={3}
-                      maxLength={30}
-                      required
-                      onChange={(event) => update('username', event.target.value)}
-                    />
-                  </label>
-                }
-                terminalEditor={
-                  <label className="studio-terminal">
-                    <span>{draft.username || 'player'}@savestate:~$</span>
-                    <input
-                      aria-label="Estado de terminal"
-                      name="terminal"
-                      value={draft.terminal_status}
-                      maxLength={160}
-                      placeholder="Ready to play"
-                      onChange={(event) => update('terminal_status', event.target.value)}
-                    />
-                  </label>
-                }
-              />
-            </GamerRoom>
+            <ProfileWallpaper url={draft.wallpaper_url}>
+              <GamerRoom theme={draft.room_theme}>
+                <ProfileIdentity
+                  profile={draft}
+                  headingLevel={2}
+                  avatarOverlay={
+                    <button
+                      type="button"
+                      className="studio-camera studio-camera-avatar"
+                      disabled={blocked}
+                      onClick={() => avatarInput.current?.click()}
+                    >
+                      <Camera size={16} aria-hidden="true" />
+                      <span>Cambiar avatar</span>
+                    </button>
+                  }
+                  bannerOverlay={
+                    <button
+                      type="button"
+                      className="studio-camera studio-camera-banner"
+                      disabled={blocked}
+                      onClick={() => bannerInput.current?.click()}
+                    >
+                      <Camera size={16} aria-hidden="true" />
+                      <span>Cambiar banner</span>
+                    </button>
+                  }
+                  usernameEditor={
+                    <label className="studio-username">
+                      <span className="sr-only">Nombre de usuario</span>
+                      <span aria-hidden="true">@</span>
+                      <input
+                        name="username"
+                        aria-label="Nombre de usuario"
+                        value={draft.username}
+                        pattern="[A-Za-z0-9_]{3,30}"
+                        minLength={3}
+                        maxLength={30}
+                        required
+                        onChange={(event) => update('username', event.target.value)}
+                      />
+                    </label>
+                  }
+                  terminalEditor={
+                    <label className="studio-terminal">
+                      <span>{draft.username || 'player'}@savestate:~$</span>
+                      <input
+                        aria-label="Estado de terminal"
+                        name="terminal"
+                        value={draft.terminal_status}
+                        maxLength={160}
+                        placeholder="Ready to play"
+                        onChange={(event) => update('terminal_status', event.target.value)}
+                      />
+                    </label>
+                  }
+                />
+              </GamerRoom>
+            </ProfileWallpaper>
             <div className="studio-statuses" role="group" aria-label="Estados rápidos">
               {QUICK_STATUSES.map((status) => (
                 <button
@@ -367,6 +380,58 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
           />
           <div className="panel form-stack">
             <h2>Detalles y privacidad</h2>
+            <div className="form-stack">
+              <h3>Wallpaper de la habitación</h3>
+              <div className="wallpaper-presets" role="group" aria-label="Wallpapers retro">
+                <button
+                  type="button"
+                  className="studio-chip"
+                  aria-pressed={!draft.wallpaper_url}
+                  onClick={() => {
+                    clearMedia('wallpaper');
+                    update('wallpaper_url', null);
+                  }}
+                >
+                  Sin wallpaper
+                </button>
+                {WALLPAPERS.map((preset) => (
+                  <button
+                    type="button"
+                    className="wallpaper-preset"
+                    key={preset.id}
+                    aria-pressed={draft.wallpaper_url === preset.url}
+                    onClick={() => {
+                      clearMedia('wallpaper');
+                      update('wallpaper_url', preset.url);
+                    }}
+                  >
+                    <img src={preset.url} alt="" />
+                    <span>{preset.name}</span>
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="button secondary"
+                onClick={() => wallpaperInput.current?.click()}
+              >
+                <Camera size={16} /> Subir wallpaper propio
+              </button>
+              <input
+                ref={wallpaperInput}
+                hidden
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                aria-label="Seleccionar wallpaper"
+                onChange={(event) => {
+                  void prepare(event.target.files?.[0], 'wallpaper');
+                  event.target.value = '';
+                }}
+              />
+              <p className="muted">
+                Vista previa en vivo. Se guarda junto al perfil; visible para todos.
+              </p>
+            </div>
             <HardwareSelector
               value={draft.owned_platforms}
               onChange={(value) => update('owned_platforms', value)}

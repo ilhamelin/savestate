@@ -13,10 +13,23 @@ import {
 } from '@/domain/validation';
 import { cleanMarkdown, renderMarkdown } from '@/services/markdown';
 import { sessionMinutes, accumulatedHours } from '@/domain/quick-session';
+import { favoriteSlot, favoriteGame } from '@/domain/top4';
+import { revalidatePath } from 'next/cache';
 export async function libraryMutation(input: unknown) {
   const { db, user } = await authenticated();
   const data = object(input);
   switch (data.action) {
+    case 'favorite_slot': {
+      const { error } = await db.rpc('set_favorite_slot', {
+        p_slot: favoriteSlot(data.slot),
+        p_game_id: favoriteGame(data.game_id),
+        p_status: 'backlog',
+      });
+      dbCheck(error);
+      revalidatePath('/players/[username]', 'page');
+      revalidatePath('/library');
+      return true;
+    }
     case 'preview_review': {
       return renderMarkdown(text(data.content, 'Reseña', 10000));
     }

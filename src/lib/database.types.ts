@@ -51,7 +51,7 @@ export type Database = {
       post_comments: Table<PostComment>;
       profiles: Table<Profile>;
       games: Table<Game>;
-      user_games: Table<UserGame>;
+      user_games: Table<UserGame, [ForeignKey<'user_games_game_id_fkey', 'game_id', 'games'>]>;
       play_logs: Table<
         PlayLog,
         [ForeignKey<'play_logs_user_game_id_fkey', 'user_game_id', 'user_games'>]
@@ -142,6 +142,10 @@ export type Database = {
         Returns: string;
       };
       set_favorites: { Args: { p_game_ids: string[] }; Returns: undefined };
+      set_favorite_slot: {
+        Args: { p_slot: number; p_game_id: string | null; p_status?: string };
+        Returns: undefined;
+      };
       community_rating: {
         Args: { p_game_id: string };
         Returns: { average: number | null; total: number }[];

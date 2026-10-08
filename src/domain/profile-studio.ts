@@ -5,6 +5,7 @@ export type DraftProfile = Pick<
   | 'username'
   | 'avatar_url'
   | 'banner_url'
+  | 'wallpaper_url'
   | 'theme_color'
   | 'room_theme'
   | 'terminal_status'
@@ -31,6 +32,7 @@ export function profileDraft(profile: DraftProfile): DraftProfile {
     username: profile.username,
     avatar_url: profile.avatar_url,
     banner_url: profile.banner_url,
+    wallpaper_url: profile.wallpaper_url ?? null,
     theme_color: profile.theme_color,
     room_theme: profile.room_theme ?? 'crt_terminal',
     terminal_status: profile.terminal_status,

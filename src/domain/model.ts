@@ -26,6 +26,7 @@ export interface Profile {
   username: string;
   avatar_url: string | null;
   banner_url: string | null;
+  wallpaper_url: string | null;
   theme_color: Theme;
   terminal_status: string;
   social_links: Record<string, string>;
