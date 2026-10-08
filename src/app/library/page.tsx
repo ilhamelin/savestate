@@ -6,6 +6,8 @@ import { NumberTicker } from '@/components/ui/number-ticker';
 import { Library } from '@/components/library';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { SteamQuickSync } from '@/components/steam-quick-sync';
+import { steamSyncStatus } from '@/services/steam-sync';
 export const metadata = { title: 'Mi biblioteca' };
 export default async function LibraryPage() {
   if (!isConfigured())
@@ -22,7 +24,11 @@ export default async function LibraryPage() {
     );
   const user = await currentUser();
   if (!user) redirect('/login?next=/library');
-  const [library, totalHours] = await Promise.all([libraryFor(user.id), libraryHoursFor(user.id)]);
+  const [library, totalHours, steamState] = await Promise.all([
+    libraryFor(user.id),
+    libraryHoursFor(user.id),
+    steamSyncStatus(),
+  ]);
   return (
     <>
       <div className="page-heading">
@@ -43,6 +49,7 @@ export default async function LibraryPage() {
           Importar biblioteca de Steam →
         </Link>
       </p>
+      <SteamQuickSync initial={steamState} />
       <Library {...library} editable />
     </>
   );

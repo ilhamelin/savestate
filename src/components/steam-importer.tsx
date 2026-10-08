@@ -4,7 +4,13 @@ import Link from 'next/link';
 import { api } from '@/lib/client-api';
 import { suggestedSteamStatus, type SteamPreview, type SteamStatus } from '@/domain/steam';
 type Candidate = { id: string; title: string; release_year: number | null; slug: string };
-type PreviewPage = { games: SteamPreview[]; total: number; nextOffset: number | null };
+type PreviewPage = {
+  games: SteamPreview[];
+  total: number;
+  nextOffset: number | null;
+  steamId: string;
+  linkTicket: string;
+};
 export function SteamImporter({ configured }: { configured: boolean }) {
   const [profile, setProfile] = useState(''),
     [games, setGames] = useState<SteamPreview[]>([]);
@@ -19,6 +25,9 @@ export function SteamImporter({ configured }: { configured: boolean }) {
     [search, setSearch] = useState(''),
     [page, setPage] = useState(0);
   const [loaded, setLoaded] = useState(false);
+  const [linkTicket, setLinkTicket] = useState('');
+  const [linked, setLinked] = useState(false);
+  const [linkMessage, setLinkMessage] = useState('');
   const [total, setTotal] = useState(0),
     [nextOffset, setNextOffset] = useState<number | null>(null),
     [loadedProfile, setLoadedProfile] = useState('');
@@ -48,6 +57,9 @@ export function SteamImporter({ configured }: { configured: boolean }) {
       const rows = result.games;
       if (!mounted.current) return;
       setGames(rows);
+      setLinkTicket(result.linkTicket);
+      setLinked(false);
+      setLinkMessage('');
       setTotal(result.total);
       setNextOffset(result.nextOffset);
       setLoadedProfile(profile);
@@ -76,6 +88,7 @@ export function SteamImporter({ configured }: { configured: boolean }) {
         offset: nextOffset,
       });
       if (!mounted.current) return;
+      setLinkTicket(result.linkTicket);
       setGames((old) => [
         ...new Map([...old, ...result.games].map((game) => [game.appid, game])).values(),
       ]);
@@ -110,6 +123,25 @@ export function SteamImporter({ configured }: { configured: boolean }) {
       setBusy(false);
     }
   }
+  async function linkAccount() {
+    setBusy(true);
+    setError('');
+    try {
+      const result = await api<{ message: string }>('steam/import', {
+        action: 'link',
+        ticket: linkTicket,
+      });
+      if (mounted.current) {
+        setLinked(true);
+        setLinkMessage(result.message);
+      }
+    } catch (failure) {
+      if (mounted.current)
+        setError(failure instanceof Error ? failure.message : 'No se pudo vincular Steam.');
+    } finally {
+      if (mounted.current) setBusy(false);
+    }
+  }
   async function commit() {
     setBusy(true);
     setError('');
@@ -128,6 +160,7 @@ export function SteamImporter({ configured }: { configured: boolean }) {
           });
           if (!mounted.current) break;
           setResults((old) => ({ ...old, [game.appid]: result.message }));
+          if (['imported', 'existing'].includes(result.state)) setLinked(true);
           if (['imported', 'existing'].includes(result.state))
             setFinished((old) => new Set(old).add(game.appid));
         } catch (failure) {
@@ -182,6 +215,29 @@ export function SteamImporter({ configured }: { configured: boolean }) {
         <p role="alert" className="error-text">
           {error}
         </p>
+      ) : null}
+      {loaded && linkTicket ? (
+        <div className="form-stack">
+          <button
+            type="button"
+            className="button secondary"
+            disabled={busy || linked}
+            onClick={() => void linkAccount()}
+          >
+            {linked
+              ? 'Cuenta vinculada para sincronización rápida'
+              : 'Vincular esta cuenta para sincronización rápida'}
+          </button>
+          <p role="status" className="muted">
+            {linkMessage ||
+              'Los juegos ya importados podrán actualizar sus horas desde la biblioteca. Cambiar la cuenta no reinicia la cuota diaria.'}
+          </p>
+          {linked ? (
+            <Link className="text-link" href="/library">
+              Ir a sincronización rápida →
+            </Link>
+          ) : null}
+        </div>
       ) : null}
       {games.length ? (
         <>
