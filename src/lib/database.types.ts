@@ -15,6 +15,7 @@ import type {
 import type { Post, PostReaction, PostComment } from '@/domain/highlights';
 import type { GameDuel, DuelVote, PartyRequest } from '@/domain/arcade';
 import type { Badge, UserBadge } from '@/domain/badges';
+import type { ForumCategory, ForumThread, ForumReply, ForumReaction } from '@/domain/forum';
 
 type Row<T> = { [K in keyof T]: T[K] };
 type Table<T, Relations = []> = {
@@ -33,6 +34,13 @@ type ForeignKey<Name extends string, Column extends string, Target extends strin
 export type Database = {
   public: {
     Tables: {
+      forum_categories: Table<ForumCategory>;
+      forum_threads: Table<ForumThread>;
+      forum_replies: Table<
+        ForumReply,
+        [ForeignKey<'forum_replies_thread_id_fkey', 'thread_id', 'forum_threads'>]
+      >;
+      forum_reactions: Table<ForumReaction>;
       badges: Table<Badge>;
       user_badges: Table<UserBadge>;
       game_duels: Table<GameDuel>;
@@ -74,6 +82,7 @@ export type Database = {
         created_at: string;
       }>;
       notifications: Table<{
+        forum_thread_id: string | null;
         badge_id: string | null;
         id: string;
         user_id: string;
@@ -85,6 +94,16 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      increment_thread_views: { Args: { p_thread_id: string }; Returns: undefined };
+      forum_category_stats: {
+        Args: Record<string, never>;
+        Returns: {
+          category_id: string;
+          threads: number;
+          messages: number;
+          last_activity: string | null;
+        }[];
+      };
       import_steam_game: {
         Args: { p_game_id: string; p_status: string; p_minutes: number; p_appid: number };
         Returns: string;

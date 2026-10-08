@@ -26,10 +26,10 @@ export function errorResponse(error: unknown) {
     { status, headers: { 'Cache-Control': 'no-store' } },
   );
 }
-export async function body(request: Request) {
+export async function body(request: Request, maxBytes = 24000) {
   if (!request.headers.get('content-type')?.includes('application/json'))
     throw new AppError('Usa contenido JSON.', 415);
-  if (Number(request.headers.get('content-length')) > 24000)
+  if (Number(request.headers.get('content-length')) > maxBytes)
     throw new AppError('Solicitud demasiado grande.', 413);
   const reader = request.body?.getReader();
   const decoder = new TextDecoder();
@@ -41,7 +41,7 @@ export async function body(request: Request) {
         const { value, done } = await reader.read();
         if (done) break;
         bytes += value.length;
-        if (bytes > 24000) {
+        if (bytes > maxBytes) {
           await reader.cancel();
           throw new AppError('Solicitud demasiado grande.', 413);
         }
@@ -71,11 +71,15 @@ export function sameOrigin(request: Request) {
   }
   if (!allowed) throw new AppError('Origen de solicitud no permitido.', 403);
 }
-export async function mutation(request: Request, action: (input: unknown) => Promise<unknown>) {
+export async function mutation(
+  request: Request,
+  action: (input: unknown) => Promise<unknown>,
+  maxBytes = 24000,
+) {
   try {
     sameOrigin(request);
     return Response.json(
-      { data: await action(await body(request)) },
+      { data: await action(await body(request, maxBytes)) },
       { headers: { 'Cache-Control': 'no-store' } },
     );
   } catch (error) {

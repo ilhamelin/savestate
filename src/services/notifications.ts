@@ -8,7 +8,7 @@ export async function notificationSummary(): Promise<NotificationSummary> {
   const [recent, unread] = await Promise.all([
     db
       .from('notifications')
-      .select('id,kind,read_at,created_at,actor_id,badge_id')
+      .select('id,kind,read_at,created_at,actor_id,badge_id,forum_thread_id')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
@@ -34,6 +34,13 @@ export async function notificationSummary(): Promise<NotificationSummary> {
     ? await db.from('badges').select('id,name').in('id', badgeIds)
     : { data: [], error: null };
   dbCheck(badges.error);
+  const threadIds = [
+    ...new Set(rows.flatMap((row) => (row.forum_thread_id ? [row.forum_thread_id] : []))),
+  ];
+  const threads = threadIds.length
+    ? await db.from('forum_threads').select('id,category_id').in('id', threadIds)
+    : { data: [], error: null };
+  dbCheck(threads.error);
   return {
     unreadCount: unread.count ?? 0,
     generatedAt: new Date().toISOString(),
@@ -41,6 +48,9 @@ export async function notificationSummary(): Promise<NotificationSummary> {
       ...row,
       username: profiles.data?.find((p) => p.id === actor_id)?.username ?? null,
       badgeName: badges.data?.find((badge) => badge.id === row.badge_id)?.name ?? null,
+      forumHref: threads.data?.find((t) => t.id === row.forum_thread_id)
+        ? `/forum/${threads.data.find((t) => t.id === row.forum_thread_id)!.category_id}/${row.forum_thread_id}`
+        : null,
     })),
   };
 }

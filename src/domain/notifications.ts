@@ -1,4 +1,6 @@
 export const NOTIFICATION_LABELS: Record<string, string> = {
+  forum_reply: 'respondió en tu hilo del foro',
+  forum_quote: 'te citó en una respuesta del foro',
   badge_unlocked: 'desbloqueó un nuevo logro retro',
   follow: 'empezó a seguirte',
   friend_request: 'te envió una solicitud de amistad',
@@ -18,6 +20,7 @@ export interface NotificationSummary {
     created_at: string;
     username: string | null;
     badgeName?: string | null;
+    forumHref?: string | null;
   }[];
 }
 export function notificationAge(createdAt: string, now: string) {
