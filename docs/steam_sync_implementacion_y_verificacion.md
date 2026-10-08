@@ -27,11 +27,11 @@ Fecha: 8 de octubre de 2026. Referencia: `docs/propuesta_steam_sync_rapido.md`, 
 - Móvil 375 px: documento 360 px, panel de sincronización 320 px; sin desbordamiento.
 - Cuentas temporales eliminadas y servidor de prueba detenido. El mock de Valve no se importa por la aplicación ni se activa en un inicio normal.
 
-## Corrección SQL pendiente de confirmación
+## Protección de cambio de cuenta pendiente de diagnóstico
 
-La primera versión de la migración 014 fue ejecutada y confirmada por el usuario. La prueba integral encontró que el error SQL `40001` en la protección de cambio de cuenta acababa en un timeout de Supabase, en lugar de una respuesta inmediata. Se corrigió el archivo de migración para usar `P0001`, que el servicio traduce a HTTP 409. Se mostró el bloque de reemplazo de `apply_steam_sync` al usuario; falta confirmar su ejecución para repetir y cerrar la prueba integral completa. La primera ejecución de esa prueba terminó con error en esa comprobación, después de verificar correctamente concurrencia y persistencia.
+La primera versión de la migración 014 utilizaba `40001` en la protección de cambio de cuenta, cuya prueba acababa en un timeout de Supabase. El archivo versionado usa ahora `P0001`, que el servicio traduce a HTTP 409. El usuario confirmó la ejecución del bloque de reemplazo de `apply_steam_sync`. Sin embargo, la repetición integral todavía falla al comprobar el rechazo de una cuenta diferente: no recibe el código esperado. Una llamada aislada a esa protección superó seis segundos, mientras que una entrada inválida en la misma función respondió con `P0001` en 436 ms. Se solicitó consultar `pg_get_functiondef` en el proyecto `pvrfiugmpiozteetjoym` para comprobar la definición activa; no se da esta protección por verificada.
 
-La cuota y el flujo visual ya están comprobados. Los casos finales de fallo de Valve y reinicio diario de la prueba integral deben completarse después del reemplazo SQL.
+Una copia temporal de la prueba, omitiendo exclusivamente la comprobación bloqueada de cambio de cuenta, terminó correctamente en 14 segundos. Verificó nuevamente concurrencia y persistencia, además del reinicio por día UTC, consumo de un intento ante un fallo simulado de Valve y enlace de un juego existente con marcador de cero horas sin modificar su estado. Esto no equivale a una pasada integral completa. La copia temporal y las cuentas de prueba se eliminaron, y el servidor local se detuvo.
 
 Capturas: `docs/evidence/steam-quick-sync.png`, `steam-quick-sync-exhausted.png`, `steam-quick-sync-mobile.png`.
 
