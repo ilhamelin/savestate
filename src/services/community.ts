@@ -72,6 +72,15 @@ export async function communityMutation(input: unknown) {
       dbCheck(error);
       return true;
     }
+    case 'read_all_notifications': {
+      const { error } = await db
+        .from('notifications')
+        .update({ read_at: new Date().toISOString() })
+        .eq('user_id', user.id)
+        .is('read_at', null);
+      dbCheck(error);
+      return true;
+    }
     case 'moderate_review': {
       const { data: claims } = await db.auth.getClaims();
       if (!['admin', 'moderator'].includes(claims?.claims.app_metadata?.role))

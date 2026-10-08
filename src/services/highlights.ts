@@ -6,16 +6,20 @@ import { object, uuid, text, reaction } from '@/domain/validation';
 import { validatePost, type PostCategory } from '@/domain/highlights';
 import { REACTIONS } from '@/domain/model';
 import { cleanMarkdown } from '@/services/markdown';
+import { revalidatePath } from 'next/cache';
 
 export async function highlightMutation(input: unknown) {
   const { db, user } = await authenticated(),
     data = object(input);
-  if (data.action === 'create') {
+  if (data.action === 'create' || data.action === 'update') {
+    const editing = data.action === 'update';
+    const existing = await db.from('posts').select('*').eq('id', uuid(data.id)).maybeSingle();
+    dbCheck(existing.error);
+    if (editing && (!existing.data || existing.data.user_id !== user.id))
+      throw new AppError('Momento no encontrado.', 404);
     const post = validatePost(data, user.id);
     post.content = cleanMarkdown(post.content);
-    const existing = await db.from('posts').select('*').eq('id', post.id).maybeSingle();
-    dbCheck(existing.error);
-    if (existing.data) {
+    if (!editing && existing.data) {
       const stored = existing.data;
       if (
         (Object.keys(post) as (keyof typeof post)[]).every(
@@ -28,6 +32,11 @@ export async function highlightMutation(input: unknown) {
         409,
       );
     }
+    if (editing && data.expected_updated_at !== existing.data!.updated_at)
+      throw new AppError(
+        'Este momento cambió. Cancela y vuelve a editar para cargar la versión actual.',
+        409,
+      );
     if (post.game_id) {
       const result = await db.from('games').select('id').eq('id', post.game_id).maybeSingle();
       dbCheck(result.error);
@@ -50,6 +59,28 @@ export async function highlightMutation(input: unknown) {
         file.metadata.size <= 0
       )
         throw new AppError('Captura no encontrada o fuera de los límites.', 400);
+    }
+    if (editing) {
+      const { id, user_id, ...changes } = post;
+      const result = await db
+        .from('posts')
+        .update({ ...changes, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .eq('user_id', user_id)
+        .eq('updated_at', existing.data!.updated_at)
+        .select('id');
+      dbCheck(result.error);
+      if (!result.data?.length)
+        throw new AppError('Este momento cambió. Cancela y vuelve a editar.', 409);
+      const removed = existing.data!.image_urls.filter((path) => !post.image_urls.includes(path));
+      if (removed.length) {
+        const cleanup = await db.storage
+          .from('highlights')
+          .remove(removed.filter((path) => path.startsWith(`${user.id}/${id}/`)));
+        if (cleanup.error) console.error('Highlight storage cleanup failed');
+      }
+      revalidatePath('/highlights');
+      return { id };
     }
     // can_view_post is STABLE and looks up the row; RETURNING can evaluate
     // its SELECT policy before that new row is visible in the statement snapshot.
@@ -177,7 +208,7 @@ export async function highlightFeed(filters: {
       counts.forEach((count) => dbCheck(count.error));
       return {
         ...post,
-        image_urls: [],
+        image_urls: viewer?.id === post.user_id ? post.image_urls : [],
         images: images.data?.flatMap((image) => (image.signedUrl ? [image.signedUrl] : [])) ?? [],
         mediaUnavailable: Boolean(images.error || images.data?.some((image) => image.error)),
         username: players.data?.find((p) => p.id === post.user_id)?.username ?? 'jugador',
