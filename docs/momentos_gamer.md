@@ -55,4 +55,13 @@ bibliotecas privadas, amistades y visibilidad de activity_logs.
   se repitió la matriz de permisos satisfactoriamente antes de desplegar.
 - Evidencia de interfaz con datos desechables: `evidence/momentos-gamer.png`.
 
-El despliegue de producción se registra al finalizar sus comprobaciones.
+## Producción
+
+Desplegado con `npx vercel --prod` en
+`https://savestate-eight.vercel.app/highlights`.
+Deployment `dpl_H5zNT13BTRGTAHvUaEyxjXmuzRUH`, estado READY.
+
+Verificación posterior: `/highlights` responde 200, contiene CSP nonce y
+`frame-src 'self' https://www.youtube-nocookie.com`, y no usa caché compartida.
+Publicar sin sesión responde 401. El navegador renderiza el módulo sin errores
+de consola. Evidencia pública: `evidence/momentos-produccion.png`.
