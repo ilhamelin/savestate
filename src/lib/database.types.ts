@@ -12,6 +12,8 @@ import type {
   ReviewReaction,
   ReviewComment,
 } from '@/domain/model';
+import type { Post, PostReaction, PostComment } from '@/domain/highlights';
+
 type Row<T> = { [K in keyof T]: T[K] };
 type Table<T> = {
   Row: Row<T>;
@@ -22,6 +24,9 @@ type Table<T> = {
 export type Database = {
   public: {
     Tables: {
+      posts: Table<Post>;
+      post_reactions: Table<PostReaction>;
+      post_comments: Table<PostComment>;
       profiles: Table<Profile>;
       games: Table<Game>;
       user_games: Table<UserGame>;
