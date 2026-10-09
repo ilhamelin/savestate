@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { GameCard } from '@/components/game-card';
 import { BacklogPicker } from '@/components/backlog-picker';
 import { filterLibrary, type LibrarySort } from '@/domain/library-view';
+import { libraryPlatformOptions } from '@/domain/library-platforms';
 import { QuickSession } from '@/components/quick-session';
 import {
   LibraryForm,
@@ -19,6 +20,7 @@ import {
   type UserGame,
   type PlayLog,
 } from '@/domain/model';
+const PAGE_SIZE = 5;
 export function Library({
   entries,
   games,
@@ -36,11 +38,14 @@ export function Library({
     [genre, setGenre] = useState('');
   const [sort, setSort] = useState<LibrarySort>('updated');
   const [compact, setCompact] = useState(false);
+  const [page, setPage] = useState(0);
   const gameMap = new Map(games.map((game) => [game.id, game]));
   const gameIds = new Set(entries.map((entry) => entry.game_id));
   const choices = games.filter((game) => gameIds.has(game.id));
-  const platforms = [...new Set(choices.flatMap((game) => game.platforms))].sort();
-  const genres = [...new Set(choices.flatMap((game) => game.genres))].sort();
+  const platforms = libraryPlatformOptions(entries, games, logs);
+  const genres = [
+    ...new Set(choices.flatMap((game) => game.genres).filter((value) => value?.trim())),
+  ].sort((a, b) => a.localeCompare(b, 'es'));
   const visible = filterLibrary(entries, games, logs, {
     query,
     platform,
@@ -48,15 +53,19 @@ export function Library({
     status: filter,
     sort,
   });
+  const totalPages = Math.ceil(visible.length / PAGE_SIZE) || 1;
+  const currentPage = Math.min(page, totalPages - 1);
+  const pagedVisible = visible.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
   function reset() {
     setQuery('');
     setPlatform('');
     setGenre('');
     setFilter('all');
+    setPage(0);
   }
   return (
     <>
-      {editable ? <BacklogPicker entries={entries} games={games} /> : null}
+      {editable ? <BacklogPicker entries={entries} games={games} logs={logs} /> : null}
       {editable ? (
         <details className="panel">
           <summary>Editar mis Top 4 favoritos</summary>
@@ -70,14 +79,23 @@ export function Library({
             type="search"
             maxLength={100}
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setPage(0);
+            }}
             placeholder="Nombre del juego…"
           />
         </label>
         <div className="form-row">
           <label>
-            Plataforma de catálogo
-            <select value={platform} onChange={(event) => setPlatform(event.target.value)}>
+            Plataforma jugada
+            <select
+              value={platform}
+              onChange={(event) => {
+                setPlatform(event.target.value);
+                setPage(0);
+              }}
+            >
               <option value="">Todas las plataformas</option>
               {platforms.map((value) => (
                 <option key={value}>{value}</option>
@@ -86,7 +104,13 @@ export function Library({
           </label>
           <label>
             Género
-            <select value={genre} onChange={(event) => setGenre(event.target.value)}>
+            <select
+              value={genre}
+              onChange={(event) => {
+                setGenre(event.target.value);
+                setPage(0);
+              }}
+            >
               <option value="">Todos los géneros</option>
               {genres.map((value) => (
                 <option key={value}>{value}</option>
@@ -95,7 +119,13 @@ export function Library({
           </label>
           <label>
             Ordenar por
-            <select value={sort} onChange={(event) => setSort(event.target.value as LibrarySort)}>
+            <select
+              value={sort}
+              onChange={(event) => {
+                setSort(event.target.value as LibrarySort);
+                setPage(0);
+              }}
+            >
               <option value="updated">Última actualización</option>
               <option value="title">Título A–Z</option>
               <option value="rating">Mayor puntuación</option>
@@ -121,11 +151,24 @@ export function Library({
         </p>
       </section>
       <div className="filter-buttons">
-        <button aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>
+        <button
+          aria-pressed={filter === 'all'}
+          onClick={() => {
+            setFilter('all');
+            setPage(0);
+          }}
+        >
           Todos ({entries.length})
         </button>
         {GAME_STATUSES.map((value) => (
-          <button key={value} aria-pressed={filter === value} onClick={() => setFilter(value)}>
+          <button
+            key={value}
+            aria-pressed={filter === value}
+            onClick={() => {
+              setFilter(value);
+              setPage(0);
+            }}
+          >
             {STATUS_LABELS[value]} ({entries.filter((e) => e.status === value).length})
           </button>
         ))}
@@ -147,7 +190,7 @@ export function Library({
           </button>
         </div>
       ) : null}
-      {visible.map((entry) => {
+      {pagedVisible.map((entry) => {
         const game = gameMap.get(entry.game_id);
         if (!game) return null;
         const playLogs = logs.filter((log) => log.user_game_id === entry.id);
@@ -227,6 +270,27 @@ export function Library({
           </article>
         );
       })}
+      {entries.length > 0 ? (
+        <div className="filter-buttons" role="group" aria-label="Paginación de biblioteca">
+          <button
+            type="button"
+            disabled={currentPage === 0}
+            onClick={() => setPage(currentPage - 1)}
+          >
+            ← Anterior
+          </button>
+          <span role="status">
+            Página {currentPage + 1} de {totalPages} ({visible.length} títulos)
+          </span>
+          <button
+            type="button"
+            disabled={currentPage >= totalPages - 1}
+            onClick={() => setPage(currentPage + 1)}
+          >
+            Siguiente →
+          </button>
+        </div>
+      ) : null}
     </>
   );
 }

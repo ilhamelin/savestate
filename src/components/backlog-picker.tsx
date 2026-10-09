@@ -2,8 +2,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { backlogCandidates, chooseBacklog } from '@/domain/backlog';
 import { GameCard } from '@/components/game-card';
-import type { Game, UserGame } from '@/domain/model';
-export function BacklogPicker({ entries, games }: { entries: UserGame[]; games: Game[] }) {
+import type { Game, PlayLog, UserGame } from '@/domain/model';
+import { libraryPlatformOptions } from '@/domain/library-platforms';
+export function BacklogPicker({
+  entries,
+  games,
+  logs = [],
+}: {
+  entries: UserGame[];
+  games: Game[];
+  logs?: PlayLog[];
+}) {
   const [platform, setPlatform] = useState('');
   const [genre, setGenre] = useState('');
   const [chosen, setChosen] = useState<Game | null>(null);
@@ -11,7 +20,12 @@ export function BacklogPicker({ entries, games }: { entries: UserGame[]; games: 
   const stop = useRef<(() => void) | null>(null);
   useEffect(() => () => stop.current?.(), []);
   const all = backlogCandidates(entries, games);
-  const candidates = backlogCandidates(entries, games, platform, genre);
+  const candidates = backlogCandidates(entries, games, platform, genre, logs);
+  const platforms = libraryPlatformOptions(
+    entries.filter((entry) => entry.status === 'backlog'),
+    games,
+    logs,
+  );
   const visibleChoice = candidates.find((game) => game.id === chosen?.id);
   return (
     <section className="panel">
@@ -31,7 +45,7 @@ export function BacklogPicker({ entries, games }: { entries: UserGame[]; games: 
             }}
           >
             <option value="">Todas</option>
-            {[...new Set(all.flatMap((game) => game.platforms))].sort().map((value) => (
+            {platforms.map((value) => (
               <option key={value}>{value}</option>
             ))}
           </select>
@@ -47,9 +61,11 @@ export function BacklogPicker({ entries, games }: { entries: UserGame[]; games: 
             }}
           >
             <option value="">Todos</option>
-            {[...new Set(all.flatMap((game) => game.genres))].sort().map((value) => (
-              <option key={value}>{value}</option>
-            ))}
+            {[...new Set(all.flatMap((game) => game.genres).filter((value) => value?.trim()))]
+              .sort((a, b) => a.localeCompare(b, 'es'))
+              .map((value) => (
+                <option key={value}>{value}</option>
+              ))}
           </select>
         </label>
       </div>

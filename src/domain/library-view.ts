@@ -1,4 +1,5 @@
 import type { Game, PlayLog, UserGame } from './model.ts';
+import { matchesLibraryPlatform } from './library-platforms.ts';
 export type LibrarySort = 'updated' | 'title' | 'rating' | 'hours';
 export function filterLibrary(
   entries: UserGame[],
@@ -8,8 +9,13 @@ export function filterLibrary(
 ) {
   const gameMap = new Map(games.map((game) => [game.id, game]));
   const hours = new Map<string, number>();
-  for (const log of logs)
+  const entryLogs = new Map<string, PlayLog[]>();
+  for (const log of logs) {
     hours.set(log.user_game_id, (hours.get(log.user_game_id) ?? 0) + Number(log.hours_played));
+    const group = entryLogs.get(log.user_game_id) ?? [];
+    group.push(log);
+    entryLogs.set(log.user_game_id, group);
+  }
   const normalize = (value: string) =>
     value
       .normalize('NFD')
@@ -23,7 +29,7 @@ export function filterLibrary(
         game &&
         (filters.status === 'all' || entry.status === filters.status) &&
         normalize(game.title).includes(query) &&
-        (!filters.platform || game.platforms.includes(filters.platform)) &&
+        matchesLibraryPlatform(game, entryLogs.get(entry.id) ?? [], filters.platform) &&
         (!filters.genre || game.genres.includes(filters.genre))
       );
     })

@@ -17,10 +17,10 @@ test('biblioteca: combina filtros, ignora acentos y ordena notas/horas sin mutar
     { id: 'd', game_id: 'missing', status: 'playing', rating: 10, updated_at: '2026-01-04' },
   ] as UserGame[];
   const logs = [
-    { user_game_id: 'a', hours_played: 10 },
-    { user_game_id: 'a', hours_played: 12 },
-    { user_game_id: 'b', hours_played: 8 },
-    { user_game_id: 'c', hours_played: 21 },
+    { user_game_id: 'a', hours_played: 10, platform_played: 'GB' },
+    { user_game_id: 'a', hours_played: 12, platform_played: 'GB' },
+    { user_game_id: 'b', hours_played: 8, platform_played: 'PC' },
+    { user_game_id: 'c', hours_played: 21, platform_played: 'SNES' },
     { user_game_id: 'other', hours_played: 10000 },
   ] as PlayLog[];
   const filters = { query: '', status: 'all', platform: '', genre: '', sort: 'updated' as const };
