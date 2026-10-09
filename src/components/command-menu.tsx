@@ -122,6 +122,7 @@ export function CommandMenu({
     ['Buscar compañeros de partida', '/parties'],
     ['Momentos Gamer', '/highlights'],
     ['Foro · SaveState Boards', '/forum'],
+    ['Discord · Terminal comunitaria', '/community/discord'],
     [
       authenticated ? 'Mi perfil' : 'Iniciar sesión',
       authenticated

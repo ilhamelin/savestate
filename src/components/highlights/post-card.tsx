@@ -5,6 +5,7 @@ import type { highlightFeed } from '@/services/highlights';
 import { PostMedia } from './post-media';
 import { PostActions } from './post-actions';
 import { PostEditor } from './post-editor';
+import { SocialEmbeds } from '@/components/social-embeds';
 type FeedPost = Awaited<ReturnType<typeof highlightFeed>>['posts'][number];
 export function PostCard({ post, viewerId }: { post: FeedPost; viewerId: string | null }) {
   return (
@@ -41,6 +42,7 @@ export function PostCard({ post, viewerId }: { post: FeedPost; viewerId: string 
         title={post.title}
         unavailable={post.mediaUnavailable}
       />
+      <SocialEmbeds content={post.content} />
       <PostActions
         postId={post.id}
         viewerId={viewerId}

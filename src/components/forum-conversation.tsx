@@ -13,6 +13,7 @@ import {
 } from '@/domain/forum';
 import { GamerRoom } from './gamer-room';
 import { ForumEditor } from './forum-editor';
+import { SocialEmbeds } from './social-embeds';
 function Author({ author }: { author: ForumAuthor | null }) {
   if (!author) return <aside>Jugador</aside>;
   return (
@@ -119,6 +120,7 @@ export function ForumConversation({
         <div className="forum-message-body">
           <p className="muted">Mensaje inicial · {thread.created_at.slice(0, 10)}</p>
           <div className="review-body" dangerouslySetInnerHTML={{ __html: html }} />
+          <SocialEmbeds content={thread.content} />
         </div>
       </article>
       {replies.map((reply) => (
@@ -139,6 +141,7 @@ export function ForumConversation({
               </blockquote>
             ) : null}
             <div className="review-body" dangerouslySetInnerHTML={{ __html: reply.html }} />
+            <SocialEmbeds content={reply.content} />
             <div className="tags">
               {FORUM_REACTIONS.map((type) => (
                 <button

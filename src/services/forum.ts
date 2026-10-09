@@ -1,4 +1,5 @@
 import 'server-only';
+import { scheduleDiscordCheckpoint } from '@/services/discord';
 import { serverClient } from '@/integrations/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/database.types';
@@ -250,6 +251,15 @@ export async function forumMutation(input: unknown) {
     dbCheck(result.error);
     revalidatePath('/forum');
     revalidateTag('forum-directory', { expire: 0 });
+    if (process.env.DISCORD_WEBHOOK_URL) {
+      const profile = await db.from('profiles').select('username').eq('id', user.id).maybeSingle();
+      if (!profile.error && profile.data)
+        scheduleDiscordCheckpoint({
+          type: 'forum',
+          username: profile.data.username,
+          details: `abrió «${validated.title}» en #${validated.category_id}.`,
+        });
+    }
     return result.data;
   }
   if (data.action === 'reply') {

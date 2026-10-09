@@ -6,6 +6,7 @@ import { XP_ACTIONS, type XpAction } from '@/domain/progression';
 import { uuid } from '@/domain/validation';
 import type { Database } from '@/lib/database.types';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { scheduleDiscordCheckpoint } from '@/services/discord';
 
 // This privileged client is confined to the XP RPC; caller identity comes from authenticated services.
 export async function grantXp(
@@ -31,6 +32,15 @@ export async function grantXp(
   if (result.error?.code === 'PGRST202')
     throw new AppError('Aplica la migración 017 para activar la progresión.', 503);
   dbCheck(result.error);
+  if (result.data?.success && result.data.leveled_up && process.env.DISCORD_WEBHOOK_URL) {
+    const profile = await db.from('profiles').select('username').eq('id', userId).maybeSingle();
+    if (!profile.error && profile.data)
+      scheduleDiscordCheckpoint({
+        type: 'levelup',
+        username: profile.data.username,
+        details: `alcanzó el nivel ${result.data.level}.`,
+      });
+  }
   return result.data;
 }
 export async function grantCompletionXp(
@@ -46,8 +56,27 @@ export async function grantCompletionXp(
     .single();
   dbCheck(result.error);
   const state = result.data?.status;
-  if (state === 'cleared' || state === 'platinum')
-    await grantXp(userId, XP_ACTIONS[state], state, gameId);
+  if (state === 'cleared' || state === 'platinum') {
+    const award = await grantXp(userId, XP_ACTIONS[state], state, gameId);
+    if (state === 'platinum' && award?.success && process.env.DISCORD_WEBHOOK_URL) {
+      const [profile, game] = await Promise.all([
+        db.from('profiles').select('username,library_private').eq('id', userId).maybeSingle(),
+        db.from('games').select('title').eq('id', gameId).maybeSingle(),
+      ]);
+      if (
+        !profile.error &&
+        !game.error &&
+        profile.data &&
+        !profile.data.library_private &&
+        game.data
+      )
+        scheduleDiscordCheckpoint({
+          type: 'platinum',
+          username: profile.data.username,
+          details: `platinó ${game.data.title}.`,
+        });
+    }
+  }
 }
 export async function grantSessionXp(
   db: SupabaseClient<Database>,

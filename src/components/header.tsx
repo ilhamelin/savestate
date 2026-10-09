@@ -37,6 +37,7 @@ export async function Header() {
         <Link href="/parties">Compañeros</Link>
         <Link href="/lists">Listas</Link>
         <Link href="/players">Jugadores</Link>
+        <Link href="/community/discord">Discord</Link>
       </nav>
       <div className="header-actions">
         <CommandMenu

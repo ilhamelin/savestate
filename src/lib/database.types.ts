@@ -100,6 +100,7 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      claim_discord_message_slot: { Args: Record<string, never>; Returns: number };
       get_player_friends: { Args: { p_user_id: string }; Returns: PlayerFriend[] };
       award_xp: {
         Args: { p_user_id: string; p_amount: number; p_action: string; p_reference_id?: string };
