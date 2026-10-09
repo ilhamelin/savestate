@@ -1,7 +1,7 @@
 import 'server-only';
 import { authenticated } from '@/lib/session';
 import { dbCheck } from '@/lib/http';
-import type { NotificationSummary } from '@/domain/notifications';
+import { pendingNotificationFriendship, type NotificationSummary } from '@/domain/notifications';
 
 export async function notificationSummary(): Promise<NotificationSummary> {
   const { db, user } = await authenticated();
@@ -41,16 +41,37 @@ export async function notificationSummary(): Promise<NotificationSummary> {
     ? await db.from('forum_threads').select('id,category_id').in('id', threadIds)
     : { data: [], error: null };
   dbCheck(threads.error);
+  const requestActors = [
+    ...new Set(rows.filter((row) => row.kind === 'friend_request').map((row) => row.actor_id)),
+  ];
+  const friendships = requestActors.length
+    ? await db
+        .from('friendships')
+        .select('id,sender_id,created_at')
+        .eq('receiver_id', user.id)
+        .eq('status', 'pending')
+        .in('sender_id', requestActors)
+    : { data: [], error: null };
+  dbCheck(friendships.error);
+  const seenRequests = new Set<string>();
   return {
     unreadCount: unread.count ?? 0,
     generatedAt: new Date().toISOString(),
-    items: rows.map(({ actor_id, ...row }) => ({
-      ...row,
-      username: profiles.data?.find((p) => p.id === actor_id)?.username ?? null,
-      badgeName: badges.data?.find((badge) => badge.id === row.badge_id)?.name ?? null,
-      forumHref: threads.data?.find((t) => t.id === row.forum_thread_id)
-        ? `/forum/${threads.data.find((t) => t.id === row.forum_thread_id)!.category_id}/${row.forum_thread_id}`
-        : null,
-    })),
+    items: rows.map(({ actor_id, ...row }) => {
+      const friendshipId =
+        row.kind === 'friend_request' && !seenRequests.has(actor_id)
+          ? pendingNotificationFriendship({ ...row, actor_id }, friendships.data ?? [])
+          : null;
+      if (row.kind === 'friend_request') seenRequests.add(actor_id);
+      return {
+        ...row,
+        friendshipId,
+        username: profiles.data?.find((p) => p.id === actor_id)?.username ?? null,
+        badgeName: badges.data?.find((badge) => badge.id === row.badge_id)?.name ?? null,
+        forumHref: threads.data?.find((t) => t.id === row.forum_thread_id)
+          ? `/forum/${threads.data.find((t) => t.id === row.forum_thread_id)!.category_id}/${row.forum_thread_id}`
+          : null,
+      };
+    }),
   };
 }

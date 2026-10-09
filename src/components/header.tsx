@@ -39,7 +39,11 @@ export async function Header() {
         <Link href="/players">Jugadores</Link>
       </nav>
       <div className="header-actions">
-        <CommandMenu authenticated={Boolean(user)} username={profile?.username ?? null} />
+        <CommandMenu
+          authenticated={Boolean(user)}
+          username={profile?.username ?? null}
+          userId={user?.id ?? null}
+        />
         {user ? <NotificationBell key={user.id} userId={user.id} /> : null}
         <CrtToggle />
         <AudioToggle />

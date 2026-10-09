@@ -8,18 +8,22 @@ import { readJsonResponse } from '@/lib/api-response';
 import { browserClient } from '@/integrations/supabase/browser';
 import { isAudioEnabled, subscribeAudio, toggleAudio, soundFx } from '@/lib/sound';
 import { toggleCrt } from '@/components/ui/crt-toggle';
+type PlayerResult = { id: string; username: string };
 export function CommandMenu({
   authenticated,
   username,
+  userId,
 }: {
   authenticated: boolean;
   username: string | null;
+  userId: string | null;
 }) {
   const [open, setOpen] = useState(false),
     [query, setQuery] = useState('');
   const [results, setResults] = useState<Game[]>([]),
     [loading, setLoading] = useState(false),
     [error, setError] = useState('');
+  const [players, setPlayers] = useState<PlayerResult[]>([]);
   const enabled = useSyncExternalStore(subscribeAudio, isAudioEnabled, () => false);
   const router = useRouter();
   const trigger = useRef<HTMLButtonElement>(null);
@@ -36,6 +40,7 @@ export function CommandMenu({
     setOpen(value);
     setQuery('');
     setResults([]);
+    setPlayers([]);
     setError('');
     setLoading(false);
   }
@@ -51,6 +56,7 @@ export function CommandMenu({
         setOpen((previous) => !previous);
         setQuery('');
         setResults([]);
+        setPlayers([]);
         setError('');
         setLoading(false);
       }
@@ -59,18 +65,39 @@ export function CommandMenu({
     return () => window.removeEventListener('keydown', shortcut);
   }, []);
   useEffect(() => {
-    if (!open || query.trim().length < 3) return;
+    const search = query.trim();
+    const playersOnly = search.startsWith('@');
+    const playerQuery = search.replace(/^@/, '');
+    if (!open || (playersOnly ? !playerQuery : search.length < 3)) return;
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       try {
-        const response = await fetch(`/api/catalogue?${new URLSearchParams({ q: query.trim() })}`, {
-          signal: controller.signal,
-        });
-        const data = await readJsonResponse<{ games: Game[]; message: string | null }>(response);
-        if (!controller.signal.aborted) {
-          setResults(data.games.slice(0, 8));
-          setError(data.message ?? '');
-        }
+        const searches = [
+          async () => {
+            const response = await fetch(
+              `/api/players?${new URLSearchParams({ q: playerQuery })}`,
+              { signal: controller.signal },
+            );
+            const data = await readJsonResponse<{ players: PlayerResult[] }>(response);
+            if (!controller.signal.aborted) setPlayers(data.players);
+          },
+        ];
+        if (!playersOnly)
+          searches.push(async () => {
+            const response = await fetch(`/api/catalogue?${new URLSearchParams({ q: search })}`, {
+              signal: controller.signal,
+            });
+            const data = await readJsonResponse<{ games: Game[]; message: string | null }>(
+              response,
+            );
+            if (!controller.signal.aborted) {
+              setResults(data.games.slice(0, 8));
+              setError(data.message ?? '');
+            }
+          });
+        const outcomes = await Promise.allSettled(searches.map((search) => search()));
+        const failure = outcomes.find((outcome) => outcome.status === 'rejected');
+        if (failure?.status === 'rejected') throw failure.reason;
       } catch (error) {
         if (!controller.signal.aborted)
           setError(error instanceof Error ? error.message : 'No se pudo buscar.');
@@ -90,8 +117,7 @@ export function CommandMenu({
   }
   const links: [string, string][] = [
     ['Explorar catálogo', '/explore'],
-    ['Mi biblioteca', '/library'],
-    ['Mis listas', '/lists'],
+    ['Listas de la comunidad', '/lists'],
     ['Transmisión', '/feed'],
     ['Buscar compañeros de partida', '/parties'],
     ['Momentos Gamer', '/highlights'],
@@ -105,13 +131,26 @@ export function CommandMenu({
         : '/login',
     ],
   ];
+  const personalLinks: [string, string][] = authenticated
+    ? [
+        ['Mi biblioteca', '/library'],
+        ['Mis listas', userId ? `/lists?player=${encodeURIComponent(userId)}` : '/lists'],
+        [
+          'Mi vitrina de logros',
+          username
+            ? `/players/${encodeURIComponent(username)}#achievements-showcase-heading`
+            : '/settings',
+        ],
+        ['Ajustes de mi cuenta', '/settings'],
+      ]
+    : [];
   return (
     <>
       <button
         ref={trigger}
         type="button"
         className="crt-toggle"
-        aria-label="Buscar juegos, Control o Comando K"
+        aria-label="Buscar juegos y jugadores, Control o Comando K"
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => {
@@ -131,15 +170,18 @@ export function CommandMenu({
       >
         <h2 className="command-title">Tu próximo checkpoint</h2>
         <Command.Input
-          aria-label="Buscar juegos o secciones"
-          placeholder="Buscar juego o sección…"
+          aria-label="Buscar juegos, jugadores o secciones"
+          placeholder="Buscar juego, @jugador o sección…"
           maxLength={80}
           value={query}
           onValueChange={(value) => {
             setQuery(value);
             setResults([]);
+            setPlayers([]);
             setError('');
-            setLoading(value.trim().length >= 3);
+            setLoading(
+              value.trim().startsWith('@') ? value.trim().length > 1 : value.trim().length >= 3,
+            );
           }}
         />
         <p className="muted command-help" role="status">
@@ -163,7 +205,31 @@ export function CommandMenu({
                 </Command.Item>
               ))}
           </Command.Group>
-          {query.trim().length >= 3 ? (
+          {personalLinks.length ? (
+            <Command.Group heading="Mis checkpoints">
+              {personalLinks
+                .filter(([label]) => label.toLowerCase().includes(query.toLowerCase().trim()))
+                .map(([label, path]) => (
+                  <Command.Item key={path} value={path} onSelect={() => navigate(path)}>
+                    {label}
+                  </Command.Item>
+                ))}
+            </Command.Group>
+          ) : null}
+          {players.length ? (
+            <Command.Group heading="Jugadores">
+              {players.map((player) => (
+                <Command.Item
+                  key={player.id}
+                  value={`player:${player.id}`}
+                  onSelect={() => navigate(`/players/${encodeURIComponent(player.username)}`)}
+                >
+                  @{player.username}
+                </Command.Item>
+              ))}
+            </Command.Group>
+          ) : null}
+          {query.trim().length >= 3 && !query.trim().startsWith('@') ? (
             <Command.Group heading="Juegos">
               {results.map((game) => (
                 <Command.Item

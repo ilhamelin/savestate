@@ -22,6 +22,8 @@ export function NotificationBell({ userId }: { userId: string }) {
     trigger = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null),
     id = useId();
+  const responding = useRef(false);
+  const [responseId, setResponseId] = useState<string | null>(null);
   const pathname = usePathname(),
     router = useRouter();
   useEffect(() => {
@@ -38,7 +40,7 @@ export function NotificationBell({ userId }: { userId: string }) {
           cache: 'no-store',
         });
         const result = await readJsonResponse<{ data: NotificationSummary }>(response);
-        if (!disposed && !requestController.signal.aborted) {
+        if (!disposed && !requestController.signal.aborted && !responding.current) {
           setSummary(result.data);
           setError('');
         }
@@ -111,6 +113,63 @@ export function NotificationBell({ userId }: { userId: string }) {
       setPending(false);
     }
   }
+  async function respond(
+    item: NotificationSummary['items'][number],
+    status: 'accepted' | 'rejected',
+  ) {
+    if (!item.friendshipId || responding.current) return;
+    responding.current = true;
+    setResponseId(item.id);
+    setError('');
+    try {
+      await api('social', { action: 'respond', id: item.friendshipId, status });
+      setSummary((current) =>
+        current
+          ? {
+              ...current,
+              items: current.items.map((notification) =>
+                notification.friendshipId === item.friendshipId
+                  ? { ...notification, friendshipId: null }
+                  : notification,
+              ),
+            }
+          : current,
+      );
+      try {
+        await api('community', { action: 'read_notification', id: item.id });
+        setSummary((current) =>
+          current
+            ? {
+                ...current,
+                unreadCount: Math.max(
+                  0,
+                  current.unreadCount -
+                    (current.items.some(
+                      (notification) => notification.id === item.id && !notification.read_at,
+                    )
+                      ? 1
+                      : 0),
+                ),
+                items: current.items.map((notification) =>
+                  notification.id === item.id
+                    ? { ...notification, read_at: new Date().toISOString() }
+                    : notification,
+                ),
+              }
+            : current,
+        );
+      } catch {
+        setError('Solicitud respondida; no se pudo marcar la señal como leída.');
+      }
+      router.refresh();
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : 'No se pudo responder la solicitud.');
+    } finally {
+      responding.current = false;
+      setResponseId(null);
+      setRevision((n) => n + 1);
+    }
+  }
   const count = summary?.unreadCount ?? 0;
   return (
     <div
@@ -166,6 +225,27 @@ export function NotificationBell({ userId }: { userId: string }) {
               <time dateTime={item.created_at}>
                 {notificationAge(item.created_at, summary.generatedAt)}
               </time>
+              {item.kind === 'friend_request' && item.friendshipId ? (
+                <div className="filter-buttons">
+                  <button
+                    type="button"
+                    className="button outline small"
+                    disabled={responseId !== null || pending}
+                    onClick={() => void respond(item, 'accepted')}
+                  >
+                    ✔ Aceptar
+                  </button>
+                  <button
+                    type="button"
+                    className="button outline small"
+                    disabled={responseId !== null || pending}
+                    onClick={() => void respond(item, 'rejected')}
+                  >
+                    ✖ Rechazar
+                  </button>
+                  {responseId === item.id ? <span role="status">Respondiendo…</span> : null}
+                </div>
+              ) : null}
             </div>
           ))}
           {summary && !summary.items.length ? (
@@ -182,7 +262,7 @@ export function NotificationBell({ userId }: { userId: string }) {
           <button
             type="button"
             className="button outline small"
-            disabled={pending || !count}
+            disabled={pending || responseId !== null || !count}
             onClick={markAll}
           >
             {pending ? 'Marcando…' : 'Marcar todas como leídas'}

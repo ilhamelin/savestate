@@ -21,6 +21,7 @@ export interface NotificationSummary {
     username: string | null;
     badgeName?: string | null;
     forumHref?: string | null;
+    friendshipId?: string | null;
   }[];
 }
 export function notificationAge(createdAt: string, now: string) {
@@ -32,5 +33,18 @@ export function notificationAge(createdAt: string, now: string) {
   return new Intl.RelativeTimeFormat('es', { numeric: 'always' }).format(
     -Math.floor(seconds / divisor),
     unit,
+  );
+}
+export function pendingNotificationFriendship(
+  notification: { kind: string; actor_id: string; created_at: string },
+  requests: { id: string; sender_id: string; created_at: string }[],
+) {
+  if (notification.kind !== 'friend_request') return null;
+  return (
+    requests.find(
+      (request) =>
+        request.sender_id === notification.actor_id &&
+        Date.parse(request.created_at) <= Date.parse(notification.created_at),
+    )?.id ?? null
   );
 }
