@@ -5,6 +5,7 @@ import { object } from '@/domain/validation';
 import { steamSyncQuota, type SteamSyncState } from '@/domain/steam-sync';
 import { ownedSteamLibrary } from '@/integrations/steam/server';
 import { applySteamSnapshot } from '@/integrations/steam/persistence';
+import { grantXp } from '@/services/progression';
 
 export async function steamSyncStatus(): Promise<SteamSyncState> {
   const { db, user } = await authenticated();
@@ -64,6 +65,7 @@ export async function steamQuickSync(input: unknown) {
   dbCheck(updated.error);
   const result = updated.data?.[0];
   if (!result) throw new AppError('No se pudo confirmar la actualización de horas.', 503);
+  await grantXp(user.id, 200, 'steam_connected', 'Steam');
   const state = await steamSyncStatus();
   return {
     success: true,

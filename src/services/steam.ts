@@ -6,6 +6,7 @@ import { matchingTitle, steamStatus } from '@/domain/steam';
 import { ownedSteamLibrary, steamTicket, readSteamTicket } from '@/integrations/steam/server';
 import { catalogue } from '@/services/catalogue';
 import { parseFilters } from '@/integrations/igdb/query';
+import { grantXp, grantCompletionXp } from '@/services/progression';
 
 export async function steamMutation(input: unknown) {
   const { db, user } = await authenticated(),
@@ -38,6 +39,7 @@ export async function steamMutation(input: unknown) {
     if (linked.error?.code === '42703' || linked.error?.code === 'PGRST204')
       throw new AppError('Aplica la migración 014 para activar la sincronización de Steam.', 503);
     dbCheck(linked.error);
+    await grantXp(user.id, 200, 'steam_connected', 'Steam');
   }
   if (data.action === 'link') {
     await linkAccount();
@@ -84,6 +86,7 @@ export async function steamMutation(input: unknown) {
   if (result.error?.code === 'PGRST202')
     throw new AppError('Aplica la migración 010 para activar el guardado de importaciones.', 503);
   dbCheck(result.error);
+  await grantCompletionXp(db, user.id, gameId);
   if (source.steamid) await linkAccount();
   return {
     state: result.data,

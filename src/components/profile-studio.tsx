@@ -23,6 +23,13 @@ import { HardwareSelector } from '@/components/hardware-selector';
 import { ownedPlatforms } from '@/domain/hardware';
 import { WALLPAPERS } from '@/domain/wallpaper';
 import { ProfileWallpaper } from '@/components/profile-wallpaper';
+import {
+  PLAYER_TITLES,
+  AVATAR_FRAMES,
+  equippedRewards,
+  type PlayerTitle,
+  type AvatarFrame,
+} from '@/domain/progression';
 
 type Media = 'avatar' | 'banner' | 'wallpaper';
 const MEDIA_KEYS = {
@@ -163,6 +170,10 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
       next.social_links = socialLinks(next.social_links);
       next.room_theme = roomTheme(next.room_theme);
       next.owned_platforms = ownedPlatforms(next.owned_platforms);
+      Object.assign(
+        next,
+        equippedRewards(next.equipped_title, next.equipped_frame, profile.level ?? 1),
+      );
       const hasMedia = Object.keys(pendingMedia.current).length > 0;
       const objects = hasMedia
         ? await db.storage.from('profiles').list(profile.id, { limit: 10 })
@@ -268,7 +279,7 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
             <ProfileWallpaper url={draft.wallpaper_url}>
               <GamerRoom theme={draft.room_theme}>
                 <ProfileIdentity
-                  profile={draft}
+                  profile={{ ...draft, xp: profile.xp ?? 0, level: profile.level ?? 1 }}
                   headingLevel={2}
                   avatarOverlay={
                     <button
@@ -436,6 +447,42 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
               value={draft.owned_platforms}
               onChange={(value) => update('owned_platforms', value)}
             />
+            <section className="panel form-stack" aria-label="Nivel y Cosméticos">
+              <h2>Nivel y Cosméticos</h2>
+              <label>
+                Título activo
+                <select
+                  value={draft.equipped_title}
+                  onChange={(event) => update('equipped_title', event.target.value as PlayerTitle)}
+                >
+                  {PLAYER_TITLES.filter((item) => item.level <= (profile.level ?? 1)).map(
+                    (item) => (
+                      <option key={item.name} value={item.name}>
+                        {item.name}
+                      </option>
+                    ),
+                  )}
+                </select>
+              </label>
+              <label>
+                Marco de avatar
+                <select
+                  value={draft.equipped_frame}
+                  onChange={(event) => update('equipped_frame', event.target.value as AvatarFrame)}
+                >
+                  {AVATAR_FRAMES.filter((item) => item.level <= (profile.level ?? 1)).map(
+                    (item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
+                      </option>
+                    ),
+                  )}
+                </select>
+              </label>
+              <p className="muted">
+                La tarjeta muestra tus cosméticos al instante; guarda para equiparlos.
+              </p>
+            </section>
             <label>
               Habitación gamer
               <select

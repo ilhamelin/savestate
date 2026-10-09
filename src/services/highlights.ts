@@ -7,6 +7,7 @@ import { validatePost, type PostCategory } from '@/domain/highlights';
 import { REACTIONS } from '@/domain/model';
 import { cleanMarkdown } from '@/services/markdown';
 import { revalidatePath } from 'next/cache';
+import { grantXp } from '@/services/progression';
 
 export async function highlightMutation(input: unknown) {
   const { db, user } = await authenticated(),
@@ -25,8 +26,10 @@ export async function highlightMutation(input: unknown) {
         (Object.keys(post) as (keyof typeof post)[]).every(
           (key) => JSON.stringify(stored[key]) === JSON.stringify(post[key]),
         )
-      )
+      ) {
+        await grantXp(user.id, 40, 'highlight', stored.id);
         return { id: stored.id };
+      }
       throw new AppError(
         'Este intento ya fue publicado con otros datos. Recarga para crear otro momento.',
         409,
@@ -86,6 +89,7 @@ export async function highlightMutation(input: unknown) {
     // its SELECT policy before that new row is visible in the statement snapshot.
     const result = await db.from('posts').insert(post);
     dbCheck(result.error);
+    await grantXp(user.id, 40, 'highlight', post.id);
     return { id: post.id };
   }
   const id = uuid(data.post_id);

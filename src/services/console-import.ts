@@ -12,6 +12,7 @@ import {
 import { catalogue } from '@/services/catalogue';
 import { parseFilters } from '@/integrations/igdb/query';
 import { fetchPsnTitles, fetchXboxTitles } from '@/integrations/consoles/server';
+import { grantXp, grantCompletionXp } from '@/services/progression';
 
 export async function consoleImportMutation(input: unknown) {
   const { db, user } = await authenticated();
@@ -50,10 +51,15 @@ export async function consoleImportMutation(input: unknown) {
       throw new AppError('Aplica la migración 016 para guardar el identificador.', 503);
     dbCheck(saved.error);
 
-    if (source === 'PlayStation') {
-      return await fetchPsnTitles(identity);
-    }
-    return await fetchXboxTitles(identity);
+    const titles =
+      source === 'PlayStation' ? await fetchPsnTitles(identity) : await fetchXboxTitles(identity);
+    await grantXp(
+      user.id,
+      200,
+      source === 'PlayStation' ? 'psn_connected' : 'xbox_connected',
+      source,
+    );
+    return titles;
   }
   if (data.action === 'preview')
     return parseConsoleImport(data.content, data.format, source, data.platform);
@@ -85,6 +91,7 @@ export async function consoleImportMutation(input: unknown) {
   if (result.error?.code === 'PGRST202')
     throw new AppError('Aplica la migración 016 para importar juegos de consola.', 503);
   dbCheck(result.error);
+  await grantCompletionXp(db, user.id, uuid(data.game_id));
   return {
     state: result.data,
     message:

@@ -21,6 +21,8 @@ test('estudio: detecta cambios de identidad, imágenes, privacidad y enlaces; no
     { username: 'otro' },
     { psn_id: 'psn_player' },
     { xbox_gamertag: 'Xbox Player' },
+    { equipped_title: 'Button Masher' as const },
+    { equipped_frame: 'bronze' as const },
     { avatar_url: 'blob:avatar' },
     { banner_url: 'blob:banner' },
     { wallpaper_url: '/wallpapers/deep_space.svg' },

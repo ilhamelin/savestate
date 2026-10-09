@@ -7,6 +7,7 @@ import { roomTheme } from '@/domain/arcade';
 import { ownedPlatforms } from '@/domain/hardware';
 import { wallpaperForDisplay } from '@/domain/wallpaper';
 import { consoleIdentity } from '@/domain/console-import';
+import { equippedRewards } from '@/domain/progression';
 function mediaUrl(input: unknown, userId: string, wallpaper = false): string | null {
   if (input === null || input === '') return null;
   const value = text(input, 'Imagen', 500);
@@ -34,11 +35,24 @@ function mediaUrl(input: unknown, userId: string, wallpaper = false): string | n
 export async function profileMutation(input: unknown) {
   const { db, user } = await authenticated();
   const data = object(input);
+  const existing = await db
+    .from('profiles')
+    .select('level,equipped_title,equipped_frame')
+    .eq('id', user.id)
+    .single();
+  dbCheck(existing.error);
+  if (!existing.data) throw new AppError('Perfil no encontrado.', 404);
+  const cosmetics = equippedRewards(
+    data.equipped_title ?? existing.data.equipped_title,
+    data.equipped_frame ?? existing.data.equipped_frame,
+    existing.data.level,
+  );
   if (!['cyan', 'green', 'pink', 'amber'].includes(String(data.theme_color)))
     throw new AppError('Tema inválido.', 400);
   const { data: row, error } = await db
     .from('profiles')
     .update({
+      ...cosmetics,
       ...(data.psn_id === undefined ? {} : { psn_id: consoleIdentity(data.psn_id) }),
       ...(data.xbox_gamertag === undefined
         ? {}

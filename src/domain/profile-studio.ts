@@ -13,7 +13,7 @@ export type DraftProfile = Pick<
   | 'social_links'
   | 'owned_platforms'
 > &
-  Partial<Pick<Profile, 'psn_id' | 'xbox_gamertag'>>;
+  Partial<Pick<Profile, 'psn_id' | 'xbox_gamertag' | 'equipped_title' | 'equipped_frame'>>;
 export const SOCIAL_KEYS = ['steam', 'discord', 'twitch', 'github', 'x'] as const;
 export const PROFILE_COLORS: Record<Theme, string> = {
   cyan: '#00f0ff',
@@ -30,6 +30,8 @@ export const QUICK_STATUSES = [
 ] as const;
 export function profileDraft(profile: DraftProfile): DraftProfile {
   return {
+    equipped_title: profile.equipped_title ?? 'Insert Coin',
+    equipped_frame: profile.equipped_frame ?? 'default',
     psn_id: profile.psn_id ?? null,
     xbox_gamertag: profile.xbox_gamertag ?? null,
     username: profile.username,

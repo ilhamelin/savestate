@@ -15,6 +15,7 @@ import { cleanMarkdown, renderMarkdown } from '@/services/markdown';
 import { sessionMinutes, accumulatedHours } from '@/domain/quick-session';
 import { favoriteSlot, favoriteGame } from '@/domain/top4';
 import { revalidatePath } from 'next/cache';
+import { grantXp, grantCompletionXp, grantSessionXp } from '@/services/progression';
 export async function libraryMutation(input: unknown) {
   const { db, user } = await authenticated();
   const data = object(input);
@@ -61,7 +62,16 @@ export async function libraryMutation(input: unknown) {
           .select()
           .maybeSingle();
         dbCheck(error);
-        if (updated) return updated;
+        if (updated) {
+          await grantSessionXp(
+            db,
+            user.id,
+            updated.user_game_id,
+            updated.id,
+            Number(updated.hours_played),
+          );
+          return updated;
+        }
       }
       throw new AppError(
         'La partida cambió mientras guardabas. Revisa sus horas antes de volver a intentarlo.',
@@ -110,7 +120,10 @@ export async function libraryMutation(input: unknown) {
         .select()
         .maybeSingle();
       dbCheck(insertError);
-      if (inserted) return inserted;
+      if (inserted) {
+        await grantCompletionXp(db, user.id, gameId);
+        return inserted;
+      }
       const { data: row, error } = await db
         .from('user_games')
         .update(changes)
@@ -119,6 +132,7 @@ export async function libraryMutation(input: unknown) {
         .select()
         .single();
       dbCheck(error);
+      await grantCompletionXp(db, user.id, gameId);
       return row;
     }
     case 'delete': {
@@ -139,10 +153,16 @@ export async function libraryMutation(input: unknown) {
     }
     case 'log': {
       const log = validatePlayLog(data);
+      const previous = data.id
+        ? await db.from('play_logs').select('hours_played').eq('id', uuid(data.id)).single()
+        : null;
+      if (previous) dbCheck(previous.error);
       const { data: row, error } = data.id
         ? await db.from('play_logs').update(log).eq('id', uuid(data.id)).select().single()
         : await db.from('play_logs').insert(log).select().single();
       dbCheck(error);
+      if (row && Number(row.hours_played) > Number(previous?.data?.hours_played ?? 0))
+        await grantSessionXp(db, user.id, row.user_game_id, row.id, Number(row.hours_played));
       return row;
     }
     case 'delete_log': {
@@ -167,6 +187,7 @@ export async function libraryMutation(input: unknown) {
         p_has_spoilers: bool(data.has_spoilers, 'Spoilers'),
       });
       dbCheck(error);
+      if (markdown.trim().length >= 100) await grantXp(user.id, 75, 'review', uuid(data.game_id));
       return id;
     }
     case 'delete_review': {

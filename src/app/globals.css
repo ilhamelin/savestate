@@ -1,7 +1,5 @@
 @import 'tailwindcss';
-@import './arcade.css';
-@import './badges.css';
-@import './evolution.css';
+
 @import './forum.css';
 @import './qol.css';
 @import './dossier.css';
@@ -1596,3 +1594,155 @@ nav a:hover,
   border-top: 1px solid var(--line);
   padding-top: 16px;
 }
+
+.avatar-container {
+  position: relative;
+  flex: 0 0 auto;
+  width: fit-content;
+  align-self: flex-start;
+  margin-top: 8px;
+}
+.frame-overlay {
+  position: absolute;
+  inset: -4px;
+  pointer-events: none;
+  border: 3px solid transparent;
+  border-radius: 3px;
+}
+.frame-bronze .frame-overlay {
+  border-color: #ba8047;
+  box-shadow:
+    0 0 0 2px #503520,
+    0 0 14px #ba804744;
+}
+.frame-famicom .frame-overlay {
+  border-color: #bd3036;
+  box-shadow:
+    4px 4px 0 #e6c07b,
+    -4px -4px 0 #e6c07b;
+  border-radius: 0;
+}
+.frame-neon .frame-overlay {
+  border-color: #00f0ff;
+  box-shadow:
+    0 0 16px #00f0ff99,
+    inset 0 0 8px #00f0ff66;
+}
+.frame-gold .frame-overlay {
+  border-color: #ffd34e;
+  box-shadow:
+    3px 3px 0 #83601c,
+    0 0 12px #ffd34e66;
+}
+.frame-crt .frame-overlay {
+  border-color: #33ff66;
+  background: repeating-linear-gradient(transparent 0 3px, #33ff661a 3px 4px);
+  box-shadow:
+    -2px 0 #ff0055,
+    2px 0 #00f0ff;
+}
+.frame-platinum .frame-overlay {
+  border-color: #dedff6;
+  box-shadow: 0 0 14px #bfc9ff99;
+}
+.frame-vaporwave .frame-overlay {
+  border-color: #ff74d4;
+  box-shadow:
+    -3px -3px 0 #b071ff,
+    3px 3px 0 #ffbd70;
+}
+.frame-boss .frame-overlay {
+  border-color: #ffe478;
+  box-shadow:
+    0 0 18px #ffe47899,
+    -3px 0 #ff74d4,
+    3px 0 #00f0ff;
+  animation: boss-hologram 4s ease-in-out infinite;
+}
+@keyframes boss-hologram {
+  50% {
+    filter: hue-rotate(100deg);
+  }
+}
+.player-rank {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.level-badge {
+  display: inline-block;
+  padding: 5px 9px;
+  border: 1px solid var(--profile-accent, var(--accent));
+  color: var(--profile-accent, var(--accent));
+  background: #08080cd9;
+  font-size: 12px;
+}
+.level-progress {
+  max-width: 560px;
+  margin-top: 14px;
+}
+.xp-hud {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 12px;
+  border: 1px solid var(--profile-accent, var(--accent));
+  background: #08080ce6;
+  font-size: 12px;
+}
+.xp-track {
+  display: block;
+  height: 12px;
+  border: 1px solid var(--profile-accent, var(--accent));
+  padding: 2px;
+}
+.xp-track > span {
+  display: block;
+  height: 100%;
+  background: var(--profile-accent, var(--accent));
+  transition: width 400ms ease;
+}
+.rewards-dialog {
+  width: min(680px, calc(100vw - 32px));
+  max-height: 85dvh;
+  color: #f2f4f8;
+  margin: auto;
+}
+.rewards-dialog::backdrop {
+  background: #000b;
+}
+.rewards-road {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  list-style: none;
+}
+.rewards-road li {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--line);
+}
+.reward-unlocked {
+  color: var(--accent);
+}
+.reward-locked {
+  color: var(--muted);
+}
+.rewards-road [aria-current='step'] {
+  border-color: var(--accent);
+  box-shadow: inset 3px 0 var(--accent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .frame-boss .frame-overlay {
+    animation: none;
+  }
+  .xp-track > span {
+    transition: none;
+  }
+}
+@import './arcade.css';
+@import './badges.css';
+@import './evolution.css';

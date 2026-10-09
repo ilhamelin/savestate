@@ -2,8 +2,11 @@ import Image from 'next/image';
 import type { ReactNode } from 'react';
 import type { Profile } from '@/domain/model';
 import { DecryptedText } from '@/components/ui/decrypted-text';
+import { AvatarFrame } from '@/components/avatar-frame';
+import { LevelBadge, LevelProgress } from '@/components/level-progression';
 
-type Identity = Pick<Profile, 'username' | 'avatar_url' | 'banner_url' | 'terminal_status'>;
+type Identity = Pick<Profile, 'username' | 'avatar_url' | 'banner_url' | 'terminal_status'> &
+  Partial<Pick<Profile, 'xp' | 'level' | 'equipped_title' | 'equipped_frame'>>;
 
 export function ProfileIdentity({
   profile,
@@ -41,27 +44,34 @@ export function ProfileIdentity({
         {bannerOverlay}
       </div>
       <div className="profile-heading">
-        <div className="avatar">
-          {profile.avatar_url ? (
-            <Image
-              src={profile.avatar_url}
-              alt={`Avatar de ${profile.username}`}
-              fill
-              sizes="80px"
-              unoptimized
-            />
-          ) : (
-            <span aria-hidden="true">▣</span>
-          )}
-          {avatarOverlay}
-        </div>
+        <AvatarFrame frame={profile.equipped_frame}>
+          <div className="avatar">
+            {profile.avatar_url ? (
+              <Image
+                src={profile.avatar_url}
+                alt={`Avatar de ${profile.username}`}
+                fill
+                sizes="80px"
+                unoptimized
+              />
+            ) : (
+              <span aria-hidden="true">▣</span>
+            )}
+            {avatarOverlay}
+          </div>
+        </AvatarFrame>
         <div>
           <p className="eyebrow">PLAYER PROFILE</p>
           <Heading>{usernameEditor ?? <>@{profile.username}</>}</Heading>
+          <p className="player-rank">
+            <LevelBadge level={profile.level ?? 1} />{' '}
+            <span>{profile.equipped_title ?? 'Insert Coin'}</span>
+          </p>
           <p className="profile-terminal">
             {terminalEditor ?? (animateTerminal ? <DecryptedText text={terminal} /> : terminal)}
           </p>
           {children}
+          <LevelProgress xp={profile.xp ?? 0} />
         </div>
       </div>
     </>
