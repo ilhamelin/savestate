@@ -12,6 +12,8 @@ La especificación actualizada se conserva en `docs/propuesta_sincronizacion_con
 - Consulta real local de `ilhamelin`: búsqueda HTTP 200, identidad exacta y títulos HTTP 200; 200 filas normalizadas. No se imprimieron claves ni respuestas personales.
 - `npm run check`: salida 0, 53 pruebas unitarias, lint, TypeScript y Prettier. `npm run build`: salida 0. Pruebas del emparejamiento: coincidencia exacta, primera opción, lista vacía, error por fila y cancelación.
 - Prueba del endpoint con Supabase real y transportes simulados: pasó en 7.95 segundos, incluyendo el nuevo endpoint, locale obligatorio, respuestas anidadas y títulos PC. Sesión, privacidad y ausencia de importación sin confirmación siguen correctas; cuenta temporal eliminada.
+- Publicado con `npx vercel --prod` desde `acf5303`: `dpl_BEywKNWDsGVghhFcEprqMuBtVjr9`, estado `READY`, build remoto de 13 segundos. Alias `https://savestate-eight.vercel.app`, despliegue `https://savestate-3hb7jrmyp-ilhamelins-projects.vercel.app`.
+- Verificación real posterior al despliegue: inicio HTTP 200 con CSP nonce; `POST /api/consoles/import` con sesión temporal y Gamertag `ilhamelin` respondió HTTP 200 con 200 títulos. No se importaron juegos; la cuenta temporal y el script de prueba se eliminaron.
 
 Los apartados siguientes conservan la evidencia de la entrega inicial y sus limitaciones en ese momento.
 
