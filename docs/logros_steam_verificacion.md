@@ -12,7 +12,8 @@ Referencia: [GetPlayerAchievements, documentación oficial de Valve](https://par
 
 - `npm run check`: 63 pruebas unitarias, lint, TypeScript y formato aprobados.
 - `npm run build`: aprobado.
-- Prueba integral local con Supabase real y respuestas controladas de Steam: autenticación y propiedad verificadas; la persistencia quedó bloqueada por `play_logs_console_progress_check`, error 23514. El proyecto configurado aún rechaza `achievements`. Se solicitó aplicar el archivo versionado `supabase/migrations/202610090019_steam_achievements_progress.sql`.
+- Prueba integral local repetida tras aplicar la migración 019: aprobada, código de salida 0 (11,5 segundos). Supabase real aceptó y persistió `{ kind: 'achievements', current: 2, total: 3 }`. Steam respondió mediante una fixture controlada; esta prueba verifica el guardado y no la disponibilidad de la API externa.
+- Dos sincronizaciones conservaron una única partida, 42,25 horas, nota y fecha de inicio. Peticiones sin sesión y a partidas ajenas devolvieron 401 y 404. Estadísticas ausentes y errores de Steam conservaron el progreso previo; una plataforma incompatible devolvió 400.
 - Cuentas temporales eliminadas; servidor detenido. No se realizó despliegue.
 
 Para repetir la prueba, iniciar el build local con `TEST_STEAM_ACHIEVEMENTS_MOCK=1` y el preload `tests/integration/steam-achievements.mock.mjs`; ejecutar `tests/integration/steam-achievements.test.ts` con `TEST_STEAM_ACHIEVEMENTS_LIVE=1`, `TEST_STEAM_ACHIEVEMENTS_MOCK=1` y `TEST_APP_URL=http://localhost:3000`. La fixture nunca se importa desde el código de aplicación ni se activa en producción.
