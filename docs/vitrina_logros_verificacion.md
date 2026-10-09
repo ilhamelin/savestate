@@ -36,5 +36,6 @@ Implementación en `implementation/chatgpt`, siguiendo
 - No se observaron errores ni advertencias de consola. Pestaña de prueba cerrada.
 - Evidencia visual: `docs/evidence/achievements-showcase.png` con datos sintéticos.
 
-La limpieza de la cuenta temporal está pendiente de autorización explícita, solicitada
-tras el rechazo de la revisión automática. No se desplegó esta entrega a producción.
+La cuenta temporal y sus seis registros se eliminaron tras la autorización explícita
+del usuario. Los archivos temporales de prueba también se retiraron. No se desplegó
+esta entrega a producción.
