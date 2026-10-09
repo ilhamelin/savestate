@@ -45,4 +45,12 @@ $env:TEST_APP_URL='http://localhost:3000'
 node --env-file=.env.local --experimental-strip-types --test tests/integration/console-import.test.ts
 ```
 
-El despliegue de esta entrega a Vercel queda pendiente.
+## Publicación en producción
+
+Publicado mediante `npx vercel --prod` desde el commit `e64fdbd`. Vercel confirmó estado `READY` para `dpl_61X8B81HLmWbgFhCbGSJKemnyvHL`; build remoto correcto en 33 segundos, con Next.js 16.4.0 y el proxy nativo.
+
+- Dominio: <https://savestate-eight.vercel.app>.
+- Despliegue: <https://savestate-jfbttdyxf-ilhamelins-projects.vercel.app>.
+- Comprobación pública: `/` devuelve HTTP 200, CSP con nonce y `Referrer-Policy: strict-origin-when-cross-origin`. `/library/import` incluye redirección a login sin sesión. `POST /api/consoles/import` devuelve HTTP 401 con error JSON de autenticación y `Cache-Control: no-store`.
+
+Estas comprobaciones confirman salud y protección del despliegue; la importación autenticada completa se verificó antes con el build local y Supabase real.
