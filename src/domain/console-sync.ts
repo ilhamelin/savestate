@@ -25,21 +25,28 @@ export function exactPsnAccount(input: unknown, identity: string): string | null
   return null;
 }
 export function exactXboxAccount(input: unknown, identity: string): string | null {
-  const people = record(input).people;
+  const value = record(input);
+  const people = [value.people, record(value.content).profileUsers, value.profileUsers].find(
+    Array.isArray,
+  );
   if (!Array.isArray(people)) throw new ValidationError('Respuesta Xbox inválida.');
   for (const item of people) {
     const person = record(item);
+    const settings = Array.isArray(person.settings) ? person.settings : [];
+    const gamertag = record(settings.find((setting) => record(setting).id === 'Gamertag')).value;
+    const xuid = person.id ?? person.xuid;
     const names = [
+      gamertag,
       person.gamertag,
       person.uniqueModernGamertag,
       !person.modernGamertagSuffix ? person.modernGamertag : null,
     ];
     if (
       names.some((name) => normalized(name) === normalized(identity)) &&
-      typeof person.xuid === 'string' &&
-      /^\d{1,20}$/.test(person.xuid)
+      typeof xuid === 'string' &&
+      /^\d{1,20}$/.test(xuid)
     )
-      return person.xuid;
+      return xuid;
   }
   return null;
 }
@@ -93,6 +100,8 @@ function mappedTitles(input: unknown, provider: 'psn' | 'xbox'): ConsoleRow[] {
       platform = devices
         .map((part) => (typeof part === 'string' ? platforms[part] : undefined))
         .find(Boolean);
+      if (!platform && devices.length > 0 && devices.every((device) => device === 'PC'))
+        platform = 'Xbox One';
       const achievement = record(value.achievement);
       const current = achievement.currentGamerscore ?? value.currentGamerscore;
       const total = achievement.totalGamerscore ?? value.maxGamerscore;

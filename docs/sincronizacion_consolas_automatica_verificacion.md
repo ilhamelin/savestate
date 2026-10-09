@@ -1,5 +1,20 @@
 # Sincronización automática de consolas
 
+## Actualización: Xbox y emparejamiento masivo (9 de octubre de 2026)
+
+La especificación actualizada se conserva en `docs/propuesta_sincronizacion_consolas_automatica.md`. Esta actualización reemplaza los detalles del endpoint, formatos Xbox y limitaciones de credenciales documentados en la verificación inicial más abajo.
+
+- OpenXBL: `friends/search?gt=...`, cabecera `Accept-Language: en-US` y títulos en `content.titles` o `titles`.
+- Identidad exacta desde `people`, `content.profileUsers` o `profileUsers`, con Gamertag en `settings` e ID numérico. No se selecciona otra cuenta por aproximación.
+- Los títulos Xbox con dispositivos exclusivamente `PC` se conservan con plataforma compatible `Xbox One`, conforme a la decisión de producto. El usuario puede corregir la plataforma antes de importar; esta asignación no acredita hardware físico.
+- Emparejamiento secuencial de filas seleccionadas sin juego asignado y sin importar. Prefiere título exacto normalizado; si falta, propone el primer resultado. Conserva elecciones existentes, permite revisar otras ediciones y exige el botón de importación para persistir la biblioteca.
+- Progreso accesible y cancelación con `AbortController`: no inicia nuevas consultas ni asigna resultados después de cancelar. Conserva las coincidencias terminadas para reanudar. Los errores individuales no interrumpen las demás filas.
+- Consulta real local de `ilhamelin`: búsqueda HTTP 200, identidad exacta y títulos HTTP 200; 200 filas normalizadas. No se imprimieron claves ni respuestas personales.
+- `npm run check`: salida 0, 53 pruebas unitarias, lint, TypeScript y Prettier. `npm run build`: salida 0. Pruebas del emparejamiento: coincidencia exacta, primera opción, lista vacía, error por fila y cancelación.
+- Prueba del endpoint con Supabase real y transportes simulados: pasó en 7.95 segundos, incluyendo el nuevo endpoint, locale obligatorio, respuestas anidadas y títulos PC. Sesión, privacidad y ausencia de importación sin confirmación siguen correctas; cuenta temporal eliminada.
+
+Los apartados siguientes conservan la evidencia de la entrega inicial y sus limitaciones en ese momento.
+
 Referencia conservada: `docs/propuesta_sincronizacion_consolas_automatica.md`. Se completó la implementación inicial del commit `3f70350`, manteniendo `psn-api` 2.18.1 y la RPC de la migración 016. No requiere nuevas migraciones.
 
 ## Flujo

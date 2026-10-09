@@ -36,7 +36,15 @@ test('console sync: exact identities only, including Xbox suffixes and numeric I
     exactXboxAccount({ people: [{ gamertag: 'Player', xuid: '../secret' }] }, 'Player'),
     null,
   );
-  assert.throws(() => exactXboxAccount({ profileUsers: [] }, 'Player'));
+  assert.equal(exactXboxAccount({ profileUsers: [] }, 'Player'), null);
+  const profile = { id: '2535436457611225', settings: [{ id: 'Gamertag', value: 'ilhamelin' }] };
+  assert.equal(exactXboxAccount({ content: { profileUsers: [profile] } }, 'ILHAMELIN'), profile.id);
+  assert.equal(exactXboxAccount({ profileUsers: [profile] }, 'Other'), null);
+  assert.equal(
+    exactXboxAccount({ profileUsers: [{ ...profile, id: '../bad' }] }, 'ilhamelin'),
+    null,
+  );
+  assert.throws(() => exactXboxAccount({}, 'Player'));
 });
 test('console sync: trophies map real platforms, completion and hidden titles', () => {
   const rows = psnTitleRows([
@@ -56,7 +64,7 @@ test('console sync: trophies map real platforms, completion and hidden titles', 
   assert.equal(rows[1]!.status, 'playing');
   assert.ok(rows.every((row) => row.hours === 0));
 });
-test('console sync: achievement totals must be positive; PC-only games are not Xbox consoles', () => {
+test('console sync: positive achievement totals and PC ecosystem fallback', () => {
   const rows = xboxTitleRows([
     {
       name: 'Full',
@@ -69,10 +77,12 @@ test('console sync: achievement totals must be positive; PC-only games are not X
       achievement: { currentGamerscore: 0, totalGamerscore: 0 },
     },
     { name: 'Desktop', devices: ['Win32'] },
+    { name: 'PC ecosystem', devices: ['PC'] },
     { name: 'Full', devices: ['XboxOne'], maxGamerscore: 1000, currentGamerscore: 1000 },
   ]);
-  assert.equal(rows.length, 2);
+  assert.equal(rows.length, 3);
   assert.equal(rows[0]!.status, 'cleared');
   assert.equal(rows[1]!.status, 'playing');
+  assert.equal(rows[2]!.platform, 'Xbox One');
   assert.throws(() => xboxTitleRows({}));
 });

@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/client-api';
+import { matchConsoleRows } from '@/lib/console-auto-match';
 import {
   CONSOLE_PLATFORMS,
   consoleIdentity,
@@ -46,6 +47,8 @@ export function ConsoleImporter({
     [error, setError] = useState('');
   const [progress, setProgress] = useState(0);
   const [progressTotal, setProgressTotal] = useState(0);
+  const [matching, setMatching] = useState(false);
+  const matchController = useRef<AbortController | null>(null);
   const alive = useRef(true),
     running = useRef(false),
     cancelled = useRef(false);
@@ -56,6 +59,7 @@ export function ConsoleImporter({
     return () => {
       alive.current = false;
       cancelled.current = true;
+      matchController.current?.abort();
     };
   }, []);
   useEffect(() => {
@@ -142,6 +146,54 @@ export function ConsoleImporter({
     });
   }
   const pending = rows.filter((row) => row.selected && row.gameId && !row.done);
+  const unmatched = rows.filter((row) => row.selected && !row.gameId && !row.done);
+  async function autoMatchAll() {
+    await perform(async () => {
+      const targets = rows
+        .map((row, index) => ({ ...row, index }))
+        .filter((row) => row.selected && !row.gameId && !row.done);
+      const controller = new AbortController();
+      matchController.current = controller;
+      setMatching(true);
+      setProgress(0);
+      setProgressTotal(targets.length);
+      try {
+        const summary = await matchConsoleRows<Candidate>(targets, {
+          signal: controller.signal,
+          search: async (title, signal) => {
+            const found = await api<{ games: Candidate[] }>(
+              'consoles/import',
+              { action: 'match', source, title },
+              signal,
+            );
+            return found.games;
+          },
+          result: (index, choices, chosen, failure) => {
+            if (alive.current)
+              update(index, {
+                choices,
+                gameId: chosen?.id ?? '',
+                result:
+                  failure ??
+                  (chosen
+                    ? 'Emparejado automáticamente'
+                    : 'Sin coincidencias. Ajusta el título o consulta Explorar.'),
+              });
+          },
+          progress: (processed) => {
+            if (alive.current) setProgress(processed);
+          },
+        });
+        if (alive.current)
+          setMessage(
+            `${summary.matched} emparejados; ${summary.processed - summary.matched - summary.failures} sin coincidencias; ${summary.failures} errores.${summary.stopped ? ' Emparejamiento detenido.' : ''} Revisa las ediciones antes de importar.`,
+          );
+      } finally {
+        matchController.current = null;
+        if (alive.current) setMatching(false);
+      }
+    });
+  }
   return (
     <section className="panel console-importer" aria-label={`Importar ${source}`}>
       <h2>{source === 'PlayStation' ? 'PlayStation / PSN' : 'Xbox'}</h2>
@@ -315,6 +367,14 @@ export function ConsoleImporter({
             />
             Seleccionar todos
           </label>
+          <button
+            type="button"
+            className="button secondary"
+            disabled={busy || !unmatched.length}
+            onClick={() => void autoMatchAll()}
+          >
+            ⚡ Emparejar todo automáticamente
+          </button>
           {rows.slice(page * 10, page * 10 + 10).map((row, offset) => {
             const index = page * 10 + offset,
               choice = row.choices.find((item) => item.id === row.gameId);
@@ -514,16 +574,23 @@ export function ConsoleImporter({
               className="button secondary"
               onClick={() => {
                 cancelled.current = true;
+                matchController.current?.abort();
               }}
             >
-              Detener tras el juego actual
+              {matching ? 'Cancelar emparejamiento' : 'Detener tras el juego actual'}
             </button>
           ) : null}
           {progressTotal > 0 ? (
             <div>
-              <progress aria-label="Progreso de importación" value={progress} max={progressTotal} />
+              <progress
+                aria-label={matching ? 'Progreso de emparejamiento' : 'Progreso de importación'}
+                value={progress}
+                max={progressTotal}
+              />
               <p role="status">
-                {progress} / {progressTotal} juegos procesados
+                {matching
+                  ? `Emparejando títulos: ${progress} / ${progressTotal}…`
+                  : `${progress} / ${progressTotal} juegos procesados`}
               </p>
             </div>
           ) : null}

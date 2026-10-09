@@ -53,25 +53,34 @@ if (process.env.TEST_CONSOLE_SYNC_MOCK === '1') {
       throw new Error('Unexpected PSN fixture request');
     }
     if (url.hostname === 'api.xbl.io') {
-      if (url.pathname.includes('/friends/search/')) {
-        const tag = decodeURIComponent(url.pathname.split('/').pop());
+      if (new Headers(init?.headers).get('Accept-Language') !== 'en-US')
+        return new Response(null, { status: 400 });
+      if (url.pathname.endsWith('/friends/search')) {
+        const tag = url.searchParams.get('gt');
         if (tag === 'Broken') return new Response('fixture-xbox-key', { status: 500 });
         return Response.json({
-          people: [
-            { gamertag: tag === 'Missing' ? 'Other' : tag, xuid: tag === 'Private' ? '2' : '1' },
-          ],
+          content: {
+            profileUsers: [
+              {
+                settings: [{ id: 'Gamertag', value: tag === 'Missing' ? 'Other' : tag }],
+                id: tag === 'Private' ? '2' : '1',
+              },
+            ],
+          },
         });
       }
       if (url.pathname.endsWith('/player/2')) return new Response(null, { status: 403 });
       if (url.pathname.endsWith('/player/1'))
         return Response.json({
-          titles: [
-            {
-              name: 'Xbox Fixture',
-              devices: ['XboxOne'],
-              achievement: { currentGamerscore: 500, totalGamerscore: 1000 },
-            },
-          ],
+          content: {
+            titles: [
+              {
+                name: 'Xbox Fixture',
+                devices: ['PC'],
+                achievement: { currentGamerscore: 500, totalGamerscore: 1000 },
+              },
+            ],
+          },
         });
       throw new Error('Unexpected Xbox fixture request');
     }

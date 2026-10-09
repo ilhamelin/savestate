@@ -102,7 +102,7 @@ export async function fetchPsnTitles(onlineId: string): Promise<ConsoleRow[]> {
 }
 async function xboxRequest(path: string, key: string): Promise<unknown> {
   const response = await fetch(`https://api.xbl.io/v2/${path}`, {
-    headers: { 'X-Authorization': key, Accept: 'application/json' },
+    headers: { 'X-Authorization': key, Accept: 'application/json', 'Accept-Language': 'en-US' },
     cache: 'no-store',
     redirect: 'error',
     signal: AbortSignal.timeout(10000),
@@ -120,13 +120,17 @@ export async function fetchXboxTitles(gamertag: string): Promise<ConsoleRow[]> {
       503,
     );
   try {
-    const search = await xboxRequest(`friends/search/${encodeURIComponent(identity)}`, key);
+    const search = await xboxRequest(`friends/search?gt=${encodeURIComponent(identity)}`, key);
     const xuid = exactXboxAccount(search, identity);
     if (!xuid) throw providerError('Xbox', 404);
     const titles = await xboxRequest(`achievements/player/${xuid}`, key);
-    if (!titles || typeof titles !== 'object' || !('titles' in titles))
-      throw providerError('Xbox', 502);
-    const rows = xboxTitleRows(titles.titles);
+    if (!titles || typeof titles !== 'object') throw providerError('Xbox', 502);
+    const value = titles as Record<string, unknown>;
+    const content =
+      value.content && typeof value.content === 'object'
+        ? (value.content as Record<string, unknown>)
+        : {};
+    const rows = xboxTitleRows(content.titles ?? value.titles);
     if (!rows.length) throw providerError('Xbox', 404);
     return rows;
   } catch (error) {
