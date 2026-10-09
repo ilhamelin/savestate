@@ -11,6 +11,7 @@ import {
 } from '@/domain/console-import';
 import { catalogue } from '@/services/catalogue';
 import { parseFilters } from '@/integrations/igdb/query';
+import { fetchPsnTitles, fetchXboxTitles } from '@/integrations/consoles/server';
 
 export async function consoleImportMutation(input: unknown) {
   const { db, user } = await authenticated();
@@ -28,6 +29,26 @@ export async function consoleImportMutation(input: unknown) {
       throw new AppError('Aplica la migración 016 para guardar tus identificadores.', 503);
     dbCheck(result.error);
     return { identity };
+  }
+  if (data.action === 'sync') {
+    const identity = consoleIdentity(data.identity);
+    if (!identity) {
+      throw new AppError(
+        source === 'PlayStation'
+          ? 'Ingresa tu PSN Online ID para sincronizar.'
+          : 'Ingresa tu Xbox Gamertag para sincronizar.',
+        400,
+      );
+    }
+    await db
+      .from('profiles')
+      .update(source === 'PlayStation' ? { psn_id: identity } : { xbox_gamertag: identity })
+      .eq('id', user.id);
+
+    if (source === 'PlayStation') {
+      return await fetchPsnTitles(identity);
+    }
+    return await fetchXboxTitles(identity);
   }
   if (data.action === 'preview')
     return parseConsoleImport(data.content, data.format, source, data.platform);

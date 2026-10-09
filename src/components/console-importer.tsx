@@ -102,139 +102,197 @@ export function ConsoleImporter({
       setMessage(`Archivo ${file.name} cargado. Previsualiza antes de importar.`);
     });
   }
+  async function syncProfile() {
+    await perform(async () => {
+      const trimmed = identity.trim();
+      if (!trimmed) {
+        throw new Error(
+          source === 'PlayStation' ? 'Ingresa tu PSN Online ID.' : 'Ingresa tu Xbox Gamertag.',
+        );
+      }
+      setMessage(`Buscando juegos en el perfil de ${source} para "${trimmed}"…`);
+      const preview = await api<ConsoleRow[]>('consoles/import', {
+        action: 'sync',
+        source,
+        identity: trimmed,
+        platform,
+      });
+      if (!alive.current) return;
+      setRows(
+        preview.map((row) => ({
+          ...row,
+          selected: true,
+          choices: [],
+          gameId: '',
+          result: '',
+          done: false,
+        })),
+      );
+      setPage(0);
+      setProgress(0);
+      setProgressTotal(0);
+      setMessage(
+        `¡Encontramos ${preview.length} títulos en tu perfil de ${source}! Confirma las coincidencias antes de importar.`,
+      );
+    });
+  }
   const pending = rows.filter((row) => row.selected && row.gameId && !row.done);
   return (
     <section className="panel console-importer" aria-label={`Importar ${source}`}>
       <h2>{source === 'PlayStation' ? 'PlayStation / PSN' : 'Xbox'}</h2>
       <p className="muted">
-        Importa una exportación o una lista de títulos. El identificador se muestra en tu perfil
-        público; no accedemos automáticamente a tu cuenta de consola.
+        Ingresa tu identificador público para sincronizar automáticamente tus juegos y trofeos, o
+        utiliza las opciones manuales más abajo.
       </p>
       <fieldset disabled={busy}>
         <div className="form-row">
           <label>
-            {source === 'PlayStation' ? 'PSN Online ID' : 'Xbox Gamertag'}
+            {source === 'PlayStation' ? 'PSN Online ID (público)' : 'Xbox Gamertag (público)'}
             <input
               minLength={3}
               maxLength={30}
+              placeholder={source === 'PlayStation' ? 'Ej: Cristian13' : 'Ej: MasterChief'}
               value={identity}
               onChange={(event) => setIdentity(event.target.value)}
-            />
-          </label>
-          <button
-            type="button"
-            className="button secondary"
-            onClick={() =>
-              void perform(async () => {
-                await api('consoles/import', { action: 'identity', source, identity });
-                if (alive.current) {
-                  setMessage('Identificador guardado.');
-                  router.refresh();
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  void syncProfile();
                 }
-              })
-            }
-          >
-            Guardar identificador
-          </button>
-        </div>
-        <div className="form-row">
-          <label>
-            Plataforma si el archivo no la indica
-            <select value={platform} onChange={(event) => setPlatform(event.target.value)}>
-              {CONSOLE_PLATFORMS[source].map((item) => (
-                <option key={item}>{item}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Archivo de exportación
-            <input
-              type="file"
-              accept=".csv,.json"
-              onChange={(event) => {
-                void loadFile(event.target.files?.[0]);
-                event.target.value = '';
               }}
             />
           </label>
-        </div>
-        <label>
-          Formato
-          <select
-            value={format}
-            onChange={(event) => {
-              setFormat(event.target.value);
-              setRows([]);
-            }}
+          <div
+            className="inline-actions"
+            style={{ alignSelf: 'flex-end', marginBottom: '0.25rem' }}
           >
-            <option value="text">Lista: un título por línea</option>
-            <option value="csv">CSV</option>
-            <option value="json">JSON</option>
-          </select>
-        </label>
-        <label>
-          Contenido
-          <textarea
-            rows={6}
-            maxLength={200000}
-            value={content}
-            placeholder={'Chrono Trigger\nHalo'}
-            onChange={(event) => {
-              setContent(event.target.value);
-              setRows([]);
-            }}
-          />
-        </label>
-        <details>
-          <summary>Formatos admitidos y ejemplo</summary>
-          <p>
-            Hasta 200 juegos y 200 KB. CSV con encabezados title, platform, hours y status (los tres
-            últimos son opcionales). Se admiten name/título, plataforma y horas. JSON: array de
-            objetos o {`{ "games": [...] }`}. Las horas son decimales; minutes se interpreta como
-            minutos. Sin estado explícito se sugiere Playing si hay horas y Backlog en caso
-            contrario.
-          </p>
-          <pre>{'title,platform,hours,status\n"Final Fantasy VII",PS5,12.5,playing'}</pre>
-          <p>
-            Si tu exportador usa otro formato, adapta sus columnas. Los registros existentes
-            conservarán sus datos y sumarán cero horas.
-          </p>
-        </details>
-        <button
-          type="button"
-          className="button"
-          disabled={!content.trim()}
-          onClick={() =>
-            void perform(async () => {
-              const preview = await api<ConsoleRow[]>('consoles/import', {
-                action: 'preview',
-                source,
-                platform,
-                format,
-                content,
-              });
-              if (!alive.current) return;
-              setRows(
-                preview.map((row) => ({
-                  ...row,
-                  selected: true,
-                  choices: [],
-                  gameId: '',
-                  result: '',
-                  done: false,
-                })),
-              );
-              setPage(0);
-              setProgress(0);
-              setProgressTotal(0);
-              setMessage(
-                `Encontramos ${preview.length} títulos. Busca y confirma cada coincidencia antes de importar.`,
-              );
-            })
-          }
+            <button
+              type="button"
+              className="button"
+              disabled={!identity.trim()}
+              onClick={() => void syncProfile()}
+            >
+              {source === 'PlayStation' ? '🔍 Sincronizar desde PSN' : '🔍 Sincronizar desde Xbox'}
+            </button>
+            <button
+              type="button"
+              className="button secondary"
+              disabled={!identity.trim()}
+              onClick={() =>
+                void perform(async () => {
+                  await api('consoles/import', { action: 'identity', source, identity });
+                  if (alive.current) {
+                    setMessage('Identificador guardado en tu perfil.');
+                    router.refresh();
+                  }
+                })
+              }
+            >
+              Guardar identificador
+            </button>
+          </div>
+        </div>
+
+        <details
+          style={{ marginTop: '1.25rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}
         >
-          Previsualizar juegos
-        </button>
+          <summary>Opciones manuales: subir archivo o pegar lista de títulos</summary>
+          <div className="form-row" style={{ marginTop: '0.75rem' }}>
+            <label>
+              Plataforma si el archivo no la indica
+              <select value={platform} onChange={(event) => setPlatform(event.target.value)}>
+                {CONSOLE_PLATFORMS[source].map((item) => (
+                  <option key={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Archivo de exportación
+              <input
+                type="file"
+                accept=".csv,.json"
+                onChange={(event) => {
+                  void loadFile(event.target.files?.[0]);
+                  event.target.value = '';
+                }}
+              />
+            </label>
+          </div>
+          <label>
+            Formato
+            <select
+              value={format}
+              onChange={(event) => {
+                setFormat(event.target.value);
+                setRows([]);
+              }}
+            >
+              <option value="text">Lista: un título por línea</option>
+              <option value="csv">CSV</option>
+              <option value="json">JSON</option>
+            </select>
+          </label>
+          <label>
+            Contenido
+            <textarea
+              rows={5}
+              maxLength={200000}
+              value={content}
+              placeholder={'Chrono Trigger\nHalo'}
+              onChange={(event) => {
+                setContent(event.target.value);
+                setRows([]);
+              }}
+            />
+          </label>
+          <details>
+            <summary>Formatos admitidos y ejemplo</summary>
+            <p>
+              Hasta 200 juegos y 200 KB. CSV con encabezados title, platform, hours y status (los
+              tres últimos son opcionales). Se admiten name/título, plataforma y horas. JSON: array
+              de objetos o {`{ "games": [...] }`}. Las horas son decimales; minutes se interpreta
+              como minutos. Sin estado explícito se sugiere Playing si hay horas y Backlog en caso
+              contrario.
+            </p>
+            <pre>{'title,platform,hours,status\n"Final Fantasy VII",PS5,12.5,playing'}</pre>
+          </details>
+          <button
+            type="button"
+            className="button secondary"
+            disabled={!content.trim()}
+            style={{ marginTop: '0.5rem' }}
+            onClick={() =>
+              void perform(async () => {
+                const preview = await api<ConsoleRow[]>('consoles/import', {
+                  action: 'preview',
+                  source,
+                  platform,
+                  format,
+                  content,
+                });
+                if (!alive.current) return;
+                setRows(
+                  preview.map((row) => ({
+                    ...row,
+                    selected: true,
+                    choices: [],
+                    gameId: '',
+                    result: '',
+                    done: false,
+                  })),
+                );
+                setPage(0);
+                setProgress(0);
+                setProgressTotal(0);
+                setMessage(
+                  `Encontramos ${preview.length} títulos. Busca y confirma cada coincidencia antes de importar.`,
+                );
+              })
+            }
+          >
+            Previsualizar lista manual
+          </button>
+        </details>
       </fieldset>
       <p role="status" aria-live="polite">
         {busy ? 'Procesando…' : message}
