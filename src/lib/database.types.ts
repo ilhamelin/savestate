@@ -17,6 +17,7 @@ import type { GameDuel, DuelVote, PartyRequest } from '@/domain/arcade';
 import type { Badge, UserBadge } from '@/domain/badges';
 import type { ForumCategory, ForumThread, ForumReply, ForumReaction } from '@/domain/forum';
 import type { XpEvent, XpAward } from '@/domain/progression';
+import type { PlayerFriend } from '@/domain/player-friends';
 
 type Row<T> = { [K in keyof T]: T[K] };
 type Table<T, Relations = []> = {
@@ -99,6 +100,7 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      get_player_friends: { Args: { p_user_id: string }; Returns: PlayerFriend[] };
       award_xp: {
         Args: { p_user_id: string; p_amount: number; p_action: string; p_reference_id?: string };
         Returns: XpAward;

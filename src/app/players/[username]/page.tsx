@@ -1,6 +1,12 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { profileByName, libraryFor } from '@/repositories/player';
+import {
+  profileByName,
+  libraryFor,
+  playerFriends,
+  pendingFriendRequests,
+} from '@/repositories/player';
+import { PlayerFriendsWidget } from '@/components/player-friends-widget';
 import { serverClient } from '@/integrations/supabase/server';
 import { currentUser } from '@/lib/session';
 import { isConfigured, publicEnv } from '@/lib/env';
@@ -34,7 +40,8 @@ export default async function Player({ params }: { params: Promise<{ username: s
   if (!profile) notFound();
   const user = await currentUser(),
     db = await serverClient();
-  const [access, following, friendship, badges] = await Promise.all([
+  const isOwner = user?.id === profile.id;
+  const [access, following, friendship, badges, friendships, requests] = await Promise.all([
     db.rpc('can_view_library', { owner_id: profile.id }),
     user
       ? db
@@ -54,6 +61,8 @@ export default async function Player({ params }: { params: Promise<{ username: s
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
     playerBadges(profile.id),
+    playerFriends(profile.id),
+    isOwner ? pendingFriendRequests() : Promise.resolve({ received: [], sent: [] }),
   ]);
   [access, following, friendship].forEach((result) => dbCheck(result.error));
   const [library, dossier] = access.data
@@ -113,6 +122,7 @@ export default async function Player({ params }: { params: Promise<{ username: s
         </p>
         <nav className="tabs" aria-label="Momentos del jugador">
           <Link href={`/highlights?player=${profile.id}`}>Momentos</Link>
+          <a href="#player-friends">Amigos ({friendships.friends.length})</a>
         </nav>
         {user ? (
           <SocialControls
@@ -126,6 +136,14 @@ export default async function Player({ params }: { params: Promise<{ username: s
             Conecta para seguir o solicitar amistad.
           </Link>
         )}
+        <PlayerFriendsWidget
+          key={profile.id}
+          friends={friendships.friends}
+          available={friendships.available}
+          receivedRequests={requests.received}
+          sentRequests={requests.sent}
+          isOwner={isOwner}
+        />
         {!library ? (
           <div className="empty-state">
             <h2>Biblioteca visible solo para amigos.</h2>

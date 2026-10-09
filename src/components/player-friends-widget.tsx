@@ -1,0 +1,186 @@
+'use client';
+
+import { useRef, useState, useTransition } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { api } from '@/lib/client-api';
+import { friendLevelTier } from '@/domain/player-friends';
+import type { FriendProfile, FriendRequest, PlayerFriend } from '@/domain/player-friends';
+
+function FriendIdentity({
+  profile,
+  currentGame,
+}: {
+  profile: FriendProfile;
+  currentGame?: string | null;
+}) {
+  return (
+    <Link className="friend-identity" href={`/players/${profile.username}`}>
+      <span className="friend-avatar">
+        {profile.avatar_url ? (
+          <Image src={profile.avatar_url} alt="" width={36} height={36} unoptimized />
+        ) : (
+          <span aria-hidden="true">▣</span>
+        )}
+      </span>
+      <span className="friend-copy">
+        <strong>@{profile.username}</strong>
+        <span className={currentGame ? 'friend-playing' : 'muted'}>
+          {currentGame ? `Jugando ${currentGame}` : profile.terminal_status || 'Ready to play'}
+        </span>
+      </span>
+      <span
+        className={`friend-level-circle friend-level-${friendLevelTier(profile.level)}`}
+        aria-label={`Nivel ${profile.level}`}
+      >
+        {profile.level}
+      </span>
+    </Link>
+  );
+}
+
+export function PlayerFriendsWidget({
+  friends,
+  receivedRequests = [],
+  sentRequests = [],
+  isOwner,
+  available = true,
+}: {
+  friends: PlayerFriend[];
+  receivedRequests?: FriendRequest[];
+  sentRequests?: FriendRequest[];
+  isOwner: boolean;
+  available?: boolean;
+}) {
+  const [tab, setTab] = useState<'friends' | 'received' | 'sent'>('friends');
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState(false);
+  const [refreshing, startTransition] = useTransition();
+  const locked = useRef(false);
+  const router = useRouter();
+  const requests = tab === 'received' ? receivedRequests : sentRequests;
+
+  async function mutate(id: string, status?: 'accepted' | 'rejected') {
+    if (locked.current || refreshing) return;
+    locked.current = true;
+    setBusyId(id);
+    setMessage('');
+    try {
+      await api('social', status ? { action: 'respond', id, status } : { action: 'remove', id });
+      setError(false);
+      setMessage(
+        status === 'accepted'
+          ? 'Amistad aceptada.'
+          : status === 'rejected'
+            ? 'Solicitud rechazada.'
+            : 'Solicitud cancelada.',
+      );
+      startTransition(() => router.refresh());
+    } catch (failure) {
+      setError(true);
+      setMessage(
+        failure instanceof Error ? failure.message : 'No se pudo actualizar la solicitud.',
+      );
+    } finally {
+      locked.current = false;
+      setBusyId(null);
+    }
+  }
+
+  return (
+    <section
+      id="player-friends"
+      className="player-friends-widget"
+      aria-labelledby="player-friends-heading"
+    >
+      <h2 id="player-friends-heading">
+        Amigos <span className="muted">{available ? friends.length : '—'}</span>
+      </h2>
+      {isOwner ? (
+        <div className="filter-buttons friend-tabs" aria-label="Amigos y solicitudes">
+          <button type="button" aria-pressed={tab === 'friends'} onClick={() => setTab('friends')}>
+            Amigos ({friends.length})
+          </button>
+          <button
+            type="button"
+            aria-pressed={tab === 'received'}
+            onClick={() => setTab('received')}
+          >
+            Solicitudes recibidas ({receivedRequests.length})
+          </button>
+          <button type="button" aria-pressed={tab === 'sent'} onClick={() => setTab('sent')}>
+            Solicitudes enviadas ({sentRequests.length})
+          </button>
+        </div>
+      ) : null}
+      {tab === 'friends' || !isOwner ? (
+        !available ? (
+          <p className="notice">
+            La lista de amigos estará disponible al aplicar la migración 020.
+          </p>
+        ) : friends.length ? (
+          <ul className="friend-list">
+            {friends.map((friend) => (
+              <li key={friend.id}>
+                <FriendIdentity profile={friend} currentGame={friend.current_game} />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="muted">Todavía no hay amistades aceptadas.</p>
+        )
+      ) : requests.length ? (
+        <ul className="friend-list">
+          {requests.map((request) => (
+            <li key={request.id}>
+              <FriendIdentity profile={request.profile} />
+              <div className="friend-request-actions">
+                {tab === 'received' ? (
+                  <>
+                    <button
+                      type="button"
+                      className="button secondary"
+                      disabled={busyId !== null || refreshing}
+                      onClick={() => void mutate(request.id, 'accepted')}
+                    >
+                      Aceptar
+                    </button>
+                    <button
+                      type="button"
+                      className="button danger"
+                      disabled={busyId !== null || refreshing}
+                      onClick={() => void mutate(request.id, 'rejected')}
+                    >
+                      Rechazar
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className="button secondary"
+                    disabled={busyId !== null || refreshing}
+                    onClick={() => void mutate(request.id)}
+                  >
+                    Cancelar solicitud
+                  </button>
+                )}
+                {busyId === request.id ? <span role="status">Procesando…</span> : null}
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="muted">
+          No hay solicitudes {tab === 'received' ? 'recibidas' : 'enviadas'} pendientes.
+        </p>
+      )}
+      {message ? (
+        <p role={error ? 'alert' : 'status'} className={error ? 'error-text' : 'muted'}>
+          {message}
+        </p>
+      ) : null}
+    </section>
+  );
+}

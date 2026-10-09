@@ -1919,3 +1919,107 @@ nav a:hover,
   height: 9px;
   accent-color: var(--accent);
 }
+/* Steam-inspired social panel; remains readable on narrow profiles. */
+.player-friends-widget {
+  margin-block: 2rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  max-width: 680px;
+}
+.player-friends-widget h2 {
+  font-size: 1.2rem;
+  margin: 0 0 1rem;
+}
+.friend-tabs {
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.friend-tabs button {
+  white-space: normal;
+}
+.friend-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+}
+.friend-list li {
+  padding-block: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+.friend-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.friend-avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border: 1px solid var(--accent);
+  overflow: hidden;
+}
+.friend-avatar img {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+}
+.friend-copy {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.friend-copy > span {
+  font-size: 0.8rem;
+}
+.friend-playing {
+  color: #4ade80;
+}
+.friend-level-circle {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border: 2px solid;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+.friend-level-gold {
+  border-color: #eab308;
+  color: #fef08a;
+}
+.friend-level-purple {
+  border-color: #a855f7;
+  color: #f3e8ff;
+}
+.friend-level-red {
+  border-color: #ef4444;
+  color: #fee2e2;
+}
+.friend-level-bronze {
+  border-color: #cd7f32;
+  color: #fed7aa;
+}
+.friend-level-gray {
+  border-color: #64748b;
+  color: #f8fafc;
+}
+.friend-request-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0 48px;
+}
+@media (max-width: 400px) {
+  .friend-request-actions {
+    margin-left: 0;
+  }
+}

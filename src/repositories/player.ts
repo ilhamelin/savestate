@@ -1,6 +1,66 @@
 import 'server-only';
 import { serverClient } from '@/integrations/supabase/server';
 import { dbCheck } from '@/lib/http';
+import { authenticated } from '@/lib/session';
+import type { PlayerFriend, FriendRequest } from '@/domain/player-friends';
+import type { Friendship } from '@/domain/model';
+
+export async function playerFriends(userId: string) {
+  const db = await serverClient();
+  const friends: PlayerFriend[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const result = await db
+      .rpc('get_player_friends', { p_user_id: userId })
+      .range(offset, offset + 999);
+    // Keep the rest of the profile available until migration 020 is applied.
+    if (result.error?.code === 'PGRST202') return { friends: [], available: false };
+    dbCheck(result.error);
+    friends.push(...(result.data ?? []));
+    if ((result.data?.length ?? 0) < 1000) break;
+  }
+  return { friends, available: true };
+}
+
+// No caller-provided owner ID: requests always belong to the authenticated viewer.
+export async function pendingFriendRequests() {
+  const { db, user } = await authenticated();
+  const requests: Friendship[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const result = await db
+      .from('friendships')
+      .select('*')
+      .eq('status', 'pending')
+      .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+      .order('created_at', { ascending: false })
+      .order('id')
+      .range(offset, offset + 999);
+    dbCheck(result.error);
+    requests.push(...(result.data ?? []));
+    if ((result.data?.length ?? 0) < 1000) break;
+  }
+  const ids = [
+    ...new Set(requests.map((r) => (r.sender_id === user.id ? r.receiver_id : r.sender_id))),
+  ];
+  const profiles = new Map<string, FriendRequest['profile']>();
+  for (let offset = 0; offset < ids.length; offset += 100) {
+    const result = await db
+      .from('profiles')
+      .select('id,username,avatar_url,level,terminal_status')
+      .in('id', ids.slice(offset, offset + 100));
+    dbCheck(result.error);
+    for (const profile of result.data ?? []) profiles.set(profile.id, profile);
+  }
+  const received: FriendRequest[] = [],
+    sent: FriendRequest[] = [];
+  for (const request of requests) {
+    const profile = profiles.get(
+      request.sender_id === user.id ? request.receiver_id : request.sender_id,
+    );
+    if (profile)
+      (request.receiver_id === user.id ? received : sent).push({ id: request.id, profile });
+  }
+  return { received, sent };
+}
 export async function libraryHoursFor(userId: string) {
   const db = await serverClient();
   let total = 0;
