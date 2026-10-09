@@ -11,15 +11,17 @@
 SaveState ya cuenta con una sólida ingesta de Steam. Esta entrega amplía la compatibilidad a los dos mayores ecosistemas de consolas: **PlayStation** y **Xbox**.
 
 ### Canales de Importación Soportados:
-1. **Identidad de Consola en Perfil:**
+1. **Sincronización Automática por ID de Consola (Directa):**
+   - El jugador ingresa su **PSN Online ID** (ej: `Cristian13`) o su **Xbox Gamertag**.
+   - Con un solo clic en `[ 🔍 Sincronizar desde PSN / Xbox ]`, el servidor consulta la API de PlayStation (vía `psn-api` con token `PSN_NPSSO`) o Xbox Live (`xbl.io`) y extrae los títulos públicos jugados con su plataforma correspondiente (PS5, PS4, PS3, etc.).
+   - Muestra las carátulas previsualizadas para que el usuario confirme e importe directamente.
+2. **Identidad de Consola en Perfil:**
    - El jugador puede vincular y exhibir su **PSN Online ID** (PlayStation) y su **Xbox Gamertag** en su perfil y Profile Studio junto a su Steam ID.
-2. **Importación por Exportación Universal (CSV / JSON / GOG Galaxy / Backloggd):**
-   - El método más fiable y universal para consolas. El usuario sube un archivo `.csv` o `.json` exportado desde su consola, GOG Galaxy, Exophase o PSNProfiles.
-   - El sistema analiza los títulos, detecta la plataforma (`PlayStation 5`, `PlayStation 4`, `Xbox Series`, etc.) y las horas estimadas.
-3. **Ingesta Rápida por Lista de Títulos / Gamertag:**
-   - El usuario puede pegar una lista de títulos jugados o introducir su Gamertag/PSN ID.
-   - El servidor empareja los nombres contra el catálogo de IGDB/SaveState y genera la pantalla de casillas de verificación para seleccionar cuáles importar.
-4. **Registro en Biblioteca y Hardware:**
+3. **Importación por Exportación Universal (CSV / JSON / GOG Galaxy / Backloggd):**
+   - El usuario puede subir un archivo `.csv` o `.json` exportado desde su consola, GOG Galaxy, Exophase o PSNProfiles como opción manual alternativa.
+4. **Ingesta Rápida por Lista Manual de Títulos:**
+   - El usuario puede pegar una lista de títulos jugados (un título por línea).
+5. **Registro en Biblioteca y Hardware:**
    - Los títulos importados se guardan en `user_games` y añaden una entrada en `play_logs` con `platform_played = 'PlayStation'` o `'Xbox'` y `play_method = 'hardware'`.
    - Estas horas y plataformas nutren directamente el **Dossier de Métricas** y la **SaveState Memory Card**.
 
