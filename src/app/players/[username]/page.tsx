@@ -28,6 +28,7 @@ import { dossierFor } from '@/repositories/dossier';
 import { hardwareForDisplay } from '@/domain/hardware';
 import { StatsDossier, HardwareBadges } from '@/components/profile-dossier';
 import { MemoryCardExport } from '@/components/memory-card-export';
+import { AchievementsShowcase } from '@/components/achievements-showcase';
 export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
   return { title: `@${username}` };
@@ -192,6 +193,11 @@ export default async function Player({ params }: { params: Promise<{ username: s
             {dossier ? (
               <>
                 <StatsDossier stats={dossier} />
+                <AchievementsShowcase
+                  games={library.games}
+                  entries={library.entries}
+                  logs={library.logs}
+                />
                 <MemoryCardExport
                   data={{
                     profile: {

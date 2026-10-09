@@ -44,33 +44,37 @@ export function ProfileIdentity({
         {bannerOverlay}
       </div>
       <div className="profile-heading">
-        <AvatarFrame frame={profile.equipped_frame}>
-          <div className="avatar">
-            {profile.avatar_url ? (
-              <Image
-                src={profile.avatar_url}
-                alt={`Avatar de ${profile.username}`}
-                fill
-                sizes="80px"
-                unoptimized
-              />
-            ) : (
-              <span aria-hidden="true">▣</span>
-            )}
-            {avatarOverlay}
+        <div className="profile-identity-main">
+          <AvatarFrame frame={profile.equipped_frame}>
+            <div className="avatar">
+              {profile.avatar_url ? (
+                <Image
+                  src={profile.avatar_url}
+                  alt={`Avatar de ${profile.username}`}
+                  fill
+                  sizes="80px"
+                  unoptimized
+                />
+              ) : (
+                <span aria-hidden="true">▣</span>
+              )}
+              {avatarOverlay}
+            </div>
+          </AvatarFrame>
+          <div className="profile-identity-info">
+            <p className="eyebrow">PLAYER PROFILE</p>
+            <Heading>{usernameEditor ?? <>@{profile.username}</>}</Heading>
+            <p className="player-rank">
+              <LevelBadge level={profile.level ?? 1} />{' '}
+              <span>{profile.equipped_title ?? 'Insert Coin'}</span>
+            </p>
+            <p className="profile-terminal">
+              {terminalEditor ?? (animateTerminal ? <DecryptedText text={terminal} /> : terminal)}
+            </p>
+            {children}
           </div>
-        </AvatarFrame>
-        <div>
-          <p className="eyebrow">PLAYER PROFILE</p>
-          <Heading>{usernameEditor ?? <>@{profile.username}</>}</Heading>
-          <p className="player-rank">
-            <LevelBadge level={profile.level ?? 1} />{' '}
-            <span>{profile.equipped_title ?? 'Insert Coin'}</span>
-          </p>
-          <p className="profile-terminal">
-            {terminalEditor ?? (animateTerminal ? <DecryptedText text={terminal} /> : terminal)}
-          </p>
-          {children}
+        </div>
+        <div className="profile-identity-aside">
           <LevelProgress xp={profile.xp ?? 0} />
         </div>
       </div>
