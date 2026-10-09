@@ -75,7 +75,7 @@ if (process.env.TEST_CONSOLE_SYNC_MOCK === '1') {
           content: {
             titles: [
               {
-                name: 'Xbox Fixture',
+                name: process.env.TEST_CONSOLE_SYNC_TITLE || 'Xbox Fixture',
                 devices: ['PC'],
                 achievement: { currentGamerscore: 500, totalGamerscore: 1000 },
               },

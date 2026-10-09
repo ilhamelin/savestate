@@ -1,6 +1,7 @@
 import { ValidationError } from './validation.ts';
 import type { ConsoleSource } from './console-import.ts';
 export interface ConsoleProgress {
+  source_title?: string;
   kind: 'gamerscore' | 'trophies';
   current: number;
   total: number;
@@ -21,7 +22,19 @@ export function consoleProgress(value: unknown, source: ConsoleSource): ConsoleP
     (input.total as number) > 10000000
   )
     throw new ValidationError('Progreso de consola inválido.');
-  return { kind, current: input.current as number, total: input.total as number };
+  if (
+    input.source_title !== undefined &&
+    (typeof input.source_title !== 'string' ||
+      !input.source_title.trim() ||
+      input.source_title.length > 200)
+  )
+    throw new ValidationError('Título de origen inválido.');
+  return {
+    kind,
+    current: input.current as number,
+    total: input.total as number,
+    ...(typeof input.source_title === 'string' ? { source_title: input.source_title.trim() } : {}),
+  };
 }
 export function consoleProgressLabel(progress: ConsoleProgress): string {
   return progress.kind === 'gamerscore'

@@ -29,6 +29,43 @@ test(
     try {
       assert.equal((await db.auth.signInWithPassword({ email, password })).error, null);
       const cookie = [...cookies].map(([name, value]) => `${name}=${value}`).join('; ');
+      const game = (await admin.from('games').select('id,title').order('id').limit(1).single())
+        .data!;
+      assert.equal(process.env.TEST_CONSOLE_SYNC_TITLE, game.title);
+      const entry = (
+        await db
+          .from('user_games')
+          .insert({
+            user_id: id,
+            game_id: game.id,
+            status: 'playing',
+            rating: 9,
+            favorite_position: 1,
+          })
+          .select()
+          .single()
+      ).data!;
+      const logs = await db
+        .from('play_logs')
+        .insert([
+          {
+            user_game_id: entry.id,
+            platform_played: 'Xbox One',
+            play_method: 'hardware',
+            hours_played: 12.5,
+            note: '[Xbox] Partida importada a la biblioteca.',
+          },
+          {
+            user_game_id: entry.id,
+            platform_played: 'Xbox One',
+            play_method: 'other',
+            hours_played: 3,
+            note: 'Partida manual personal',
+          },
+        ])
+        .select();
+      assert.equal(logs.error, null);
+      const imported = logs.data!.find((log) => log.play_method === 'hardware')!;
       const post = (source: string, identity: string, session = cookie) =>
         fetch(`${base}/api/consoles/import`, {
           method: 'POST',
@@ -59,7 +96,23 @@ test(
         .single();
       assert.equal(profile.data!.psn_id, 'Private');
       assert.equal(profile.data!.xbox_gamertag, 'Broken');
-      assert.deepEqual((await db.from('user_games').select('id').eq('user_id', id)).data, []);
+      assert.equal((await post('Xbox', 'Fixture')).status, 200);
+      const stored = await db.from('play_logs').select('*').eq('user_game_id', entry.id);
+      assert.equal(stored.data!.length, 2);
+      const refreshed = stored.data!.find((log) => log.id === imported.id)!;
+      assert.deepEqual(refreshed.console_progress, {
+        kind: 'gamerscore',
+        current: 500,
+        total: 1000,
+        source_title: game.title,
+      });
+      assert.equal(Number(refreshed.hours_played), 12.5);
+      assert.equal(refreshed.note, imported.note);
+      assert.equal(stored.data!.find((log) => log.id !== imported.id)!.console_progress, null);
+      const preserved = (await db.from('user_games').select('*').eq('id', entry.id).single()).data!;
+      assert.equal(preserved.status, 'playing');
+      assert.equal(preserved.rating, 9);
+      assert.equal(preserved.favorite_position, 1);
     } finally {
       await db.auth.signOut();
       assert.equal((await admin.auth.admin.deleteUser(id)).error, null);

@@ -8,12 +8,11 @@ import { matchConsoleRows } from '@/lib/console-auto-match';
 import {
   CONSOLE_PLATFORMS,
   consoleIdentity,
-  applyBulkHours,
   type ConsoleRow,
   type ConsoleSource,
 } from '@/domain/console-import';
 import { GAME_STATUSES, STATUS_LABELS, type GameStatus } from '@/domain/model';
-import { consoleProgressLabel } from '@/domain/console-progress';
+import { ConsoleProgressBadge } from '@/components/console-progress-badge';
 
 type Candidate = {
   id: string;
@@ -50,7 +49,6 @@ export function ConsoleImporter({
   const [progress, setProgress] = useState(0);
   const [progressTotal, setProgressTotal] = useState(0);
   const [matching, setMatching] = useState(false);
-  const [bulkHours, setBulkHours] = useState('');
   const matchController = useRef<AbortController | null>(null);
   const alive = useRef(true),
     running = useRef(false),
@@ -202,8 +200,8 @@ export function ConsoleImporter({
       <h2>{source === 'PlayStation' ? 'PlayStation / PSN' : 'Xbox'}</h2>
       <p className="notice">
         ℹ️ A diferencia de Steam, la sincronización actual de Xbox y PlayStation solo consulta
-        listas de logros/trofeos y no transmite horas de juego. Puedes asignar horas manualmente o
-        usar la herramienta de horas en lote.
+        listas de logros/trofeos y no transmite horas de juego. Los títulos se importan con el
+        progreso recibido y 0 horas cuando el proveedor no las facilita.
       </p>
       <p className="muted">
         Ingresa tu identificador público para sincronizar automáticamente tus juegos y trofeos, o
@@ -383,39 +381,6 @@ export function ConsoleImporter({
           >
             ⚡ Emparejar todo automáticamente
           </button>
-          <div className="inline-actions console-bulk-hours">
-            <label>
-              Horas estimadas{' '}
-              <input
-                type="number"
-                min={0}
-                max={100000}
-                step="0.01"
-                value={bulkHours}
-                disabled={busy}
-                onChange={(event) => setBulkHours(event.target.value)}
-              />{' '}
-              h por juego
-            </label>
-            <button
-              type="button"
-              className="button secondary"
-              disabled={busy || !rows.some((row) => row.selected && !row.done)}
-              onClick={() => {
-                try {
-                  setRows(applyBulkHours(rows, bulkHours));
-                  setError('');
-                  setMessage(
-                    `Horas estimadas aplicadas a ${rows.filter((row) => row.selected && !row.done).length} títulos seleccionados.`,
-                  );
-                } catch (failure) {
-                  setError(failure instanceof Error ? failure.message : 'Horas inválidas.');
-                }
-              }}
-            >
-              Aplicar a seleccionados
-            </button>
-          </div>
           {rows.slice(page * 10, page * 10 + 10).map((row, offset) => {
             const index = page * 10 + offset,
               choice = row.choices.find((item) => item.id === row.gameId);
@@ -430,9 +395,7 @@ export function ConsoleImporter({
                     />
                     <strong>{row.title}</strong>
                   </label>
-                  {row.progress ? (
-                    <p className="console-progress-badge">{consoleProgressLabel(row.progress)}</p>
-                  ) : null}
+                  {row.progress ? <ConsoleProgressBadge progress={row.progress} /> : null}
                   <div className="form-row">
                     <label>
                       Estado
@@ -589,6 +552,7 @@ export function ConsoleImporter({
                       hours: row.hours,
                       status: row.status,
                       progress: row.progress,
+                      source_title: row.progress?.source_title ?? row.title,
                     });
                     if (!alive.current) break;
                     update(index, { done: true, result: result.message });

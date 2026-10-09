@@ -7,7 +7,7 @@ import { filterLibrary, type LibrarySort } from '@/domain/library-view';
 import { libraryPlatformOptions } from '@/domain/library-platforms';
 import { QuickSession } from '@/components/quick-session';
 import { QuickHoursEditor } from '@/components/quick-hours-editor';
-import { consoleProgressLabel } from '@/domain/console-progress';
+import { ConsoleProgressBadge } from '@/components/console-progress-badge';
 import {
   LibraryForm,
   PlayLogForm,
@@ -218,9 +218,11 @@ export function Library({
               {playLogs
                 .filter((log) => log.console_progress)
                 .map((log) => (
-                  <p className="console-progress-badge" key={log.id}>
-                    {log.platform_played} · {consoleProgressLabel(log.console_progress!)}
-                  </p>
+                  <ConsoleProgressBadge
+                    key={log.id}
+                    progress={log.console_progress!}
+                    platform={log.platform_played}
+                  />
                 ))}
               {editable && playLogs.length > 0 ? <QuickHoursEditor logs={playLogs} /> : null}
               <details className="library-record-details" open={compact ? undefined : true}>

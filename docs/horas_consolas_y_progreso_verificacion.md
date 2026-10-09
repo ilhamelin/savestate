@@ -1,5 +1,7 @@
 # Horas estimadas y progreso de consolas
 
+Actualización posterior: por indicación del usuario se retiró la herramienta de horas en lote. La resincronización ahora actualiza el progreso de partidas ya importadas. Ver `docs/resincronizacion_progreso_consolas.md`; lo siguiente conserva la evidencia de la entrega anterior.
+
 ## Cambios
 
 - Importador Xbox/PSN: aviso sobre la ausencia de horas en la sincronización actual y herramienta de horas por juego para todas las filas seleccionadas y pendientes. Admite cero y hasta 100000 horas, con dos decimales; conserva filas desmarcadas e importadas y no cambia los estados elegidos.

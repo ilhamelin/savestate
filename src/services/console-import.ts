@@ -8,12 +8,67 @@ import {
   consoleHours,
   consolePlatform,
   parseConsoleImport,
+  type ConsoleRow,
+  type ConsoleSource,
 } from '@/domain/console-import';
 import { catalogue } from '@/services/catalogue';
 import { parseFilters } from '@/integrations/igdb/query';
 import { fetchPsnTitles, fetchXboxTitles } from '@/integrations/consoles/server';
 import { grantXp, grantCompletionXp } from '@/services/progression';
 import { consoleProgress } from '@/domain/console-progress';
+import {
+  consoleProgressUpdates,
+  type ImportedProgressLog,
+} from '@/domain/console-progress-refresh';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/lib/database.types';
+import { revalidatePath } from 'next/cache';
+
+async function refreshConsoleProgress(
+  db: SupabaseClient<Database>,
+  userId: string,
+  titles: ConsoleRow[],
+  source: ConsoleSource,
+) {
+  const logs: ImportedProgressLog[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const result = await db
+      .from('play_logs')
+      .select(
+        'id,platform_played,note,console_progress,user_games!inner(user_id,games!inner(title))',
+      )
+      .eq('user_games.user_id', userId)
+      .order('id')
+      .range(offset, offset + 999);
+    dbCheck(result.error);
+    for (const row of result.data ?? [])
+      logs.push({
+        id: row.id,
+        title: row.user_games.games.title,
+        platform: row.platform_played,
+        note: row.note,
+        progress: row.console_progress,
+      });
+    if ((result.data?.length ?? 0) < 1000) break;
+  }
+  const updates = consoleProgressUpdates(logs, titles, source);
+  for (let index = 0; index < updates.length; index += 5) {
+    const results = await Promise.allSettled(
+      updates.slice(index, index + 5).map(async (item) => {
+        const saved = await db
+          .from('play_logs')
+          .update({ console_progress: item.progress })
+          .eq('id', item.id);
+        dbCheck(saved.error);
+      }),
+    );
+    for (const result of results) if (result.status === 'rejected') throw result.reason;
+  }
+  if (updates.length) {
+    revalidatePath('/library');
+    revalidatePath('/players/[username]', 'page');
+  }
+}
 
 export async function consoleImportMutation(input: unknown) {
   const { db, user } = await authenticated();
@@ -52,8 +107,12 @@ export async function consoleImportMutation(input: unknown) {
       throw new AppError('Aplica la migración 016 para guardar el identificador.', 503);
     dbCheck(saved.error);
 
-    const titles =
+    const received =
       source === 'PlayStation' ? await fetchPsnTitles(identity) : await fetchXboxTitles(identity);
+    const titles = received.map((row) =>
+      row.progress ? { ...row, progress: { ...row.progress, source_title: row.title } } : row,
+    );
+    await refreshConsoleProgress(db, user.id, titles, source);
     await grantXp(
       user.id,
       200,
@@ -81,6 +140,8 @@ export async function consoleImportMutation(input: unknown) {
   }
   if (data.action !== 'commit') throw new AppError('Operación de importación inválida.', 400);
   const progress = consoleProgress(data.progress, source);
+  if (progress && data.source_title !== undefined)
+    progress.source_title = text(data.source_title, 'Título de origen', 200);
   const gameId = uuid(data.game_id),
     platform = consolePlatform(data.platform, source);
   const result = await db

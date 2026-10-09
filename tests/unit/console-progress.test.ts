@@ -2,28 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { consoleProgress, consoleProgressLabel } from '../../src/domain/console-progress.ts';
 import { xboxTitleRows, psnTitleRows } from '../../src/domain/console-sync.ts';
-import { applyBulkHours } from '../../src/domain/console-import.ts';
-test('bulk hours validate before modifying selected pending rows; retain unselected and imported values', () => {
-  const rows = [
-    { selected: true, done: false, hours: 0 },
-    { selected: false, done: false, hours: 12 },
-    { selected: true, done: true, hours: 2 },
-  ];
-  assert.deepEqual(
-    applyBulkHours(rows, '35,5').map((row) => row.hours),
-    [35.5, 12, 2],
-  );
-  assert.deepEqual(
-    applyBulkHours(rows, 0).map((row) => row.hours),
-    [0, 12, 2],
-  );
-  for (const value of ['', -1, NaN, Infinity, 100001])
-    assert.throws(() => applyBulkHours(rows, value));
-  assert.deepEqual(
-    rows.map((row) => row.hours),
-    [0, 12, 2],
-  );
-});
 test('console progress preserves real achievement totals and never invents missing scores', () => {
   const rows = xboxTitleRows([
     {
