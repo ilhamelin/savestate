@@ -1540,3 +1540,47 @@ nav a:hover,
     width: 84px;
   }
 }
+.console-importer fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.console-importer label {
+  display: block;
+  margin-block: 12px;
+}
+.console-importer .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.console-importer .checkbox-label input {
+  width: auto;
+}
+.console-import-row {
+  border-top: 1px solid var(--line);
+  padding-block: 18px;
+  overflow-wrap: anywhere;
+}
+.console-importer pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.console-importer select,
+.console-importer input,
+.console-importer textarea {
+  max-width: 100%;
+}
+.console-match {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-block: 12px;
+}
+.console-match img {
+  object-fit: cover;
+}
+.console-importer progress {
+  width: 100%;
+  accent-color: var(--accent);
+}

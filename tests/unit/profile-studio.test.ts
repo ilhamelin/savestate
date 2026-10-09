@@ -19,6 +19,8 @@ test('estudio: detecta cambios de identidad, imágenes, privacidad y enlaces; no
   assert.equal(profileChanged({ ...saved, social_links: {} }, saved), false);
   for (const change of [
     { username: 'otro' },
+    { psn_id: 'psn_player' },
+    { xbox_gamertag: 'Xbox Player' },
     { avatar_url: 'blob:avatar' },
     { banner_url: 'blob:banner' },
     { wallpaper_url: '/wallpapers/deep_space.svg' },

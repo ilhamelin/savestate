@@ -46,7 +46,7 @@ export default async function LibraryPage() {
       ) : null}
       <p>
         <Link className="button secondary" href="/library/import">
-          Importar biblioteca de Steam →
+          Importar biblioteca: Steam, PSN o Xbox →
         </Link>
       </p>
       <SteamQuickSync initial={steamState} />

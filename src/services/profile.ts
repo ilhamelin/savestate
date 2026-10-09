@@ -6,6 +6,7 @@ import { publicEnv } from '@/lib/env';
 import { roomTheme } from '@/domain/arcade';
 import { ownedPlatforms } from '@/domain/hardware';
 import { wallpaperForDisplay } from '@/domain/wallpaper';
+import { consoleIdentity } from '@/domain/console-import';
 function mediaUrl(input: unknown, userId: string, wallpaper = false): string | null {
   if (input === null || input === '') return null;
   const value = text(input, 'Imagen', 500);
@@ -38,6 +39,10 @@ export async function profileMutation(input: unknown) {
   const { data: row, error } = await db
     .from('profiles')
     .update({
+      ...(data.psn_id === undefined ? {} : { psn_id: consoleIdentity(data.psn_id) }),
+      ...(data.xbox_gamertag === undefined
+        ? {}
+        : { xbox_gamertag: consoleIdentity(data.xbox_gamertag) }),
       username: username(data.username),
       terminal_status: text(data.terminal_status ?? '', 'Estado', 160, 0),
       library_private: bool(data.library_private, 'Privacidad'),

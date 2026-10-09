@@ -12,7 +12,8 @@ export type DraftProfile = Pick<
   | 'library_private'
   | 'social_links'
   | 'owned_platforms'
->;
+> &
+  Partial<Pick<Profile, 'psn_id' | 'xbox_gamertag'>>;
 export const SOCIAL_KEYS = ['steam', 'discord', 'twitch', 'github', 'x'] as const;
 export const PROFILE_COLORS: Record<Theme, string> = {
   cyan: '#00f0ff',
@@ -29,6 +30,8 @@ export const QUICK_STATUSES = [
 ] as const;
 export function profileDraft(profile: DraftProfile): DraftProfile {
   return {
+    psn_id: profile.psn_id ?? null,
+    xbox_gamertag: profile.xbox_gamertag ?? null,
     username: profile.username,
     avatar_url: profile.avatar_url,
     banner_url: profile.banner_url,

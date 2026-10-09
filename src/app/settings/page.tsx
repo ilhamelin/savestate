@@ -42,10 +42,10 @@ export default async function SettingsPage() {
       </div>
       <Settings key={profileResult.data.username} profile={profileResult.data} />
       <section className="panel">
-        <h2>Biblioteca de Steam</h2>
+        <h2>Importación multiplataforma</h2>
         <p>Revisa títulos y horas antes de añadirlos a SaveState.</p>
         <Link className="button secondary" href="/library/import">
-          Importar desde Steam →
+          Importar desde Steam, PSN o Xbox →
         </Link>
       </section>
       <section className="panel">

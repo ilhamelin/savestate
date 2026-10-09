@@ -505,6 +505,26 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
                 </label>
               ))}
             </div>
+            <div className="form-row">
+              <label>
+                PSN Online ID (público)
+                <input
+                  minLength={3}
+                  maxLength={30}
+                  value={draft.psn_id ?? ''}
+                  onChange={(event) => update('psn_id', event.target.value || null)}
+                />
+              </label>
+              <label>
+                Xbox Gamertag (público)
+                <input
+                  minLength={3}
+                  maxLength={30}
+                  value={draft.xbox_gamertag ?? ''}
+                  onChange={(event) => update('xbox_gamertag', event.target.value || null)}
+                />
+              </label>
+            </div>
             <p className="muted">
               {preparing
                 ? 'Comprimiendo imagen…'

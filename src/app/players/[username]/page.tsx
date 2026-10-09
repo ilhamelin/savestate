@@ -92,6 +92,10 @@ export default async function Player({ params }: { params: Promise<{ username: s
         <GamerRoom theme={profile.room_theme}>
           <ProfileIdentity profile={profile} animateTerminal>
             <div className="tags">
+              {profile.psn_id ? <span className="tag">🎮 PSN: @{profile.psn_id}</span> : null}
+              {profile.xbox_gamertag ? (
+                <span className="tag">🟩 Xbox: @{profile.xbox_gamertag}</span>
+              ) : null}
               {Object.entries(links).map(([label, url]) => (
                 <a className="tag" key={label} href={url} target="_blank" rel="noopener noreferrer">
                   {label} ↗
