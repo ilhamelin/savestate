@@ -1,7 +1,8 @@
 import 'server-only';
 import { authenticated } from '@/lib/session';
 import { AppError, dbCheck } from '@/lib/http';
-import { object, uuid } from '@/domain/validation';
+import { object, uuid, text } from '@/domain/validation';
+import { cleanSteamSearchTitle, searchSteamCandidates } from '@/domain/steam-matching';
 import { matchingTitle, steamStatus } from '@/domain/steam';
 import { ownedSteamLibrary, steamTicket, readSteamTicket } from '@/integrations/steam/server';
 import { catalogue } from '@/services/catalogue';
@@ -45,19 +46,23 @@ export async function steamMutation(input: unknown) {
     await linkAccount();
     return { message: 'Cuenta vinculada para sincronización rápida. La cuota diaria se conserva.' };
   }
-  const search = async () => {
-    const q = source.name.slice(0, 80);
-    const result = await catalogue(
-      parseFilters(new URLSearchParams({ q, platform: 'PC (Microsoft Windows)' })),
+  const search = async (title = source.name) =>
+    searchSteamCandidates(title, async (q, platform) => {
+      const result = await catalogue(
+        parseFilters(new URLSearchParams({ q, ...(platform ? { platform } : {}) })),
+      );
+      return result.games.map((game) => ({
+        id: game.id,
+        title: game.title,
+        release_year: game.release_year,
+        slug: game.slug,
+        cover_url: game.cover_url,
+      }));
+    });
+  if (data.action === 'match')
+    return search(
+      data.title === undefined ? source.name : text(data.title, 'Título de búsqueda', 80),
     );
-    return result.games.map((game) => ({
-      id: game.id,
-      title: game.title,
-      release_year: game.release_year,
-      slug: game.slug,
-    }));
-  };
-  if (data.action === 'match') return search();
   if (data.action !== 'commit') throw new AppError('Operación de importación inválida.', 400);
   let gameId: string;
   if (data.game_id) {
@@ -67,7 +72,9 @@ export async function steamMutation(input: unknown) {
     if (!exists.data) throw new AppError('Juego no encontrado.', 404);
   } else {
     const candidates = (await search()).filter(
-      (game) => matchingTitle(game.title) === matchingTitle(source.name),
+      (game) =>
+        matchingTitle(cleanSteamSearchTitle(game.title)) ===
+        matchingTitle(cleanSteamSearchTitle(source.name)),
     );
     if (candidates.length !== 1)
       return {

@@ -1,9 +1,26 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { api } from '@/lib/client-api';
-import { suggestedSteamStatus, type SteamPreview, type SteamStatus } from '@/domain/steam';
-type Candidate = { id: string; title: string; release_year: number | null; slug: string };
+import {
+  matchingTitle,
+  suggestedSteamStatus,
+  type SteamPreview,
+  type SteamStatus,
+} from '@/domain/steam';
+import {
+  cleanSteamSearchTitle,
+  isSteamReady,
+  type SteamMatchFilter,
+} from '@/domain/steam-matching';
+type Candidate = {
+  id: string;
+  title: string;
+  release_year: number | null;
+  slug: string;
+  cover_url: string | null;
+};
 type PreviewPage = {
   games: SteamPreview[];
   total: number;
@@ -25,6 +42,8 @@ export function SteamImporter({ configured }: { configured: boolean }) {
     [search, setSearch] = useState(''),
     [page, setPage] = useState(0);
   const [loaded, setLoaded] = useState(false);
+  const [filterMode, setFilterMode] = useState<SteamMatchFilter>('all');
+  const [manualQueries, setManualQueries] = useState<Record<number, string>>({});
   const [linkTicket, setLinkTicket] = useState('');
   const [linked, setLinked] = useState(false);
   const [linkMessage, setLinkMessage] = useState('');
@@ -68,6 +87,9 @@ export function SteamImporter({ configured }: { configured: boolean }) {
       setStatuses({});
       setMatches({});
       setChoices({});
+      setManualQueries({});
+      setFilterMode('all');
+      setSearch('');
       setResults({});
       setFinished(new Set());
       setPage(0);
@@ -103,24 +125,42 @@ export function SteamImporter({ configured }: { configured: boolean }) {
       if (mounted.current) setBusy(false);
     }
   }
-  async function find(game: SteamPreview) {
+  async function find(game: SteamPreview, title?: string) {
+    if (busy) return;
     setBusy(true);
     setError('');
     try {
       const candidates = await api<Candidate[]>('steam/import', {
         action: 'match',
         ticket: game.ticket,
+        ...(title !== undefined ? { title } : {}),
       });
+      if (!mounted.current) return;
       setMatches((old) => ({ ...old, [game.appid]: candidates }));
-      if (!candidates.length)
-        setResults((old) => ({
-          ...old,
-          [game.appid]: 'Sin coincidencias. Puedes buscar el título desde Explorar.',
-        }));
+      const exact = candidates.filter(
+        (candidate) =>
+          matchingTitle(cleanSteamSearchTitle(candidate.title)) ===
+          matchingTitle(cleanSteamSearchTitle(title ?? game.name)),
+      );
+      setChoices((old) => ({
+        ...old,
+        [game.appid]: candidates.some((candidate) => candidate.id === old[game.appid])
+          ? old[game.appid]!
+          : exact.length === 1
+            ? exact[0]!.id
+            : '',
+      }));
+      setResults((old) => ({
+        ...old,
+        [game.appid]: candidates.length
+          ? 'Elige y confirma la ficha que corresponde a tu juego.'
+          : 'Sin coincidencias. Prueba otro título en la búsqueda manual.',
+      }));
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : 'No se pudo buscar el juego.');
+      if (mounted.current)
+        setError(failure instanceof Error ? failure.message : 'No se pudo buscar el juego.');
     } finally {
-      setBusy(false);
+      if (mounted.current) setBusy(false);
     }
   }
   async function linkAccount() {
@@ -175,7 +215,13 @@ export function SteamImporter({ configured }: { configured: boolean }) {
       if (mounted.current) setBusy(false);
     }
   }
-  const visible = games.filter((game) => game.name.toLowerCase().includes(search.toLowerCase())),
+  const readyCount = games.filter((game) => isSteamReady(game.appid, choices, finished)).length;
+  const visible = games.filter(
+      (game) =>
+        game.name.toLowerCase().includes(search.toLowerCase()) &&
+        (filterMode === 'all' ||
+          (filterMode === 'matched') === isSteamReady(game.appid, choices, finished)),
+    ),
     totalPages = Math.ceil(visible.length / 24),
     currentPage = Math.min(page, Math.max(0, totalPages - 1));
   return (
@@ -259,6 +305,32 @@ export function SteamImporter({ configured }: { configured: boolean }) {
             puedes elegir otra ficha.
           </p>
           <div className="steam-toolbar">
+            <div
+              className="filter-buttons"
+              role="group"
+              aria-label="Estado de emparejamiento Steam"
+            >
+              {(
+                [
+                  ['all', `Todos (${games.length})`],
+                  ['matched', `Listos (${readyCount})`],
+                  ['unmatched', `⚠️ Sin ficha / Pendientes (${games.length - readyCount})`],
+                ] as const
+              ).map(([mode, label]) => (
+                <button
+                  type="button"
+                  key={mode}
+                  aria-pressed={filterMode === mode}
+                  disabled={busy}
+                  onClick={() => {
+                    setFilterMode(mode);
+                    setPage(0);
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             <label>
               Buscar en los resultados
               <input
@@ -336,29 +408,81 @@ export function SteamImporter({ configured }: { configured: boolean }) {
                 >
                   Elegir ficha de catálogo
                 </button>
-                {matches[game.appid]?.length ? (
+                <form
+                  className="steam-manual-search"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void find(
+                      game,
+                      manualQueries[game.appid] ?? cleanSteamSearchTitle(game.name).slice(0, 80),
+                    );
+                  }}
+                >
                   <label>
-                    Ficha para {game.name}
-                    <select
-                      value={choices[game.appid] ?? ''}
+                    Búsqueda manual para {game.name}
+                    <input
+                      type="search"
+                      maxLength={80}
+                      required
+                      value={
+                        manualQueries[game.appid] ?? cleanSteamSearchTitle(game.name).slice(0, 80)
+                      }
                       disabled={busy || finished.has(game.appid)}
                       onChange={(event) =>
-                        setChoices((old) => ({ ...old, [game.appid]: event.target.value }))
+                        setManualQueries((old) => ({ ...old, [game.appid]: event.target.value }))
                       }
-                    >
-                      <option value="">Coincidencia exacta automática</option>
-                      {matches[game.appid]!.map((candidate) => (
-                        <option key={candidate.id} value={candidate.id}>
-                          {candidate.title} ({candidate.release_year ?? 'Sin año'})
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </label>
+                  <button
+                    className="button secondary small"
+                    disabled={busy || finished.has(game.appid)}
+                  >
+                    🔍 Buscar
+                  </button>
+                </form>
+                {matches[game.appid]?.length ? (
+                  <fieldset
+                    className="steam-candidates"
+                    disabled={busy || finished.has(game.appid)}
+                  >
+                    <legend>Ficha para {game.name}</legend>
+                    {matches[game.appid]!.map((candidate) => (
+                      <label className="steam-candidate" key={candidate.id}>
+                        <input
+                          type="radio"
+                          name={`steam-match-${game.appid}`}
+                          checked={choices[game.appid] === candidate.id}
+                          onChange={() =>
+                            setChoices((old) => ({ ...old, [game.appid]: candidate.id }))
+                          }
+                        />
+                        {candidate.cover_url ? (
+                          <Image src={candidate.cover_url} alt="" width={32} height={44} />
+                        ) : (
+                          <span aria-hidden="true">🎮</span>
+                        )}
+                        <span>
+                          {candidate.title}
+                          <small>{candidate.release_year ?? 'Sin año'}</small>
+                        </span>
+                      </label>
+                    ))}
+                    <button
+                      type="button"
+                      className="text-link"
+                      onClick={() => setChoices((old) => ({ ...old, [game.appid]: '' }))}
+                    >
+                      Quitar ficha elegida
+                    </button>
+                  </fieldset>
                 ) : null}
                 {results[game.appid] ? <p className="notice">{results[game.appid]}</p> : null}
               </article>
             ))}
           </div>
+          {!visible.length ? (
+            <p role="status">No hay juegos que coincidan con estos filtros.</p>
+          ) : null}
           <nav className="steam-toolbar" aria-label="Páginas de Steam">
             <button
               type="button"
