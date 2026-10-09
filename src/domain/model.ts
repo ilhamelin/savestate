@@ -19,6 +19,10 @@ export const REACTIONS = ['critical_hit', 'gg', 'game_over'] as const;
 export type Reaction = (typeof REACTIONS)[number];
 export type Theme = 'cyan' | 'green' | 'pink' | 'amber';
 export interface Profile {
+  xp: number;
+  level: number;
+  equipped_title: import('./progression.ts').PlayerTitle;
+  equipped_frame: import('./progression.ts').AvatarFrame;
   psn_id: string | null;
   xbox_gamertag: string | null;
   steam_id: string | null;

@@ -16,6 +16,7 @@ import type { Post, PostReaction, PostComment } from '@/domain/highlights';
 import type { GameDuel, DuelVote, PartyRequest } from '@/domain/arcade';
 import type { Badge, UserBadge } from '@/domain/badges';
 import type { ForumCategory, ForumThread, ForumReply, ForumReaction } from '@/domain/forum';
+import type { XpEvent, XpAward } from '@/domain/progression';
 
 type Row<T> = { [K in keyof T]: T[K] };
 type Table<T, Relations = []> = {
@@ -34,6 +35,7 @@ type ForeignKey<Name extends string, Column extends string, Target extends strin
 export type Database = {
   public: {
     Tables: {
+      user_xp_events: Table<XpEvent>;
       forum_categories: Table<ForumCategory>;
       forum_threads: Table<ForumThread>;
       forum_replies: Table<
@@ -97,6 +99,10 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      award_xp: {
+        Args: { p_user_id: string; p_amount: number; p_action: string; p_reference_id?: string };
+        Returns: XpAward;
+      };
       import_console_game: {
         Args: {
           p_game_id: string;
