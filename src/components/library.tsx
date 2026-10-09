@@ -5,18 +5,14 @@ import { GameCard } from '@/components/game-card';
 import { BacklogPicker } from '@/components/backlog-picker';
 import { filterLibrary, type LibrarySort } from '@/domain/library-view';
 import { libraryPlatformOptions } from '@/domain/library-platforms';
-import { QuickSession } from '@/components/quick-session';
 import { QuickHoursEditor } from '@/components/quick-hours-editor';
 import { ConsoleProgressBadge } from '@/components/console-progress-badge';
 import { SteamAchievementsSync } from '@/components/steam-achievements-sync';
 import { steamLogAppId } from '@/domain/steam-achievements';
-import {
-  LibraryForm,
-  PlayLogForm,
-  FavoritesForm,
-  DeleteLibrary,
-  DeleteLog,
-} from '@/components/library-forms';
+import { FavoritesForm } from '@/components/library-forms';
+import { LibraryRecordActions } from '@/components/library-record-actions';
+import { LibraryTable } from '@/components/library-table';
+import { useLibraryViewPreference } from '@/components/library-view-preference';
 import {
   GAME_STATUSES,
   STATUS_LABELS,
@@ -41,7 +37,8 @@ export function Library({
     [platform, setPlatform] = useState(''),
     [genre, setGenre] = useState('');
   const [sort, setSort] = useState<LibrarySort>('updated');
-  const [compact, setCompact] = useState(false);
+  const [view, selectView] = useLibraryViewPreference();
+  const [completedAchievements, setCompletedAchievements] = useState(false);
   const [page, setPage] = useState(0);
   const gameMap = new Map(games.map((game) => [game.id, game]));
   const gameIds = new Set(entries.map((entry) => entry.game_id));
@@ -56,6 +53,7 @@ export function Library({
     genre,
     status: filter,
     sort,
+    completedAchievements,
   });
   const totalPages = Math.ceil(visible.length / PAGE_SIZE) || 1;
   const currentPage = Math.min(page, totalPages - 1);
@@ -65,6 +63,7 @@ export function Library({
     setPlatform('');
     setGenre('');
     setFilter('all');
+    setCompletedAchievements(false);
     setPage(0);
   }
   return (
@@ -134,18 +133,33 @@ export function Library({
               <option value="title">Título A–Z</option>
               <option value="rating">Mayor puntuación</option>
               <option value="hours">Más horas registradas</option>
+              <option value="achievements">Mayor % de logros / trofeos</option>
             </select>
           </label>
         </div>
         <div className="inline-actions">
-          <button
-            type="button"
-            className="button secondary"
-            aria-pressed={compact}
-            onClick={() => setCompact((value) => !value)}
+          <div
+            className="inline-actions library-view-switch"
+            role="group"
+            aria-label="Vista de biblioteca"
           >
-            {compact ? 'Ver tarjetas' : 'Vista compacta'}
-          </button>
+            <button
+              type="button"
+              className="button secondary"
+              aria-pressed={view === 'grid'}
+              onClick={() => selectView('grid')}
+            >
+              ⊞ Vitrina
+            </button>
+            <button
+              type="button"
+              className="button secondary"
+              aria-pressed={view === 'table'}
+              onClick={() => selectView('table')}
+            >
+              ☰ Tabla
+            </button>
+          </div>
           <button type="button" className="button secondary" onClick={reset}>
             Limpiar filtros
           </button>
@@ -155,6 +169,16 @@ export function Library({
         </p>
       </section>
       <div className="filter-buttons">
+        <button
+          type="button"
+          aria-pressed={completedAchievements}
+          onClick={() => {
+            setCompletedAchievements((value) => !value);
+            setPage(0);
+          }}
+        >
+          🏆 100% Platinados
+        </button>
         <button
           aria-pressed={filter === 'all'}
           onClick={() => {
@@ -194,107 +218,63 @@ export function Library({
           </button>
         </div>
       ) : null}
-      {pagedVisible.map((entry) => {
-        const game = gameMap.get(entry.game_id);
-        if (!game) return null;
-        const playLogs = logs.filter((log) => log.user_game_id === entry.id);
-        return (
-          <article
-            key={entry.id}
-            className={`panel library-item${compact ? ' library-compact' : ''}`}
-          >
-            <GameCard game={game} score={entry.rating} />
-            <div>
-              <p className="eyebrow">
-                {STATUS_LABELS[entry.status]}{' '}
-                {entry.favorite_position ? `// TOP ${entry.favorite_position}` : ''}
-              </p>
-              <h2>
-                <Link href={`/games/${game.slug}`}>{game.title}</Link>
-              </h2>
-              <p className="muted">
-                {entry.rating ? `★ ${entry.rating}/10 · ` : ''}
-                {playLogs.length} partidas ·{' '}
-                {playLogs.reduce((sum, log) => sum + Number(log.hours_played), 0).toFixed(1)} horas
-              </p>
-              {playLogs
-                .filter((log) => log.console_progress)
-                .map((log) => (
-                  <ConsoleProgressBadge
-                    key={log.id}
-                    progress={log.console_progress!}
-                    platform={log.platform_played}
-                  />
-                ))}
-              {editable && playLogs.length > 0 ? <QuickHoursEditor logs={playLogs} /> : null}
-              {editable
-                ? playLogs
-                    .filter((log) => steamLogAppId(log.platform_played, log.note))
-                    .map((log) => (
-                      <SteamAchievementsSync
-                        key={log.id}
-                        id={log.id}
-                        hasProgress={log.console_progress?.kind === 'achievements'}
-                      />
-                    ))
-                : null}
-              <details className="library-record-details" open={compact ? undefined : true}>
-                <summary>Ver partidas y acciones</summary>
-                {editable ? (
-                  <>
-                    <details>
-                      <summary>Actualizar estado y puntuación</summary>
-                      <LibraryForm key={entry.updated_at} game={game} entry={entry} />
-                    </details>
-                    <QuickSession logs={playLogs} />
-                    <details>
-                      <summary>+ Nueva partida / rejugada</summary>
-                      <PlayLogForm entryId={entry.id} />
-                    </details>
-                  </>
-                ) : null}
-                {playLogs.map((log) => (
-                  <div className="log-entry" key={log.id}>
-                    <strong>
-                      {log.platform_played} ·{' '}
-                      {log.play_method === 'emulator'
-                        ? 'Emulador'
-                        : log.play_method === 'hardware'
-                          ? 'Hardware original'
-                          : 'Otro'}{' '}
-                      · {log.hours_played} h
-                    </strong>
-                    <p className="muted">
-                      {log.start_date ?? 'Sin inicio'} → {log.finish_date ?? 'En curso'}{' '}
-                      {log.difficulty ? `· ${log.difficulty}` : ''}
-                    </p>
-                    {log.note ? <p>{log.note}</p> : null}
-                    {editable ? (
-                      <details>
-                        <summary>Editar esta partida</summary>
-                        <PlayLogForm
-                          key={`${log.id}-${log.hours_played}`}
-                          entryId={entry.id}
-                          log={log}
+      {view === 'table' ? (
+        <LibraryTable entries={pagedVisible} games={games} logs={logs} editable={editable} />
+      ) : (
+        pagedVisible.map((entry) => {
+          const game = gameMap.get(entry.game_id);
+          if (!game) return null;
+          const playLogs = logs.filter((log) => log.user_game_id === entry.id);
+          return (
+            <article key={entry.id} className="panel library-item">
+              <GameCard game={game} score={entry.rating} />
+              <div>
+                <p className="eyebrow">
+                  {STATUS_LABELS[entry.status]}{' '}
+                  {entry.favorite_position ? `// TOP ${entry.favorite_position}` : ''}
+                </p>
+                <h2>
+                  <Link href={`/games/${game.slug}`}>{game.title}</Link>
+                </h2>
+                <p className="muted">
+                  {entry.rating ? `★ ${entry.rating}/10 · ` : ''}
+                  {playLogs.length} partidas ·{' '}
+                  {playLogs.reduce((sum, log) => sum + Number(log.hours_played), 0).toFixed(1)}{' '}
+                  horas
+                </p>
+                {playLogs
+                  .filter((log) => log.console_progress)
+                  .map((log) => (
+                    <ConsoleProgressBadge
+                      key={log.id}
+                      progress={log.console_progress!}
+                      platform={log.platform_played}
+                    />
+                  ))}
+                {editable && playLogs.length > 0 ? <QuickHoursEditor logs={playLogs} /> : null}
+                {editable
+                  ? playLogs
+                      .filter((log) => steamLogAppId(log.platform_played, log.note))
+                      .map((log) => (
+                        <SteamAchievementsSync
+                          key={log.id}
+                          id={log.id}
+                          hasProgress={log.console_progress?.kind === 'achievements'}
                         />
-                        <DeleteLog id={log.id} />
-                      </details>
-                    ) : null}
-                  </div>
-                ))}
-                {editable ? (
-                  <div className="inline-actions" style={{ marginTop: 20 }}>
-                    <Link className="button secondary" href={`/games/${game.slug}#write-review`}>
-                      Escribir / editar reseña
-                    </Link>
-                    <DeleteLibrary id={entry.id} />
-                  </div>
-                ) : null}
-              </details>
-            </div>
-          </article>
-        );
-      })}
+                      ))
+                  : null}
+                <LibraryRecordActions
+                  entry={entry}
+                  game={game}
+                  playLogs={playLogs}
+                  editable={editable}
+                  expanded
+                />
+              </div>
+            </article>
+          );
+        })
+      )}
       {entries.length > 0 ? (
         <div className="filter-buttons" role="group" aria-label="Paginación de biblioteca">
           <button
