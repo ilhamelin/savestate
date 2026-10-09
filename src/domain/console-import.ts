@@ -19,6 +19,7 @@ export interface ConsoleRow {
   platform: string;
   hours: number;
   status: GameStatus;
+  progress?: import('./console-progress.ts').ConsoleProgress;
 }
 export function consoleSource(value: unknown): ConsoleSource {
   if (value !== 'PlayStation' && value !== 'Xbox') throw new ValidationError('Consola inválida.');
@@ -70,6 +71,13 @@ export function consoleHours(value: unknown): number {
   if (typeof numeric !== 'number' || !Number.isFinite(numeric) || numeric < 0 || numeric > 100000)
     throw new ValidationError('Horas: usa un número entre 0 y 100000.');
   return Math.round(numeric * 100) / 100;
+}
+export function applyBulkHours<T extends { selected: boolean; done: boolean; hours: number }>(
+  rows: T[],
+  value: unknown,
+): T[] {
+  const hours = consoleHours(value);
+  return rows.map((row) => (row.selected && !row.done ? { ...row, hours } : row));
 }
 function importStatus(value: unknown, hours: number): GameStatus {
   if (value === undefined || value === null || value === '')

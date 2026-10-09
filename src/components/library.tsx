@@ -6,6 +6,8 @@ import { BacklogPicker } from '@/components/backlog-picker';
 import { filterLibrary, type LibrarySort } from '@/domain/library-view';
 import { libraryPlatformOptions } from '@/domain/library-platforms';
 import { QuickSession } from '@/components/quick-session';
+import { QuickHoursEditor } from '@/components/quick-hours-editor';
+import { consoleProgressLabel } from '@/domain/console-progress';
 import {
   LibraryForm,
   PlayLogForm,
@@ -213,6 +215,14 @@ export function Library({
                 {playLogs.length} partidas ·{' '}
                 {playLogs.reduce((sum, log) => sum + Number(log.hours_played), 0).toFixed(1)} horas
               </p>
+              {playLogs
+                .filter((log) => log.console_progress)
+                .map((log) => (
+                  <p className="console-progress-badge" key={log.id}>
+                    {log.platform_played} · {consoleProgressLabel(log.console_progress!)}
+                  </p>
+                ))}
+              {editable && playLogs.length > 0 ? <QuickHoursEditor logs={playLogs} /> : null}
               <details className="library-record-details" open={compact ? undefined : true}>
                 <summary>Ver partidas y acciones</summary>
                 {editable ? (

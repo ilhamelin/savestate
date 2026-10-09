@@ -1746,3 +1746,24 @@ nav a:hover,
 @import './arcade.css';
 @import './badges.css';
 @import './evolution.css';
+.console-bulk-hours {
+  margin: 14px 0;
+  flex-wrap: wrap;
+}
+.console-bulk-hours label {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.console-bulk-hours input {
+  width: 100px;
+}
+.console-progress-badge {
+  display: inline-block;
+  border: 1px solid var(--accent);
+  padding: 4px 8px;
+  color: var(--accent);
+  font-size: 12px;
+  margin: 8px 8px 8px 0;
+}

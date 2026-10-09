@@ -16,10 +16,44 @@ import { sessionMinutes, accumulatedHours } from '@/domain/quick-session';
 import { favoriteSlot, favoriteGame } from '@/domain/top4';
 import { revalidatePath } from 'next/cache';
 import { grantXp, grantCompletionXp, grantSessionXp } from '@/services/progression';
+import { consoleHours } from '@/domain/console-import';
 export async function libraryMutation(input: unknown) {
   const { db, user } = await authenticated();
   const data = object(input);
   switch (data.action) {
+    case 'set_hours': {
+      const id = uuid(data.id),
+        hours = consoleHours(data.hours),
+        expected = consoleHours(data.expected_hours);
+      const log = await db.from('play_logs').select('user_game_id').eq('id', id).maybeSingle();
+      dbCheck(log.error);
+      if (!log.data) throw new AppError('Partida no encontrada.', 404);
+      const owner = await db
+        .from('user_games')
+        .select('id')
+        .eq('id', log.data.user_game_id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      dbCheck(owner.error);
+      if (!owner.data) throw new AppError('Partida no encontrada.', 404);
+      const updated = await db
+        .from('play_logs')
+        .update({ hours_played: hours })
+        .eq('id', id)
+        .eq('user_game_id', owner.data.id)
+        .eq('hours_played', expected)
+        .select()
+        .maybeSingle();
+      dbCheck(updated.error);
+      if (!updated.data)
+        throw new AppError(
+          'Las horas cambiaron mientras editabas. Recarga y vuelve a intentarlo.',
+          409,
+        );
+      revalidatePath('/library');
+      revalidatePath('/players/[username]', 'page');
+      return updated.data;
+    }
     case 'favorite_slot': {
       const { error } = await db.rpc('set_favorite_slot', {
         p_slot: favoriteSlot(data.slot),

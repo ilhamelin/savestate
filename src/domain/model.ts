@@ -67,6 +67,7 @@ export interface UserGame {
   updated_at: string;
 }
 export interface PlayLog {
+  console_progress?: import('./console-progress.ts').ConsoleProgress | null;
   id: string;
   user_game_id: string;
   platform_played: string;

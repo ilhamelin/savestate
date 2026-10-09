@@ -13,6 +13,7 @@ import { catalogue } from '@/services/catalogue';
 import { parseFilters } from '@/integrations/igdb/query';
 import { fetchPsnTitles, fetchXboxTitles } from '@/integrations/consoles/server';
 import { grantXp, grantCompletionXp } from '@/services/progression';
+import { consoleProgress } from '@/domain/console-progress';
 
 export async function consoleImportMutation(input: unknown) {
   const { db, user } = await authenticated();
@@ -79,11 +80,14 @@ export async function consoleImportMutation(input: unknown) {
     };
   }
   if (data.action !== 'commit') throw new AppError('Operación de importación inválida.', 400);
+  const progress = consoleProgress(data.progress, source);
+  const gameId = uuid(data.game_id),
+    platform = consolePlatform(data.platform, source);
   const result = await db
     .rpc('import_console_game', {
-      p_game_id: uuid(data.game_id),
+      p_game_id: gameId,
       p_status: status(data.status),
-      p_platform: consolePlatform(data.platform, source),
+      p_platform: platform,
       p_hours: consoleHours(data.hours),
       p_source: source,
     })
@@ -91,6 +95,27 @@ export async function consoleImportMutation(input: unknown) {
   if (result.error?.code === 'PGRST202')
     throw new AppError('Aplica la migración 016 para importar juegos de consola.', 503);
   dbCheck(result.error);
+  if (progress) {
+    const entry = await db
+      .from('user_games')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('game_id', gameId)
+      .single();
+    dbCheck(entry.error);
+    if (!entry.data) throw new AppError('Registro importado no encontrado.', 404);
+    const saved = await db
+      .from('play_logs')
+      .update({ console_progress: progress })
+      .eq('user_game_id', entry.data.id)
+      .eq('platform_played', platform)
+      .eq('note', `[${source}] Partida importada a la biblioteca.`)
+      .select('id');
+    if (saved.error?.code === '42703' || saved.error?.code === 'PGRST204')
+      throw new AppError('Aplica la migración 018 para conservar el progreso de consola.', 503);
+    dbCheck(saved.error);
+    if (!saved.data?.length) throw new AppError('Partida importada no encontrada.', 404);
+  }
   await grantCompletionXp(db, user.id, uuid(data.game_id));
   return {
     state: result.data,

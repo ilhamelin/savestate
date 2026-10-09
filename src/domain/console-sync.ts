@@ -1,5 +1,6 @@
 import type { ConsoleRow } from './console-import.ts';
 import { ValidationError } from './validation.ts';
+import { consoleProgress, type ConsoleProgress } from './console-progress.ts';
 const record = (input: unknown): Record<string, unknown> =>
   input && typeof input === 'object' && !Array.isArray(input)
     ? (input as Record<string, unknown>)
@@ -67,6 +68,7 @@ function mappedTitles(input: unknown, provider: 'psn' | 'xbox'): ConsoleRow[] {
       continue;
     let platform: string | undefined,
       complete = false;
+    let progress: ConsoleProgress | null = null;
     if (provider === 'psn') {
       const raw =
         typeof value.trophyTitlePlatform === 'string'
@@ -88,6 +90,31 @@ function mappedTitles(input: unknown, provider: 'psn' | 'xbox'): ConsoleRow[] {
       complete =
         value.progress === 100 ||
         (typeof platinum === 'number' && Number.isFinite(platinum) && platinum > 0);
+      const earned = record(value.earnedTrophies),
+        defined = record(value.definedTrophies);
+      const kinds = ['bronze', 'silver', 'gold', 'platinum'];
+      if (
+        kinds.every(
+          (kind) =>
+            Number.isInteger(earned[kind]) &&
+            (earned[kind] as number) >= 0 &&
+            Number.isInteger(defined[kind]) &&
+            (defined[kind] as number) >= 0,
+        )
+      ) {
+        try {
+          progress = consoleProgress(
+            {
+              kind: 'trophies',
+              current: kinds.reduce((sum, kind) => sum + (earned[kind] as number), 0),
+              total: kinds.reduce((sum, kind) => sum + (defined[kind] as number), 0),
+            },
+            'PlayStation',
+          );
+        } catch {
+          /* Missing or malformed upstream totals are not inferred. */
+        }
+      }
     } else {
       const devices = Array.isArray(value.devices) ? value.devices : [];
       const platforms: Record<string, string> = {
@@ -105,6 +132,11 @@ function mappedTitles(input: unknown, provider: 'psn' | 'xbox'): ConsoleRow[] {
       const achievement = record(value.achievement);
       const current = achievement.currentGamerscore ?? value.currentGamerscore;
       const total = achievement.totalGamerscore ?? value.maxGamerscore;
+      try {
+        progress = consoleProgress({ kind: 'gamerscore', current, total }, 'Xbox');
+      } catch {
+        /* Do not turn incomplete achievement data into invented scores. */
+      }
       complete =
         typeof current === 'number' &&
         typeof total === 'number' &&
@@ -122,6 +154,7 @@ function mappedTitles(input: unknown, provider: 'psn' | 'xbox'): ConsoleRow[] {
       platform,
       hours: 0,
       status: complete ? 'cleared' : 'playing',
+      ...(progress ? { progress } : {}),
     });
     if (rows.length === 200) break;
   }
