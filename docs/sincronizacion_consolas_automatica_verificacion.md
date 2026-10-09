@@ -47,4 +47,11 @@ node --env-file=.env.local --experimental-strip-types --test tests/integration/c
 
 ## Publicación
 
-Pendiente de completar el despliegue solicitado mediante `npx vercel --prod`.
+Publicado con `npx vercel --prod` desde el commit `f6d6c93`. Vercel confirmó `READY` para `dpl_9r9vdoxCWLBnGLycS9BLgVDekys6`, con build remoto correcto en 17 segundos.
+
+- Dominio: <https://savestate-eight.vercel.app>.
+- Despliegue: <https://savestate-ffzufnum8-ilhamelins-projects.vercel.app>.
+- Comprobación pública: HTTP 200 y CSP con nonce; sincronización sin sesión rechazada con 401.
+- Sesión temporal real en producción: ID vacío rechazado con 400; Xbox respondió 503 con el mensaje explícito de `XBL_API_KEY` pendiente. La cuenta temporal se eliminó.
+
+No se da por verificada una sincronización Xbox real hasta configurar su credencial. PSN se verificó con la credencial local real; los casos de privacidad y coincidencias se probaron con transportes simulados.
