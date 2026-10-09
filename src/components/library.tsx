@@ -8,6 +8,8 @@ import { libraryPlatformOptions } from '@/domain/library-platforms';
 import { QuickSession } from '@/components/quick-session';
 import { QuickHoursEditor } from '@/components/quick-hours-editor';
 import { ConsoleProgressBadge } from '@/components/console-progress-badge';
+import { SteamAchievementsSync } from '@/components/steam-achievements-sync';
+import { steamLogAppId } from '@/domain/steam-achievements';
 import {
   LibraryForm,
   PlayLogForm,
@@ -225,6 +227,17 @@ export function Library({
                   />
                 ))}
               {editable && playLogs.length > 0 ? <QuickHoursEditor logs={playLogs} /> : null}
+              {editable
+                ? playLogs
+                    .filter((log) => steamLogAppId(log.platform_played, log.note))
+                    .map((log) => (
+                      <SteamAchievementsSync
+                        key={log.id}
+                        id={log.id}
+                        hasProgress={log.console_progress?.kind === 'achievements'}
+                      />
+                    ))
+                : null}
               <details className="library-record-details" open={compact ? undefined : true}>
                 <summary>Ver partidas y acciones</summary>
                 {editable ? (

@@ -17,10 +17,65 @@ import { favoriteSlot, favoriteGame } from '@/domain/top4';
 import { revalidatePath } from 'next/cache';
 import { grantXp, grantCompletionXp, grantSessionXp } from '@/services/progression';
 import { consoleHours } from '@/domain/console-import';
+import { steamLogAppId } from '@/domain/steam-achievements';
+import { fetchSteamAchievements } from '@/integrations/steam/server';
 export async function libraryMutation(input: unknown) {
   const { db, user } = await authenticated();
   const data = object(input);
   switch (data.action) {
+    case 'steam_achievements': {
+      const id = uuid(data.id);
+      const log = await db
+        .from('play_logs')
+        .select('user_game_id,platform_played,note')
+        .eq('id', id)
+        .maybeSingle();
+      dbCheck(log.error);
+      if (!log.data) throw new AppError('Partida no encontrada.', 404);
+      const owner = await db
+        .from('user_games')
+        .select('id')
+        .eq('id', log.data.user_game_id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      dbCheck(owner.error);
+      if (!owner.data) throw new AppError('Partida no encontrada.', 404);
+      const appid = steamLogAppId(log.data.platform_played, log.data.note);
+      if (!appid)
+        throw new AppError('Esta partida no tiene un identificador de Steam válido.', 400);
+      const profile = await db.from('profiles').select('steam_id').eq('id', user.id).single();
+      dbCheck(profile.error);
+      if (!profile.data?.steam_id)
+        throw new AppError('Vincula tu cuenta desde el importador de Steam.', 400);
+      const progress = await fetchSteamAchievements(profile.data.steam_id, appid);
+      if (!progress)
+        return {
+          progress: null,
+          message:
+            'Steam no devolvió logros para este juego. Puede no tener estadísticas o tenerlas privadas.',
+        };
+      // Do not overwrite unrelated fields, and reject a log edited while fetching upstream.
+      const updated = await db
+        .from('play_logs')
+        .update({ console_progress: progress })
+        .eq('id', id)
+        .eq('user_game_id', owner.data.id)
+        .eq('platform_played', log.data.platform_played)
+        .eq('note', log.data.note)
+        .select('id')
+        .maybeSingle();
+      if (updated.error?.code === '23514')
+        throw new AppError(
+          'La base de datos requiere la migración 019 para guardar logros de Steam.',
+          503,
+        );
+      dbCheck(updated.error);
+      if (!updated.data)
+        throw new AppError('La partida cambió. Recarga y vuelve a sincronizar.', 409);
+      revalidatePath('/library');
+      revalidatePath('/players/[username]', 'page');
+      return { progress, message: 'Logros de Steam actualizados.' };
+    }
     case 'set_hours': {
       const id = uuid(data.id),
         hours = consoleHours(data.hours),

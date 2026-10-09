@@ -2,6 +2,34 @@ import 'server-only';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { AppError } from '@/lib/http';
 import { steamGames, steamProfile, type SteamGame } from '@/domain/steam';
+import { steamAchievementSummary } from '@/domain/steam-achievements';
+
+export async function fetchSteamAchievements(steamid: string, appid: number) {
+  const account = steamProfile(steamid);
+  if (!('steamid' in account) || !Number.isInteger(appid) || appid < 1 || appid > 4294967295)
+    throw new AppError('Identificador de Steam inválido.', 400);
+  const key = process.env.STEAM_API_KEY;
+  if (!key) throw new AppError('Configura STEAM_API_KEY para sincronizar logros.', 503);
+  const url = new URL('https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/');
+  url.search = new URLSearchParams({
+    key,
+    steamid: account.steamid,
+    appid: String(appid),
+  }).toString();
+  try {
+    const response = await fetch(url, {
+      cache: 'no-store',
+      redirect: 'error',
+      signal: AbortSignal.timeout(6000),
+    });
+    // Steam returns 400 for games without user stats and 403 for unavailable/private stats.
+    if (response.status === 400 || response.status === 403) return null;
+    if (!response.ok) throw new Error('upstream');
+    return steamAchievementSummary(await response.json());
+  } catch {
+    throw new AppError('No se pudieron consultar los logros de Steam. Inténtalo de nuevo.', 503);
+  }
+}
 
 async function request(path: string, params: Record<string, string>): Promise<unknown> {
   const key = process.env.STEAM_API_KEY;

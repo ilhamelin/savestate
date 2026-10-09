@@ -2,7 +2,7 @@ import { ValidationError } from './validation.ts';
 import type { ConsoleSource } from './console-import.ts';
 export interface ConsoleProgress {
   source_title?: string;
-  kind: 'gamerscore' | 'trophies';
+  kind: 'gamerscore' | 'trophies' | 'achievements';
   current: number;
   total: number;
 }
@@ -37,6 +37,8 @@ export function consoleProgress(value: unknown, source: ConsoleSource): ConsoleP
   };
 }
 export function consoleProgressLabel(progress: ConsoleProgress): string {
+  if (progress.kind === 'achievements')
+    return `[Steam] ${progress.current} / ${progress.total} logros (${Math.round((progress.current / progress.total) * 100)}%)`;
   return progress.kind === 'gamerscore'
     ? `[Xbox Live] ${progress.current} / ${progress.total} G`
     : `[PlayStation Network] ${progress.current} / ${progress.total} trofeos`;
