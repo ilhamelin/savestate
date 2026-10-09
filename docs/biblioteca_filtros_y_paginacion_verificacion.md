@@ -17,3 +17,9 @@ Referencia: `docs/propuesta_filtros_plataforma_y_paginacion_biblioteca.md`. No r
 - Evidencia: `docs/evidence/library-platform-pagination.png`. Cuenta temporal, registros dependientes, scripts y servidor eliminados al finalizar.
 
 La paginación es de cliente sobre la colección ya cargada; no cambia el límite de lectura del servidor ni añade paginación de base de datos.
+
+## Producción
+
+Publicado con `npx vercel --prod` desde `fe90b6f`: estado `READY`, build remoto de 10 segundos. Despliegue `dpl_8xk7agehzyo91piZGJfp4ZSUXAYx`, URL `https://savestate-opar9da1t-ilhamelins-projects.vercel.app`, alias `https://savestate-eight.vercel.app`.
+
+El perfil público respondió HTTP 200 con CSP nonce, etiqueta «Plataforma jugada» y controles de «Paginación de biblioteca» en el HTML de producción.
