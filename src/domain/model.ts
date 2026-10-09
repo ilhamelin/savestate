@@ -19,6 +19,8 @@ export const REACTIONS = ['critical_hit', 'gg', 'game_over'] as const;
 export type Reaction = (typeof REACTIONS)[number];
 export type Theme = 'cyan' | 'green' | 'pink' | 'amber';
 export interface Profile {
+  psn_id: string | null;
+  xbox_gamertag: string | null;
   steam_id: string | null;
   steam_sync_count: number;
   steam_last_sync_at: string | null;

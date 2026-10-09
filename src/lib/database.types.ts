@@ -97,6 +97,16 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      import_console_game: {
+        Args: {
+          p_game_id: string;
+          p_status: string;
+          p_platform: string;
+          p_hours: number;
+          p_source: string;
+        };
+        Returns: string;
+      };
       claim_steam_sync_slot: {
         Args: Record<string, never>;
         Returns: { allowed: boolean; remaining_slots: number; message: string }[];
