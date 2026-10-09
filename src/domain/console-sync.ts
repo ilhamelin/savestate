@@ -7,6 +7,26 @@ const record = (input: unknown): Record<string, unknown> =>
     : {};
 const normalized = (input: unknown) =>
   typeof input === 'string' ? input.normalize('NFKC').trim().toLowerCase() : '';
+export function parseIsoDuration(duration: unknown): number {
+  if (typeof duration !== 'string' || duration.length > 100) return 0;
+  const match = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(duration);
+  if (!match || !match.slice(1).some(Boolean)) return 0;
+  const total = Number(match[1] ?? 0) + Number(match[2] ?? 0) / 60 + Number(match[3] ?? 0) / 3600;
+  const rounded = Math.round(total * 100) / 100;
+  return Number.isFinite(rounded) ? rounded : 0;
+}
+export function psnPlaytimes(input: unknown): Map<string, number> {
+  const result = new Map<string, number>();
+  if (!Array.isArray(input)) return result;
+  for (const item of input) {
+    const row = record(item);
+    if (typeof row.category === 'string' && row.category.includes('media_app')) continue;
+    const title = normalized(row.name);
+    const hours = parseIsoDuration(row.playDuration);
+    if (title && hours <= 100000) result.set(title, Math.max(result.get(title) ?? 0, hours));
+  }
+  return result;
+}
 export function exactPsnAccount(input: unknown, identity: string): string | null {
   const domains = record(input).domainResponses;
   if (!Array.isArray(domains)) throw new ValidationError('Respuesta PSN inválida.');
@@ -51,7 +71,11 @@ export function exactXboxAccount(input: unknown, identity: string): string | nul
   }
   return null;
 }
-function mappedTitles(input: unknown, provider: 'psn' | 'xbox'): ConsoleRow[] {
+function mappedTitles(
+  input: unknown,
+  provider: 'psn' | 'xbox',
+  playtimes?: Map<string, number>,
+): ConsoleRow[] {
   if (!Array.isArray(input) || input.length > 5000)
     throw new ValidationError('Lista de títulos inválida.');
   const rows: ConsoleRow[] = [];
@@ -149,10 +173,17 @@ function mappedTitles(input: unknown, provider: 'psn' | 'xbox'): ConsoleRow[] {
     const key = `${normalized(title)}:${platform}`;
     if (seen.has(key)) continue;
     seen.add(key);
+    const playedHours = provider === 'psn' ? playtimes?.get(normalized(title)) : undefined;
     rows.push({
       title: title.trim(),
       platform,
-      hours: 0,
+      hours:
+        typeof playedHours === 'number' &&
+        Number.isFinite(playedHours) &&
+        playedHours >= 0 &&
+        playedHours <= 100000
+          ? playedHours
+          : 0,
       status: complete ? 'cleared' : 'playing',
       ...(progress ? { progress } : {}),
     });
@@ -160,5 +191,6 @@ function mappedTitles(input: unknown, provider: 'psn' | 'xbox'): ConsoleRow[] {
   }
   return rows;
 }
-export const psnTitleRows = (input: unknown) => mappedTitles(input, 'psn');
+export const psnTitleRows = (input: unknown, playtimes?: Map<string, number>) =>
+  mappedTitles(input, 'psn', playtimes);
 export const xboxTitleRows = (input: unknown) => mappedTitles(input, 'xbox');

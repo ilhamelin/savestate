@@ -5,7 +5,60 @@ import {
   exactXboxAccount,
   psnTitleRows,
   xboxTitleRows,
+  parseIsoDuration,
+  psnPlaytimes,
 } from '../../src/domain/console-sync.ts';
+
+test('PSN durations parse hours, minutes and seconds with safe invalid fallbacks', () => {
+  assert.equal(parseIsoDuration('PT72H23M32S'), 72.39);
+  assert.equal(parseIsoDuration('PT2H25M'), 2.42);
+  assert.equal(parseIsoDuration('PT45M'), 0.75);
+  assert.equal(parseIsoDuration('PT10S'), 0);
+  assert.equal(parseIsoDuration('PT36S'), 0.01);
+  assert.equal(parseIsoDuration('PT137H6M36S'), 137.11);
+  assert.equal(parseIsoDuration('PT0H0M0S'), 0);
+  for (const value of [
+    null,
+    undefined,
+    72,
+    {},
+    '',
+    'PT',
+    'P1D',
+    'PT-1H',
+    'PT1.5H',
+    'PT1M2H',
+    ' PT2H',
+    'PT2Hgarbage',
+    `PT${'9'.repeat(101)}H`,
+  ])
+    assert.equal(parseIsoDuration(value), 0);
+});
+test('PSN playtime joins normalized trophy titles, excludes media and preserves missing retro hours', () => {
+  const playtimes = psnPlaytimes([
+    { name: ' Roblox ', playDuration: 'PT72H23M32S', category: 'ps5_native_game' },
+    { name: 'Roblox', playDuration: 'PT1H', category: 'ps4_game' },
+    { name: 'Netflix', playDuration: 'PT99H', category: 'ps5_media_app' },
+    { name: 'Huge', playDuration: 'PT100001H', category: 'ps5_native_game' },
+  ]);
+  assert.equal(playtimes.get('roblox'), 72.39);
+  assert.equal(playtimes.has('netflix'), false);
+  assert.equal(playtimes.has('huge'), false);
+  const rows = psnTitleRows(
+    [
+      { trophyTitleName: 'ROBLOX', trophyTitlePlatform: 'PS5', progress: 100 },
+      { trophyTitleName: 'Retro', trophyTitlePlatform: 'PS3' },
+    ],
+    playtimes,
+  );
+  assert.equal(rows[0]!.hours, 72.39);
+  assert.equal(rows[0]!.status, 'cleared');
+  assert.equal(rows[1]!.hours, 0);
+  assert.equal(
+    psnTitleRows([{ trophyTitleName: 'ROBLOX', trophyTitlePlatform: 'PS5' }])[0]!.hours,
+    0,
+  );
+});
 test('console sync: exact identities only, including Xbox suffixes and numeric IDs', () => {
   const psn = {
     domainResponses: [

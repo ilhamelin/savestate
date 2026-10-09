@@ -141,7 +141,7 @@ export function ConsoleImporter({
       setProgress(0);
       setProgressTotal(0);
       setMessage(
-        `Encontramos ${preview.length} títulos en tu perfil de ${source}. Confirma las coincidencias antes de importar. Se muestran hasta 200 títulos públicos; las horas no están disponibles y quedan en cero.`,
+        `Encontramos ${preview.length} títulos en tu perfil de ${source}. Confirma las coincidencias antes de importar. Se muestran hasta 200 títulos públicos. ${source === 'PlayStation' ? 'Las horas reales se incluyen cuando Sony permite consultar el historial; los títulos sin datos quedan en cero.' : 'Xbox no facilita horas en esta integración; quedan en cero.'}`,
       );
       router.refresh();
     });
@@ -199,9 +199,9 @@ export function ConsoleImporter({
     <section className="panel console-importer" aria-label={`Importar ${source}`}>
       <h2>{source === 'PlayStation' ? 'PlayStation / PSN' : 'Xbox'}</h2>
       <p className="notice">
-        ℹ️ A diferencia de Steam, la sincronización actual de Xbox y PlayStation solo consulta
-        listas de logros/trofeos y no transmite horas de juego. Los títulos se importan con el
-        progreso recibido y 0 horas cuando el proveedor no las facilita.
+        {source === 'PlayStation'
+          ? 'ℹ️ PlayStation importa trofeos y horas reales cuando el historial de juegos es accesible. Si Sony no facilita horas para un título o el historial es privado, se muestran 0 horas.'
+          : 'ℹ️ Xbox sincroniza logros y Gamerscore; esta integración no recibe horas de juego. Los títulos sin tiempo disponible se muestran con 0 horas.'}
       </p>
       <p className="muted">
         Ingresa tu identificador público para sincronizar automáticamente tus juegos y trofeos, o

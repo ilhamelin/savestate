@@ -79,7 +79,7 @@ test(
         assert.equal(response.status, 200);
         const preview = (await response.json()).data;
         assert.equal(preview.length, 1);
-        assert.equal(preview[0].hours, 0);
+        assert.equal(preview[0].hours, source === 'PlayStation' ? 72.39 : 0);
         assert.equal(preview[0].status, source === 'PlayStation' ? 'cleared' : 'playing');
         assert.equal((await post(source, 'Missing')).status, 404);
         const privateProfile = await post(source, 'Private');
@@ -96,6 +96,40 @@ test(
         .single();
       assert.equal(profile.data!.psn_id, 'Private');
       assert.equal(profile.data!.xbox_gamertag, 'Broken');
+      const noHours = await post('PlayStation', 'NoHours');
+      assert.equal(noHours.status, 200);
+      assert.equal((await noHours.json()).data[0].hours, 0);
+      const otherGame = (
+        await admin.from('games').select('id').neq('id', game.id).limit(1).single()
+      ).data!;
+      const psnImport = await fetch(`${base}/api/consoles/import`, {
+        method: 'POST',
+        headers: { Cookie: cookie, Origin: base, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'commit',
+          source: 'PlayStation',
+          game_id: otherGame.id,
+          platform: 'PlayStation 4',
+          status: 'playing',
+          hours: 72.39,
+        }),
+      });
+      assert.equal(psnImport.status, 200);
+      const psnEntry = (
+        await db
+          .from('user_games')
+          .select('id')
+          .eq('user_id', id)
+          .eq('game_id', otherGame.id)
+          .single()
+      ).data!;
+      const psnLog = await db
+        .from('play_logs')
+        .select('hours_played')
+        .eq('user_game_id', psnEntry.id)
+        .single();
+      assert.equal(psnLog.error, null);
+      assert.equal(Number(psnLog.data!.hours_played), 72.39);
       assert.equal((await post('Xbox', 'Fixture')).status, 200);
       const stored = await db.from('play_logs').select('*').eq('user_game_id', entry.id);
       assert.equal(stored.data!.length, 2);

@@ -4,6 +4,7 @@ import {
   exactPsnAccount,
   exactXboxAccount,
   psnTitleRows,
+  psnPlaytimes,
   xboxTitleRows,
 } from '@/domain/console-sync';
 import { consoleIdentity, type ConsoleRow } from '@/domain/console-import';
@@ -34,7 +35,7 @@ function psnResponse(input: unknown) {
     throw providerError('PSN', 502);
   }
 }
-async function bounded<T>(work: () => Promise<T>): Promise<T> {
+async function bounded<T>(work: () => Promise<T>, timeout = 20000): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
@@ -48,7 +49,7 @@ async function bounded<T>(work: () => Promise<T>): Promise<T> {
                 502,
               ),
             ),
-          20000,
+          timeout,
         );
       }),
     ]);
@@ -72,6 +73,7 @@ export async function fetchPsnTitles(onlineId: string): Promise<ConsoleRow[]> {
         exchangeAccessCodeForAuthTokens,
         makeUniversalSearch,
         getUserTitles,
+        getUserPlayedGames,
       } = await import('psn-api');
       const accessCode = await exchangeNpssoForAccessCode(npsso);
       const auth = await exchangeAccessCodeForAuthTokens(accessCode);
@@ -80,15 +82,31 @@ export async function fetchPsnTitles(onlineId: string): Promise<ConsoleRow[]> {
       psnResponse(search);
       const accountId = exactPsnAccount(search, identity);
       if (!accountId) throw providerError('PSN', 404);
-      const titles: unknown[] = [];
-      for (const offset of [0, 100]) {
-        const page = await getUserTitles(auth, accountId, { limit: 100, offset });
-        psnResponse(page);
-        if (!Array.isArray(page.trophyTitles)) throw providerError('PSN', 502);
-        titles.push(...page.trophyTitles);
-        if (page.trophyTitles.length < 100) break;
-      }
-      const rows = psnTitleRows(titles);
+      const [titles, playtimes] = await Promise.all([
+        (async () => {
+          const titles: unknown[] = [];
+          for (const offset of [0, 100]) {
+            const page = await getUserTitles(auth, accountId, { limit: 100, offset });
+            psnResponse(page);
+            if (!Array.isArray(page.trophyTitles)) throw providerError('PSN', 502);
+            titles.push(...page.trophyTitles);
+            if (page.trophyTitles.length < 100) break;
+          }
+          return titles;
+        })(),
+        bounded(async () => {
+          const played: unknown[] = [];
+          for (const offset of [0, 100]) {
+            const page = await getUserPlayedGames(auth, accountId, { limit: 100, offset });
+            psnResponse(page);
+            if (!Array.isArray(page.titles)) throw providerError('PSN', 502);
+            played.push(...page.titles);
+            if (page.titles.length < 100) break;
+          }
+          return psnPlaytimes(played);
+        }, 6000).catch(() => new Map<string, number>()),
+      ]);
+      const rows = psnTitleRows(titles, playtimes);
       if (!rows.length) throw providerError('PSN', 404);
       return rows;
     });

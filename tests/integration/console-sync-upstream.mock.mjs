@@ -29,11 +29,26 @@ if (process.env.TEST_CONSOLE_SYNC_MOCK === '1') {
                       {
                         socialMetadata: {
                           onlineId: body.searchTerm,
-                          accountId: body.searchTerm === 'Private' ? '2' : '1',
+                          accountId:
+                            body.searchTerm === 'Private'
+                              ? '2'
+                              : body.searchTerm === 'NoHours'
+                                ? '3'
+                                : '1',
                         },
                       },
                     ],
             },
+          ],
+        });
+      }
+      if (url.pathname.includes('/api/gamelist/v2/users/') && url.pathname.endsWith('/titles')) {
+        if (url.pathname.includes('/users/2/') || url.pathname.includes('/users/3/'))
+          return new Response(null, { status: 403 });
+        return Response.json({
+          titles: [
+            { name: 'PSN Fixture', category: 'ps5_native_game', playDuration: 'PT72H23M32S' },
+            { name: 'Netflix', category: 'ps5_media_app', playDuration: 'PT99H' },
           ],
         });
       }
