@@ -87,6 +87,24 @@ test('library progress sorts by best platform and filters exact completion witho
     [],
   );
   assert.equal(achievementPercent(logs[0]!), 99.9);
+  const completedEntries = entries.map((entry, index) => ({
+    ...entry,
+    status: (['cleared', 'platinum', 'playing', 'backlog'] as const)[index]!,
+  }));
+  assert.deepEqual(
+    filterLibrary(completedEntries, games, logs, { ...filters, status: 'completed' }).map(
+      (entry) => entry.id,
+    ),
+    ['B', 'A'],
+  );
+  assert.deepEqual(
+    filterLibrary(completedEntries, games, logs, {
+      ...filters,
+      status: 'completed',
+      completedAchievements: true,
+    }).map((entry) => entry.id),
+    ['B'],
+  );
   assert.equal(achievementPercent({ console_progress: null } as PlayLog), null);
   assert.equal(
     achievementPercent({

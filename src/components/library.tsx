@@ -2,13 +2,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { GameCard } from '@/components/game-card';
-import { filterLibrary, type LibrarySort } from '@/domain/library-view';
+import { achievementPercent, filterLibrary, type LibrarySort } from '@/domain/library-view';
 import { libraryPlatformOptions } from '@/domain/library-platforms';
 import { QuickHoursEditor } from '@/components/quick-hours-editor';
 import { ConsoleProgressBadge } from '@/components/console-progress-badge';
 import { SteamAchievementsSync } from '@/components/steam-achievements-sync';
 import { steamLogAppId } from '@/domain/steam-achievements';
-import { FavoritesForm } from '@/components/library-forms';
 import { LibraryRecordActions } from '@/components/library-record-actions';
 import { LibraryTable } from '@/components/library-table';
 import { useLibraryViewPreference } from '@/components/library-view-preference';
@@ -57,6 +56,32 @@ export function Library({
   const totalPages = Math.ceil(visible.length / PAGE_SIZE) || 1;
   const currentPage = Math.min(page, totalPages - 1);
   const pagedVisible = visible.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+  const fullAchievementEntries = new Set(
+    logs.filter((log) => achievementPercent(log) === 100).map((log) => log.user_game_id),
+  );
+  const collectionCards = [
+    {
+      id: 'playing',
+      label: 'Jugando',
+      count: entries.filter((entry) => entry.status === 'playing').length,
+    },
+    {
+      id: 'backlog',
+      label: 'Backlog',
+      count: entries.filter((entry) => entry.status === 'backlog').length,
+    },
+    {
+      id: 'completed',
+      label: 'Completados',
+      count: entries.filter((entry) => entry.status === 'cleared' || entry.status === 'platinum')
+        .length,
+    },
+    {
+      id: 'achievements',
+      label: '🏆 100% Platinados',
+      count: entries.filter((entry) => fullAchievementEntries.has(entry.id)).length,
+    },
+  ];
   function reset() {
     setQuery('');
     setPlatform('');
@@ -67,12 +92,31 @@ export function Library({
   }
   return (
     <>
-      {editable ? (
-        <details className="panel">
-          <summary>Editar mis Top 4 favoritos</summary>
-          <FavoritesForm entries={entries} games={games} />
-        </details>
-      ) : null}
+      <section className="collection-dashboard" aria-label="Resumen de colección">
+        {collectionCards.map((card) => (
+          <button
+            type="button"
+            key={card.id}
+            className="collection-dashboard-card"
+            aria-pressed={
+              card.id === 'achievements'
+                ? completedAchievements && filter === 'all'
+                : !completedAchievements && filter === card.id
+            }
+            onClick={() => {
+              setQuery('');
+              setPlatform('');
+              setGenre('');
+              setFilter(card.id === 'achievements' ? 'all' : card.id);
+              setCompletedAchievements(card.id === 'achievements');
+              setPage(0);
+            }}
+          >
+            <span>{card.label}</span>
+            <strong>{card.count}</strong>
+          </button>
+        ))}
+      </section>
       <section className="panel form-stack" aria-label="Buscar y organizar biblioteca">
         <label>
           Buscar en esta biblioteca

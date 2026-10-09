@@ -50,7 +50,10 @@ export function filterLibrary(
       const game = gameMap.get(entry.game_id);
       return (
         game &&
-        (filters.status === 'all' || entry.status === filters.status) &&
+        (filters.status === 'all' ||
+          entry.status === filters.status ||
+          (filters.status === 'completed' &&
+            (entry.status === 'cleared' || entry.status === 'platinum'))) &&
         (!filters.completedAchievements || progress.get(entry.id) === 100) &&
         normalize(game.title).includes(query) &&
         matchesLibraryPlatform(game, entryLogs.get(entry.id) ?? [], filters.platform) &&

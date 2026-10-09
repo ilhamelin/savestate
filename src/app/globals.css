@@ -2211,3 +2211,45 @@ nav a:hover,
   flex: 1;
   min-width: 0;
 }
+
+.collection-dashboard {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.collection-dashboard-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.collection-dashboard-card strong {
+  font-size: 1.8rem;
+  line-height: 1.2;
+  color: var(--accent);
+}
+.collection-dashboard-card:hover,
+.collection-dashboard-card[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  color: var(--accent);
+  box-shadow: inset 3px 0 var(--accent);
+}
+.collection-dashboard-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+@media (max-width: 639px) {
+  .collection-dashboard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
