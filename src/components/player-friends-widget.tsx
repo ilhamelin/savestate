@@ -90,11 +90,7 @@ export function PlayerFriendsWidget({
   }
 
   return (
-    <section
-      id="player-friends"
-      className="player-friends-widget"
-      aria-labelledby="player-friends-heading"
-    >
+    <section className="player-friends-widget" aria-labelledby="player-friends-heading">
       <h2 id="player-friends-heading">
         Amigos <span className="muted">{available ? friends.length : '—'}</span>
       </h2>

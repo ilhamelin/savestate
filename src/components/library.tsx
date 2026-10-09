@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { GameCard } from '@/components/game-card';
-import { BacklogPicker } from '@/components/backlog-picker';
 import { filterLibrary, type LibrarySort } from '@/domain/library-view';
 import { libraryPlatformOptions } from '@/domain/library-platforms';
 import { QuickHoursEditor } from '@/components/quick-hours-editor';
@@ -68,7 +67,6 @@ export function Library({
   }
   return (
     <>
-      {editable ? <BacklogPicker entries={entries} games={games} logs={logs} /> : null}
       {editable ? (
         <details className="panel">
           <summary>Editar mis Top 4 favoritos</summary>

@@ -113,7 +113,17 @@ export default async function Player({ params }: { params: Promise<{ username: s
             </div>
           </ProfileIdentity>
         </GamerRoom>
-        <HardwareBadges platforms={hardware} />
+        <div className="profile-dual-grid" id="player-friends">
+          <HardwareBadges platforms={hardware} />
+          <PlayerFriendsWidget
+            key={profile.id}
+            friends={friendships.friends}
+            available={friendships.available}
+            receivedRequests={requests.received}
+            sentRequests={requests.sent}
+            isOwner={isOwner}
+          />
+        </div>
         <BadgeGallery {...badges} />
         <p>
           <Link className="button secondary" href={`/players/${profile.username}/wrapped`}>
@@ -136,14 +146,6 @@ export default async function Player({ params }: { params: Promise<{ username: s
             Conecta para seguir o solicitar amistad.
           </Link>
         )}
-        <PlayerFriendsWidget
-          key={profile.id}
-          friends={friendships.friends}
-          available={friendships.available}
-          receivedRequests={requests.received}
-          sentRequests={requests.sent}
-          isOwner={isOwner}
-        />
         {!library ? (
           <div className="empty-state">
             <h2>Biblioteca visible solo para amigos.</h2>
