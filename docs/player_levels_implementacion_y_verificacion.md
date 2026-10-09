@@ -33,3 +33,12 @@ Perfil y vista previa comparten `ProfileIdentity`: marco, nivel, título equipad
 - Navegador: HUD, camino de 50 niveles, apertura/cierre del modal, opciones limitadas al nivel, previsualización, dock y guardado de título/marco. Perfil temporal de nivel 15 preparado por el administrador exclusivamente para QA; los usuarios no pueden modificar su nivel de esta manera.
 - Evidencia: `docs/evidence/player-level-profile.png` y `docs/evidence/player-rewards-road.png`.
 - La prueba integral final pasó en 15.99 segundos e incluyó `leveled_up`. Modal centrado y cierre con Escape verificados. Cuentas, scripts y servidor de QA eliminados.
+
+## Despliegue
+
+Publicado con `npx vercel --prod` desde `dcf103c` (motor: `d6e41bb`). Vercel confirmó `READY`, build remoto de 30 segundos y despliegue `dpl_Bc6mubrGicverYrHC7edokp46MeD`.
+
+- Alias: `https://savestate-eight.vercel.app`.
+- URL inmutable: `https://savestate-b98rt9nv8-ilhamelins-projects.vercel.app`.
+- Perfil público HTTP 200, CSP con nonce y HUD de nivel presentes.
+- Cuenta temporal con sesión real en producción: sincronización Xbox de `ilhamelin` respondió HTTP 200 con 200 títulos; se registraron 200 XP y nivel 2. Cuenta y script temporal eliminados. Los límites y la deduplicación se verificaron en la prueba integral local con Supabase real.
