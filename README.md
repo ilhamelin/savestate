@@ -88,3 +88,5 @@ La [Entrega A de v2: PWA y medallas](docs/v2_entrega_a_pwa_y_badges.md) añade e
 La [Entrega B: importador Steam y Wrapped](docs/v2_entrega_b_steam_y_wrapped.md) incorpora `/library/import` y `/players/[username]/wrapped`, con confirmación previa, conservación de registros existentes y exportación PNG de 1080×1920. Requiere la migración `202610070010_steam_import.sql`; configurar `STEAM_API_KEY` únicamente en servidor para habilitar la consulta de bibliotecas públicas de Steam.
 
 [SaveState Boards](docs/foros_implementacion_y_verificacion.md) incorpora cinco canales en `/forum`, hilos y respuestas paginados, Markdown y spoilers, reacciones, notificaciones con destino al hilo y avisos Realtime. Requiere `202610080011_forum_boards.sql`.
+
+El [importador multiplataforma](docs/importador_consolas_implementacion.md) amplía `/library/import` con pestañas PSN y Xbox, archivos CSV/JSON, listas de títulos, confirmación de edición del catálogo, plataforma y horas. Añade identificadores públicos de consola en Profile Studio y el perfil. Requiere `202610080016_console_imports.sql`; no necesita nuevas claves de proveedor.
