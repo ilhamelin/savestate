@@ -4,7 +4,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/client-api';
-import { CONSOLE_PLATFORMS, type ConsoleRow, type ConsoleSource } from '@/domain/console-import';
+import {
+  CONSOLE_PLATFORMS,
+  consoleIdentity,
+  type ConsoleRow,
+  type ConsoleSource,
+} from '@/domain/console-import';
 import { GAME_STATUSES, STATUS_LABELS, type GameStatus } from '@/domain/model';
 
 type Candidate = {
@@ -104,7 +109,7 @@ export function ConsoleImporter({
   }
   async function syncProfile() {
     await perform(async () => {
-      const trimmed = identity.trim();
+      const trimmed = consoleIdentity(identity);
       if (!trimmed) {
         throw new Error(
           source === 'PlayStation' ? 'Ingresa tu PSN Online ID.' : 'Ingresa tu Xbox Gamertag.',
@@ -115,7 +120,6 @@ export function ConsoleImporter({
         action: 'sync',
         source,
         identity: trimmed,
-        platform,
       });
       if (!alive.current) return;
       setRows(
@@ -132,8 +136,9 @@ export function ConsoleImporter({
       setProgress(0);
       setProgressTotal(0);
       setMessage(
-        `¡Encontramos ${preview.length} títulos en tu perfil de ${source}! Confirma las coincidencias antes de importar.`,
+        `Encontramos ${preview.length} títulos en tu perfil de ${source}. Confirma las coincidencias antes de importar. Se muestran hasta 200 títulos públicos; las horas no están disponibles y quedan en cero.`,
       );
+      router.refresh();
     });
   }
   const pending = rows.filter((row) => row.selected && row.gameId && !row.done);
@@ -142,7 +147,8 @@ export function ConsoleImporter({
       <h2>{source === 'PlayStation' ? 'PlayStation / PSN' : 'Xbox'}</h2>
       <p className="muted">
         Ingresa tu identificador público para sincronizar automáticamente tus juegos y trofeos, o
-        utiliza las opciones manuales más abajo.
+        utiliza las opciones manuales más abajo. Tu identificador se guarda en el perfil público; el
+        acceso depende de la privacidad del proveedor y de la configuración del servidor.
       </p>
       <fieldset disabled={busy}>
         <div className="form-row">
@@ -162,22 +168,13 @@ export function ConsoleImporter({
               }}
             />
           </label>
-          <div
-            className="inline-actions"
-            style={{ alignSelf: 'flex-end', marginBottom: '0.25rem' }}
-          >
-            <button
-              type="button"
-              className="button"
-              disabled={!identity.trim()}
-              onClick={() => void syncProfile()}
-            >
+          <div className="console-sync-actions">
+            <button type="button" className="button" onClick={() => void syncProfile()}>
               {source === 'PlayStation' ? '🔍 Sincronizar desde PSN' : '🔍 Sincronizar desde Xbox'}
             </button>
             <button
               type="button"
               className="button secondary"
-              disabled={!identity.trim()}
               onClick={() =>
                 void perform(async () => {
                   await api('consoles/import', { action: 'identity', source, identity });
@@ -193,11 +190,9 @@ export function ConsoleImporter({
           </div>
         </div>
 
-        <details
-          style={{ marginTop: '1.25rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}
-        >
+        <details className="console-manual-options">
           <summary>Opciones manuales: subir archivo o pegar lista de títulos</summary>
-          <div className="form-row" style={{ marginTop: '0.75rem' }}>
+          <div className="form-row">
             <label>
               Plataforma si el archivo no la indica
               <select value={platform} onChange={(event) => setPlatform(event.target.value)}>

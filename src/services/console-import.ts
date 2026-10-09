@@ -40,10 +40,15 @@ export async function consoleImportMutation(input: unknown) {
         400,
       );
     }
-    await db
+    const saved = await db
       .from('profiles')
       .update(source === 'PlayStation' ? { psn_id: identity } : { xbox_gamertag: identity })
-      .eq('id', user.id);
+      .eq('id', user.id)
+      .select('id')
+      .single();
+    if (saved.error?.code === '42703' || saved.error?.code === 'PGRST204')
+      throw new AppError('Aplica la migración 016 para guardar el identificador.', 503);
+    dbCheck(saved.error);
 
     if (source === 'PlayStation') {
       return await fetchPsnTitles(identity);
