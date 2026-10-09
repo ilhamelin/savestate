@@ -160,3 +160,21 @@ export function consoleProgressLabel(progress: ConsoleProgress): string {
 4. Incorporar la acción de sincronización de logros en la biblioteca (`/library`) para partidas de Steam.
 5. Actualizar `src/components/console-progress-badge.tsx` para renderizar la barra de logros de Steam.
 6. Verificar con `npm run check`.
+
+---
+
+## 7. Estado de Implementación y Verificación (Completado)
+
+* **Rama:** `implementation/chatgpt`
+* **Commit de implementación:** `b7db785` (11 archivos modificados, 63/63 tests aprobados).
+* **Migración Supabase:** Migración `019` aplicada con éxito en Supabase SQL Editor (`kind in ('gamerscore','trophies','achievements')`).
+* **Verificación real en Supabase:**
+  * **Commit de certificación:** `415cd3d`
+  * **Resultado de prueba:** Código de salida `0` (aprobado).
+  * **Validaciones superadas:**
+    1. Supabase guarda correctamente `kind: 'achievements'`.
+    2. Resincronizar no duplica partidas y conserva horas reales, notas y fechas.
+    3. Se rechaza el acceso a partidas ajenas (RLS verificado).
+    4. Los fallos o timeouts de Steam conservan intacto el progreso anterior.
+    5. Cuentas temporales de prueba depuradas.
+
