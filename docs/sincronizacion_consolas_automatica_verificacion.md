@@ -1,0 +1,50 @@
+# Sincronización automática de consolas
+
+Referencia conservada: `docs/propuesta_sincronizacion_consolas_automatica.md`. Se completó la implementación inicial del commit `3f70350`, manteniendo `psn-api` 2.18.1 y la RPC de la migración 016. No requiere nuevas migraciones.
+
+## Flujo
+
+En `/library/import`, PSN y Xbox ofrecen sincronización por identificador con botón y Enter. Los valores vacíos o inválidos se rechazan en cliente antes de consultar la API. El servidor autentica, valida y comprueba el guardado del identificador en el perfil antes de consultar el proveedor. El ID es público y no constituye verificación de propiedad. Los juegos solo entran a la biblioteca después de confirmar las coincidencias del catálogo.
+
+La importación manual se conserva en un acordeón cerrado inicialmente. El botón de guardar identificador permite también borrarlo. PSN consulta hasta dos páginas de 100 títulos; Xbox normaliza hasta 200 títulos de la respuesta. Plataformas desconocidas y juegos exclusivamente de PC no se atribuyen artificialmente a una consola. Duplicados y títulos ocultos se excluyen. Las horas quedan en cero porque estas respuestas de trofeos/logros no ofrecen tiempo jugado. Platino o progreso 100% en PSN, y puntuación completa con total positivo en Xbox, sugieren `cleared`; el resto sugiere `playing`.
+
+## Integraciones y configuración
+
+- `PSN_NPSSO`: secreto de servidor para `psn-api`. Autenticación con NPSSO, resolución exacta de Online ID y lectura de títulos. Una búsqueda aproximada no selecciona automáticamente otra cuenta.
+- `XBL_API_KEY`: secreto de servidor de OpenXBL. Host fijo `https://api.xbl.io/v2`, búsqueda `friends/search/{gamertag}` y títulos `achievements/player/{xuid}`. Gamertags modernos con sufijo requieren coincidencia exacta; el XUID se valida como texto numérico.
+- `.env.example` incluye ambas variables; no deben utilizar prefijo `NEXT_PUBLIC_` ni pegarse en el chat.
+- Credencial ausente/expirada o límite upstream: 503; perfil no encontrado o inaccesible: 404; fallo de transporte/formato: 502. No se devuelve texto crudo del proveedor ni se imprimen credenciales.
+- Xbox usa `no-store`, redirecciones bloqueadas y `AbortSignal.timeout(10000)`. El SDK PSN no expone señal de cancelación; el flujo tiene un plazo total de respuesta de 20 segundos, aunque el SDK puede continuar una petición iniciada tras vencer ese plazo.
+
+Fuentes primarias: [PSN user trophies](https://psn-api.achievements.app/api-docs/user-trophies), [OpenXBL](https://xbl.io/), [OpenXBL OpenAPI](https://github.com/OpenXBL/Docs/blob/main/openapi.yaml), [OpenXBL account search](https://github.com/OpenXBL/Docs/blob/main/account.json). La integración corrige la URL y el formato de búsqueda de la propuesta inicial.
+
+## Verificación
+
+- `npm run check`: ESLint, tipado estricto, 51 pruebas unitarias y formato.
+- `npm run build`: empaquetado completo de Next.js 16.4.0.
+- Credencial PSN local real: intercambio de autenticación correcto y consulta mínima del propio contexto de servicio con respuesta válida de títulos. No se guardaron ni mostraron títulos o tokens personales.
+- Prueba integral con Supabase real y transportes PSN/OpenXBL simulados: pasó en 5.68 segundos. Verificó sesión, ID vacío, coincidencia exacta, previsualización, perfiles privados, error 502 sin filtrar secretos, guardado de IDs y ausencia de importación sin confirmación. Utiliza el SDK PSN real sobre HTTP simulado.
+- Navegador sobre build local: ID vacío, Enter en ambas consolas, estados/plataformas de previsualización y acordeón cerrado. Sin errores en consola; a 375 px, documento de 360 px sin desbordamiento. Evidencia: `docs/evidence/console-automatic-sync.jpg`.
+- Servidor, cuentas y archivos temporales de prueba eliminados. Los mocks solo se activan con un preload explícito y no forman parte del inicio normal.
+- Inventario de variables de producción: `PSN_NPSSO` presente; `XBL_API_KEY` ausente al verificar. Xbox queda disponible mediante importación manual hasta configurar su clave. No se pudo comprobar una consulta Xbox real.
+
+Para repetir la prueba integral, iniciar el build local con:
+
+```powershell
+$env:TEST_CONSOLE_SYNC_MOCK='1'
+$env:NODE_OPTIONS='--import=./tests/integration/console-sync-upstream.mock.mjs'
+npm run start
+```
+
+Y en otra terminal:
+
+```powershell
+$env:TEST_CONSOLE_SYNC_LIVE='1'
+$env:TEST_CONSOLE_SYNC_MOCK='1'
+$env:TEST_APP_URL='http://localhost:3000'
+node --env-file=.env.local --experimental-strip-types --test tests/integration/console-sync.test.ts
+```
+
+## Publicación
+
+Pendiente de completar el despliegue solicitado mediante `npx vercel --prod`.
