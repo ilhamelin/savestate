@@ -2177,13 +2177,21 @@ nav a:hover,
 .social-embed {
   min-width: 0;
   overflow-wrap: anywhere;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--line);
+  border-radius: 8px;
 }
 .social-embed-frame {
   display: block;
   width: 100%;
+  max-width: 550px;
+  min-height: 500px;
   height: 560px;
   border: 0;
-  margin-bottom: 1rem;
+  margin: 0 auto 1rem;
+  background: #000;
+  color-scheme: dark;
+  border-radius: 12px;
 }
 .discord-message-list {
   position: relative;

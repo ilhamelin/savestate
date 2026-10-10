@@ -59,6 +59,7 @@ export function SocialEmbed({ url }: { url: string }) {
           className="social-embed-frame"
           src={post.frameUrl}
           title={`Publicación de ${label}`}
+          style={{ background: '#000', colorScheme: 'dark' }}
           loading="lazy"
           sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
           referrerPolicy="no-referrer"
@@ -76,6 +77,12 @@ export function SocialEmbed({ url }: { url: string }) {
       </div>
       {ready && !state.html && !frame ? (
         <p className="muted">Publicación privada, eliminada o proveedor no disponible.</p>
+      ) : null}
+      {frame && post.provider === 'instagram' ? (
+        <p className="muted">
+          Si Instagram bloquea la incrustación o la cuenta es privada, usa el enlace a la
+          publicación original.
+        </p>
       ) : null}
     </div>
   );

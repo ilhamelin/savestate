@@ -9,9 +9,14 @@ test('social embeds canonicalize exact public post hosts and reject SSRF URLs', 
   );
   assert.equal(
     socialPost('https://www.instagram.com/reel/abc_-123/?igsh=test')?.frameUrl,
-    'https://www.instagram.com/reel/abc_-123/embed/',
+    'https://www.instagram.com/reel/abc_-123/embed/captioned/',
   );
   assert.equal(socialPost('https://instagram.com/p/abc')?.provider, 'instagram');
+  assert.deepEqual(socialPost('https://instagram.com/p/abc/?dlrf=tracking&igsh=share#caption'), {
+    provider: 'instagram',
+    url: 'https://www.instagram.com/p/abc/',
+    frameUrl: 'https://www.instagram.com/p/abc/embed/captioned/',
+  });
   for (const url of [
     'http://x.com/a/status/1',
     'https://x.com.evil.test/a/status/1',

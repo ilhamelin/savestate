@@ -21,7 +21,7 @@ export function socialPost(input: unknown): SocialPost | null {
     const instagram = /^\/(p|reel)\/([a-zA-Z0-9_-]{1,80})\/?$/.exec(url.pathname);
     if (host === 'instagram.com' && instagram) {
       const canonical = `https://www.instagram.com/${instagram[1]}/${instagram[2]}/`;
-      return { provider: 'instagram', url: canonical, frameUrl: `${canonical}embed/` };
+      return { provider: 'instagram', url: canonical, frameUrl: `${canonical}embed/captioned/` };
     }
   } catch {
     /* Invalid URLs never reach upstream. */
