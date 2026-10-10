@@ -2,9 +2,10 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { isConfigured, publicEnv } from '@/lib/env';
 import type { Database } from '@/lib/database.types';
+import { voiceConnectSources } from '@/domain/voice';
 function securityHeaders(response: NextResponse, csp: string) {
   response.headers.set('Content-Security-Policy', csp);
-  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('X-Frame-Options', 'DENY');
   return response;
@@ -15,7 +16,8 @@ export async function proxy(request: NextRequest) {
   const dev = process.env.NODE_ENV !== 'production';
   const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const origin = supabase ? new URL(supabase).origin : '';
-  const csp = `default-src 'self'; script-src 'self' 'nonce-${nonce}' ${dev ? "'unsafe-eval'" : ''}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://images.igdb.com https://cdn.discordapp.com https://media.discordapp.net https://media.tenor.com https://c.tenor.com https://*.giphy.com https://klipy.com https://*.klipy.com https://img.itch.zone ${origin}; font-src 'self'; connect-src 'self' ${origin} ${origin.replace('https:', 'wss:').replace('http:', 'ws:')} ${dev ? 'ws://localhost:*' : ''}; frame-src 'self' https://www.youtube-nocookie.com https://platform.twitter.com https://www.instagram.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'`;
+  const voiceSources = voiceConnectSources(process.env.LIVEKIT_URL, dev);
+  const csp = `default-src 'self'; script-src 'self' 'nonce-${nonce}' ${dev ? "'unsafe-eval'" : ''}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://images.igdb.com https://cdn.discordapp.com https://media.discordapp.net https://media.tenor.com https://c.tenor.com https://*.giphy.com https://klipy.com https://*.klipy.com https://img.itch.zone ${origin}; font-src 'self'; media-src 'self' blob:; connect-src 'self' ${origin} ${origin.replace('https:', 'wss:').replace('http:', 'ws:')} ${voiceSources} ${dev ? 'ws://localhost:*' : ''}; frame-src 'self' https://www.youtube-nocookie.com https://platform.twitter.com https://www.instagram.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'`;
   const headers = new Headers(request.headers);
   headers.set('x-nonce', nonce);
   headers.set('Content-Security-Policy', csp);

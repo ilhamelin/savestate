@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Silkscreen, JetBrains_Mono } from 'next/font/google';
 import { Header } from '@/components/header';
+import { VoiceProvider } from '@/contexts/voice-context';
+import { VoiceDock } from '@/components/voice-dock';
 import './globals.css';
 const pixel = Silkscreen({
   weight: ['400', '700'],
@@ -31,19 +33,22 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="es" className={`${pixel.variable} ${mono.variable}`}>
       <body>
-        <a href="#main" className="skip-link">
-          Saltar al contenido
-        </a>
-        <Header />
-        <main id="main" className="container">
-          {children}
-        </main>
-        <footer className="site-footer">
-          <span>
-            SAVESTATE <span className="muted">{'// EL PROGRESO ES PERSONAL.'}</span>
-          </span>
-          <span className="muted">INSERT COIN. KEEP PLAYING.</span>
-        </footer>
+        <VoiceProvider>
+          <a href="#main" className="skip-link">
+            Saltar al contenido
+          </a>
+          <Header />
+          <main id="main" className="container">
+            {children}
+          </main>
+          <footer className="site-footer">
+            <span>
+              SAVESTATE <span className="muted">{'// EL PROGRESO ES PERSONAL.'}</span>
+            </span>
+            <span className="muted">INSERT COIN. KEEP PLAYING.</span>
+          </footer>
+          <VoiceDock />
+        </VoiceProvider>
       </body>
     </html>
   );
