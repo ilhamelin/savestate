@@ -55,6 +55,7 @@ export function RecentNewsSection({ news }: { news: GamingNewsItem[] }) {
             ['all', 'Todas'],
             ['vandal', 'Vandal'],
             ['ign', 'IGN'],
+            ['anime', 'Anime & Manga'],
           ] as const
         ).map(([value, label]) => (
           <button

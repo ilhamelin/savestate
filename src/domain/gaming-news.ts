@@ -1,4 +1,4 @@
-export type GamingNewsSource = 'vandal' | 'ign';
+export type GamingNewsSource = 'vandal' | 'ign' | 'anime';
 export interface GamingNewsItem {
   title: string;
   url: string;
@@ -57,7 +57,12 @@ export function extractNewsImage(itemXml: string): string | null {
       const url = new URL(value);
       if (
         !['https:', 'http:'].includes(url.protocol) ||
-        !['sm.ign.com', 'media.vandal.net', 'videos.vandalimg.com'].includes(url.hostname) ||
+        ![
+          'sm.ign.com',
+          'media.vandal.net',
+          'videos.vandalimg.com',
+          'areajugones.sport.es',
+        ].includes(url.hostname) ||
         url.username ||
         url.password ||
         url.port ||
@@ -106,7 +111,11 @@ export function parseGamingRss(
     try {
       const url = new URL(newsText(field('link')));
       const hosts =
-        source === 'vandal' ? ['vandal.elespanol.com', 'www.vandal.elespanol.com'] : ['es.ign.com'];
+        source === 'vandal'
+          ? ['vandal.elespanol.com', 'www.vandal.elespanol.com']
+          : source === 'ign'
+            ? ['es.ign.com']
+            : ['areajugones.sport.es'];
       if (
         !hosts.includes(url.hostname) ||
         !['https:', 'http:'].includes(url.protocol) ||

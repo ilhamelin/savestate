@@ -112,3 +112,35 @@ test('Gaming RSS buffer only processes twenty entries per source', () => {
   ).join('');
   assert.equal(parseGamingRss(xml, 'ign', now).length, 20);
 });
+
+test('Anime RSS accepts official article and image hosts and merges chronologically with gaming news', () => {
+  const xml = item('Anime &amp; manga', 'https://areajugones.sport.es/anime/estreno').replace(
+    '</item>',
+    '<media:thumbnail url="https://areajugones.sport.es/wp-content/uploads/cover.jpg"/></item>',
+  );
+  const anime = parseGamingRss(xml, 'anime', now);
+  assert.equal(anime[0]?.source, 'anime');
+  assert.equal(anime[0]?.title, 'Anime & manga');
+  assert.equal(anime[0]?.imageUrl, 'https://areajugones.sport.es/wp-content/uploads/cover.jpg');
+  const ign = parseGamingRss(
+    item('Juego', 'https://es.ign.com/news/1', 'Sat, 10 Oct 2026 16:00:00 GMT'),
+    'ign',
+    now,
+  );
+  assert.deepEqual(
+    combineGamingNews([ign, anime]).map((row) => row.source),
+    ['anime', 'ign'],
+  );
+  assert.deepEqual(
+    parseGamingRss(
+      item('Host falso', 'https://areajugones.sport.es.evil.example/anime/a'),
+      'anime',
+      now,
+    ),
+    [],
+  );
+  assert.deepEqual(
+    parseGamingRss(item('Otra fuente', 'https://es.ign.com/anime/a'), 'anime', now),
+    [],
+  );
+});

@@ -3772,6 +3772,9 @@ a.feed-card-cover:hover {
 .badge-ign {
   color: #ffb000;
 }
+.badge-anime {
+  color: #ff0055;
+}
 .news-copy {
   min-width: 0;
   overflow-wrap: anywhere;

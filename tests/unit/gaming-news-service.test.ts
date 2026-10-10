@@ -44,7 +44,11 @@ test('Gaming news fetches concurrently with 30 minute cache, Latin-1 decoding an
     if (mode === 'all-failed' || (mode === 'partial' && url.includes('es.ign.com')))
       throw new Error('Offline');
     const vandal = url.includes('vandal.elespanol.com');
-    const host = vandal ? 'vandal.elespanol.com' : 'es.ign.com';
+    const host = vandal
+      ? 'vandal.elespanol.com'
+      : url.includes('areajugones.sport.es')
+        ? 'areajugones.sport.es'
+        : 'es.ign.com';
     const xml = `<rss><item><title>Acción y Pokémon</title><link>https://${host}/news/1</link><pubDate>Sat, 10 Oct 2026 17:00:00 GMT</pubDate><description>Resumen</description></item></rss>`;
     return new Response(Buffer.from(xml, vandal ? 'latin1' : 'utf8'), {
       headers: {
@@ -55,13 +59,15 @@ test('Gaming news fetches concurrently with 30 minute cache, Latin-1 decoding an
   try {
     const { getRecentGamingNews } = await import('../../src/services/gaming-news.ts');
     const news = await getRecentGamingNews();
-    assert.equal(maxActive, 2);
-    assert.equal(news.length, 2);
+    assert.equal(maxActive, 3);
+    assert.equal(news.length, 3);
+    assert.ok(news.some((item) => item.source === 'anime'));
     assert.ok(news.every((item) => item.title === 'Acción y Pokémon'));
     mode = 'partial';
     const partial = await getRecentGamingNews();
-    assert.equal(partial.length, 1);
+    assert.equal(partial.length, 2);
     assert.equal(partial[0]?.source, 'vandal');
+    assert.ok(partial.some((item) => item.source === 'anime'));
     mode = 'all-failed';
     assert.deepEqual(await getRecentGamingNews(), []);
   } finally {
