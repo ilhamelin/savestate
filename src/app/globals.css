@@ -2186,6 +2186,10 @@ nav a:hover,
   margin-bottom: 1rem;
 }
 .discord-message-list {
+  position: relative;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, #00000018 3px 4px);
+  padding: 0 0.75rem;
+  border: 1px solid var(--line);
   max-height: 540px;
   overflow-y: auto;
   margin: 1.5rem 0;

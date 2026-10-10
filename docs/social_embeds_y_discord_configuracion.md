@@ -22,7 +22,8 @@ Implementación basada en `research/antigravity:docs/propuesta_social_embeds_y_d
 7. Añade las tres variables a `.env.local` y a **Production** en Vercel. Reinicia el servidor local y realiza un nuevo despliegue de Vercel para activar los valores de producción.
 8. La migración `202610090021_discord_bridge.sql`, confirmada como aplicada por el usuario, habilita el cooldown atómico de tres segundos por usuario. Un intento que alcanza Discord consume el slot incluso si el proveedor falla: evita ráfagas de reintentos.
 
-No hay un enlace de invitación inventado: aún no se proporcionó la invitación pública del servidor.
+9. La invitación pública proporcionada es `https://discord.gg/532ZQzVXCp` y se usa por defecto. Puedes reemplazarla con `DISCORD_INVITE_URL` (`https://discord.gg/…` o `https://discord.com/invite/…`). La página muestra «Unirse al servidor» solo con una invitación válida; el webhook y el token nunca se usan como enlaces públicos.
+10. En Production, usa `NEXT_PUBLIC_APP_URL=https://savestate-eight.vercel.app`. Para desarrollo local, conserva `http://localhost:3000` en `.env.local`; el enlace de la web y los avisos usan el origen configurado para cada entorno.
 
 ## Seguridad y eventos
 
@@ -32,14 +33,16 @@ No hay un enlace de invitación inventado: aún no se proporcionó la invitació
 - Lectura con caché corta de cinco segundos, sondeo cada diez segundos solo con la pestaña visible, cancelación de peticiones y refresco manual. Los adjuntos se muestran como enlaces a hosts oficiales; texto escapado por React.
 - Avisos de platino y nivel se basan en `award_xp.success`: una repetición del evento de XP no vuelve a enviarlos. Los platinos de bibliotecas privadas no se anuncian. Los niveles solo incluyen username y nivel, datos públicos del perfil.
 - Los hilos se anuncian tras guardarse. Se usa `after()` para que fallos de Discord no impidan guardar la acción en SaveState. La entrega es best effort, sin cola durable ni reintento automático.
+- Los avisos incluyen el botón Link (style 5) «🌐 Ver en SaveState» y el enlace del embed hacia el perfil o el hilo. El webhook añade `with_components=true` y `wait=true`, según la [API oficial](https://docs.discord.com/developers/resources/webhook#execute-webhook).
+- Un progreso Steam/Xbox/PSN que se guarda por primera vez con `current === total` y total mayor que cero también genera aviso, con título y horas acumuladas de sus partidas. No se altera el estado ni se otorga XP por este aviso. La actualización compara el valor anterior para evitar anunciar dos sincronizaciones concurrentes del mismo registro. Otro registro ya completo o un juego con estado `platinum` evita el aviso adicional. No se garantiza entrega exactamente una vez entre registros distintos ni ante fallos del proveedor.
 - `src/proxy.ts` mantiene el nonce y permite únicamente los marcos oficiales de X/Instagram, además de YouTube existente; no amplía `script-src`.
 
 ## Verificación
 
-- `npm run check`: ESLint, TypeScript, formato y 76 pruebas unitarias aprobadas.
+- `npm run check`: ESLint, TypeScript, formato y pruebas unitarias.
 - `node --experimental-strip-types --test tests/integration/social-bridge.test.ts`: aprobado. Prueba los servicios y rutas reales con sesión/proveedores simulados, sin enviar mensajes externos ni escribir en Supabase.
 - `npm run build`: aprobado con las nuevas rutas y Proxy nativo de Next.js 16.
 - Supabase real: llamada anónima a `claim_discord_message_slot` rechazada con `42501`, sin modificaciones. No se ha ensayado el cooldown con una sesión real.
-- Pendiente de credenciales: lectura/envío y recepción de webhooks en un canal Discord real. El módulo devuelve un aviso de configuración pendiente mientras falten las variables.
+- Verificación del 9 de octubre: las credenciales locales permiten leer 30 mensajes del canal (HTTP 200), y consultar la configuración del webhook (HTTP 200). No se publicaron mensajes de prueba. La recepción real de avisos y el envío desde una sesión de SaveState siguen pendientes de prueba tras el despliegue.
 
 Referencias: [Message Resource de Discord](https://docs.discord.com/developers/resources/message), [oEmbed de Instagram](https://developers.facebook.com/docs/instagram-platform/oembed).

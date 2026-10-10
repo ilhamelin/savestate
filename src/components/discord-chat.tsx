@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { DiscordMessage } from '@/domain/discord';
 import { api } from '@/lib/client-api';
 import { readJsonResponse } from '@/lib/api-response';
-export function DiscordChat() {
+export function DiscordChat({ inviteUrl, siteUrl }: { inviteUrl: string | null; siteUrl: string }) {
   const [messages, setMessages] = useState<DiscordMessage[]>([]);
   const [content, setContent] = useState(''),
     [error, setError] = useState('');
@@ -88,6 +88,23 @@ export function DiscordChat() {
         Canal compartido con Discord · se actualiza cada 10 segundos mientras esta pestaña está
         visible.
       </p>
+      <div className="filter-buttons">
+        {inviteUrl ? (
+          <a
+            className="button outline small"
+            href={inviteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Unirse al servidor de Discord ↗
+          </a>
+        ) : (
+          <span className="muted">Invitación al servidor pendiente de configuración.</span>
+        )}
+        <a className="button outline small" href={siteUrl}>
+          🌐 Ver SaveState
+        </a>
+      </div>
       <div className="discord-message-list" aria-label="Mensajes del canal">
         {loading ? <p role="status">[ Conectando con Discord… ]</p> : null}
         {!loading && !messages.length && !error ? <p>No hay mensajes todavía.</p> : null}

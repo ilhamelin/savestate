@@ -95,6 +95,10 @@ test('social bridge routes enforce session, origin, quota and sanitized embeds; 
         return Response.json(fixture);
       }
       assert.equal(body.embeds[0].color, 0xffd700);
+      assert.equal(url.searchParams.get('with_components'), 'true');
+      assert.equal(url.searchParams.get('wait'), 'true');
+      assert.equal(body.components[0].components[0].style, 5);
+      assert.equal(body.components[0].components[0].url, 'https://savestate.test/');
       return new Response(null, { status: 204 });
     }
     return Response.json([fixture]);
@@ -150,6 +154,57 @@ test('social bridge routes enforce session, origin, quota and sanitized embeds; 
       details: 'GG',
     });
     assert.equal(state.sends, 2);
+    await checkpoint.notifyDiscordCheckpoint({
+      type: 'platinum',
+      username: 'fixture',
+      details: 'GG',
+      path: '//evil.test',
+    });
+    assert.equal(state.sends, 3);
+    const privateDb = {
+      from(table: string) {
+        const result = {
+          error: null,
+          data:
+            table === 'profiles'
+              ? { username: 'fixture', library_private: true }
+              : table === 'user_games'
+                ? { status: 'playing', games: { title: 'Private game' } }
+                : [
+                    {
+                      id: 'log',
+                      hours_played: 20,
+                      console_progress: { kind: 'achievements', current: 10, total: 10 },
+                    },
+                  ],
+        };
+        const query = {
+          select: () => query,
+          eq: () => query,
+          maybeSingle: async () => result,
+          then: (resolve: (value: typeof result) => unknown) => Promise.resolve(resolve(result)),
+        };
+        return query;
+      },
+    } as unknown as Parameters<typeof checkpoint.notifyDiscordProgress>[0];
+    const complete = { kind: 'achievements', current: 10, total: 10 };
+    await checkpoint.notifyDiscordProgress(privateDb, 'fixture', 'entry', null, complete, 'log');
+    await checkpoint.notifyDiscordProgress(
+      privateDb,
+      'fixture',
+      'entry',
+      complete,
+      complete,
+      'log',
+    );
+    assert.equal(state.sends, 3);
+    delete process.env.DISCORD_WEBHOOK_URL;
+    await checkpoint.notifyDiscordCheckpoint({
+      type: 'platinum',
+      username: 'fixture',
+      details: 'GG',
+    });
+    assert.equal(state.sends, 3);
     delete process.env.DISCORD_BOT_TOKEN;
     assert.equal((await discord.POST(request())).status, 503);
   } finally {

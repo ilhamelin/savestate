@@ -7,6 +7,34 @@ export interface DiscordMessage {
   createdAt: string;
   attachments: { name: string; url: string }[];
 }
+export function discordInvite(input: string): string | null {
+  try {
+    const url = new URL(input);
+    if (url.protocol !== 'https:' || url.port || url.username || url.password) return null;
+    const valid =
+      (url.hostname === 'discord.gg' && /^\/[\w-]+\/?$/.test(url.pathname)) ||
+      (url.hostname === 'discord.com' && /^\/invite\/[\w-]+\/?$/.test(url.pathname));
+    if (!valid) return null;
+    url.search = '';
+    url.hash = '';
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+export function completedDiscordProgress(input: unknown): boolean {
+  if (!input || typeof input !== 'object') return false;
+  const progress = input as Record<string, unknown>;
+  return (
+    ['gamerscore', 'trophies', 'achievements'].includes(String(progress.kind)) &&
+    typeof progress.current === 'number' &&
+    Number.isInteger(progress.current) &&
+    typeof progress.total === 'number' &&
+    Number.isInteger(progress.total) &&
+    progress.total > 0 &&
+    progress.current === progress.total
+  );
+}
 export function discordContent(input: unknown) {
   if (
     typeof input !== 'string' ||

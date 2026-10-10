@@ -2,7 +2,15 @@ import 'server-only';
 import { unstable_cache, revalidateTag } from 'next/cache';
 import { after } from 'next/server';
 import { AppError } from '@/lib/http';
-import { discordContent, discordWebhook, normalizedDiscordMessages } from '@/domain/discord';
+import { appUrl } from '@/lib/env';
+import {
+  discordContent,
+  discordWebhook,
+  normalizedDiscordMessages,
+  completedDiscordProgress,
+} from '@/domain/discord';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/lib/database.types';
 
 function configuration() {
   const token = process.env.DISCORD_BOT_TOKEN,
@@ -89,6 +97,7 @@ export type DiscordCheckpoint = {
   type: 'platinum' | 'levelup' | 'forum';
   username: string;
   details: string;
+  path?: string;
 };
 export async function notifyDiscordCheckpoint(event: DiscordCheckpoint) {
   const webhook = discordWebhook(process.env.DISCORD_WEBHOOK_URL ?? '');
@@ -98,7 +107,19 @@ export async function notifyDiscordCheckpoint(event: DiscordCheckpoint) {
     levelup: { title: '⚡ LEVEL UP', color: 0x00f0ff },
     forum: { title: '💬 Nuevo debate en el Foro', color: 0x39ff14 },
   }[event.type];
-  await discordRequest(webhook, {
+  const target = new URL(appUrl());
+  if (event.path?.startsWith('/') && !event.path.startsWith('//')) {
+    const candidate = new URL(event.path, target);
+    if (candidate.origin === target.origin) {
+      target.pathname = candidate.pathname;
+      target.search = candidate.search;
+      target.hash = candidate.hash;
+    }
+  }
+  const endpoint = new URL(webhook);
+  endpoint.searchParams.set('with_components', 'true');
+  endpoint.searchParams.set('wait', 'true');
+  await discordRequest(endpoint.toString(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -108,6 +129,13 @@ export async function notifyDiscordCheckpoint(event: DiscordCheckpoint) {
           ...meta,
           description: `@${event.username}: ${event.details}`.slice(0, 1500),
           timestamp: new Date().toISOString(),
+          url: target.toString(),
+        },
+      ],
+      components: [
+        {
+          type: 1,
+          components: [{ type: 2, style: 5, label: '🌐 Ver en SaveState', url: target.toString() }],
         },
       ],
     }),
@@ -122,4 +150,54 @@ export function scheduleDiscordCheckpoint(event: DiscordCheckpoint) {
       console.warn('Discord checkpoint delivery failed', { type: event.type });
     }
   });
+}
+// Announce a newly saved 100% result; repeated syncs and private libraries stay silent.
+export async function notifyDiscordProgress(
+  db: SupabaseClient<Database>,
+  userId: string,
+  entryId: string,
+  previous: unknown,
+  next: unknown,
+  logId: string,
+) {
+  if (
+    !process.env.DISCORD_WEBHOOK_URL ||
+    completedDiscordProgress(previous) ||
+    !completedDiscordProgress(next)
+  )
+    return;
+  try {
+    const [profile, entry, logs] = await Promise.all([
+      db.from('profiles').select('username,library_private').eq('id', userId).maybeSingle(),
+      db
+        .from('user_games')
+        .select('status,games!inner(title)')
+        .eq('id', entryId)
+        .eq('user_id', userId)
+        .maybeSingle(),
+      db.from('play_logs').select('id,hours_played,console_progress').eq('user_game_id', entryId),
+    ]);
+    if (
+      profile.error ||
+      entry.error ||
+      logs.error ||
+      !profile.data ||
+      profile.data.library_private ||
+      !entry.data ||
+      entry.data.status === 'platinum'
+    )
+      return;
+    if (
+      logs.data?.some((log) => log.id !== logId && completedDiscordProgress(log.console_progress))
+    )
+      return;
+    scheduleDiscordCheckpoint({
+      type: 'platinum',
+      username: profile.data.username,
+      details: `completó el 100% de logros/trofeos de ${entry.data.games.title} (${(logs.data ?? []).reduce((sum, log) => sum + Number(log.hours_played), 0).toFixed(2)} horas registradas).`,
+      path: `/players/${encodeURIComponent(profile.data.username)}#achievements-showcase-heading`,
+    });
+  } catch {
+    console.warn('Discord progress notification preparation failed');
+  }
 }

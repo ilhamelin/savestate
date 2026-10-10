@@ -39,6 +39,7 @@ export async function grantXp(
         type: 'levelup',
         username: profile.data.username,
         details: `alcanzó el nivel ${result.data.level}.`,
+        path: `/players/${encodeURIComponent(profile.data.username)}`,
       });
   }
   return result.data;
@@ -50,7 +51,7 @@ export async function grantCompletionXp(
 ) {
   const result = await db
     .from('user_games')
-    .select('status')
+    .select('id,status')
     .eq('user_id', userId)
     .eq('game_id', gameId)
     .single();
@@ -59,13 +60,15 @@ export async function grantCompletionXp(
   if (state === 'cleared' || state === 'platinum') {
     const award = await grantXp(userId, XP_ACTIONS[state], state, gameId);
     if (state === 'platinum' && award?.success && process.env.DISCORD_WEBHOOK_URL) {
-      const [profile, game] = await Promise.all([
+      const [profile, game, logs] = await Promise.all([
         db.from('profiles').select('username,library_private').eq('id', userId).maybeSingle(),
         db.from('games').select('title').eq('id', gameId).maybeSingle(),
+        db.from('play_logs').select('hours_played').eq('user_game_id', result.data!.id),
       ]);
       if (
         !profile.error &&
         !game.error &&
+        !logs.error &&
         profile.data &&
         !profile.data.library_private &&
         game.data
@@ -73,7 +76,8 @@ export async function grantCompletionXp(
         scheduleDiscordCheckpoint({
           type: 'platinum',
           username: profile.data.username,
-          details: `platinó ${game.data.title}.`,
+          details: `platinó ${game.data.title} (${(logs.data ?? []).reduce((sum, log) => sum + Number(log.hours_played), 0).toFixed(2)} horas registradas).`,
+          path: `/players/${encodeURIComponent(profile.data.username)}#achievements-showcase-heading`,
         });
     }
   }

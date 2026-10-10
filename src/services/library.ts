@@ -19,6 +19,7 @@ import { grantXp, grantCompletionXp, grantSessionXp } from '@/services/progressi
 import { consoleHours } from '@/domain/console-import';
 import { steamLogAppId } from '@/domain/steam-achievements';
 import { fetchSteamAchievements } from '@/integrations/steam/server';
+import { notifyDiscordProgress } from '@/services/discord';
 export async function libraryMutation(input: unknown) {
   const { db, user } = await authenticated();
   const data = object(input);
@@ -27,7 +28,7 @@ export async function libraryMutation(input: unknown) {
       const id = uuid(data.id);
       const log = await db
         .from('play_logs')
-        .select('user_game_id,platform_played,note')
+        .select('user_game_id,platform_played,note,console_progress')
         .eq('id', id)
         .maybeSingle();
       dbCheck(log.error);
@@ -55,15 +56,17 @@ export async function libraryMutation(input: unknown) {
             'Steam no devolvió logros para este juego. Puede no tener estadísticas o tenerlas privadas.',
         };
       // Do not overwrite unrelated fields, and reject a log edited while fetching upstream.
-      const updated = await db
+      const update = db
         .from('play_logs')
         .update({ console_progress: progress })
         .eq('id', id)
         .eq('user_game_id', owner.data.id)
         .eq('platform_played', log.data.platform_played)
-        .eq('note', log.data.note)
-        .select('id')
-        .maybeSingle();
+        .eq('note', log.data.note);
+      const guarded = log.data.console_progress
+        ? update.filter('console_progress', 'eq', JSON.stringify(log.data.console_progress))
+        : update.is('console_progress', null);
+      const updated = await guarded.select('id').maybeSingle();
       if (updated.error?.code === '23514')
         throw new AppError(
           'La base de datos requiere la migración 019 para guardar logros de Steam.',
@@ -72,6 +75,14 @@ export async function libraryMutation(input: unknown) {
       dbCheck(updated.error);
       if (!updated.data)
         throw new AppError('La partida cambió. Recarga y vuelve a sincronizar.', 409);
+      await notifyDiscordProgress(
+        db,
+        user.id,
+        owner.data.id,
+        log.data.console_progress,
+        progress,
+        id,
+      );
       revalidatePath('/library');
       revalidatePath('/players/[username]', 'page');
       return { progress, message: 'Logros de Steam actualizados.' };

@@ -2,9 +2,39 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   discordContent,
+  discordInvite,
+  completedDiscordProgress,
   discordWebhook,
   normalizedDiscordMessages,
 } from '../../src/domain/discord.ts';
+test('Discord invite links and 100% checkpoints reject unsafe or incomplete values', () => {
+  assert.equal(
+    discordInvite('https://discord.gg/SaveState?source=web'),
+    'https://discord.gg/SaveState',
+  );
+  assert.equal(
+    discordInvite('https://discord.com/invite/retro'),
+    'https://discord.com/invite/retro',
+  );
+  for (const value of [
+    '',
+    'http://discord.gg/test',
+    'https://discord.gg.evil.test/test',
+    'https://user@discord.gg/test',
+    'https://discord.com/api/webhooks/123/key',
+  ])
+    assert.equal(discordInvite(value), null);
+  for (const kind of ['gamerscore', 'trophies', 'achievements'])
+    assert.equal(completedDiscordProgress({ kind, current: 10, total: 10 }), true);
+  for (const value of [
+    null,
+    { kind: 'achievements', current: 0, total: 0 },
+    { kind: 'trophies', current: 9, total: 10 },
+    { kind: 'unknown', current: 1, total: 1 },
+    { kind: 'gamerscore', current: 11, total: 10 },
+  ])
+    assert.equal(completedDiscordProgress(value), false);
+});
 test('Discord validates message length and confines webhook credentials to the official host', () => {
   assert.equal(discordContent(' hello '), 'hello');
   for (const value of ['', 'a'.repeat(501), null, 'bad\0'])

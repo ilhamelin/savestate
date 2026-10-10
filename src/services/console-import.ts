@@ -15,7 +15,7 @@ import { catalogue } from '@/services/catalogue';
 import { parseFilters } from '@/integrations/igdb/query';
 import { fetchPsnTitles, fetchXboxTitles } from '@/integrations/consoles/server';
 import { grantXp, grantCompletionXp } from '@/services/progression';
-import { consoleProgress } from '@/domain/console-progress';
+import { consoleProgress, type ConsoleProgress } from '@/domain/console-progress';
 import {
   consoleProgressUpdates,
   type ImportedProgressLog,
@@ -23,6 +23,7 @@ import {
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/database.types';
 import { revalidatePath } from 'next/cache';
+import { notifyDiscordProgress } from '@/services/discord';
 
 async function refreshConsoleProgress(
   db: SupabaseClient<Database>,
@@ -31,17 +32,19 @@ async function refreshConsoleProgress(
   source: ConsoleSource,
 ) {
   const logs: ImportedProgressLog[] = [];
+  const records = new Map<string, { entryId: string; progress: ConsoleProgress | null }>();
   for (let offset = 0; ; offset += 1000) {
     const result = await db
       .from('play_logs')
       .select(
-        'id,platform_played,note,console_progress,user_games!inner(user_id,games!inner(title))',
+        'id,user_game_id,platform_played,note,console_progress,user_games!inner(user_id,games!inner(title))',
       )
       .eq('user_games.user_id', userId)
       .order('id')
       .range(offset, offset + 999);
     dbCheck(result.error);
-    for (const row of result.data ?? [])
+    for (const row of result.data ?? []) {
+      records.set(row.id, { entryId: row.user_game_id, progress: row.console_progress ?? null });
       logs.push({
         id: row.id,
         title: row.user_games.games.title,
@@ -49,17 +52,33 @@ async function refreshConsoleProgress(
         note: row.note,
         progress: row.console_progress,
       });
+    }
     if ((result.data?.length ?? 0) < 1000) break;
   }
   const updates = consoleProgressUpdates(logs, titles, source);
   for (let index = 0; index < updates.length; index += 5) {
     const results = await Promise.allSettled(
       updates.slice(index, index + 5).map(async (item) => {
-        const saved = await db
+        const before = records.get(item.id);
+        if (!before) return;
+        const update = db
           .from('play_logs')
           .update({ console_progress: item.progress })
           .eq('id', item.id);
+        const guarded = before.progress
+          ? update.filter('console_progress', 'eq', JSON.stringify(before.progress))
+          : update.is('console_progress', null);
+        const saved = await guarded.select('id').maybeSingle();
         dbCheck(saved.error);
+        if (saved.data)
+          await notifyDiscordProgress(
+            db,
+            userId,
+            before.entryId,
+            before.progress,
+            item.progress,
+            item.id,
+          );
       }),
     );
     for (const result of results) if (result.status === 'rejected') throw result.reason;
@@ -165,17 +184,31 @@ export async function consoleImportMutation(input: unknown) {
       .single();
     dbCheck(entry.error);
     if (!entry.data) throw new AppError('Registro importado no encontrado.', 404);
-    const saved = await db
+    const before = await db
       .from('play_logs')
-      .update({ console_progress: progress })
+      .select('id,console_progress')
       .eq('user_game_id', entry.data.id)
       .eq('platform_played', platform)
-      .eq('note', `[${source}] Partida importada a la biblioteca.`)
-      .select('id');
-    if (saved.error?.code === '42703' || saved.error?.code === 'PGRST204')
-      throw new AppError('Aplica la migración 018 para conservar el progreso de consola.', 503);
-    dbCheck(saved.error);
-    if (!saved.data?.length) throw new AppError('Partida importada no encontrada.', 404);
+      .eq('note', `[${source}] Partida importada a la biblioteca.`);
+    dbCheck(before.error);
+    if (!before.data?.length) throw new AppError('Partida importada no encontrada.', 404);
+    for (const log of before.data) {
+      const update = db.from('play_logs').update({ console_progress: progress }).eq('id', log.id);
+      const guarded = log.console_progress
+        ? update.filter('console_progress', 'eq', JSON.stringify(log.console_progress))
+        : update.is('console_progress', null);
+      const saved = await guarded.select('id').maybeSingle();
+      dbCheck(saved.error);
+      if (saved.data)
+        await notifyDiscordProgress(
+          db,
+          user.id,
+          entry.data.id,
+          log.console_progress,
+          progress,
+          log.id,
+        );
+    }
   }
   await grantCompletionXp(db, user.id, uuid(data.game_id));
   return {

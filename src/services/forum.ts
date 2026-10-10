@@ -258,6 +258,7 @@ export async function forumMutation(input: unknown) {
           type: 'forum',
           username: profile.data.username,
           details: `abrió «${validated.title}» en #${validated.category_id}.`,
+          path: `/forum/${encodeURIComponent(result.data!.category_id)}/${result.data!.id}`,
         });
     }
     return result.data;
