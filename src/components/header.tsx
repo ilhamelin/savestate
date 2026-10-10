@@ -48,8 +48,17 @@ export async function Header() {
         {user ? <NotificationBell key={user.id} userId={user.id} /> : null}
         <CrtToggle />
         <AudioToggle />
-        <Link className="button small" href={user ? '/settings' : '/login'}>
-          {user ? 'Mi cuenta' : 'Conectar'}
+        <Link
+          className="button small"
+          href={
+            user
+              ? profile?.username
+                ? `/players/${encodeURIComponent(profile.username)}`
+                : '/settings'
+              : '/login'
+          }
+        >
+          {user ? 'Mi perfil' : 'Conectar'}
           <ArrowUpRight size={15} />
         </Link>
       </div>
