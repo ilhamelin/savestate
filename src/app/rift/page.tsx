@@ -18,7 +18,7 @@ export default async function RiftPage({
     : '/rift';
   if (!(await currentUser())) redirect(`/login?next=${encodeURIComponent(next)}`);
   return (
-    <ProfileWallpaper url="/wallpapers/neon_cyberpunk.svg" fullScreen>
+    <ProfileWallpaper url="/wallpapers/rift_arcane.jpg" fullScreen>
       <ProfileLolTracker
         key={next + String(hasLink)}
         configured={Boolean(process.env.RIOT_API_KEY?.trim())}
