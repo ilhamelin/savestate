@@ -25,4 +25,12 @@ Las partidas personalizadas se excluyen de las búsquedas por Riot ID: para most
 
 ## Filtros y analíticas
 
-El historial filtra localmente por Todas, Solo/Dúo (420), Normales (400/430), ARAM (450) y Otros / Caos (el resto, incluyendo Flexible). Los paneles ROLES y TOP CHAMPIONS usan la muestra filtrada de hasta diez partidas, no toda la trayectoria del jugador. Las posiciones desconocidas se excluyen solo del panel de roles. Los cinco campeones más jugados se ordenan por cantidad y nombre en caso de empate. WR = victorias / partidas; KDA = (kills + assists) / deaths acumuladas (Perfecto cuando no hay muertes); los promedios K/D/A son por partida. Una nueva consulta restablece Todas.
+El historial filtra localmente por Todas, Solo/Dúo (420), Normales (400/430), ARAM (450), Arena (1700/1710) y Otros / Caos (el resto, incluyendo Flexible). Los paneles ROLES y TOP CHAMPIONS usan la muestra filtrada de hasta diez partidas, no toda la trayectoria del jugador. Las posiciones desconocidas se excluyen solo del panel de roles. Los cinco campeones más jugados se ordenan por cantidad y nombre en caso de empate. WR = victorias / partidas; KDA = (kills + assists) / deaths acumuladas (Perfecto cuando no hay muertes); los promedios K/D/A son por partida. Una nueva consulta restablece Todas.
+
+## Cuenta principal, medallas y maestría
+
+Los enlaces `/rift?riotId=Nombre%23TAG&platform=la2` cargan automáticamente la cuenta tras iniciar sesión. Sin parámetros se utiliza la cuenta fijada en `savestate_pinned_lol_account`. Las últimas cinco consultas exitosas se guardan en `savestate_recent_lol_searches`; los datos almacenados se validan y las restricciones del navegador no bloquean el buscador. Estas preferencias pertenecen al navegador, sin vínculos nuevos en Supabase.
+
+Maestría consulta champion-mastery-v4 por PUUID en la plataforma seleccionada, con count=3. Los fallos son parciales y no bloquean el historial; el recurso se documenta en el [portal oficial](https://developer.riotgames.com/apis/#champion-mastery-v4). Se utiliza la versión actual de Data Dragon para sus imágenes.
+
+Las medallas MVP son una heurística de SaveState por mayor daño o mejor KDA dentro del mismo equipo, incluyendo empates positivos. Participación = (kills + assists) / kills del equipo; se muestra 0% si no hay kills. Pentakill/cuatricidio provienen de largestMultiKill. Publicar en Momentos abre un borrador editable mediante parámetros acotados, nunca realiza publicaciones automáticas.

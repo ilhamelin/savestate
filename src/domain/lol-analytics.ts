@@ -5,6 +5,7 @@ export const LOL_QUEUE_FILTERS = {
   solo: 'Solo/Dúo',
   normal: 'Normales',
   aram: 'ARAM',
+  arena: 'Arena',
   other: 'Otros / Caos',
 } as const;
 export type LolQueueFilter = keyof typeof LOL_QUEUE_FILTERS;
@@ -17,12 +18,45 @@ export function filterLolMatches(matches: LolMatchSummary[], queue: LolQueueFilt
         return match.queueId === 400 || match.queueId === 430;
       case 'aram':
         return match.queueId === 450;
+      case 'arena':
+        return match.queueId === 1700 || match.queueId === 1710;
       case 'other':
-        return ![420, 400, 430, 450].includes(match.queueId);
+        return ![420, 400, 430, 450, 1700, 1710].includes(match.queueId);
       default:
         return true;
     }
   });
+}
+export function lolMatchMedals(match: LolMatchSummary) {
+  const player = match.player;
+  const team = match.participants.filter((other) => other.teamId === player.teamId);
+  const teamKills = team.reduce((sum, other) => sum + other.kills, 0);
+  const ratio = (other: typeof player) =>
+    other.deaths === 0 && other.kills + other.assists > 0
+      ? Infinity
+      : (other.kills + other.assists) / Math.max(1, other.deaths);
+  const mvp =
+    team.length > 1 &&
+    ((player.totalDamage > 0 && team.every((other) => other.totalDamage <= player.totalDamage)) ||
+      (ratio(player) > 0 && team.every((other) => ratio(other) <= ratio(player))));
+  return {
+    multikill:
+      player.largestMultiKill >= 5
+        ? 'PENTAKILL'
+        : player.largestMultiKill === 4
+          ? 'CUATRICIDIO'
+          : null,
+    mvp,
+    killParticipation: teamKills
+      ? Math.min(100, Math.round(((player.kills + player.assists) / teamKills) * 100))
+      : 0,
+  };
+}
+export function lolMomentLink(match: LolMatchSummary) {
+  const player = match.player;
+  const title = `¡Partidaza con ${player.championName} en ${match.gameMode}!`.slice(0, 120);
+  const draft = `${title} ${player.kills}/${player.deaths}/${player.assists} (${player.kda} KDA) · ${player.win ? 'Victoria' : 'Derrota'}.`;
+  return `/highlights?${new URLSearchParams({ draft, draftTitle: title })}`;
 }
 export const LOL_ROLES = {
   TOP: { label: 'Top', icon: '▲' },

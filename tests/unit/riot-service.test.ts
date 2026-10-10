@@ -99,6 +99,11 @@ test('Rift service protects credentials, routes official APIs, limits concurrenc
         },
       ]);
     }
+    if (url.pathname.includes('/champion-mastery/v4/')) {
+      assert.equal(url.searchParams.get('count'), '3');
+      if (state.mode === 'mastery-failed') return Response.json({}, { status: 503 });
+      return Response.json([{ championId: 103, championLevel: 12, championPoints: 340000 }]);
+    }
     if (url.pathname.endsWith('/ids'))
       return Response.json(Array.from({ length: 10 }, (_, i) => `LA2_${i + 1}`));
     if (url.pathname.includes('/match/v5/matches/')) {
@@ -183,6 +188,10 @@ test('Rift service protects credentials, routes official APIs, limits concurrenc
     assert.equal(profile.matches[0].participants.length, 10);
     assert.equal(profile.soloQueue.winrate, 75);
     assert.equal(profile.rankStatus, 'available');
+    assert.equal(profile.masteryStatus, 'available');
+    assert.equal(profile.masteries[0].points, 340000);
+    assert.equal(profile.masteries[0].championName, 'Ahri');
+    assert.match(profile.masteries[0].championIcon, /16\.20\.1\/img\/champion\/Ahri.png/);
     assert.ok(profile.warnings.some((value: string) => value.includes('personalizadas')));
     assert.ok(state.maxActive >= 2 && state.maxActive <= 3);
     assert.equal(state.active, 0);
@@ -213,6 +222,12 @@ test('Rift service protects credentials, routes official APIs, limits concurrenc
     const rankMissing = await inspectLol('Jugador Ñ#LAS', 'la2');
     assert.equal(rankMissing.rankStatus, 'unavailable');
     assert.equal(rankMissing.soloQueue, null);
+    state.cache.clear();
+    state.mode = 'mastery-failed';
+    const masteryMissing = await inspectLol('Jugador Ñ#LAS', 'la2');
+    assert.equal(masteryMissing.masteryStatus, 'unavailable');
+    assert.equal(masteryMissing.matches.length, 9);
+    assert.equal(masteryMissing.masteries.length, 0);
     state.cache.clear();
     state.requests = [];
     state.mode = 'match-rate';

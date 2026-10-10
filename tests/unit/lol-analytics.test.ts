@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { filterLolMatches, lolAnalytics } from '../../src/domain/lol-analytics.ts';
+import {
+  filterLolMatches,
+  lolAnalytics,
+  lolMatchMedals,
+  lolMomentLink,
+} from '../../src/domain/lol-analytics.ts';
 import type { LolMatchSummary } from '../../src/domain/lol-tracker.ts';
 
 function match(
@@ -28,6 +33,7 @@ function match(
       championName,
       championIcon: null,
       championLevel: 18,
+      largestMultiKill: 0,
       kills,
       deaths,
       assists,
@@ -49,10 +55,10 @@ function match(
   };
 }
 test('Rift queue filters cover exact queues and preserve input order', () => {
-  const rows = [420, 400, 430, 450, 440, 1700, 900, 490].map((id) =>
+  const rows = [420, 400, 430, 450, 440, 1700, 1710, 900, 490].map((id) =>
     match(id, 'Ahri', 'MIDDLE', true),
   );
-  assert.equal(filterLolMatches(rows, 'all').length, 8);
+  assert.equal(filterLolMatches(rows, 'all').length, 9);
   assert.deepEqual(
     filterLolMatches(rows, 'solo').map((m) => m.queueId),
     [420],
@@ -67,9 +73,13 @@ test('Rift queue filters cover exact queues and preserve input order', () => {
   );
   assert.deepEqual(
     filterLolMatches(rows, 'other').map((m) => m.queueId),
-    [440, 1700, 900, 490],
+    [440, 900, 490],
   );
-  assert.equal(rows.length, 8);
+  assert.deepEqual(
+    filterLolMatches(rows, 'arena').map((m) => m.queueId),
+    [1700, 1710],
+  );
+  assert.equal(rows.length, 9);
 });
 test('Rift analytics aggregate KDA from totals, averages and truthful roles', () => {
   const rows = [
@@ -108,4 +118,37 @@ test('Rift top champions use match count first and only show five', () => {
     lolAnalytics(rows).champions.map((row) => row.label),
     ['Zed', 'Ahri', 'Bard', 'Corki', 'Diana'],
   );
+});
+
+test('Rift medals compare only teammates, allow tied MVP and handle zero team kills', () => {
+  const row = match(420, 'Rammus', 'JUNGLE', true, 5, 2, 22);
+  row.player.largestMultiKill = 5;
+  const ally = {
+    ...row.player,
+    puuid: 'ally',
+    kills: 35,
+    assists: 0,
+    deaths: 5,
+    totalDamage: 30000,
+  };
+  row.participants = [row.player, ally, { ...ally, teamId: 200, kills: 100, totalDamage: 90000 }];
+  assert.deepEqual(lolMatchMedals(row), {
+    multikill: 'PENTAKILL',
+    mvp: true,
+    killParticipation: 68,
+  });
+  row.player.largestMultiKill = 4;
+  assert.equal(lolMatchMedals(row).multikill, 'CUATRICIDIO');
+  row.player.assists = 0;
+  assert.equal(lolMatchMedals(row).mvp, false);
+  row.player.totalDamage = ally.totalDamage;
+  assert.equal(lolMatchMedals(row).mvp, true);
+  const zero = match(450, 'Ahri', '', false, 0, 0, 0);
+  zero.player.totalDamage = 0;
+  zero.participants = [zero.player, { ...zero.player, puuid: 'ally' }];
+  assert.deepEqual(lolMatchMedals(zero), { multikill: null, mvp: false, killParticipation: 0 });
+  const link = new URL(lolMomentLink(row), 'https://savestate.test');
+  assert.equal(link.pathname, '/highlights');
+  assert.ok(link.searchParams.get('draft')?.includes('Rammus'));
+  assert.ok(link.searchParams.get('draftTitle')!.length <= 120);
 });

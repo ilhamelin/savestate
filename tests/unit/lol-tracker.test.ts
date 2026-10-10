@@ -27,6 +27,7 @@ const participant = (puuid = 'target', teamId = 100) => ({
   championId: 9,
   championName: 'FiddleSticks',
   champLevel: 18,
+  largestMultiKill: 5,
   kills: 10,
   deaths: 2,
   assists: 6,
@@ -103,6 +104,7 @@ test('Rift statistics include neutral CS, damage, gold, finite KDA and actual te
   assert.equal(result.player.csPerMin, 10);
   assert.equal(result.player.kda, '8.00');
   assert.equal(result.player.championLevel, 18);
+  assert.equal(result.player.largestMultiKill, 5);
   assert.equal(result.player.totalDamage, 22000);
   assert.equal(result.player.gold, 14500);
   assert.equal(result.player.win, true);

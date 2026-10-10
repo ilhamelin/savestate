@@ -60,7 +60,14 @@ export default async function Highlights({
         </div>
       </div>
       {user ? (
-        <PostForm userId={user.id} />
+        <PostForm
+          key={typeof params.draft === 'string' ? params.draft.slice(0, 5000) : ''}
+          userId={user.id}
+          initialDraft={typeof params.draft === 'string' ? params.draft.slice(0, 5000) : undefined}
+          initialTitle={
+            typeof params.draftTitle === 'string' ? params.draftTitle.slice(0, 120) : undefined
+          }
+        />
       ) : (
         <p>
           <Link className="button" href="/login?next=/highlights">

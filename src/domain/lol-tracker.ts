@@ -57,6 +57,7 @@ export interface LolMatchParticipant {
   championName: string;
   championIcon: string | null;
   championLevel: number;
+  largestMultiKill: number;
   kills: number;
   deaths: number;
   assists: number;
@@ -95,9 +96,39 @@ export interface LolProfileData {
   soloQueue: LolRankEntry | null;
   flexQueue: LolRankEntry | null;
   rankStatus: 'available' | 'unavailable';
+  masteries: LolChampionMastery[];
+  masteryStatus: 'available' | 'unavailable';
   matches: LolMatchSummary[];
   warnings: string[];
   lastUpdated: string;
+}
+export interface LolChampionMastery {
+  championId: number;
+  championName: string;
+  championIcon: string | null;
+  level: number;
+  points: number;
+}
+export function normalizeLolMasteries(input: unknown, assets: LolAssets): LolChampionMastery[] {
+  if (!Array.isArray(input)) throw new Error('Invalid Riot masteries');
+  const seen = new Set<number>();
+  return input
+    .map((entry): LolChampionMastery => {
+      const data = lolObject(entry);
+      const championId = requiredInteger(data.championId);
+      if (championId <= 0 || seen.has(championId)) throw new Error('Invalid mastery champion');
+      seen.add(championId);
+      const champion = assets.champions[String(championId)];
+      return {
+        championId,
+        championName: champion?.name ?? `Campeón ${championId}`,
+        championIcon: champion ? lolAssetUrl(assets.version, 'champion', champion.file) : null,
+        level: requiredInteger(data.championLevel),
+        points: requiredInteger(data.championPoints),
+      };
+    })
+    .sort((a, b) => b.points - a.points || a.championId - b.championId)
+    .slice(0, 3);
 }
 export interface LolAssets {
   version: string;
@@ -125,6 +156,7 @@ export function lolQueueName(queue: number, mode: string) {
     430: 'Normal',
     490: 'Normal · Partida rápida',
     1700: 'Arena',
+    1710: 'Arena',
   };
   return labels[queue] ?? `${mode || 'LoL'} · Cola ${queue}`;
 }
@@ -241,6 +273,7 @@ export function normalizeLolMatch(
       championName: champion?.name || string(data.championName) || 'Campeón',
       championIcon: champion ? lolAssetUrl(assets.version, 'champion', champion.file) : null,
       championLevel: integer(data.champLevel),
+      largestMultiKill: integer(data.largestMultiKill),
       kills,
       deaths,
       assists,

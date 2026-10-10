@@ -1,6 +1,7 @@
 'use client';
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Trophy } from 'lucide-react';
 import { api } from '@/lib/client-api';
 import { notificationAge } from '@/domain/notifications';
@@ -8,9 +9,17 @@ import {
   LOL_QUEUE_FILTERS,
   filterLolMatches,
   lolAnalytics,
+  lolMatchMedals,
+  lolMomentLink,
   type LolAggregate,
   type LolQueueFilter,
 } from '@/domain/lol-analytics';
+import {
+  lolAccount,
+  recentLolAccounts,
+  sameLolAccount,
+  type LolAccount,
+} from '@/domain/lol-accounts';
 import {
   LOL_PLATFORMS,
   LOL_TIERS,
@@ -22,6 +31,10 @@ import {
 } from '@/domain/lol-tracker';
 
 const format = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 1 });
+const masteryPoints = new Intl.NumberFormat('en-US', {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+});
 function RiftImage({ src, alt, size = 32 }: { src: string | null; alt: string; size?: number }) {
   const [failed, setFailed] = useState(false);
   return (
@@ -253,6 +266,7 @@ function MatchTeams({ match }: { match: LolMatchSummary }) {
   );
 }
 function MatchCard({ match, now }: { match: LolMatchSummary; now: string }) {
+  const medals = lolMatchMedals(match);
   const player = match.player,
     seconds = Math.round(match.gameDurationMinutes * 60);
   const ended = new Date(match.gameEndTimestamp).toISOString();
@@ -294,24 +308,53 @@ function MatchCard({ match, now }: { match: LolMatchSummary; now: string }) {
         </div>
         <ItemBuild player={player} />
       </div>
+      <div className="lol-match-medals">
+        {medals.multikill ? (
+          <span className="tag lol-medal-gold">⚡ {medals.multikill}</span>
+        ) : null}
+        {medals.mvp ? (
+          <span
+            className="tag lol-medal-gold"
+            title="Distintivo SaveState: mayor daño o mejor KDA del equipo; incluye empates."
+          >
+            👑 MVP
+          </span>
+        ) : null}
+        <span className="tag" title="Participación en los asesinatos del equipo">
+          🎯 {medals.killParticipation}% P/K
+        </span>
+      </div>
       <details className="lol-match-details">
         <summary>Ver detalles de la partida ({match.participants.length} jugadores)</summary>
         <MatchTeams match={match} />
       </details>
+      <Link className="button outline small lol-publish-match" href={lolMomentLink(match)}>
+        🚀 Publicar en Momentos
+      </Link>
     </article>
   );
 }
-export function ProfileLolTracker({ configured }: { configured: boolean }) {
+export function ProfileLolTracker({
+  configured,
+  initialAccount = null,
+  initialError = '',
+}: {
+  configured: boolean;
+  initialAccount?: LolAccount | null;
+  initialError?: string;
+}) {
+  const [pinned, setPinned] = useState<LolAccount | null>(null);
+  const [recent, setRecent] = useState<LolAccount[]>([]);
+  const recentRef = useRef<LolAccount[]>([]);
   const [queue, setQueue] = useState<LolQueueFilter>('all');
-  const [riotId, setRiotId] = useState(''),
-    [platform, setPlatform] = useState<LolPlatform>('la2');
+  const [riotId, setRiotId] = useState(initialAccount?.riotId ?? ''),
+    [platform, setPlatform] = useState<LolPlatform>(initialAccount?.platform ?? 'la2');
   const [profile, setProfile] = useState<LolProfileData | null>(null),
-    [error, setError] = useState(''),
+    [error, setError] = useState(initialError),
     [loading, setLoading] = useState(false);
   const request = useRef<AbortController | null>(null),
     working = useRef(false);
-  useEffect(() => () => request.current?.abort(), []);
-  async function load() {
+  const load = useCallback(async (account: LolAccount) => {
     if (working.current) return;
     working.current = true;
     setLoading(true);
@@ -321,12 +364,26 @@ export function ProfileLolTracker({ configured }: { configured: boolean }) {
     try {
       const result = await api<LolProfileData>(
         'tracker/lol/inspect',
-        { riotId, platform },
+        { ...account },
         controller.signal,
       );
       if (!controller.signal.aborted) {
         setProfile(result);
         setQueue('all');
+        const canonical = {
+          riotId: `${result.gameName}#${result.tagLine}`,
+          platform: result.platform,
+        };
+        setRiotId(canonical.riotId);
+        setPlatform(canonical.platform);
+        const next = recentLolAccounts([canonical, ...recentRef.current]);
+        recentRef.current = next;
+        setRecent(next);
+        try {
+          window.localStorage.setItem('savestate_recent_lol_searches', JSON.stringify(next));
+        } catch {
+          /* Las restricciones o datos inválidos de localStorage no bloquean la consulta. */
+        }
       }
     } catch (failure) {
       if (!controller.signal.aborted)
@@ -336,6 +393,53 @@ export function ProfileLolTracker({ configured }: { configured: boolean }) {
     } finally {
       working.current = false;
       if (!controller.signal.aborted) setLoading(false);
+    }
+  }, []);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      let saved: LolAccount | null = null;
+      try {
+        saved = lolAccount(
+          JSON.parse(window.localStorage.getItem('savestate_pinned_lol_account') ?? 'null'),
+        );
+      } catch {
+        /* Las restricciones o datos inválidos de localStorage no bloquean la consulta. */
+      }
+      setPinned(saved);
+      try {
+        const savedRecent = recentLolAccounts(
+          JSON.parse(window.localStorage.getItem('savestate_recent_lol_searches') ?? '[]'),
+        );
+        recentRef.current = savedRecent;
+        setRecent(savedRecent);
+      } catch {
+        /* Las restricciones o datos inválidos de localStorage no bloquean la consulta. */
+      }
+      const account = initialAccount ?? (!initialError ? saved : null);
+      if (account) {
+        setRiotId(account.riotId);
+        setPlatform(account.platform);
+        if (configured) void load(account);
+      }
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      request.current?.abort();
+    };
+  }, [initialAccount, initialError, configured, load]);
+  function pinAccount() {
+    if (!profile) return;
+    const account = {
+      riotId: `${profile.gameName}#${profile.tagLine}`,
+      platform: profile.platform,
+    };
+    const next = sameLolAccount(pinned, account) ? null : account;
+    try {
+      if (next) window.localStorage.setItem('savestate_pinned_lol_account', JSON.stringify(next));
+      else window.localStorage.removeItem('savestate_pinned_lol_account');
+      setPinned(next);
+    } catch {
+      setError('El navegador no permite guardar la cuenta fijada.');
     }
   }
   const matches = filterLolMatches(profile?.matches ?? [], queue);
@@ -363,7 +467,9 @@ export function ProfileLolTracker({ configured }: { configured: boolean }) {
             className="lol-search-form"
             onSubmit={(event) => {
               event.preventDefault();
-              void load();
+              const account = lolAccount({ riotId, platform });
+              if (account) void load(account);
+              else setError('Usa un Riot ID válido con formato Nombre#TAG.');
             }}
           >
             <label>
@@ -395,6 +501,30 @@ export function ProfileLolTracker({ configured }: { configured: boolean }) {
               {loading ? 'Consultando Riot…' : 'Cargar Historial'}
             </button>
           </form>
+          {recent.length ? (
+            <div
+              className="filter-buttons lol-recent-searches"
+              role="group"
+              aria-label="Búsquedas recientes"
+            >
+              <span className="muted">Recientes:</span>
+              {recent.map((account) => (
+                <button
+                  key={`${account.platform}-${account.riotId}`}
+                  type="button"
+                  className="button outline small"
+                  disabled={loading || !configured}
+                  onClick={() => {
+                    setRiotId(account.riotId);
+                    setPlatform(account.platform);
+                    void load(account);
+                  }}
+                >
+                  {account.riotId} · {account.platform.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          ) : null}
           {loading ? (
             <p role="status" className="muted">
               [ Recuperando señal, rango y partidas… ]
@@ -419,9 +549,53 @@ export function ProfileLolTracker({ configured }: { configured: boolean }) {
                     <h3>
                       {profile.gameName}#{profile.tagLine}
                     </h3>
+                    <button
+                      type="button"
+                      className="button outline small"
+                      aria-pressed={sameLolAccount(pinned, {
+                        riotId: `${profile.gameName}#${profile.tagLine}`,
+                        platform: profile.platform,
+                      })}
+                      onClick={pinAccount}
+                    >
+                      {sameLolAccount(pinned, {
+                        riotId: `${profile.gameName}#${profile.tagLine}`,
+                        platform: profile.platform,
+                      })
+                        ? '⭐ Cuenta fijada · Desfijar'
+                        : '☆ Fijar mi cuenta'}
+                    </button>
                     <p className="accent">Nivel {profile.summonerLevel}</p>
                     <span className="tag">{LOL_PLATFORMS[profile.platform].name}</span>
                   </div>
+                </div>
+                <div className="lol-mastery-section">
+                  <p className="eyebrow">TOP 3 // MAESTRÍA HISTÓRICA</p>
+                  {profile.masteryStatus === 'unavailable' ? (
+                    <p className="muted">Maestrías no disponibles.</p>
+                  ) : profile.masteries.length ? (
+                    <div className="lol-masteries">
+                      {profile.masteries.map((mastery) => (
+                        <div key={mastery.championId} className="lol-mastery-card">
+                          <RiftImage
+                            key={mastery.championIcon}
+                            src={mastery.championIcon}
+                            alt={mastery.championName}
+                            size={48}
+                          />
+                          <div>
+                            <strong>{mastery.championName}</strong>
+                            <small>
+                              Nivel {mastery.level} ·{' '}
+                              {masteryPoints.format(mastery.points).toLowerCase()} pts
+                            </small>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="muted">Sin maestrías registradas.</p>
+                  )}
                 </div>
                 <div className="lol-ranks">
                   <RankCard

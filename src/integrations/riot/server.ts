@@ -14,6 +14,7 @@ import {
   lolAssetUrl,
   normalizeLolMatch,
   normalizeLolRank,
+  normalizeLolMasteries,
   type LolPlatform,
   type LolCluster,
   type LolAssets,
@@ -90,6 +91,12 @@ export function fetchSummonerByPuuid(puuid: string, platform: LolPlatform) {
 export function fetchRankedEntries(puuid: string, platform: LolPlatform) {
   return riotRequest(platform, `/lol/league/v4/entries/by-puuid/${encodeURIComponent(puuid)}`);
 }
+export function fetchChampionMasteries(puuid: string, platform: LolPlatform) {
+  return riotRequest(
+    platform,
+    `/lol/champion-mastery/v4/champion-masteries/by-puuid/${encodeURIComponent(puuid)}/top?count=3`,
+  );
+}
 export function fetchRecentMatchIds(puuid: string, cluster: LolCluster) {
   return riotRequest(
     cluster,
@@ -118,10 +125,11 @@ async function loadProfile(
   const latestVersion = dataDragonVersion(versions);
   const puuid = account.puuid;
   const cluster = LOL_PLATFORMS[platform].cluster;
-  const [summonerResult, rankResult, idsResult] = await Promise.allSettled([
+  const [summonerResult, rankResult, idsResult, masteryResult] = await Promise.allSettled([
     fetchSummonerByPuuid(puuid, platform),
     fetchRankedEntries(puuid, platform),
     fetchRecentMatchIds(puuid, cluster),
+    fetchChampionMasteries(puuid, platform),
   ]);
   if (summonerResult.status === 'rejected') throw summonerResult.reason;
   const summoner = lolObject(summonerResult.value);
@@ -175,6 +183,17 @@ async function loadProfile(
     return assetsByVersion.get(version)!;
   };
   const matches: LolMatchSummary[] = [];
+  let masteries: LolProfileData['masteries'] = [];
+  let masteryStatus: LolProfileData['masteryStatus'] = 'available';
+  try {
+    if (masteryResult.status === 'rejected') throw masteryResult.reason;
+    masteries = normalizeLolMasteries(masteryResult.value, await assetsFor(latestVersion));
+  } catch {
+    masteryStatus = 'unavailable';
+    warnings.push(
+      'No se pudieron consultar las maestrías. El resto del historial sigue disponible.',
+    );
+  }
   let failed = 0,
     excluded = 0;
   for (let offset = 0; offset < ids.length; offset += 3) {
@@ -221,6 +240,8 @@ async function loadProfile(
     soloQueue,
     flexQueue,
     rankStatus,
+    masteries,
+    masteryStatus,
     matches: matches.sort((a, b) => b.gameEndTimestamp - a.gameEndTimestamp),
     warnings,
     lastUpdated: new Date().toISOString(),
@@ -242,7 +263,7 @@ export async function inspectLol(
   try {
     return await unstable_cache(
       () => loadProfile(gameName, tagLine, platform),
-      ['rift-tracker-v1', fingerprint, platform, gameName, tagLine],
+      ['rift-tracker-v2', fingerprint, platform, gameName, tagLine],
       { revalidate: 120 },
     )();
   } catch (error) {

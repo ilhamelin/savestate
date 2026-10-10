@@ -11,10 +11,14 @@ export function PostForm({
   userId,
   initialPost,
   onDone,
+  initialDraft,
+  initialTitle,
 }: {
   userId: string;
   initialPost?: Post;
   onDone?: () => void;
+  initialDraft?: string;
+  initialTitle?: string;
 }) {
   const [files, setFiles] = useState<File[]>([]),
     [pending, setPending] = useState(false),
@@ -80,7 +84,7 @@ export function PostForm({
     }
   }
   return (
-    <details className="panel" open={initialPost ? true : undefined}>
+    <details className="panel" open={initialPost || initialDraft ? true : undefined}>
       <summary className="accent">
         {initialPost ? 'Editar momento' : '+ Compartir un momento'}
       </summary>
@@ -93,7 +97,7 @@ export function PostForm({
               minLength={3}
               maxLength={120}
               required
-              defaultValue={initialPost?.title}
+              defaultValue={initialPost?.title ?? initialTitle}
             />
           </label>
           <label>
@@ -112,7 +116,7 @@ export function PostForm({
               name="content"
               maxLength={5000}
               rows={5}
-              defaultValue={initialPost?.content}
+              defaultValue={initialPost?.content ?? initialDraft}
             />
           </label>
           {!initialPost ? (
