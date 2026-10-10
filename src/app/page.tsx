@@ -1,9 +1,10 @@
 import Link from 'next/link';
-import { ArrowUpRight, Library, NotebookPen, Users, Gamepad2 } from 'lucide-react';
+import { ArrowUpRight, Gamepad2 } from 'lucide-react';
 import { SetupNotice } from '@/components/setup-notice';
-import { Suspense } from 'react';
-import { ArcadeSection } from '@/components/arcade-section';
-export default function Home() {
+import { getRecentGamingNews } from '@/services/gaming-news';
+import { RecentNewsSection } from '@/components/recent-news-section';
+export default async function Home() {
+  const news = await getRecentGamingNews();
   return (
     <>
       <section className="hero">
@@ -65,53 +66,7 @@ export default function Home() {
         </div>
       </section>
       <SetupNotice />
-      <Suspense fallback={<div className="panel skeleton" aria-label="Cargando sala arcade" />}>
-        <ArcadeSection />
-      </Suspense>
-      <section className="intro-strip">
-        <div>
-          <p className="eyebrow">TU PARTIDA, TUS REGLAS</p>
-          <h2>Más que una lista de juegos.</h2>
-        </div>
-        <span className="muted">01 — 03 / PLAYER TOOLS</span>
-      </section>
-      <section className="feature-grid">
-        {[
-          {
-            icon: Library,
-            n: '01',
-            title: 'Tu biblioteca',
-            text: 'Seis estados para ordenar tus aventuras. Cuatro favoritos para contar quién eres.',
-            href: '/library',
-          },
-          {
-            icon: NotebookPen,
-            n: '02',
-            title: 'Tu diario',
-            text: 'Cada rejugada tiene su historia: plataforma, horas, fechas y una nota que evoluciona contigo.',
-            href: '/explore',
-          },
-          {
-            icon: Users,
-            n: '03',
-            title: 'Tu comunidad',
-            text: 'Sigue la actividad pública de otros jugadores y comparte tu biblioteca con tus amigos.',
-            href: '/players',
-          },
-        ].map((item) => (
-          <Link href={item.href} key={item.n} className="feature-panel">
-            <div className="feature-top">
-              <item.icon size={24} />
-              <span>{item.n}</span>
-            </div>
-            <h3>{item.title}</h3>
-            <p>{item.text}</p>
-            <span className="card-link">
-              Entrar <ArrowUpRight size={14} />
-            </span>
-          </Link>
-        ))}
-      </section>
+      <RecentNewsSection news={news} />
     </>
   );
 }

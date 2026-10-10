@@ -3674,3 +3674,126 @@ a.feed-card-cover:hover {
   max-width: 100%;
   white-space: normal;
 }
+
+.news-section {
+  margin: 2rem 0 3rem;
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.news-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.news-header h2 {
+  margin: 0.5rem 0;
+}
+.news-header p {
+  margin: 0.5rem 0;
+}
+.news-pulse-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #33ff66;
+  box-shadow: 0 0 10px #33ff6655;
+  animation: news-pulse 2s ease-in-out infinite;
+}
+.news-live-tag {
+  color: #33ff66;
+  border: 1px solid #33ff6655;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+.news-cache-note {
+  font-size: 0.75rem;
+}
+.news-table {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.news-row {
+  display: grid;
+  grid-template-columns: 90px 75px minmax(0, 1fr) 20px;
+  align-items: start;
+  gap: 1rem;
+  padding: 1.1rem 0;
+  border-top: 1px solid var(--line);
+}
+.news-row:hover {
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+}
+.news-time {
+  font-size: 0.75rem;
+  color: var(--muted);
+  padding-top: 0.15rem;
+}
+.news-source-tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.badge-vandal {
+  color: #00f0ff;
+}
+.badge-ign {
+  color: #ffb000;
+}
+.news-copy {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.news-title {
+  font-weight: 700;
+  color: #f2f4f8;
+}
+.news-title:hover,
+.news-title:focus-visible {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.news-desc {
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.news-arrow {
+  color: var(--accent);
+}
+@keyframes news-pulse {
+  50% {
+    opacity: 0.4;
+  }
+}
+@media (max-width: 700px) {
+  .news-section {
+    padding: 1rem;
+  }
+  .news-header {
+    flex-wrap: wrap;
+  }
+  .news-row {
+    grid-template-columns: 90px minmax(0, 1fr) 20px;
+    gap: 0.5rem;
+  }
+  .news-copy {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .news-desc {
+    -webkit-line-clamp: 2;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .news-pulse-dot {
+    animation: none;
+  }
+}
