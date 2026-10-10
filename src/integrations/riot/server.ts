@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { unstable_cache } from 'next/cache';
 import { AppError } from '@/lib/http';
 import { ValidationError } from '@/domain/validation';
+import { lolPage } from '@/domain/lol-pages';
 import {
   LOL_PLATFORMS,
   accountCluster,
@@ -97,10 +98,11 @@ export function fetchChampionMasteries(puuid: string, platform: LolPlatform) {
     `/lol/champion-mastery/v4/champion-masteries/by-puuid/${encodeURIComponent(puuid)}/top?count=3`,
   );
 }
-export function fetchRecentMatchIds(puuid: string, cluster: LolCluster) {
+export function fetchRecentMatchIds(puuid: string, cluster: LolCluster, start = 0, count = 10) {
+  const page = lolPage(start, count);
   return riotRequest(
     cluster,
-    `/lol/match/v5/matches/by-puuid/${encodeURIComponent(puuid)}/ids?start=0&count=10`,
+    `/lol/match/v5/matches/by-puuid/${encodeURIComponent(puuid)}/ids?start=${page.start}&count=${page.count}`,
   );
 }
 export function fetchMatchDetails(matchId: string, cluster: LolCluster) {
@@ -112,6 +114,8 @@ async function loadProfile(
   gameName: string,
   tagLine: string,
   platform: LolPlatform,
+  start: number,
+  count: number,
 ): Promise<LolProfileData> {
   const [rawAccount, rawVersions] = await Promise.all([
     resolveRiotAccount(gameName, tagLine, platform),
@@ -128,7 +132,7 @@ async function loadProfile(
   const [summonerResult, rankResult, idsResult, masteryResult] = await Promise.allSettled([
     fetchSummonerByPuuid(puuid, platform),
     fetchRankedEntries(puuid, platform),
-    fetchRecentMatchIds(puuid, cluster),
+    fetchRecentMatchIds(puuid, cluster, start, count),
     fetchChampionMasteries(puuid, platform),
   ]);
   if (summonerResult.status === 'rejected') throw summonerResult.reason;
@@ -163,13 +167,15 @@ async function loadProfile(
     );
   }
   let ids: string[] = [];
+  let idsAvailable = false;
   if (
     idsResult.status === 'fulfilled' &&
     Array.isArray(idsResult.value) &&
     idsResult.value.every((id) => typeof id === 'string' && /^[A-Z0-9]+_\d+$/.test(id))
-  )
-    ids = [...new Set(idsResult.value as string[])].slice(0, 10);
-  else warnings.push('El historial no pudo consultarse. Inténtalo de nuevo más tarde.');
+  ) {
+    ids = (idsResult.value as string[]).slice(0, count);
+    idsAvailable = true;
+  } else warnings.push('El historial no pudo consultarse. Inténtalo de nuevo más tarde.');
   const assetsByVersion = new Map<string, Promise<LolAssets>>();
   const assetsFor = (version: string) => {
     if (!assetsByVersion.has(version))
@@ -196,6 +202,7 @@ async function loadProfile(
   }
   let failed = 0,
     excluded = 0;
+  let scanned = 0;
   for (let offset = 0; offset < ids.length; offset += 3) {
     const results = await Promise.allSettled(
       ids.slice(offset, offset + 3).map(async (id) => {
@@ -209,6 +216,7 @@ async function loadProfile(
         return normalizeLolMatch(raw, puuid, await assetsFor(version));
       }),
     );
+    scanned += Math.min(3, ids.length - offset);
     let throttled = false;
     for (const result of results) {
       if (result.status === 'fulfilled') {
@@ -245,14 +253,20 @@ async function loadProfile(
     matches: matches.sort((a, b) => b.gameEndTimestamp - a.gameEndTimestamp),
     warnings,
     lastUpdated: new Date().toISOString(),
+    nextStart: start + scanned,
+    hasMore:
+      start + scanned <= 10000 && (!idsAvailable || scanned < ids.length || ids.length === count),
   };
 }
 export async function inspectLol(
   inputRiotId: unknown,
   inputPlatform: unknown,
+  inputStart: unknown = 0,
+  inputCount: unknown = 10,
 ): Promise<LolProfileData> {
   const { gameName, tagLine } = riotId(inputRiotId);
   const platform = lolPlatform(inputPlatform);
+  const { start, count } = lolPage(inputStart, inputCount);
   const key = process.env.RIOT_API_KEY?.trim();
   if (!key)
     throw new AppError(
@@ -262,8 +276,8 @@ export async function inspectLol(
   const fingerprint = createHash('sha256').update(key).digest('hex');
   try {
     return await unstable_cache(
-      () => loadProfile(gameName, tagLine, platform),
-      ['rift-tracker-v2', fingerprint, platform, gameName, tagLine],
+      () => loadProfile(gameName, tagLine, platform, start, count),
+      ['rift-tracker-v3', fingerprint, platform, gameName, tagLine, String(start), String(count)],
       { revalidate: 120 },
     )();
   } catch (error) {

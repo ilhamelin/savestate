@@ -1,6 +1,6 @@
 # Rift Tracker
 
-En la vista dedicada `/rift`, accesible desde el Navbar y Ctrl+K, Rift Tracker permite consultar un Riot ID y servidor. Muestra rango Solo/Dúo y Flexible, nivel e icono, hasta diez partidas recientes, estadísticas y jugadores por equipo. Es una consulta bajo demanda, sin migración SQL ni almacenamiento de vínculos en el perfil.
+En la vista dedicada `/rift`, accesible desde el Navbar y Ctrl+K, Rift Tracker permite consultar un Riot ID y servidor. Muestra rango Solo/Dúo y Flexible, nivel e icono, partidas recientes en lotes de diez, estadísticas y jugadores por equipo. Es una consulta bajo demanda, sin migración SQL ni almacenamiento de vínculos en el perfil.
 
 ## Activar Riot
 
@@ -25,7 +25,7 @@ Las partidas personalizadas se excluyen de las búsquedas por Riot ID: para most
 
 ## Filtros y analíticas
 
-El historial filtra localmente por Todas, Solo/Dúo (420), Normales (400/430), ARAM (450), Arena (1700/1710) y Otros / Caos (el resto, incluyendo Flexible). Los paneles ROLES y TOP CHAMPIONS usan la muestra filtrada de hasta diez partidas, no toda la trayectoria del jugador. Las posiciones desconocidas se excluyen solo del panel de roles. Los cinco campeones más jugados se ordenan por cantidad y nombre en caso de empate. WR = victorias / partidas; KDA = (kills + assists) / deaths acumuladas (Perfecto cuando no hay muertes); los promedios K/D/A son por partida. Una nueva consulta restablece Todas.
+El historial filtra localmente por Todas, Solo/Dúo (420), Normales (400/430), ARAM (450), Arena (1700/1710) y Otros / Caos (el resto, incluyendo Flexible). Los paneles ROLES y TOP CHAMPIONS usan la muestra filtrada de todas las partidas cargadas, no toda la trayectoria del jugador. Las posiciones desconocidas se excluyen solo del panel de roles. Los cinco campeones más jugados se ordenan por cantidad y nombre en caso de empate. WR = victorias / partidas; KDA = (kills + assists) / deaths acumuladas (Perfecto cuando no hay muertes); los promedios K/D/A son por partida. Una nueva consulta restablece Todas.
 
 ## Cuenta principal, medallas y maestría
 
@@ -34,3 +34,9 @@ Los enlaces `/rift?riotId=Nombre%23TAG&platform=la2` cargan automáticamente la 
 Maestría consulta champion-mastery-v4 por PUUID en la plataforma seleccionada, con count=3. Los fallos son parciales y no bloquean el historial; el recurso se documenta en el [portal oficial](https://developer.riotgames.com/apis/#champion-mastery-v4). Se utiliza la versión actual de Data Dragon para sus imágenes.
 
 Las medallas MVP son una heurística de SaveState por mayor daño o mejor KDA dentro del mismo equipo, incluyendo empates positivos. Participación = (kills + assists) / kills del equipo; se muestra 0% si no hay kills. Pentakill/cuatricidio provienen de largestMultiKill. Publicar en Momentos abre un borrador editable mediante parámetros acotados, nunca realiza publicaciones automáticas.
+
+## Cargar más partidas y ambientación
+
+La vista usa ProfileWallpaper con neon_cyberpunk.svg y fullScreen, conservando la capa oscura de contraste existente. La API acepta start (0–10000) y count (1–10), con valores por defecto 0/10. Cada página tiene su propia entrada de caché. La respuesta añade nextStart y hasMore. El cursor cuenta los IDs examinados de Riot, incluyendo partidas personalizadas o fallos de detalle, en lugar del número de tarjetas visibles. Si se interrumpe por 429, continúa desde el final del lote examinado, sin saltar los lotes no solicitados. Los errores parciales se mantienen visibles.
+
+Cargar más acumula partidas únicas por matchId, conserva los filtros y recalcula las analíticas sobre la muestra acumulada. Las búsquedas y cargas adicionales se excluyen mutuamente; los errores conservan las partidas existentes y permiten reintentar. Un listado vacío o corto indica el final del historial; un fallo del listado no avanza el cursor.

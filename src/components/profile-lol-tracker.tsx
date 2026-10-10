@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Trophy } from 'lucide-react';
 import { api } from '@/lib/client-api';
 import { notificationAge } from '@/domain/notifications';
+import { mergeLolMatches } from '@/domain/lol-pages';
 import {
   LOL_QUEUE_FILTERS,
   filterLolMatches,
@@ -352,6 +353,7 @@ export function ProfileLolTracker({
   const [profile, setProfile] = useState<LolProfileData | null>(null),
     [error, setError] = useState(initialError),
     [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const request = useRef<AbortController | null>(null),
     working = useRef(false);
   const load = useCallback(async (account: LolAccount) => {
@@ -395,6 +397,51 @@ export function ProfileLolTracker({
       if (!controller.signal.aborted) setLoading(false);
     }
   }, []);
+  async function handleLoadMore() {
+    if (!profile || working.current || !profile.hasMore) return;
+    working.current = true;
+    setLoadingMore(true);
+    setError('');
+    const controller = new AbortController();
+    request.current = controller;
+    try {
+      const result = await api<LolProfileData>(
+        'tracker/lol/inspect',
+        {
+          riotId: `${profile.gameName}#${profile.tagLine}`,
+          platform: profile.platform,
+          start: profile.nextStart,
+          count: 10,
+        },
+        controller.signal,
+      );
+      if (controller.signal.aborted) return;
+      if (result.hasMore && result.nextStart <= profile.nextStart)
+        throw new Error(
+          result.warnings[0] ?? 'No se pudo avanzar en el historial. Inténtalo de nuevo.',
+        );
+      setProfile((previous) =>
+        previous
+          ? {
+              ...previous,
+              matches: mergeLolMatches(previous.matches, result.matches),
+              nextStart: result.nextStart,
+              hasMore: result.hasMore,
+              lastUpdated: result.lastUpdated,
+              warnings: [...new Set([...previous.warnings, ...result.warnings])].slice(-20),
+            }
+          : previous,
+      );
+    } catch (failure) {
+      if (!controller.signal.aborted)
+        setError(
+          failure instanceof Error ? failure.message : 'No se pudieron cargar más partidas.',
+        );
+    } finally {
+      working.current = false;
+      if (!controller.signal.aborted) setLoadingMore(false);
+    }
+  }
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       let saved: LolAccount | null = null;
@@ -453,7 +500,7 @@ export function ProfileLolTracker({
         </div>
       </div>
       <p className="muted">
-        Consulta un Riot ID para ver su rango y sus últimas diez partidas disponibles.
+        Consulta un Riot ID para ver su rango y cargar su historial en lotes de diez partidas.
       </p>
       {!configured ? (
         <p className="notice" role="status">
@@ -480,7 +527,7 @@ export function ProfileLolTracker({
                 required
                 placeholder="Nombre#TAG"
                 onChange={(event) => setRiotId(event.target.value)}
-                disabled={loading}
+                disabled={loading || loadingMore}
               />
             </label>
             <label>
@@ -488,7 +535,7 @@ export function ProfileLolTracker({
               <select
                 value={platform}
                 onChange={(event) => setPlatform(event.target.value as LolPlatform)}
-                disabled={loading}
+                disabled={loading || loadingMore}
               >
                 {Object.entries(LOL_PLATFORMS).map(([id, region]) => (
                   <option key={id} value={id}>
@@ -497,7 +544,10 @@ export function ProfileLolTracker({
                 ))}
               </select>
             </label>
-            <button className="button" disabled={!configured || loading || !riotId.trim()}>
+            <button
+              className="button"
+              disabled={!configured || loading || loadingMore || !riotId.trim()}
+            >
               {loading ? 'Consultando Riot…' : 'Cargar Historial'}
             </button>
           </form>
@@ -513,7 +563,7 @@ export function ProfileLolTracker({
                   key={`${account.platform}-${account.riotId}`}
                   type="button"
                   className="button outline small"
-                  disabled={loading || !configured}
+                  disabled={loading || loadingMore || !configured}
                   onClick={() => {
                     setRiotId(account.riotId);
                     setPlatform(account.platform);
@@ -645,6 +695,22 @@ export function ProfileLolTracker({
               ) : (
                 <p className="empty-state">No hay partidas disponibles para esta cola.</p>
               )}
+              <div className="rift-load-more" aria-busy={loadingMore}>
+                {profile.hasMore ? (
+                  <button
+                    type="button"
+                    className="button outline"
+                    disabled={loadingMore || loading}
+                    onClick={() => void handleLoadMore()}
+                  >
+                    {loadingMore ? '⏳ Cargando más partidas...' : '🔄 Cargar 10 partidas más'}
+                  </button>
+                ) : (
+                  <p className="muted" role="status">
+                    Fin del historial disponible.
+                  </p>
+                )}
+              </div>
             </div>
           ) : null}
         </div>

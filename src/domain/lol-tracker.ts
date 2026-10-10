@@ -101,6 +101,8 @@ export interface LolProfileData {
   matches: LolMatchSummary[];
   warnings: string[];
   lastUpdated: string;
+  nextStart: number;
+  hasMore: boolean;
 }
 export interface LolChampionMastery {
   championId: number;

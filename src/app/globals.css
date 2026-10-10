@@ -3664,3 +3664,13 @@ a.feed-card-cover:hover {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.rift-load-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+.rift-load-more .button {
+  max-width: 100%;
+  white-space: normal;
+}

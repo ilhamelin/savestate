@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { currentUser } from '@/lib/session';
 import { ProfileLolTracker } from '@/components/profile-lol-tracker';
 import { lolAccount } from '@/domain/lol-accounts';
+import { ProfileWallpaper } from '@/components/profile-wallpaper';
 
 export const metadata = { title: 'Rift Tracker · League of Legends' };
 export default async function RiftPage({
@@ -17,15 +18,17 @@ export default async function RiftPage({
     : '/rift';
   if (!(await currentUser())) redirect(`/login?next=${encodeURIComponent(next)}`);
   return (
-    <ProfileLolTracker
-      key={next + String(hasLink)}
-      configured={Boolean(process.env.RIOT_API_KEY?.trim())}
-      initialAccount={account}
-      initialError={
-        hasLink && !account
-          ? 'El enlace debe incluir un Riot ID Nombre#TAG y una plataforma válida.'
-          : ''
-      }
-    />
+    <ProfileWallpaper url="/wallpapers/neon_cyberpunk.svg" fullScreen>
+      <ProfileLolTracker
+        key={next + String(hasLink)}
+        configured={Boolean(process.env.RIOT_API_KEY?.trim())}
+        initialAccount={account}
+        initialError={
+          hasLink && !account
+            ? 'El enlace debe incluir un Riot ID Nombre#TAG y una plataforma válida.'
+            : ''
+        }
+      />
+    </ProfileWallpaper>
   );
 }

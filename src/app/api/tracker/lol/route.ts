@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     await authenticated();
     sameOrigin(request);
     const input = object(await body(request, 2048));
-    const data = await inspectLol(input.riotId, input.platform);
+    const data = await inspectLol(input.riotId, input.platform, input.start, input.count);
     return Response.json({ data }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
     const response = errorResponse(error);

@@ -104,8 +104,12 @@ test('Rift service protects credentials, routes official APIs, limits concurrenc
       if (state.mode === 'mastery-failed') return Response.json({}, { status: 503 });
       return Response.json([{ championId: 103, championLevel: 12, championPoints: 340000 }]);
     }
-    if (url.pathname.endsWith('/ids'))
-      return Response.json(Array.from({ length: 10 }, (_, i) => `LA2_${i + 1}`));
+    if (url.pathname.endsWith('/ids')) {
+      if (state.mode === 'ids-failed') return Response.json({}, { status: 503 });
+      const start = Number(url.searchParams.get('start'));
+      const count = state.mode === 'ids-short' ? 2 : Number(url.searchParams.get('count'));
+      return Response.json(Array.from({ length: count }, (_, i) => `LA2_${start + i + 1}`));
+    }
     if (url.pathname.includes('/match/v5/matches/')) {
       state.active++;
       state.maxActive = Math.max(state.maxActive, state.active);
@@ -185,6 +189,8 @@ test('Rift service protects credentials, routes official APIs, limits concurrenc
     assert.equal(response.headers.get('cache-control'), 'private, no-store');
     const profile = (await response.json()).data;
     assert.equal(profile.matches.length, 9);
+    assert.equal(profile.nextStart, 10);
+    assert.equal(profile.hasMore, true);
     assert.equal(profile.matches[0].participants.length, 10);
     assert.equal(profile.soloQueue.winrate, 75);
     assert.equal(profile.rankStatus, 'available');
@@ -210,6 +216,43 @@ test('Rift service protects credentials, routes official APIs, limits concurrenc
     const count = state.requests.length;
     await inspectLol('Jugador Ñ#LAS', 'la2');
     assert.equal(state.requests.length, count);
+    const secondPage = await inspectLol('Jugador Ñ#LAS', 'la2', 10, 10);
+    assert.equal(secondPage.matches.length, 10);
+    assert.equal(secondPage.nextStart, 20);
+    assert.ok(
+      secondPage.matches.every(
+        (match) =>
+          !profile.matches.some(
+            (previous: { matchId: string }) => previous.matchId === match.matchId,
+          ),
+      ),
+    );
+    assert.ok(
+      state.requests.some(
+        ({ url }) =>
+          url.pathname.endsWith('/ids') &&
+          url.searchParams.get('start') === '10' &&
+          url.searchParams.get('count') === '10',
+      ),
+    );
+    const pagedRequest = new Request('https://savestate.test/api/tracker/lol/inspect', {
+      method: 'POST',
+      headers: { Origin: 'https://savestate.test', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ riotId: 'Jugador Ñ#LAS', platform: 'la2', start: 10, count: 10 }),
+    });
+    assert.equal((await (await POST(pagedRequest)).json()).data.nextStart, 20);
+    await assert.rejects(() => inspectLol('Jugador Ñ#LAS', 'la2', -1, 10));
+    await assert.rejects(() => inspectLol('Jugador Ñ#LAS', 'la2', 0, 11));
+    state.cache.clear();
+    state.mode = 'ids-short';
+    const last = await inspectLol('Jugador Ñ#LAS', 'la2', 20, 10);
+    assert.equal(last.nextStart, 22);
+    assert.equal(last.hasMore, false);
+    state.cache.clear();
+    state.mode = 'ids-failed';
+    const noList = await inspectLol('Jugador Ñ#LAS', 'la2', 20, 10);
+    assert.equal(noList.nextStart, 20);
+    assert.equal(noList.hasMore, true);
     for (const status of [403, 404, 429]) {
       state.cache.clear();
       state.mode = `account-${status}`;
@@ -233,6 +276,8 @@ test('Rift service protects credentials, routes official APIs, limits concurrenc
     state.mode = 'match-rate';
     const limited = await inspectLol('Jugador Ñ#LAS', 'la2');
     assert.equal(limited.matches.length, 2);
+    assert.equal(limited.nextStart, 3);
+    assert.equal(limited.hasMore, true);
     assert.ok(limited.warnings.some((value) => value.includes('limitó')));
     assert.equal(
       state.requests.filter(({ url }) => /\/matches\/LA2_/.test(url.pathname)).length,
