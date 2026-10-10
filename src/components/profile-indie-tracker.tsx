@@ -40,6 +40,28 @@ function TrackerCard({
   const inputId = useId();
   const dirty = JSON.stringify(edits(draft)) !== JSON.stringify(edits(tracker));
   const available = itchUpdateAvailable(draft);
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      try {
+        const saved = window.localStorage.getItem(`savestate_itch_collapsed_${tracker.id}`);
+        if (saved !== null) setCollapsed(saved === 'true');
+      } catch {
+        // Restricted storage leaves the default expanded state intact.
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [tracker.id]);
+  function toggleCollapsed() {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(`savestate_itch_collapsed_${tracker.id}`, String(next));
+      } catch {
+        // The card remains usable when storage is unavailable.
+      }
+      return next;
+    });
+  }
   async function run(action: 'save' | 'check-updates' | 'remove' | 'acknowledge-installer') {
     if (working.current) return;
     working.current = true;
@@ -157,7 +179,7 @@ function TrackerCard({
                   : `Contraer controles de ${draft.title}`
               }
               title={collapsed ? 'Desplegar controles' : 'Contraer controles'}
-              onClick={() => setCollapsed((prev) => !prev)}
+              onClick={toggleCollapsed}
             >
               {collapsed ? '▾ Desplegar' : '▴ Contraer'}
             </button>
