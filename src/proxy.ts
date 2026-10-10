@@ -15,13 +15,17 @@ export async function proxy(request: NextRequest) {
   const dev = process.env.NODE_ENV !== 'production';
   const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const origin = supabase ? new URL(supabase).origin : '';
-  const csp = `default-src 'self'; script-src 'self' 'nonce-${nonce}' ${dev ? "'unsafe-eval'" : ''}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://images.igdb.com https://cdn.discordapp.com https://img.itch.zone ${origin}; font-src 'self'; connect-src 'self' ${origin} ${origin.replace('https:', 'wss:').replace('http:', 'ws:')} ${dev ? 'ws://localhost:*' : ''}; frame-src 'self' https://www.youtube-nocookie.com https://platform.twitter.com https://www.instagram.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'`;
+  const csp = `default-src 'self'; script-src 'self' 'nonce-${nonce}' ${dev ? "'unsafe-eval'" : ''}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://images.igdb.com https://cdn.discordapp.com https://media.discordapp.net https://media.tenor.com https://c.tenor.com https://*.giphy.com https://klipy.com https://*.klipy.com https://img.itch.zone ${origin}; font-src 'self'; connect-src 'self' ${origin} ${origin.replace('https:', 'wss:').replace('http:', 'ws:')} ${dev ? 'ws://localhost:*' : ''}; frame-src 'self' https://www.youtube-nocookie.com https://platform.twitter.com https://www.instagram.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'`;
   const headers = new Headers(request.headers);
   headers.set('x-nonce', nonce);
   headers.set('Content-Security-Policy', csp);
   let response = NextResponse.next({ request: { headers } });
   // Public catalogue API never accesses sessions, enabling shared cache safely.
-  if (isConfigured() && !request.nextUrl.pathname.startsWith('/api/catalogue')) {
+  if (
+    isConfigured() &&
+    !request.nextUrl.pathname.startsWith('/api/catalogue') &&
+    request.nextUrl.pathname !== '/api/cron/check-itch'
+  ) {
     const { url, key } = publicEnv();
     const db = createServerClient<Database>(url, key, {
       cookies: {

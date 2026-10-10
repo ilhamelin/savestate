@@ -5,7 +5,7 @@ import { publicEnv } from '@/lib/env';
 import type { Database } from '@/lib/database.types';
 import { AppError, dbCheck } from '@/lib/http';
 import { object, uuid } from '@/domain/validation';
-import { trackerForDisplay, validateItchEdits } from '@/domain/itch-tracker';
+import { trackerForDisplay, validateItchEdits, type ItchTrackerRow } from '@/domain/itch-tracker';
 import { inspectItch } from '@/integrations/itch/server';
 import { scheduleDiscordCheckpoint } from '@/services/discord';
 import { revalidatePath } from 'next/cache';
@@ -19,7 +19,10 @@ function trackerAdmin() {
 }
 function check(error: { code?: string; message: string } | null) {
   if (error && ['42P01', '42703', 'PGRST202', 'PGRST204', 'PGRST205'].includes(error.code ?? ''))
-    throw new AppError('Aplica la migración 022 para activar Indie Tracker.', 503);
+    throw new AppError(
+      'Aplica las migraciones 022 y 023 para activar Indie Tracker y su monitor.',
+      503,
+    );
   dbCheck(error);
 }
 export async function itchTrackerList() {
@@ -73,39 +76,159 @@ export async function itchTrackerMutation(input: unknown) {
     check(result.error);
     return { removed: true };
   }
+  if (data.action === 'acknowledge-installer') {
+    if (
+      !Array.isArray(data.uploadIds) ||
+      data.uploadIds.length > 100 ||
+      data.uploadIds.some((id) => typeof id !== 'string' || !/^\d{1,20}$/.test(id))
+    )
+      throw new AppError('Identificadores de instalador inválidos.', 400);
+    const result = await trackerAdmin().rpc('acknowledge_itch_installer', {
+      p_id: id,
+      p_user_id: user.id,
+      p_upload_ids: [...new Set(data.uploadIds as string[])].sort(),
+    });
+    check(result.error);
+    if (!result.data)
+      throw new AppError(
+        'El instalador cambió mientras lo confirmabas. Sincroniza y vuelve a intentarlo.',
+        409,
+      );
+    const refreshed = await db
+      .from('itch_trackers')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single();
+    check(refreshed.error);
+    return trackerForDisplay(refreshed.data!);
+  }
   if (data.action !== 'check-updates') throw new AppError('Operación de tracker inválida.', 400);
   const admin = trackerAdmin();
-  const slot = await admin.rpc('claim_itch_check', { p_id: id, p_user_id: user.id });
+  const result = await checkTracker(admin, owned.data);
+  if (!result) throw new AppError('Espera 30 segundos entre comprobaciones de este juego.', 429);
+  revalidatePath('/notifications');
+  return result;
+}
+async function checkTracker(
+  admin: ReturnType<typeof trackerAdmin>,
+  row: ItchTrackerRow,
+  announced?: Set<string>,
+) {
+  const slot = await admin.rpc('claim_itch_check', { p_id: row.id, p_user_id: row.user_id });
   check(slot.error);
-  if (!slot.data) throw new AppError('Espera 30 segundos entre comprobaciones de este juego.', 429);
-  const metadata = await inspectItch(owned.data.url);
-  const applied = await admin.rpc('apply_itch_check', {
-    p_id: id,
-    p_user_id: user.id,
+  if (!slot.data) return null;
+  const metadata = await inspectItch(row.url);
+  const applied = await admin.rpc('apply_itch_check_v2', {
+    p_id: row.id,
+    p_user_id: row.user_id,
     p_metadata: metadata,
   });
   check(applied.error);
-  if (applied.data && metadata.devlog)
+  const eventKey = `${metadata.url}:${applied.data?.reason}:${metadata.releaseDevlog?.url}:${metadata.downloads
+    ?.map((item) => item.uploadId)
+    .sort()
+    .join(',')}`;
+  if (applied.data?.updated && !announced?.has(eventKey)) {
+    announced?.add(eventKey);
     scheduleDiscordCheckpoint({
       type: 'itch',
       username: 'itch.io',
-      details: `${metadata.title} · ${metadata.devlog.title}\nDevlog: ${metadata.devlog.url}\nDescargar desde la página oficial: ${metadata.url}`,
+      details: `${metadata.title} · ${applied.data.reason === 'installer' ? 'Nuevo archivo instalador subido a itch.io' : (metadata.releaseDevlog?.title ?? 'Nueva actualización')}\nDescargar desde la página oficial: ${metadata.url}`,
     });
-  const refreshed = await db
+  }
+  const refreshed = await admin
     .from('itch_trackers')
     .select('*')
-    .eq('user_id', user.id)
-    .eq('id', id)
+    .eq('user_id', row.user_id)
+    .eq('id', row.id)
     .single();
   check(refreshed.error);
-  revalidatePath('/notifications');
   return {
     tracker: trackerForDisplay(refreshed.data!),
-    updated: applied.data,
-    message: metadata.devlogAvailable
-      ? applied.data
-        ? 'Nuevo devlog detectado. Notificación enviada.'
-        : 'No hay un devlog nuevo.'
-      : 'El devlog no está disponible. Se conserva la última actualización conocida.',
+    updated: applied.data?.updated ?? false,
+    partial: !metadata.devlogAvailable || !metadata.downloadsAvailable,
+    message: applied.data?.updated
+      ? applied.data.reason === 'installer'
+        ? 'Nuevo archivo instalador detectado. Alerta creada.'
+        : 'Nueva versión detectada. Alerta creada.'
+      : !metadata.devlogAvailable || !metadata.downloadsAvailable
+        ? 'Comprobación parcial. Se conservan las fuentes que no están disponibles.'
+        : 'Sin releases ni instaladores nuevos. Las noticias no activan la alarma.',
   };
+}
+export async function itchMonitorStatus() {
+  const configured =
+    process.env.VERCEL_ENV === 'production' && (process.env.CRON_SECRET?.length ?? 0) >= 32;
+  if (!configured) return { configured: false, healthy: false, lastRunAt: null };
+  const result = await trackerAdmin()
+    .from('itch_monitor_state')
+    .select('last_success_at,last_run_at')
+    .eq('id', true)
+    .single();
+  return {
+    configured,
+    healthy:
+      !result.error &&
+      Boolean(
+        result.data?.last_success_at &&
+        Date.now() - Date.parse(result.data.last_success_at) < 26 * 3600000,
+      ),
+    lastRunAt: result.data?.last_run_at ?? null,
+  };
+}
+export async function runItchMonitor() {
+  const admin = trackerAdmin();
+  const lease = await admin.rpc('claim_itch_monitor', {});
+  check(lease.error);
+  if (!lease.data) throw new AppError('Ya hay una comprobación automática en curso.', 409);
+  const deadline = Date.now() + 250000;
+  const dueBefore = new Date(Date.now() - 23 * 3600000).toISOString();
+  const announced = new Set<string>();
+  let checked = 0,
+    updated = 0,
+    failed = 0,
+    remaining = 0,
+    success = false;
+  try {
+    // Bounded batches keep requests modest and let the oldest unchecked rows run first.
+    for (let batch = 0; batch < 100 && Date.now() < deadline; batch++) {
+      const rows = await admin
+        .from('itch_trackers')
+        .select('*')
+        .lte('last_checked_at', dueBefore)
+        .order('last_checked_at')
+        .order('id')
+        .limit(3);
+      check(rows.error);
+      if (!rows.data?.length) break;
+      const outcomes = await Promise.allSettled(
+        rows.data.map((row) => checkTracker(admin, row, announced)),
+      );
+      for (const outcome of outcomes) {
+        checked++;
+        if (outcome.status === 'rejected') {
+          failed++;
+          console.warn('Indie monitor check failed');
+        } else {
+          if (outcome.value?.updated) updated++;
+          if (outcome.value?.partial) failed++;
+        }
+      }
+    }
+    const count = await admin
+      .from('itch_trackers')
+      .select('id', { count: 'exact', head: true })
+      .lte('last_checked_at', dueBefore);
+    check(count.error);
+    remaining = count.count ?? 0;
+    success = failed === 0 && remaining === 0;
+    return { checked, updated, failed, remaining, complete: success };
+  } finally {
+    const finished = await admin.rpc('finish_itch_monitor', {
+      p_token: lease.data,
+      p_success: success,
+    });
+    check(finished.error);
+  }
 }

@@ -7,7 +7,67 @@ import {
   validateItchEdits,
   trackerForDisplay,
   itchUpdateAvailable,
+  isReleaseDevlog,
+  latestItchRelease,
+  itchDownloads,
 } from '../../src/domain/itch-tracker.ts';
+test('itch news stay visible without release alarms; RSS retains the latest release', () => {
+  for (const title of ['Fanart Contest', 'Q&A', 'Feliz San Valentín'])
+    assert.equal(isReleaseDevlog(title, null), false);
+  for (const title of [
+    'Release',
+    'Update',
+    'Patch',
+    'Hotfix',
+    'Build',
+    'Nueva versión',
+    'Actualización',
+  ])
+    assert.equal(isReleaseDevlog(title, null), true);
+  assert.equal(isReleaseDevlog('Anything', '1.8E'), true);
+  const rss = `<rss><item><title>Fanart Contest</title><link>${url}/devlog/2/news</link><pubDate>Fri, 09 Oct 2026 10:00:00 GMT</pubDate></item><item><title>Patch 1.8E</title><link>${url}/devlog/1/patch</link><pubDate>Thu, 08 Oct 2026 10:00:00 GMT</pubDate></item></rss>`;
+  assert.equal(latestItchDevlog(rss, url)?.title, 'Fanart Contest');
+  assert.equal(latestItchRelease(rss, url)?.version, '1.8E');
+  assert.equal(
+    itchUpdateAvailable({
+      currentPlayedVersion: '1.8D',
+      latestDetectedVersion: 'Fanart Contest',
+      devlog: latestItchDevlog(rss, url),
+    }),
+    false,
+  );
+  assert.equal(
+    itchUpdateAvailable({
+      currentPlayedVersion: '1.8D',
+      latestDetectedVersion: '1.8E',
+      devlog: latestItchDevlog(rss, url),
+      releaseDevlog: latestItchRelease(rss, url),
+    }),
+    true,
+  );
+  assert.equal(
+    itchUpdateAvailable({
+      currentPlayedVersion: '',
+      latestDetectedVersion: '',
+      devlog: null,
+      installerChanged: true,
+    }),
+    true,
+  );
+});
+test('itch parses public download IDs and sizes without following download actions', () => {
+  const html = `<div data-upload_id="99"></div><h2 id="download">Download</h2><div><a data-upload_id="123" href="javascript:void(0)">Download</a><span class="file_size"><span>554 MB</span></span></div><a data-upload_id='124'>Other</a><span class='file_size'>1.5 GB</span><a data-upload_id="123">Duplicate</a><section id="devlog"><a data-upload_id="125">Not a download</a></section>`;
+  assert.deepEqual(itchDownloads(html), [
+    { uploadId: '123', size: '554 MB' },
+    { uploadId: '124', size: '1.5 GB' },
+  ]);
+  assert.deepEqual(itchDownloads('<p>No downloads</p>'), []);
+  assert.deepEqual(
+    itchDownloads('<h2 id="download">Download</h2><a data-upload_id="42">File</a>'),
+    [{ uploadId: '42', size: null }],
+  );
+  assert.throws(() => itchDownloads('a'.repeat(1000001)));
+});
 test('itch update indicator does not call an older detected version a new release', () => {
   const devlog = {
     title: 'Patch 1.8D',

@@ -42,7 +42,7 @@ test('itch routes require session/origin, reject SSRF, enforce quota and preserv
     const state=globalThis.__itchState;
     export const db={
       from() { let update=null; const query={select(){return query},eq(){return query},order(){return query},limit(){return query},update(value){update=value;return query},maybeSingle:async()=>({data:state.owner?state.row:null,error:null}),single:async()=>{if(update)Object.assign(state.row,update);return {data:state.row,error:null}},then(resolve){return Promise.resolve(resolve({data:state.owner?[state.row]:[],error:null}))}};return query;},
-      async rpc(name,args){if(name==='claim_itch_check')return {data:state.slot,error:null};const old=state.row.metadata.devlog?.url;state.row.metadata=args.p_metadata;const changed=old!==args.p_metadata.devlog?.url;if(changed)state.notifications++;return {data:changed,error:null}}
+      async rpc(name,args){if(name==='claim_itch_check')return {data:state.slot,error:null};const old=state.row.metadata.devlog?.url;state.row.metadata=args.p_metadata;const changed=old!==args.p_metadata.devlog?.url;if(changed)state.notifications++;return {data:{updated:changed,reason:changed?'release':null},error:null}}
     };`;
   const hooks = registerHooks({
     load(url, context, next) {

@@ -1,43 +1,48 @@
 # Indie Tracker de itch.io
 
-Disponible solo en el perfil propio, en «Mis checkpoints de itch.io». Requiere la migración `202610090022_itch_tracker.sql`, aplicada y comprobada en Supabase.
+Solo visible en el perfil propio. Migraciones 022 y 023 aplicadas según confirmación del usuario. Los hitos ya no se muestran; sus datos existentes se conservan al guardar.
 
-## Uso
+## Alarmas
 
-1. Añade la URL HTTPS de la página de un juego, por ejemplo `https://autor.itch.io/juego`.
-2. Indica la versión que estás jugando y el estado. Puedes guardar hasta 5000 caracteres de notas privadas por juego. Los hitos ya no se editan ni se muestran; los datos existentes se conservan al guardar por compatibilidad.
-3. Guarda el checkpoint. «Estoy jugando la última detectada» completa la versión a partir del último devlog.
-4. «Comprobar actualizaciones» consulta itch.io manualmente. Guarda los cambios pendientes antes de comprobar. Hay un intervalo mínimo de 30 segundos por juego y un máximo de 50 juegos por usuario.
+Se muestra el último devlog, pero solo disparan alertas las releases con versión reconocida o palabras release/update/patch/hotfix/build/versión/actualización. Las noticias no activan alarmas. Se conserva por separado la última release del RSS, incluso si una noticia es más reciente. El filtro por palabras es heurístico: un anuncio de planes puede contener palabras de release.
 
-La primera consulta crea la referencia inicial sin avisos retroactivos. Un nuevo devlog genera una notificación interna con enlace al tracker. Las notas, hitos y versiones jugadas no se muestran a otros jugadores, incluso en perfiles públicos.
+El widget público que sigue a #download aporta data-upload_id y tamaños. La primera inspección HTML exitosa establece una referencia silenciosa. Nuevos IDs disparan «Nuevo archivo instalador subido a itch.io». Reordenar, quitar archivos o cambiar solo el tamaño no genera avisos. Una sustitución de contenido que mantenga el ID no puede detectarse. No se descargan instaladores ni archivos de pago.
 
-El bloque de alarma indica si la versión detectada difiere de la jugada. «ACTIVA» describe la comprobación disponible mediante el botón, no un monitor automático: no hay proceso en segundo plano. El estado visual no confirma que una notificación siga sin leer; consulta la campana para comprobarlo. El aviso a Discord depende de su configuración.
+«Estoy jugando el instalador detectado» reconoce los IDs actuales, sin inventar una versión de devlog. Si cambiaron durante la confirmación, el servidor pide sincronizar. La alarma visual no confirma que una notificación siga sin leer. Notas privadas: hasta 5000 caracteres; hasta 50 trackers por usuario.
 
-## Qué significa una actualización
+## Cron diario (Vercel Hobby)
 
-Se consulta `data.json` para metadatos y `devlog.rss` para la entrada más reciente, ordenada por fecha. [itch.io documenta el feed de devlogs](https://itch.io/updates/updates-to-devlogs).
+El usuario eligió Hobby: vercel.json configura GET /api/cron/check-itch con `0 12 * * *`. Se ejecuta una vez al día a las 12:00 UTC; Vercel puede iniciarlo dentro de esa hora. Hobby no permite el intervalo original de 12 horas. [Límites oficiales](https://vercel.com/docs/cron-jobs/usage-and-pricing).
 
-Un devlog puede ser una noticia sin lanzamiento. La versión se extrae del título si contiene un número reconocible, como `1.8E`; en caso contrario se conserva el título del devlog. No se inventa una versión ni se descargan archivos. «Página / Descargar» abre la página oficial del juego; compras, permisos y descargas siguen gestionados por itch.io. Metadatos como tags o screenshots pueden estar vacíos si itch.io no los devuelve.
+Se generó un CRON_SECRET aleatorio de servidor en .env.local, ignorado por Git y sin mostrarlo. Configura el mismo valor como Secret de producción en Vercel antes de desplegar. No uses NEXT_PUBLIC_* ni una clave fija compartida. Transferencia por stdin desde PowerShell, sin escribir el valor en el comando:
 
-Si el feed falla, se conservan los datos del último devlog conocido y se muestra el aviso. Si falla `data.json`, se informa del error y se conservan los datos guardados. El último intento de comprobación consume el intervalo incluso si el proveedor falla.
+```powershell
+$itchCronEntry = Get-Content -LiteralPath .env.local | Where-Object { $_ -match '^CRON_SECRET=' } | Select-Object -First 1
+$itchCronEntry.Substring('CRON_SECRET='.Length) | npx vercel env add CRON_SECRET production --type secret
+```
 
-## API y seguridad
+La programación y las variables nuevas requieren un despliegue para entrar en producción. El panel muestra pendiente hasta tener configuración, y activo después de una ejecución completa correcta en las últimas 26 horas. No promete vigilancia continua 24/7: revisa diariamente. Comprobación manual disponible, separada por un mínimo de 30 segundos por juego.
 
-- `POST /api/tracker/itch/inspect`: `{ url }`, devuelve metadatos en `{ data }`.
-- `GET /api/tracker/itch`: lista privada del usuario autenticado.
-- `POST /api/tracker/itch`: acciones `add`, `save` y `remove`.
-- `POST /api/tracker/itch/check-updates`: `{ id }`, donde `id` identifica el tracker guardado. Devuelve tracker, indicador de nuevo devlog y mensaje.
-- Todas las rutas requieren sesión. POST también valida origen, JSON y tamaño de payload. Solo se consultan dominios de creadores `*.itch.io`, sin credenciales en la URL ni redirecciones; imágenes únicamente desde `img.itch.zone`. Respuestas limitadas a 1 MB y timeout de 10 segundos.
-- RLS y permisos por columna protegen los campos privados. Metadatos y comprobaciones solo se escriben desde el servidor tras validar la sesión y la propiedad. Las RPC administrativas no pueden ejecutarse desde clientes anónimos o autenticados.
-- PostgreSQL bloquea el registro para serializar comprobaciones y persistir el devlog y su notificación en una misma transacción. El mismo devlog no vuelve a notificar y feeds más antiguos no reemplazan al más reciente.
+El cron valida Authorization: Bearer con comparación de tiempo constante y falla cerrado sin secreto (mínimo 32 caracteres). Una concesión SQL de cinco minutos impide cron solapados. Procesa hasta 300 trackers, tres en paralelo, empezando por los intentos más antiguos anteriores a 23 horas; presupuesto de 250 segundos dentro de una función de 300 segundos. Esto tolera la variación horaria de Hobby. Los fallos consumen el intento y se vuelven a probar en el ciclo diario siguiente.
 
-## Discord
+La respuesta incluye checked/updated/failed/remaining/complete. Fallos o pendientes devuelven 503 y no actualizan la señal de éxito. Vercel no reintenta automáticamente un cron fallido. Si la colección global supera el presupuesto, hace falta ampliar infraestructura; no se garantiza cubrir cualquier volumen cada día.
 
-Si está configurado `DISCORD_WEBHOOK_URL`, una actualización detectada envía un aviso con el juego, el devlog y la página oficial de descarga. No incluye el nombre del usuario que rastrea el juego ni sus datos privados. Usa el servicio existente con menciones deshabilitadas y entrega best effort después de responder; un fallo de Discord no revierte la notificación interna. Puede haber avisos del mismo juego para distintos usuarios. No hay cron, polling automático ni garantía de entrega de Discord exactamente una vez.
+## Privacidad y persistencia
+
+Rutas de usuario con sesión/RLS, POST con validación de origen, JSON y tamaño. Solo páginas HTTPS canónicas de creadores itch.io, sin credenciales ni redirecciones, límite de 1 MB y timeout de 10 segundos. Fallos parciales de RSS/HTML conservan sus últimas fuentes; si falla data.json no se reemplazan metadatos. El cron omite la sesión del navegador en proxy.ts y exige su propio secreto; mantiene CSP y cabeceras de seguridad.
+
+apply_itch_check_v2 bloquea el tracker y persiste metadatos y notificación juntos. News, versiones anteriores y mismos IDs no repiten avisos. RSS antiguo no reemplaza el conocido. itch_monitor_state y RPC administrativas quedan restringidos a service_role.
+
+Discord recibe el título del juego y su página pública, nunca notas, hitos o identidad del dueño. Dentro de un cron se agrupan avisos idénticos. Entrega best effort después de responder, sin garantía de exactamente una vez entre ejecuciones distintas.
+
+## API
+
+- GET /api/tracker/itch: trackers propios y estado operativo del monitor.
+- POST /api/tracker/itch/inspect: url.
+- POST /api/tracker/itch: add/save/remove/acknowledge-installer (IDs observados).
+- POST /api/tracker/itch/check-updates: id del tracker.
+- GET /api/cron/check-itch: exclusivamente CRON_SECRET; no acepta identidad de usuario desde el cliente.
 
 ## Verificación
 
-- `npm run check`: 82 pruebas unitarias, TypeScript, ESLint y formato.
-- `node --experimental-strip-types --test tests/integration/itch-tracker.test.ts`: rutas/servicios reales con adaptadores simulados; prueba sesión, CSRF, SSRF, propiedad, cuota, persistencia de notas y no repetir avisos. No escribe en Supabase ni envía mensajes externos.
-- Consulta real de `data.json` y `devlog.rss` del ejemplo proporcionado: HTTP 200.
-- Supabase real: tabla, columna y ambas RPC presentes. Invocación administrativa con UUID inexistente rechazada, sin cambios; accesos anónimos rechazados con `42501`. No se crearon cuentas de prueba ni se modificaron trackers reales durante esta validación.
+Tests de URLs, RSS, releases frente a noticias, uploads/tamaños, versiones y datos privados. Pruebas de rutas con adaptadores simulados para evitar notificaciones externas. El HTML público del ejemplo confirmó el upload ID 16488290 y 554 MB sin descargar archivos. Las verificaciones reales de RPC usan IDs inexistentes o comparaciones sin mutar trackers reales.

@@ -38,6 +38,13 @@ export type Database = {
   public: {
     Tables: {
       itch_trackers: Table<ItchTrackerRow>;
+      itch_monitor_state: Table<{
+        id: boolean;
+        lock_token: string | null;
+        locked_until: string | null;
+        last_run_at: string | null;
+        last_success_at: string | null;
+      }>;
       user_xp_events: Table<XpEvent>;
       forum_categories: Table<ForumCategory>;
       forum_threads: Table<ForumThread>;
@@ -108,6 +115,16 @@ export type Database = {
         Args: { p_id: string; p_user_id: string; p_metadata: ItchMetadata };
         Returns: boolean;
       };
+      apply_itch_check_v2: {
+        Args: { p_id: string; p_user_id: string; p_metadata: ItchMetadata };
+        Returns: { updated: boolean; reason: 'installer' | 'release' | null };
+      };
+      acknowledge_itch_installer: {
+        Args: { p_id: string; p_user_id: string; p_upload_ids: string[] };
+        Returns: boolean;
+      };
+      claim_itch_monitor: { Args: Record<string, never>; Returns: string | null };
+      finish_itch_monitor: { Args: { p_token: string; p_success: boolean }; Returns: undefined };
       claim_discord_message_slot: { Args: Record<string, never>; Returns: number };
       get_player_friends: { Args: { p_user_id: string }; Returns: PlayerFriend[] };
       award_xp: {

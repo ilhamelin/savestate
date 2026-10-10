@@ -18,6 +18,10 @@ export interface ItchMetadata {
   screenshots: string[];
   devlog: ItchDevlog | null;
   devlogAvailable: boolean;
+  releaseDevlog?: ItchDevlog | null;
+  downloads?: { uploadId: string; size: string | null }[];
+  downloadsAvailable?: boolean;
+  installerChanged?: boolean;
 }
 export interface ItchTracker extends Omit<ItchMetadata, 'id'> {
   id: string;
@@ -118,6 +122,19 @@ function xmlText(input: string) {
     .trim();
 }
 export function latestItchDevlog(rss: string, gameUrl: string): ItchDevlog | null {
+  return parseItchDevlogs(rss, gameUrl)[0] ?? null;
+}
+export function isReleaseDevlog(title: string, version: string | null): boolean {
+  return (
+    Boolean(version) || /(release|update|patch|hotfix|build|versión|actualización)/i.test(title)
+  );
+}
+export function latestItchRelease(rss: string, gameUrl: string): ItchDevlog | null {
+  return (
+    parseItchDevlogs(rss, gameUrl).find((item) => isReleaseDevlog(item.title, item.version)) ?? null
+  );
+}
+function parseItchDevlogs(rss: string, gameUrl: string): ItchDevlog[] {
   if (rss.length > 1000000 || /<!DOCTYPE|<!ENTITY/i.test(rss) || !/<rss\b/i.test(rss))
     throw new ValidationError('Feed de itch.io inválido.');
   const items: ItchDevlog[] = [];
@@ -154,7 +171,41 @@ export function latestItchDevlog(rss: string, gameUrl: string): ItchDevlog | nul
       /* External or invalid feed links are ignored. */
     }
   }
-  return items.sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt))[0] ?? null;
+  return items.sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt));
+}
+export function itchDownloads(html: string): NonNullable<ItchMetadata['downloads']> {
+  if (html.length > 1000000) throw new ValidationError('Página de itch.io demasiado grande.');
+  // Public download widgets follow the #download heading; never execute page scripts.
+  const heading = /<[^>]+\bid\s*=\s*["']download["'][^>]*>/i.exec(html);
+  if (!heading) return [];
+  const section = html.slice(heading.index + heading[0].length).split(/<section\b|<h2\b/i)[0]!;
+  const uploads = [...section.matchAll(/\bdata-upload_id\s*=\s*["'](\d{1,20})["']/gi)];
+  const seen = new Set<string>();
+  return uploads
+    .flatMap((match, index) => {
+      if (seen.has(match[1]!)) return [];
+      seen.add(match[1]!);
+      const chunk = section.slice(match.index, uploads[index + 1]?.index ?? section.length);
+      const size = /class\s*=\s*["'][^"']*\bfile_size\b[^"']*["'][^>]*>([\s\S]*?)<\/span>/i.exec(
+        chunk,
+      )?.[1];
+      const plain = size ? xmlText(size) : '';
+      return [
+        {
+          uploadId: match[1]!,
+          size: /^\d+(?:[.,]\d+)?\s*(?:bytes?|[KMGT]i?B)$/i.test(plain) ? plain : null,
+        },
+      ];
+    })
+    .slice(0, 100);
+}
+export function itchRelease(metadata: Pick<ItchMetadata, 'devlog' | 'releaseDevlog'>) {
+  return (
+    metadata.releaseDevlog ??
+    (metadata.devlog && isReleaseDevlog(metadata.devlog.title, metadata.devlog.version)
+      ? metadata.devlog
+      : null)
+  );
 }
 export function validateItchEdits(input: unknown) {
   const data = object(input);
@@ -189,7 +240,7 @@ export function trackerForDisplay(row: ItchTrackerRow): ItchTracker {
     itchId: row.metadata.id,
     currentPlayedVersion: row.current_played_version,
     latestDetectedVersion:
-      row.metadata.devlog?.version ?? row.metadata.devlog?.title.slice(0, 80) ?? '',
+      itchRelease(row.metadata)?.version ?? itchRelease(row.metadata)?.title.slice(0, 80) ?? '',
     status: row.status,
     milestones: row.milestones,
     privateNotes: row.private_notes,
@@ -197,12 +248,22 @@ export function trackerForDisplay(row: ItchTrackerRow): ItchTracker {
   };
 }
 export function itchUpdateAvailable(
-  tracker: Pick<ItchTracker, 'currentPlayedVersion' | 'latestDetectedVersion' | 'devlog'>,
+  tracker: Pick<
+    ItchTracker,
+    | 'currentPlayedVersion'
+    | 'latestDetectedVersion'
+    | 'devlog'
+    | 'releaseDevlog'
+    | 'installerChanged'
+  >,
 ) {
+  if (tracker.installerChanged) return true;
+  const release = itchRelease(tracker);
+  if (!release) return false;
   const played = tracker.currentPlayedVersion.trim().replace(/^v(?=\d)/i, '');
   const latest = tracker.latestDetectedVersion.trim();
   if (!played || !latest) return false;
-  if (tracker.devlog?.version && /^\d+\.\d+(?:\.\d+)*[a-z]?$/i.test(played))
+  if (release.version && /^\d+\.\d+(?:\.\d+)*[a-z]?$/i.test(played))
     return latest.localeCompare(played, 'en', { numeric: true, sensitivity: 'base' }) > 0;
   return latest.toLowerCase() !== played.toLowerCase();
 }

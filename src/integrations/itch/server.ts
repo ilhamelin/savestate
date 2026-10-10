@@ -1,5 +1,12 @@
 import 'server-only';
-import { itchUrl, itchMetadata, latestItchDevlog, type ItchMetadata } from '@/domain/itch-tracker';
+import {
+  itchUrl,
+  itchMetadata,
+  latestItchDevlog,
+  latestItchRelease,
+  itchDownloads,
+  type ItchMetadata,
+} from '@/domain/itch-tracker';
 import { AppError } from '@/lib/http';
 
 async function read(url: string) {
@@ -37,16 +44,29 @@ async function read(url: string) {
 export async function inspectItch(input: unknown): Promise<ItchMetadata> {
   const url = itchUrl(input);
   try {
-    const [data, feed] = await Promise.all([
+    const [data, feed, downloads] = await Promise.all([
       read(`${url}/data.json`),
       read(`${url}/devlog.rss`)
-        .then((rss) => ({ devlog: latestItchDevlog(rss, url), available: true }))
-        .catch(() => ({ devlog: null, available: false })),
+        .then((rss) => ({
+          devlog: latestItchDevlog(rss, url),
+          release: latestItchRelease(rss, url),
+          available: true,
+        }))
+        .catch(() => ({ devlog: null, release: null, available: false })),
+      read(url)
+        .then((html) => ({
+          items: itchDownloads(html),
+          available: /\bid\s*=\s*["']download["']/i.test(html),
+        }))
+        .catch(() => ({ items: [], available: false })),
     ]);
     return {
       ...itchMetadata(JSON.parse(data), url),
       devlog: feed.devlog,
       devlogAvailable: feed.available,
+      releaseDevlog: feed.release,
+      downloads: downloads.items,
+      downloadsAvailable: downloads.available,
     };
   } catch (error) {
     if (error instanceof AppError) throw error;
