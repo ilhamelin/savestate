@@ -31,6 +31,7 @@ function TrackerCard({
   onRemove: () => void;
   monitor: MonitorStatus;
 }) {
+  const [collapsed, setCollapsed] = useState(false);
   const [draft, setDraft] = useState(tracker),
     [error, setError] = useState(''),
     [message, setMessage] = useState(''),
@@ -124,156 +125,183 @@ function TrackerCard({
                 .join(' / ')}
             </p>
           ) : null}
-          <div className="filter-buttons">
-            {draft.devlog ? (
+          <div className="indie-tracker-actions-bar">
+            <div className="filter-buttons">
+              {draft.devlog ? (
+                <a
+                  href={draft.devlog.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="button outline small"
+                >
+                  Ver devlog ↗
+                </a>
+              ) : null}
               <a
-                href={draft.devlog.url}
+                href={draft.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="button outline small"
               >
-                Ver devlog ↗
+                Página / Descargar ↗
               </a>
-            ) : null}
-            <a
-              href={draft.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="button outline small"
+            </div>
+            <button
+              type="button"
+              className="button outline small indie-toggle-btn"
+              aria-expanded={!collapsed}
+              aria-controls={`${inputId}-controls`}
+              aria-label={
+                collapsed
+                  ? `Desplegar controles de ${draft.title}`
+                  : `Contraer controles de ${draft.title}`
+              }
+              title={collapsed ? 'Desplegar controles' : 'Contraer controles'}
+              onClick={() => setCollapsed((prev) => !prev)}
             >
-              Página / Descargar ↗
-            </a>
+              {collapsed ? '▾ Desplegar' : '▴ Contraer'}
+            </button>
           </div>
         </div>
       </div>
-      <fieldset disabled={busy} className="indie-tracker-fields">
-        <legend className="sr-only">Checkpoint de {draft.title}</legend>
-        <div className="form-row">
-          <label>
-            Versión que estoy jugando
-            <input
-              maxLength={80}
-              value={draft.currentPlayedVersion}
-              placeholder="Ej. 1.8E"
-              onChange={(event) => setDraft({ ...draft, currentPlayedVersion: event.target.value })}
-            />
-          </label>
-          <label>
-            Estado
-            <select
-              value={draft.status}
-              onChange={(event) =>
-                setDraft({ ...draft, status: event.target.value as ItchTracker['status'] })
-              }
+      {!collapsed ? (
+        <div id={`${inputId}-controls`}>
+          <fieldset disabled={busy} className="indie-tracker-fields">
+            <legend className="sr-only">Checkpoint de {draft.title}</legend>
+            <div className="form-row">
+              <label>
+                Versión que estoy jugando
+                <input
+                  maxLength={80}
+                  value={draft.currentPlayedVersion}
+                  placeholder="Ej. 1.8E"
+                  onChange={(event) =>
+                    setDraft({ ...draft, currentPlayedVersion: event.target.value })
+                  }
+                />
+              </label>
+              <label>
+                Estado
+                <select
+                  value={draft.status}
+                  onChange={(event) =>
+                    setDraft({ ...draft, status: event.target.value as ItchTracker['status'] })
+                  }
+                >
+                  {ITCH_STATUSES.map((status) => (
+                    <option key={status} value={status}>
+                      {labels[status]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            {draft.latestDetectedVersion ? (
+              <button
+                type="button"
+                className="button outline small"
+                onClick={() =>
+                  setDraft({ ...draft, currentPlayedVersion: draft.latestDetectedVersion })
+                }
+              >
+                Estoy jugando la última detectada ({draft.latestDetectedVersion})
+              </button>
+            ) : null}
+            {draft.installerChanged ? (
+              <button
+                type="button"
+                className="button outline small"
+                disabled={dirty}
+                onClick={() => void run('acknowledge-installer')}
+              >
+                Estoy jugando el instalador detectado
+              </button>
+            ) : null}
+            <div className={`indie-version-alarm ${available ? 'triggered' : ''}`} role="status">
+              <strong className="indie-alarm-badge">
+                {available
+                  ? draft.installerChanged
+                    ? '🚨 ¡ALARMA DISPARADA: NUEVO ARCHIVO INSTALADOR!'
+                    : `🚨 ¡ALARMA DISPARADA: NUEVA VERSIÓN DISPONIBLE! (${draft.latestDetectedVersion})`
+                  : '🔔 Alarma de nueva versión: ACTIVA'}
+              </strong>
+              <p>
+                {available
+                  ? draft.installerChanged
+                    ? 'El creador subió un nuevo archivo instalador a itch.io. Puedes descargarlo desde la página oficial y confirmar cuando estés jugando ese archivo.'
+                    : `El desarrollador ha publicado una actualización posterior o distinta a tu versión jugada (${draft.currentPlayedVersion || 'sin indicar'}). Puedes revisar la campana y descargar la actualización.`
+                  : `SaveState compara releases e instaladores con tu checkpoint (${draft.currentPlayedVersion || 'versión sin indicar'}). Las noticias no disparan avisos. Una nueva actualización crea una alerta en la campana y se envía a Discord si el canal está configurado.`}
+              </p>
+              <small className="muted">
+                {monitor.healthy
+                  ? '🤖 Monitoreo automático en segundo plano activo vía SaveState Bot · revisión diaria.'
+                  : monitor.configured
+                    ? '🤖 Monitor diario configurado · esperando una ejecución automática correcta.'
+                    : '🤖 Monitor diario pendiente de activar en producción · comprobación manual disponible.'}
+              </small>
+            </div>
+            <details>
+              <summary>Notas privadas de guardado</summary>
+              <label className="sr-only" htmlFor={`${inputId}-notes`}>
+                Notas privadas
+              </label>
+              <textarea
+                id={`${inputId}-notes`}
+                maxLength={5000}
+                rows={4}
+                value={draft.privateNotes}
+                onChange={(event) => setDraft({ ...draft, privateNotes: event.target.value })}
+              />
+            </details>
+          </fieldset>
+          <div className="filter-buttons">
+            <button
+              type="button"
+              className="button small"
+              disabled={busy || !dirty}
+              onClick={() => void run('save')}
             >
-              {ITCH_STATUSES.map((status) => (
-                <option key={status} value={status}>
-                  {labels[status]}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        {draft.latestDetectedVersion ? (
-          <button
-            type="button"
-            className="button outline small"
-            onClick={() =>
-              setDraft({ ...draft, currentPlayedVersion: draft.latestDetectedVersion })
-            }
-          >
-            Estoy jugando la última detectada ({draft.latestDetectedVersion})
-          </button>
-        ) : null}
-        {draft.installerChanged ? (
-          <button
-            type="button"
-            className="button outline small"
-            disabled={dirty}
-            onClick={() => void run('acknowledge-installer')}
-          >
-            Estoy jugando el instalador detectado
-          </button>
-        ) : null}
-        <div className={`indie-version-alarm ${available ? 'triggered' : ''}`} role="status">
-          <strong className="indie-alarm-badge">
-            {available
-              ? draft.installerChanged
-                ? '🚨 ¡ALARMA DISPARADA: NUEVO ARCHIVO INSTALADOR!'
-                : `🚨 ¡ALARMA DISPARADA: NUEVA VERSIÓN DISPONIBLE! (${draft.latestDetectedVersion})`
-              : '🔔 Alarma de nueva versión: ACTIVA'}
-          </strong>
-          <p>
-            {available
-              ? draft.installerChanged
-                ? 'El creador subió un nuevo archivo instalador a itch.io. Puedes descargarlo desde la página oficial y confirmar cuando estés jugando ese archivo.'
-                : `El desarrollador ha publicado una actualización posterior o distinta a tu versión jugada (${draft.currentPlayedVersion || 'sin indicar'}). Puedes revisar la campana y descargar la actualización.`
-              : `SaveState compara releases e instaladores con tu checkpoint (${draft.currentPlayedVersion || 'versión sin indicar'}). Las noticias no disparan avisos. Una nueva actualización crea una alerta en la campana y se envía a Discord si el canal está configurado.`}
+              Guardar checkpoint
+            </button>
+            <button
+              type="button"
+              className="button outline small"
+              disabled={busy || dirty}
+              onClick={() => void run('check-updates')}
+            >
+              ↺ Comprobar actualizaciones
+            </button>
+            <button
+              type="button"
+              className="text-link"
+              disabled={busy}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    `¿Dejar de rastrear ${draft.title} y borrar su checkpoint privado?`,
+                  )
+                )
+                  void run('remove');
+              }}
+            >
+              Dejar de rastrear
+            </button>
+          </div>
+          {dirty ? (
+            <p className="muted">Guarda los cambios antes de comprobar actualizaciones.</p>
+          ) : null}
+          <p className="muted">
+            Último intento: {draft.lastCheckedAt.slice(0, 19).replace('T', ' ')} UTC ·
+            comprobaciones separadas por 30 segundos.
           </p>
-          <small className="muted">
-            {monitor.healthy
-              ? '🤖 Monitoreo automático en segundo plano activo vía SaveState Bot · revisión diaria.'
-              : monitor.configured
-                ? '🤖 Monitor diario configurado · esperando una ejecución automática correcta.'
-                : '🤖 Monitor diario pendiente de activar en producción · comprobación manual disponible.'}
-          </small>
+          {error ? (
+            <p className="error-text" role="alert">
+              {error}
+            </p>
+          ) : null}
+          {message ? <p role="status">{message}</p> : null}
         </div>
-        <details>
-          <summary>Notas privadas de guardado</summary>
-          <label className="sr-only" htmlFor={`${inputId}-notes`}>
-            Notas privadas
-          </label>
-          <textarea
-            id={`${inputId}-notes`}
-            maxLength={5000}
-            rows={4}
-            value={draft.privateNotes}
-            onChange={(event) => setDraft({ ...draft, privateNotes: event.target.value })}
-          />
-        </details>
-      </fieldset>
-      <div className="filter-buttons">
-        <button
-          type="button"
-          className="button small"
-          disabled={busy || !dirty}
-          onClick={() => void run('save')}
-        >
-          Guardar checkpoint
-        </button>
-        <button
-          type="button"
-          className="button outline small"
-          disabled={busy || dirty}
-          onClick={() => void run('check-updates')}
-        >
-          ↺ Comprobar actualizaciones
-        </button>
-        <button
-          type="button"
-          className="text-link"
-          disabled={busy}
-          onClick={() => {
-            if (window.confirm(`¿Dejar de rastrear ${draft.title} y borrar su checkpoint privado?`))
-              void run('remove');
-          }}
-        >
-          Dejar de rastrear
-        </button>
-      </div>
-      {dirty ? (
-        <p className="muted">Guarda los cambios antes de comprobar actualizaciones.</p>
       ) : null}
-      <p className="muted">
-        Último intento: {draft.lastCheckedAt.slice(0, 19).replace('T', ' ')} UTC · comprobaciones
-        separadas por 30 segundos.
-      </p>
-      {error ? (
-        <p className="error-text" role="alert">
-          {error}
-        </p>
-      ) : null}
-      {message ? <p role="status">{message}</p> : null}
     </article>
   );
 }
