@@ -219,7 +219,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
           </span>
           <span>TERMINAL://RELAY_DISCORD_V1.0</span>
         </div>
-        <div className="form-row">
+        <div className="discord-chat-heading">
           <h2>Discord Bridge · Terminal comunitaria</h2>
           <span className="discord-live" role="status">
             <span className={node.online ? 'live-pulse' : ''} aria-hidden="true">
@@ -235,11 +235,11 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
             ↺ Sincronizar
           </button>
         </div>
-        <p className="muted">
+        <p className="muted discord-chat-description">
           Canal compartido con Discord · se actualiza cada 10 segundos mientras esta pestaña está
           visible.
         </p>
-        <div className="filter-buttons">
+        <div className="filter-buttons discord-chat-links">
           {inviteUrl ? (
             <a
               className="button outline small"
@@ -320,14 +320,14 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
           </p>
         ) : null}
         <form
-          className="form-row"
+          className="discord-chat-form"
           onSubmit={(event) => {
             event.preventDefault();
             void send();
           }}
         >
           <label>
-            Mensaje para Discord
+            <span className="discord-input-label">Mensaje para Discord</span>
             <input
               ref={inputRef}
               value={content}
@@ -335,8 +335,11 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
               disabled={sending}
               onChange={(event) => setContent(event.target.value)}
               placeholder="Escribe y pulsa Enter…"
+              aria-describedby="discord-message-count"
             />
-            <span className="muted discord-character-count">{content.length}/500</span>
+            <span id="discord-message-count" className="muted discord-character-count">
+              {content.length}/500
+            </span>
           </label>
           <div className="discord-emoji-buttons" role="group" aria-label="Insertar emoji gamer">
             {(['👾', '💾', '🏆', '🔥'] as const).map((emoji) => (

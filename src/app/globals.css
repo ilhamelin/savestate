@@ -2793,8 +2793,8 @@ a.feed-card-cover:hover {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding-bottom: 0.75rem;
-  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
   border-bottom: 1px solid var(--line);
   font-size: 0.7rem;
   overflow-wrap: anywhere;
@@ -2829,13 +2829,72 @@ a.feed-card-cover:hover {
 }
 .discord-emoji-buttons {
   display: flex;
-  flex-wrap: wrap;
   gap: 0.35rem;
+  align-items: center;
+  flex-shrink: 0;
 }
 .discord-emoji-buttons .button {
-  min-width: 40px;
-  min-height: 40px;
-  padding: 0.4rem;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+.discord-chat-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+}
+.discord-chat .discord-chat-heading h2 {
+  flex-basis: 100%;
+  margin: 0;
+}
+.discord-chat-description {
+  margin: 0.5rem 0;
+  font-size: 0.75rem;
+}
+.discord-chat .discord-chat-links {
+  margin: 0.5rem 0;
+}
+.discord-chat-form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+.discord-chat-form > label {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+.discord-chat-form input {
+  height: 36px;
+  min-height: 36px;
+  padding: 0 4rem 0 0.75rem;
+  margin: 0;
+}
+.discord-input-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.discord-chat-form > .button {
+  height: 36px;
+  min-height: 36px;
+  padding: 0 1.25rem;
+  white-space: nowrap;
+  align-self: center;
+  flex-shrink: 0;
 }
 @media (max-width: 900px) {
   .discord-layout-grid {
@@ -2850,14 +2909,21 @@ a.feed-card-cover:hover {
   .discord-chat {
     padding: 1rem;
   }
-  .discord-message-list {
-    padding: 0 0.35rem;
+  .discord-chat .discord-message-list {
+    padding: 0.75rem;
+    min-height: min(480px, 60svh);
   }
   .discord-chat .discord-message {
     gap: 0.5rem;
   }
-  .discord-chat .form-row label {
+  .discord-chat-form {
+    flex-wrap: wrap;
+  }
+  .discord-chat-form > label {
     flex-basis: 100%;
+  }
+  .discord-chat-form > .button {
+    margin-left: auto;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -2869,11 +2935,25 @@ a.feed-card-cover:hover {
 .discord-message-list {
   position: relative;
   background: repeating-linear-gradient(0deg, transparent 0 3px, #00000018 3px 4px);
-  padding: 0 0.75rem;
+  padding: 1rem;
   border: 1px solid var(--line);
-  max-height: 540px;
+  max-height: 680px;
+  min-height: 480px;
   overflow-y: auto;
-  margin: 1.5rem 0;
+  margin: 0.75rem 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) #08080c;
+  scrollbar-gutter: stable;
+}
+.discord-message-list::-webkit-scrollbar {
+  width: 6px;
+}
+.discord-message-list::-webkit-scrollbar-track {
+  background: #08080c;
+}
+.discord-message-list::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 4px;
 }
 .discord-message {
   display: flex;
@@ -2907,10 +2987,6 @@ a.feed-card-cover:hover {
 .discord-message time {
   font-size: 0.75rem;
 }
-.discord-chat .form-row label {
-  flex: 1;
-  min-width: 0;
-}
 .discord-live,
 .badge-savestate,
 .badge-discord {
@@ -2941,9 +3017,12 @@ a.feed-card-cover:hover {
   border-radius: 4px;
 }
 .discord-character-count {
-  display: block;
-  text-align: right;
-  font-size: 0.75rem;
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.65rem;
+  pointer-events: none;
 }
 .discord-inline-media {
   display: block;
