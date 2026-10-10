@@ -1,8 +1,6 @@
 import Link from 'next/link';
 import { Gamepad2, ArrowUpRight } from 'lucide-react';
-import { CrtToggle } from '@/components/ui/crt-toggle';
 import { CommandMenu } from '@/components/command-menu';
-import { AudioToggle } from '@/components/ui/audio-toggle';
 import { NotificationBell } from '@/components/notification-bell';
 import { currentUser } from '@/lib/session';
 import { serverClient } from '@/integrations/supabase/server';
@@ -46,8 +44,6 @@ export async function Header() {
           userId={user?.id ?? null}
         />
         {user ? <NotificationBell key={user.id} userId={user.id} /> : null}
-        <CrtToggle />
-        <AudioToggle />
         <Link
           className="button small"
           href={
