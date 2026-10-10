@@ -29,6 +29,7 @@ import { hardwareForDisplay } from '@/domain/hardware';
 import { StatsDossier, HardwareBadges } from '@/components/profile-dossier';
 import { MemoryCardExport } from '@/components/memory-card-export';
 import { AchievementsShowcase } from '@/components/achievements-showcase';
+import { ProfileIndieTracker } from '@/components/profile-indie-tracker';
 export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
   return { title: `@${username}` };
@@ -126,6 +127,7 @@ export default async function Player({ params }: { params: Promise<{ username: s
           />
         </div>
         <BadgeGallery {...badges} />
+        {isOwner ? <ProfileIndieTracker /> : null}
         <p>
           <Link className="button secondary" href={`/players/${profile.username}/wrapped`}>
             Ver SaveState Wrapped →

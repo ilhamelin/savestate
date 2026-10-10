@@ -212,6 +212,7 @@ export function NotificationBell({ userId }: { userId: string }) {
             <div key={item.id} className={`notification-item ${item.read_at ? '' : 'unread'}`}>
               <Link
                 href={
+                  item.trackerHref ??
                   item.forumHref ??
                   (item.username
                     ? `/players/${item.username}${item.kind === 'badge_unlocked' ? '#player-badges' : ''}`
@@ -221,6 +222,7 @@ export function NotificationBell({ userId }: { userId: string }) {
               >
                 @{item.username ?? 'jugador'} {NOTIFICATION_LABELS[item.kind] ?? 'envió una señal'}
                 {item.badgeName ? `: ${item.badgeName}` : ''}
+                {item.trackerTitle ? `: ${item.trackerTitle}` : ''}
               </Link>
               <time dateTime={item.created_at}>
                 {notificationAge(item.created_at, summary.generatedAt)}

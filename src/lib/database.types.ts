@@ -18,6 +18,7 @@ import type { Badge, UserBadge } from '@/domain/badges';
 import type { ForumCategory, ForumThread, ForumReply, ForumReaction } from '@/domain/forum';
 import type { XpEvent, XpAward } from '@/domain/progression';
 import type { PlayerFriend } from '@/domain/player-friends';
+import type { ItchTrackerRow, ItchMetadata } from '@/domain/itch-tracker';
 
 type Row<T> = { [K in keyof T]: T[K] };
 type Table<T, Relations = []> = {
@@ -36,6 +37,7 @@ type ForeignKey<Name extends string, Column extends string, Target extends strin
 export type Database = {
   public: {
     Tables: {
+      itch_trackers: Table<ItchTrackerRow>;
       user_xp_events: Table<XpEvent>;
       forum_categories: Table<ForumCategory>;
       forum_threads: Table<ForumThread>;
@@ -88,6 +90,7 @@ export type Database = {
         created_at: string;
       }>;
       notifications: Table<{
+        itch_tracker_id: string | null;
         forum_thread_id: string | null;
         badge_id: string | null;
         id: string;
@@ -100,6 +103,11 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      claim_itch_check: { Args: { p_id: string; p_user_id: string }; Returns: boolean };
+      apply_itch_check: {
+        Args: { p_id: string; p_user_id: string; p_metadata: ItchMetadata };
+        Returns: boolean;
+      };
       claim_discord_message_slot: { Args: Record<string, never>; Returns: number };
       get_player_friends: { Args: { p_user_id: string }; Returns: PlayerFriend[] };
       award_xp: {

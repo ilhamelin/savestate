@@ -94,7 +94,7 @@ export function discordConfigured() {
   }
 }
 export type DiscordCheckpoint = {
-  type: 'platinum' | 'levelup' | 'forum';
+  type: 'platinum' | 'levelup' | 'forum' | 'itch';
   username: string;
   details: string;
   path?: string;
@@ -106,6 +106,7 @@ export async function notifyDiscordCheckpoint(event: DiscordCheckpoint) {
     platinum: { title: '🏆 ¡NUEVO PLATINO DESBLOQUEADO!', color: 0xffd700 },
     levelup: { title: '⚡ LEVEL UP', color: 0x00f0ff },
     forum: { title: '💬 Nuevo debate en el Foro', color: 0x39ff14 },
+    itch: { title: '🕹️ Nueva transmisión indie · itch.io', color: 0xbc66ff },
   }[event.type];
   const target = new URL(appUrl());
   if (event.path?.startsWith('/') && !event.path.startsWith('//')) {

@@ -8,7 +8,7 @@ export async function notificationSummary(): Promise<NotificationSummary> {
   const [recent, unread] = await Promise.all([
     db
       .from('notifications')
-      .select('id,kind,read_at,created_at,actor_id,badge_id,forum_thread_id')
+      .select('id,kind,read_at,created_at,actor_id,badge_id,forum_thread_id,itch_tracker_id')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
@@ -54,6 +54,15 @@ export async function notificationSummary(): Promise<NotificationSummary> {
     : { data: [], error: null };
   dbCheck(friendships.error);
   const seenRequests = new Set<string>();
+  const trackerIds = rows.flatMap((row) => (row.itch_tracker_id ? [row.itch_tracker_id] : []));
+  const trackers = trackerIds.length
+    ? await db
+        .from('itch_trackers')
+        .select('id,metadata')
+        .in('id', trackerIds)
+        .eq('user_id', user.id)
+    : { data: [], error: null };
+  dbCheck(trackers.error);
   return {
     unreadCount: unread.count ?? 0,
     generatedAt: new Date().toISOString(),
@@ -65,6 +74,12 @@ export async function notificationSummary(): Promise<NotificationSummary> {
       if (row.kind === 'friend_request') seenRequests.add(actor_id);
       return {
         ...row,
+        trackerTitle:
+          trackers.data?.find((tracker) => tracker.id === row.itch_tracker_id)?.metadata.title ??
+          null,
+        trackerHref: row.itch_tracker_id
+          ? `/players/${profiles.data?.find((p) => p.id === user.id)?.username ?? ''}#itch-${row.itch_tracker_id}`
+          : null,
         friendshipId,
         username: profiles.data?.find((p) => p.id === actor_id)?.username ?? null,
         badgeName: badges.data?.find((badge) => badge.id === row.badge_id)?.name ?? null,

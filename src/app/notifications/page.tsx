@@ -43,6 +43,17 @@ export default async function Notifications() {
     ? await db.from('forum_threads').select('id,category_id').in('id', threadIds)
     : { data: [], error: null };
   dbCheck(threads.error);
+  const trackerIds = (rows ?? []).flatMap((row) =>
+    row.itch_tracker_id ? [row.itch_tracker_id] : [],
+  );
+  const trackers = trackerIds.length
+    ? await db
+        .from('itch_trackers')
+        .select('id,metadata')
+        .in('id', trackerIds)
+        .eq('user_id', user.id)
+    : { data: [], error: null };
+  dbCheck(trackers.error);
   return (
     <>
       <div className="page-heading">
@@ -61,16 +72,21 @@ export default async function Notifications() {
                 <Link
                   className="accent"
                   href={
-                    thread
-                      ? `/forum/${thread.category_id}/${thread.id}`
-                      : name
-                        ? `/players/${name}${row.kind === 'badge_unlocked' ? '#player-badges' : ''}`
-                        : '/players'
+                    row.itch_tracker_id && name
+                      ? `/players/${encodeURIComponent(name)}#itch-${row.itch_tracker_id}`
+                      : thread
+                        ? `/forum/${thread.category_id}/${thread.id}`
+                        : name
+                          ? `/players/${name}${row.kind === 'badge_unlocked' ? '#player-badges' : ''}`
+                          : '/players'
                   }
                 >
                   @{name ?? 'jugador'}
                 </Link>{' '}
                 {NOTIFICATION_LABELS[row.kind] ?? 'envió una señal'}
+                {row.itch_tracker_id
+                  ? `: ${trackers.data?.find((tracker) => tracker.id === row.itch_tracker_id)?.metadata.title ?? 'Juego indie'}`
+                  : ''}
                 {row.badge_id
                   ? `: ${badges.data?.find((badge) => badge.id === row.badge_id)?.name ?? 'Logro retro'}`
                   : ''}

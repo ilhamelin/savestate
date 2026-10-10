@@ -1,4 +1,5 @@
 export const NOTIFICATION_LABELS: Record<string, string> = {
+  itch_update: 'tiene una nueva actualización de itch.io',
   forum_reply: 'respondió en tu hilo del foro',
   forum_quote: 'te citó en una respuesta del foro',
   badge_unlocked: 'desbloqueó un nuevo logro retro',
@@ -22,6 +23,8 @@ export interface NotificationSummary {
     badgeName?: string | null;
     forumHref?: string | null;
     friendshipId?: string | null;
+    trackerHref?: string | null;
+    trackerTitle?: string | null;
   }[];
 }
 export function notificationAge(createdAt: string, now: string) {
