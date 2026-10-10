@@ -21,10 +21,33 @@ Agregar un botón interactivo (tipo toggle/acordeón) para **contraer (retraer) 
 
 ## 2. Implementación en `src/components/profile-indie-tracker.tsx`
 
-### 2.1. Estado Local
+### 2.1. Estado Local y Persistencia en `localStorage`
 En el componente `TrackerCard`:
 ```typescript
 const [collapsed, setCollapsed] = useState(false);
+
+// Cargar preferencia guardada al montar el componente
+useEffect(() => {
+  try {
+    const saved = window.localStorage.getItem(`savestate_itch_collapsed_${tracker.id}`);
+    if (saved !== null) {
+      setCollapsed(saved === 'true');
+    }
+  } catch {
+    /* Ignorar restricciones de almacenamiento */
+  }
+}, [tracker.id]);
+
+// Guardar preferencia al hacer clic
+function toggleCollapsed() {
+  setCollapsed((prev) => {
+    const next = !prev;
+    try {
+      window.localStorage.setItem(`savestate_itch_collapsed_${tracker.id}`, String(next));
+    } catch {}
+    return next;
+  });
+}
 ```
 
 ### 2.2. Botón de Toggle
