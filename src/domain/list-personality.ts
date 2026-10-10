@@ -16,3 +16,18 @@ export const LIST_TEMPLATES = [
     description: 'Diez aventuras de 16 bits que merecen otro checkpoint.',
   },
 ] as const;
+export function collectionSearchFilter(input: string) {
+  const pattern = `%${input.replace(/[\\%_]/g, '\\$&')}%`;
+  const quoted = pattern.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  return `title.ilike."${quoted}",description.ilike."${quoted}"`;
+}
+export function collectionSearch(input: unknown) {
+  if (typeof input !== 'string') return '';
+  return [...input.slice(0, 1000)]
+    .map((character) =>
+      character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127 ? ' ' : character,
+    )
+    .join('')
+    .trim()
+    .slice(0, 100);
+}

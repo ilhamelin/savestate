@@ -72,7 +72,7 @@ export type Database = {
       friendships: Table<Friendship>;
       follows: Table<Follow>;
       activity_logs: Table<Activity>;
-      user_lists: Table<UserList>;
+      user_lists: Table<UserList, [ForeignKey<'user_lists_user_id_fkey', 'user_id', 'profiles'>]>;
       list_items: Table<
         ListItem,
         [
