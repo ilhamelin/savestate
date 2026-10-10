@@ -107,7 +107,12 @@ function InlineMedia({ url, onOpen }: { url: string; onOpen: (media: ActiveMedia
     </div>
   );
 }
-export function DiscordChat({ inviteUrl, siteUrl }: { inviteUrl: string | null; siteUrl: string }) {
+export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
+  const [node, setNode] = useState<{ online: boolean; latency: number | null }>({
+    online: false,
+    latency: null,
+  });
+  const inputRef = useRef<HTMLInputElement>(null);
   const [activeMedia, setActiveMedia] = useState<ActiveMedia | null>(null);
   const [messages, setMessages] = useState<DiscordMessage[]>([]);
   const [content, setContent] = useState(''),
@@ -143,6 +148,7 @@ export function DiscordChat({ inviteUrl, siteUrl }: { inviteUrl: string | null; 
       controller?.abort();
       const request = new AbortController();
       controller = request;
+      const started = performance.now();
       try {
         const response = await fetch('/api/discord/messages', {
           signal: request.signal,
@@ -152,10 +158,13 @@ export function DiscordChat({ inviteUrl, siteUrl }: { inviteUrl: string | null; 
         if (!disposed && !request.signal.aborted) {
           if (!busy.current) setMessages(data.messages);
           setError('');
+          setNode({ online: true, latency: Math.round(performance.now() - started) });
         }
       } catch (failure) {
-        if (!disposed && !request.signal.aborted)
+        if (!disposed && !request.signal.aborted) {
+          setNode({ online: false, latency: null });
           setError(failure instanceof Error ? failure.message : 'No se pudo leer Discord.');
+        }
       } finally {
         if (!disposed && !request.signal.aborted) setLoading(false);
       }
@@ -200,142 +209,215 @@ export function DiscordChat({ inviteUrl, siteUrl }: { inviteUrl: string | null; 
     }
   }
   return (
-    <section className="panel discord-chat">
-      <div className="form-row">
-        <h2>Discord Bridge · Terminal comunitaria</h2>
-        <span className="discord-live" role="status">
-          <span className={!loading && !error ? 'live-pulse' : ''} aria-hidden="true">
-            {!loading && !error ? '🟢' : '◌'}
-          </span>{' '}
-          {loading ? 'CONECTANDO' : error ? 'SYNC EN PAUSA' : 'LIVE SYNC'} // #web-chat
-        </span>
-        <button
-          type="button"
-          className="button outline small"
-          onClick={() => setRevision((n) => n + 1)}
-        >
-          ↺ Sincronizar
-        </button>
-      </div>
-      <p className="muted">
-        Canal compartido con Discord · se actualiza cada 10 segundos mientras esta pestaña está
-        visible.
-      </p>
-      <div className="filter-buttons">
-        {inviteUrl ? (
-          <a
+    <div className="discord-layout-grid">
+      <section className="panel discord-chat">
+        <div className="discord-terminal-bar">
+          <span className="discord-terminal-leds" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </span>
+          <span>TERMINAL://RELAY_DISCORD_V1.0</span>
+        </div>
+        <div className="form-row">
+          <h2>Discord Bridge · Terminal comunitaria</h2>
+          <span className="discord-live" role="status">
+            <span className={node.online ? 'live-pulse' : ''} aria-hidden="true">
+              {node.online ? '🟢' : '◌'}
+            </span>{' '}
+            {loading ? 'CONECTANDO' : node.online ? 'LIVE SYNC' : 'SYNC EN PAUSA'} // #web-chat
+          </span>
+          <button
+            type="button"
             className="button outline small"
-            href={inviteUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            onClick={() => setRevision((n) => n + 1)}
           >
-            Unirse al servidor de Discord ↗
-          </a>
-        ) : (
-          <span className="muted">Invitación al servidor pendiente de configuración.</span>
-        )}
-        <a className="button outline small" href={siteUrl}>
-          🌐 Ver SaveState
-        </a>
-      </div>
-      <div className="discord-message-list" aria-label="Mensajes del canal">
-        {loading ? <p role="status">[ Conectando con Discord… ]</p> : null}
-        {!loading && !messages.length && !error ? <p>No hay mensajes todavía.</p> : null}
-        {messages.map((message) => {
-          const origin = discordMessageOrigin(message.content);
-          const media = discordInlineMedia(origin.content);
-          return (
-            <article key={message.id} className="discord-message">
-              {message.avatar ? (
-                <Image src={message.avatar} width={36} height={36} alt="" unoptimized />
-              ) : (
-                <span aria-hidden="true">▣</span>
-              )}
-              <div>
-                <span className={origin.web ? 'badge-savestate' : 'badge-discord'}>
-                  {origin.web ? '[SAVESTATE_WEB]' : '[DISCORD]'}
-                </span>{' '}
-                <strong className="accent">{origin.author ?? message.author}</strong>{' '}
-                <time dateTime={message.createdAt} title="Hora de Chile · America/Santiago">
-                  {formatMessageDate(message.createdAt)}
-                </time>
-                {media.text ? (
-                  <p>{media.text}</p>
-                ) : !media.urls.length ? (
-                  <p>Mensaje sin texto disponible.</p>
-                ) : null}
-                {media.urls.map((url) => (
-                  <InlineMedia key={url} url={url} onOpen={setActiveMedia} />
-                ))}
-                {message.attachments.map((file) => (
-                  <p key={file.url}>
-                    {discordImageAttachment(file.url) ? (
-                      <button
-                        type="button"
-                        className="discord-media-button"
-                        aria-label={`Ampliar ${file.name}`}
-                        aria-haspopup="dialog"
-                        onClick={() => setActiveMedia({ url: file.url, alt: file.name })}
-                      >
-                        <Image
-                          className="discord-attachment-thumb"
-                          src={file.url}
-                          width={240}
-                          height={160}
-                          alt={file.name}
-                          unoptimized
-                        />
-                      </button>
-                    ) : (
-                      <a href={file.url} target="_blank" rel="noopener noreferrer">
-                        ↗ {file.name}
-                      </a>
-                    )}
-                  </p>
-                ))}
-              </div>
-            </article>
-          );
-        })}
-        <div ref={endRef} aria-hidden="true" />
-      </div>
-      {error ? (
-        <p className="error-text" role="alert">
-          {error}
+            ↺ Sincronizar
+          </button>
+        </div>
+        <p className="muted">
+          Canal compartido con Discord · se actualiza cada 10 segundos mientras esta pestaña está
+          visible.
         </p>
-      ) : null}
-      <form
-        className="form-row"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void send();
-        }}
-      >
-        <label>
-          Mensaje para Discord
-          <input
-            value={content}
-            maxLength={500}
-            disabled={sending}
-            onChange={(event) => setContent(event.target.value)}
-            placeholder="Escribe y pulsa Enter…"
+        <div className="filter-buttons">
+          {inviteUrl ? (
+            <a
+              className="button outline small"
+              href={inviteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Unirse al servidor de Discord ↗
+            </a>
+          ) : (
+            <span className="muted">Invitación al servidor pendiente de configuración.</span>
+          )}
+        </div>
+        <div className="discord-message-list" aria-label="Mensajes del canal">
+          {loading ? <p role="status">[ Conectando con Discord… ]</p> : null}
+          {!loading && !messages.length && !error ? <p>No hay mensajes todavía.</p> : null}
+          {messages.map((message) => {
+            const origin = discordMessageOrigin(message.content);
+            const media = discordInlineMedia(origin.content);
+            return (
+              <article key={message.id} className="discord-message">
+                {message.avatar ? (
+                  <Image src={message.avatar} width={36} height={36} alt="" unoptimized />
+                ) : (
+                  <span aria-hidden="true">▣</span>
+                )}
+                <div className="discord-message-bubble">
+                  <span className={origin.web ? 'badge-savestate' : 'badge-discord'}>
+                    {origin.web ? '[SAVESTATE_WEB]' : '[DISCORD]'}
+                  </span>{' '}
+                  <strong className="accent">{origin.author ?? message.author}</strong>{' '}
+                  <time dateTime={message.createdAt} title="Hora de Chile · America/Santiago">
+                    {formatMessageDate(message.createdAt)}
+                  </time>
+                  {media.text ? (
+                    <p>{media.text}</p>
+                  ) : !media.urls.length && !message.attachments.length ? (
+                    <p>Mensaje sin texto disponible.</p>
+                  ) : null}
+                  {media.urls.map((url) => (
+                    <InlineMedia key={url} url={url} onOpen={setActiveMedia} />
+                  ))}
+                  {message.attachments.map((file) => (
+                    <p key={file.url}>
+                      {discordImageAttachment(file.url) ? (
+                        <button
+                          type="button"
+                          className="discord-media-button"
+                          aria-label={`Ampliar ${file.name}`}
+                          aria-haspopup="dialog"
+                          onClick={() => setActiveMedia({ url: file.url, alt: file.name })}
+                        >
+                          <Image
+                            className="discord-attachment-thumb"
+                            src={file.url}
+                            width={240}
+                            height={160}
+                            alt={file.name}
+                            unoptimized
+                          />
+                        </button>
+                      ) : (
+                        <a href={file.url} target="_blank" rel="noopener noreferrer">
+                          ↗ {file.name}
+                        </a>
+                      )}
+                    </p>
+                  ))}
+                </div>
+              </article>
+            );
+          })}
+          <div ref={endRef} aria-hidden="true" />
+        </div>
+        {error ? (
+          <p className="error-text" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <form
+          className="form-row"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void send();
+          }}
+        >
+          <label>
+            Mensaje para Discord
+            <input
+              ref={inputRef}
+              value={content}
+              maxLength={500}
+              disabled={sending}
+              onChange={(event) => setContent(event.target.value)}
+              placeholder="Escribe y pulsa Enter…"
+            />
+            <span className="muted discord-character-count">{content.length}/500</span>
+          </label>
+          <div className="discord-emoji-buttons" role="group" aria-label="Insertar emoji gamer">
+            {(['👾', '💾', '🏆', '🔥'] as const).map((emoji) => (
+              <button
+                type="button"
+                className="button outline small"
+                key={emoji}
+                aria-label={`Insertar ${emoji}`}
+                disabled={sending || content.length + emoji.length > 500}
+                onClick={() => {
+                  setContent((current) =>
+                    current.length + emoji.length <= 500 ? current + emoji : current,
+                  );
+                  inputRef.current?.focus();
+                }}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+          <button className="button" disabled={sending || cooldown > 0 || !content.trim()}>
+            {sending ? 'Enviando…' : cooldown > 0 ? `Espera ${cooldown}s…` : 'Enviar →'}
+          </button>
+        </form>
+        <p className="muted">
+          Lo que envíes se publicará en el canal de Discord con tu nombre de usuario de SaveState.
+        </p>
+        {activeMedia ? (
+          <MediaLightbox
+            key={activeMedia.url}
+            media={activeMedia}
+            onClose={() => setActiveMedia(null)}
           />
-          <span className="muted discord-character-count">{content.length}/500</span>
-        </label>
-        <button className="button" disabled={sending || cooldown > 0 || !content.trim()}>
-          {sending ? 'Enviando…' : cooldown > 0 ? `Espera ${cooldown}s…` : 'Enviar →'}
-        </button>
-      </form>
-      <p className="muted">
-        Lo que envíes se publicará en el canal de Discord con tu nombre de usuario de SaveState.
-      </p>
-      {activeMedia ? (
-        <MediaLightbox
-          key={activeMedia.url}
-          media={activeMedia}
-          onClose={() => setActiveMedia(null)}
-        />
-      ) : null}
-    </section>
+        ) : null}
+      </section>
+      <aside className="discord-sidebar" aria-label="Centro de mando Discord">
+        <section className="panel">
+          <h2>FRECUENCIAS DISCORD</h2>
+          <ul className="discord-channel-list">
+            <li className="discord-channel-pill">
+              <strong>#💾-checkpoints</strong>
+              <span>Registro automático de platinos y 100%</span>
+            </li>
+            <li className="discord-channel-pill active">
+              <strong>#💬-web-chat</strong>
+              <span>Canal sincronizado activo</span>
+            </li>
+            <li className="discord-channel-pill">
+              <strong>#📢-anuncios-savestate</strong>
+              <span>Noticias y parches</span>
+            </li>
+          </ul>
+        </section>
+        <section className="panel">
+          <h2>ESTADO DEL NODO</h2>
+          <p className="discord-node-status" role="status">
+            <span className={node.online ? 'live-pulse' : ''} aria-hidden="true">
+              {node.online ? '🟢' : '◌'}
+            </span>{' '}
+            {loading ? 'CONECTANDO' : node.online ? 'ONLINE' : 'SIN CONEXIÓN'}
+          </p>
+          <p className="muted">
+            Latencia del relay: {node.latency === null ? '—' : `${node.latency} ms`}
+          </p>
+          <p className="muted">
+            Estado de la última consulta al canal mediante el bot · refresco cada 10 s.
+          </p>
+          {inviteUrl ? (
+            <a
+              className="button discord-join"
+              href={inviteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Unirse al servidor ↗
+            </a>
+          ) : (
+            <p className="muted">Invitación pendiente de configuración.</p>
+          )}
+        </section>
+      </aside>
+    </div>
   );
 }
