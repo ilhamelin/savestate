@@ -40,10 +40,11 @@ Soporte para parámetros de paginación:
 
 ## 3. UI y Experiencia de Usuario (`src/app/rift/page.tsx`)
 
-### 3.1. Wallpaper de Fondo
-Envolvemos la vista principal con el componente existente de Savestate:
+### 3.1. Wallpaper de Fondo (Arcane League of Legends)
+La imagen solicitada (`arcane-league-of-1920x1080-18711.jpg`) ha sido copiada y alojada en `public/wallpapers/rift_arcane.jpg`.
+Envolvemos la vista principal con el componente existente:
 ```tsx
-<ProfileWallpaper url="/wallpapers/neon_cyberpunk.svg" fullScreen>
+<ProfileWallpaper url="/wallpapers/rift_arcane.jpg" fullScreen>
   <div className="rift-container">
     {/* Contenido de Rift Tracker */}
   </div>
