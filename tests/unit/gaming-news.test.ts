@@ -33,9 +33,9 @@ test('Gaming RSS strips HTML, decodes entities and ignores unsafe or incomplete 
   assert.equal(result[0]?.url, 'https://vandal.elespanol.com/noticia/1/?a=1&b=2');
   assert.deepEqual(parseGamingRss('<html>Error</html>', 'ign', now), []);
 });
-test('Gaming news sorts across sources, deduplicates links and caps the wire at twelve', () => {
+test('Gaming news sorts across sources, deduplicates links and caps the wire at thirty', () => {
   const rows = Array.from(
-    { length: 15 },
+    { length: 35 },
     (_, i) =>
       parseGamingRss(
         item(
@@ -48,9 +48,9 @@ test('Gaming news sorts across sources, deduplicates links and caps the wire at 
       )[0]!,
   );
   const result = combineGamingNews([rows.slice(0, 10), rows.slice(8)]);
-  assert.equal(result.length, 12);
+  assert.equal(result.length, 30);
   assert.equal(result[0]?.title, 'Noticia 0');
-  assert.equal(result.at(-1)?.title, 'Noticia 11');
+  assert.equal(result.at(-1)?.title, 'Noticia 29');
   assert.equal(newsAge('2026-10-10T16:00:00Z', now), 'HACE 2H');
   assert.equal(newsAge('2026-10-09T18:00:00Z', now), 'HACE 1D');
   assert.equal(newsAge('2026-10-10T19:00:00Z', now), 'AHORA');
@@ -105,4 +105,10 @@ test('Gaming thumbnails prefer enclosures, decode escaped image tags and reject 
     now,
   );
   assert.equal(row[0]?.imageUrl, image);
+});
+test('Gaming RSS buffer only processes twenty entries per source', () => {
+  const xml = Array.from({ length: 25 }, (_, i) =>
+    item(`Noticia ${i}`, `https://es.ign.com/news/${i}`),
+  ).join('');
+  assert.equal(parseGamingRss(xml, 'ign', now).length, 20);
 });

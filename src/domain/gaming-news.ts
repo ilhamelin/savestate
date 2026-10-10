@@ -96,7 +96,7 @@ export function parseGamingRss(
   now: number,
 ): GamingNewsItem[] {
   const items: GamingNewsItem[] = [];
-  for (const match of [...xml.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item\s*>/gi)].slice(0, 60)) {
+  for (const match of [...xml.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item\s*>/gi)].slice(0, 20)) {
     const item = match[1] ?? '';
     const field = (name: string) =>
       item.match(new RegExp(`<${name}\\b[^>]*>([\\s\\S]*?)<\\/${name}\\s*>`, 'i'))?.[1] ?? '';
@@ -138,5 +138,5 @@ export function parseGamingRss(
 export function combineGamingNews(feeds: GamingNewsItem[][]) {
   return [...new Map(feeds.flat().map((item) => [item.url, item])).values()]
     .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt))
-    .slice(0, 12);
+    .slice(0, 30);
 }

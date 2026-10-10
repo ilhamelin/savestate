@@ -62,7 +62,7 @@ export interface DuelSummary {
 }
 export interface PartyCardData extends PartyRequest {
   game: ArcadeGame;
-  author: Pick<Profile, 'id' | 'username' | 'avatar_url'>;
+  author: Pick<Profile, 'id' | 'username' | 'avatar_url' | 'level'>;
 }
 export function partyInput(input: unknown) {
   const data = object(input);

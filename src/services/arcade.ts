@@ -111,7 +111,7 @@ export async function partyFeed(filters: {
       .in('id', [...new Set(rows.map((r) => r.game_id))]),
     db
       .from('profiles')
-      .select('id,username,avatar_url')
+      .select('id,username,avatar_url,level')
       .in('id', [...new Set(rows.map((r) => r.user_id))]),
   ]);
   dbCheck(games.error);

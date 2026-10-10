@@ -28,6 +28,7 @@ function NewsThumbnail({ src }: { src?: string | null }) {
 
 export function RecentNewsSection({ news }: { news: GamingNewsItem[] }) {
   const [source, setSource] = useState<GamingNewsSource | 'all'>('all');
+  const [visibleCount, setVisibleCount] = useState(8);
   const visible = news.filter((item) => source === 'all' || source === item.source);
   return (
     <section className="news-section" aria-labelledby="recent-news-title">
@@ -61,7 +62,10 @@ export function RecentNewsSection({ news }: { news: GamingNewsItem[] }) {
             type="button"
             className={`button small ${source === value ? '' : 'outline'}`}
             aria-pressed={source === value}
-            onClick={() => setSource(value)}
+            onClick={() => {
+              setSource(value);
+              setVisibleCount(8);
+            }}
           >
             {label}
           </button>
@@ -69,7 +73,7 @@ export function RecentNewsSection({ news }: { news: GamingNewsItem[] }) {
       </div>
       {visible.length ? (
         <ul className="news-table">
-          {visible.map((item) => (
+          {visible.slice(0, visibleCount).map((item) => (
             <li className="news-row" key={item.url}>
               <time
                 className="news-time"
@@ -104,6 +108,21 @@ export function RecentNewsSection({ news }: { news: GamingNewsItem[] }) {
             : 'No se pudieron cargar las noticias. Vuelve a intentarlo más tarde.'}
         </p>
       )}
+      {visibleCount < visible.length ? (
+        <div className="news-load-more-wrap">
+          <button
+            type="button"
+            className="button outline small news-load-more"
+            onClick={() => setVisibleCount((previous) => previous + 6)}
+          >
+            ▾ Cargar más noticias ({Math.min(6, visible.length - visibleCount)} restantes)
+          </button>
+        </div>
+      ) : visible.length > 8 ? (
+        <p className="muted news-end-wire" role="status">
+          ● Fin de la transmisión del día
+        </p>
+      ) : null}
     </section>
   );
 }

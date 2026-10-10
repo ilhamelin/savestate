@@ -3,8 +3,10 @@ import { ArrowUpRight, Gamepad2 } from 'lucide-react';
 import { SetupNotice } from '@/components/setup-notice';
 import { getRecentGamingNews } from '@/services/gaming-news';
 import { RecentNewsSection } from '@/components/recent-news-section';
+import { getActiveFreebies } from '@/services/freebies';
+import { FreebiesTracker } from '@/components/freebies-tracker';
 export default async function Home() {
-  const news = await getRecentGamingNews();
+  const [news, freebies] = await Promise.all([getRecentGamingNews(), getActiveFreebies()]);
   return (
     <>
       <section className="hero">
@@ -67,6 +69,7 @@ export default async function Home() {
       </section>
       <SetupNotice />
       <RecentNewsSection news={news} />
+      <FreebiesTracker freebies={freebies} />
     </>
   );
 }
