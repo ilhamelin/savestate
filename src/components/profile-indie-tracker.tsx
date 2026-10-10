@@ -15,7 +15,7 @@ function edits(tracker: ItchTracker) {
   return {
     currentPlayedVersion: tracker.currentPlayedVersion,
     status: tracker.status,
-    milestones: tracker.milestones,
+    milestones: tracker.milestones || [],
     privateNotes: tracker.privateNotes,
   };
 }
@@ -31,15 +31,10 @@ function TrackerCard({
   const [draft, setDraft] = useState(tracker),
     [error, setError] = useState(''),
     [message, setMessage] = useState(''),
-    [busy, setBusy] = useState(false),
-    [milestone, setMilestone] = useState('');
+    [busy, setBusy] = useState(false);
   const working = useRef(false);
   const inputId = useId();
   const dirty = JSON.stringify(edits(draft)) !== JSON.stringify(edits(tracker));
-  const complete = draft.milestones.filter((item) => item.completed).length;
-  const percent = draft.milestones.length
-    ? Math.round((complete / draft.milestones.length) * 100)
-    : 0;
   const available = itchUpdateAvailable(draft);
   async function run(action: 'save' | 'check-updates' | 'remove') {
     if (working.current) return;
@@ -175,73 +170,18 @@ function TrackerCard({
             Estoy jugando la última detectada ({draft.latestDetectedVersion})
           </button>
         ) : null}
-        <p>
-          Hitos: {complete} / {draft.milestones.length} · {percent}%
-        </p>
-        <progress value={percent} max={100} aria-label={`Hitos completados de ${draft.title}`} />
-        <ul className="indie-milestones">
-          {draft.milestones.map((item) => (
-            <li key={item.id}>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={item.completed}
-                  onChange={(event) =>
-                    setDraft({
-                      ...draft,
-                      milestones: draft.milestones.map((entry) =>
-                        entry.id === item.id
-                          ? { ...entry, completed: event.target.checked }
-                          : entry,
-                      ),
-                    })
-                  }
-                />
-                {item.title}
-              </label>
-              <button
-                type="button"
-                className="text-link"
-                aria-label={`Quitar hito ${item.title}`}
-                onClick={() =>
-                  setDraft({
-                    ...draft,
-                    milestones: draft.milestones.filter((entry) => entry.id !== item.id),
-                  })
-                }
-              >
-                ✕
-              </button>
-            </li>
-          ))}
-        </ul>
-        <div className="form-row">
-          <label htmlFor={inputId}>
-            Nuevo hito
-            <input
-              id={inputId}
-              maxLength={120}
-              value={milestone}
-              onChange={(event) => setMilestone(event.target.value)}
-            />
-          </label>
-          <button
-            type="button"
-            className="button outline small"
-            disabled={!milestone.trim() || draft.milestones.length >= 50}
-            onClick={() => {
-              setDraft({
-                ...draft,
-                milestones: [
-                  ...draft.milestones,
-                  { id: crypto.randomUUID(), title: milestone.trim(), completed: false },
-                ],
-              });
-              setMilestone('');
-            }}
-          >
-            Añadir hito
-          </button>
+        <div className={`indie-version-alarm ${available ? 'triggered' : ''}`} role="status">
+          <strong className="indie-alarm-badge">
+            {available
+              ? `🚨 ¡ALARMA DISPARADA: NUEVA VERSIÓN DETECTADA! (${draft.latestDetectedVersion})`
+              : '🔔 Alarma de nueva versión: ACTIVA'}
+          </strong>
+          <p>
+            {available
+              ? `La actualización detectada es distinta o posterior a tu versión jugada (${draft.currentPlayedVersion}). Puedes revisar la campana de SaveState y descargar la actualización desde la página oficial.`
+              : `Al pulsar «Comprobar actualizaciones», SaveState consulta itch.io y compara el último devlog con tu versión jugada (${draft.currentPlayedVersion || 'actual'}). Si detecta un nuevo devlog, crea una alerta en la campana y envía un aviso a Discord si el canal está configurado.`}
+          </p>
+          <small className="muted">Comprobación manual · sin vigilancia en segundo plano.</small>
         </div>
         <details>
           <summary>Notas privadas de guardado</summary>
@@ -279,7 +219,7 @@ function TrackerCard({
           className="text-link"
           disabled={busy}
           onClick={() => {
-            if (window.confirm(`¿Dejar de rastrear ${draft.title} y borrar sus notas e hitos?`))
+            if (window.confirm(`¿Dejar de rastrear ${draft.title} y borrar su checkpoint privado?`))
               void run('remove');
           }}
         >

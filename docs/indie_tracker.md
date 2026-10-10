@@ -5,11 +5,13 @@ Disponible solo en el perfil propio, en «Mis checkpoints de itch.io». Requiere
 ## Uso
 
 1. Añade la URL HTTPS de la página de un juego, por ejemplo `https://autor.itch.io/juego`.
-2. Indica la versión que estás jugando y el estado. Puedes añadir hasta 50 hitos y 5000 caracteres de notas privadas por juego.
+2. Indica la versión que estás jugando y el estado. Puedes guardar hasta 5000 caracteres de notas privadas por juego. Los hitos ya no se editan ni se muestran; los datos existentes se conservan al guardar por compatibilidad.
 3. Guarda el checkpoint. «Estoy jugando la última detectada» completa la versión a partir del último devlog.
 4. «Comprobar actualizaciones» consulta itch.io manualmente. Guarda los cambios pendientes antes de comprobar. Hay un intervalo mínimo de 30 segundos por juego y un máximo de 50 juegos por usuario.
 
 La primera consulta crea la referencia inicial sin avisos retroactivos. Un nuevo devlog genera una notificación interna con enlace al tracker. Las notas, hitos y versiones jugadas no se muestran a otros jugadores, incluso en perfiles públicos.
+
+El bloque de alarma indica si la versión detectada difiere de la jugada. «ACTIVA» describe la comprobación disponible mediante el botón, no un monitor automático: no hay proceso en segundo plano. El estado visual no confirma que una notificación siga sin leer; consulta la campana para comprobarlo. El aviso a Discord depende de su configuración.
 
 ## Qué significa una actualización
 
