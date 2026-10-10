@@ -5,6 +5,13 @@ import { Trophy } from 'lucide-react';
 import { api } from '@/lib/client-api';
 import { notificationAge } from '@/domain/notifications';
 import {
+  LOL_QUEUE_FILTERS,
+  filterLolMatches,
+  lolAnalytics,
+  type LolAggregate,
+  type LolQueueFilter,
+} from '@/domain/lol-analytics';
+import {
   LOL_PLATFORMS,
   LOL_TIERS,
   type LolPlatform,
@@ -59,6 +66,61 @@ function ItemBuild({ player }: { player: LolMatchParticipant }) {
         />
       </span>
     </div>
+  );
+}
+function AnalyticsPanel({
+  title,
+  rows,
+  champions = false,
+}: {
+  title: string;
+  rows: LolAggregate[];
+  champions?: boolean;
+}) {
+  return (
+    <section className="panel lol-analytics-panel" aria-label={title}>
+      <h2 className="eyebrow">{title}</h2>
+      {rows.length ? (
+        <ul className="lol-analytics-list">
+          {rows.map((row) => (
+            <li key={row.id}>
+              <div className="lol-analytics-heading">
+                {champions ? (
+                  <RiftImage src={row.icon} alt={row.label} size={40} />
+                ) : (
+                  <span className="lol-role-icon" aria-hidden="true">
+                    {row.icon}
+                  </span>
+                )}
+                <div>
+                  <strong>{row.label}</strong>
+                  <small>
+                    {row.games} partidas · {row.wins} W // {row.losses} L
+                  </small>
+                </div>
+              </div>
+              <label className="lol-winrate">
+                WR {format.format(row.winrate)}%
+                <progress value={row.winrate} max={100} aria-label={`Winrate de ${row.label}`} />
+              </label>
+              <p className="lol-analytics-kda">
+                {row.perfect ? 'Perfecto' : format.format(row.kdaRatio)} KDA
+              </p>
+              <small>
+                Promedio K // D // A: {format.format(row.kills)} // {format.format(row.deaths)} //{' '}
+                {format.format(row.assists)}
+              </small>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="muted">
+          {champions
+            ? 'Sin campeones en esta muestra.'
+            : 'Sin posiciones definidas en esta muestra.'}
+        </p>
+      )}
+    </section>
   );
 }
 function Spells({ player }: { player: LolMatchParticipant }) {
@@ -240,6 +302,7 @@ function MatchCard({ match, now }: { match: LolMatchSummary; now: string }) {
   );
 }
 export function ProfileLolTracker({ configured }: { configured: boolean }) {
+  const [queue, setQueue] = useState<LolQueueFilter>('all');
   const [riotId, setRiotId] = useState(''),
     [platform, setPlatform] = useState<LolPlatform>('la2');
   const [profile, setProfile] = useState<LolProfileData | null>(null),
@@ -261,7 +324,10 @@ export function ProfileLolTracker({ configured }: { configured: boolean }) {
         { riotId, platform },
         controller.signal,
       );
-      if (!controller.signal.aborted) setProfile(result);
+      if (!controller.signal.aborted) {
+        setProfile(result);
+        setQueue('all');
+      }
     } catch (failure) {
       if (!controller.signal.aborted)
         setError(
@@ -272,12 +338,14 @@ export function ProfileLolTracker({ configured }: { configured: boolean }) {
       if (!controller.signal.aborted) setLoading(false);
     }
   }
+  const matches = filterLolMatches(profile?.matches ?? [], queue);
+  const analytics = lolAnalytics(matches);
   return (
     <section id="rift-tracker" className="lol-tracker">
       <div className="page-heading">
         <div>
           <p className="eyebrow">RIFT TRACKER // LEAGUE OF LEGENDS</p>
-          <h2>Tu señal en la Grieta.</h2>
+          <h1>Tu señal en la Grieta.</h1>
         </div>
       </div>
       <p className="muted">
@@ -289,95 +357,134 @@ export function ProfileLolTracker({ configured }: { configured: boolean }) {
           consultar la API oficial de Riot.
         </p>
       ) : null}
-      <form
-        className="lol-search-form"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void load();
-        }}
-      >
-        <label>
-          Riot ID
-          <input
-            value={riotId}
-            maxLength={64}
-            required
-            placeholder="Nombre#TAG"
-            onChange={(event) => setRiotId(event.target.value)}
-            disabled={loading}
-          />
-        </label>
-        <label>
-          Servidor
-          <select
-            value={platform}
-            onChange={(event) => setPlatform(event.target.value as LolPlatform)}
-            disabled={loading}
+      <div className={`lol-layout-grid ${profile ? 'lol-has-profile' : ''}`}>
+        <div className="lol-main-column">
+          <form
+            className="lol-search-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void load();
+            }}
           >
-            {Object.entries(LOL_PLATFORMS).map(([id, region]) => (
-              <option key={id} value={id}>
-                {region.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button className="button" disabled={!configured || loading || !riotId.trim()}>
-          {loading ? 'Consultando Riot…' : 'Cargar Historial'}
-        </button>
-      </form>
-      {loading ? (
-        <p role="status" className="muted">
-          [ Recuperando señal, rango y partidas… ]
-        </p>
-      ) : null}
-      {error ? (
-        <p role="alert" className="error-text">
-          {error}
-        </p>
-      ) : null}
-      {profile ? (
-        <div className="lol-results">
-          <div className="panel lol-summoner-card">
-            <div className="lol-summoner-identity">
-              <RiftImage
-                key={profile.profileIconUrl}
-                src={profile.profileIconUrl}
-                alt={`Icono de ${profile.gameName}`}
-                size={80}
+            <label>
+              Riot ID
+              <input
+                value={riotId}
+                maxLength={64}
+                required
+                placeholder="Nombre#TAG"
+                onChange={(event) => setRiotId(event.target.value)}
+                disabled={loading}
               />
-              <div>
-                <h3>
-                  {profile.gameName}#{profile.tagLine}
-                </h3>
-                <p className="accent">Nivel {profile.summonerLevel}</p>
-                <span className="tag">{LOL_PLATFORMS[profile.platform].name}</span>
-              </div>
-            </div>
-            <div className="lol-ranks">
-              <RankCard rank={profile.soloQueue} status={profile.rankStatus} title="Solo / Dúo" />
-              <RankCard rank={profile.flexQueue} status={profile.rankStatus} title="Flexible" />
-            </div>
-          </div>
-          {profile.warnings.map((warning) => (
-            <p className="notice" key={warning} role="status">
-              {warning}
+            </label>
+            <label>
+              Servidor
+              <select
+                value={platform}
+                onChange={(event) => setPlatform(event.target.value as LolPlatform)}
+                disabled={loading}
+              >
+                {Object.entries(LOL_PLATFORMS).map(([id, region]) => (
+                  <option key={id} value={id}>
+                    {region.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button className="button" disabled={!configured || loading || !riotId.trim()}>
+              {loading ? 'Consultando Riot…' : 'Cargar Historial'}
+            </button>
+          </form>
+          {loading ? (
+            <p role="status" className="muted">
+              [ Recuperando señal, rango y partidas… ]
             </p>
-          ))}
-          <p className="muted">
-            Actualizado: {new Date(profile.lastUpdated).toLocaleString('es-CL')} · caché de hasta 2
-            minutos.
-          </p>
-          {profile.matches.length ? (
-            <div className="lol-match-list">
-              {profile.matches.map((match) => (
-                <MatchCard key={match.matchId} match={match} now={profile.lastUpdated} />
+          ) : null}
+          {error ? (
+            <p role="alert" className="error-text">
+              {error}
+            </p>
+          ) : null}
+          {profile ? (
+            <div className="lol-results">
+              <div className="panel lol-summoner-card">
+                <div className="lol-summoner-identity">
+                  <RiftImage
+                    key={profile.profileIconUrl}
+                    src={profile.profileIconUrl}
+                    alt={`Icono de ${profile.gameName}`}
+                    size={80}
+                  />
+                  <div>
+                    <h3>
+                      {profile.gameName}#{profile.tagLine}
+                    </h3>
+                    <p className="accent">Nivel {profile.summonerLevel}</p>
+                    <span className="tag">{LOL_PLATFORMS[profile.platform].name}</span>
+                  </div>
+                </div>
+                <div className="lol-ranks">
+                  <RankCard
+                    rank={profile.soloQueue}
+                    status={profile.rankStatus}
+                    title="Solo / Dúo"
+                  />
+                  <RankCard rank={profile.flexQueue} status={profile.rankStatus} title="Flexible" />
+                </div>
+              </div>
+              {profile.warnings.map((warning) => (
+                <p className="notice" key={warning} role="status">
+                  {warning}
+                </p>
               ))}
+              <p className="muted">
+                Actualizado: {new Date(profile.lastUpdated).toLocaleString('es-CL')} · caché de
+                hasta 2 minutos.
+              </p>
+              <div
+                className="filter-buttons lol-queue-filters"
+                role="group"
+                aria-label="Filtrar partidas por cola"
+              >
+                {Object.entries(LOL_QUEUE_FILTERS).map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={`button small ${queue === id ? '' : 'outline'}`}
+                    aria-pressed={queue === id}
+                    onClick={() => setQueue(id as LolQueueFilter)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="muted" role="status">
+                {matches.length} de {profile.matches.length} partidas cargadas ·{' '}
+                {LOL_QUEUE_FILTERS[queue]}
+              </p>
+              {matches.length ? (
+                <div className="lol-match-list">
+                  {matches.map((match) => (
+                    <MatchCard key={match.matchId} match={match} now={profile.lastUpdated} />
+                  ))}
+                </div>
+              ) : (
+                <p className="empty-state">No hay partidas disponibles para esta cola.</p>
+              )}
             </div>
-          ) : (
-            <p className="empty-state">No hay partidas disponibles para mostrar.</p>
-          )}
+          ) : null}
         </div>
-      ) : null}
+        {profile ? (
+          <aside className="lol-analytics-sidebar" aria-label="Analíticas de las partidas cargadas">
+            <p className="muted">
+              Muestra: {matches.length} partidas · {LOL_QUEUE_FILTERS[queue]}. Estadísticas del
+              historial cargado.
+            </p>
+            <AnalyticsPanel title="ROLES" rows={analytics.roles} />
+            <AnalyticsPanel title="TOP CHAMPIONS" rows={analytics.champions} champions />
+          </aside>
+        ) : null}
+      </div>
       <p className="muted lol-attribution">
         SaveState no está respaldado por Riot Games ni representa las opiniones de Riot Games o de
         las personas que crean y gestionan sus productos. Riot Games y sus propiedades asociadas son

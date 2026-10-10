@@ -123,6 +123,7 @@ export function CommandMenu({
     ['Momentos Gamer', '/highlights'],
     ['Foro · SaveState Boards', '/forum'],
     ['Discord · Terminal comunitaria', '/community/discord'],
+    ['Rift Tracker (League of Legends)', '/rift'],
     [
       authenticated ? 'Mi perfil' : 'Iniciar sesión',
       authenticated
