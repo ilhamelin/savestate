@@ -5,6 +5,7 @@ import {
   newsAge,
   parseGamingRss,
   combineGamingNews,
+  extractNewsImage,
 } from '../../src/domain/gaming-news.ts';
 
 const now = Date.parse('2026-10-10T18:00:00Z');
@@ -55,4 +56,53 @@ test('Gaming news sorts across sources, deduplicates links and caps the wire at 
   assert.equal(newsAge('2026-10-10T19:00:00Z', now), 'AHORA');
   assert.equal(newsAge('invalid', now), '');
   assert.deepEqual(combineGamingNews([]), []);
+});
+
+test('Gaming thumbnails prefer enclosures, decode escaped image tags and reject unsafe origins', () => {
+  const image = 'https://sm.ign.com/news/cover.jpg';
+  assert.equal(
+    extractNewsImage(
+      '<img src="https://media.vandal.net/second.png"/><enclosure url="' + image + '"/>',
+    ),
+    image,
+  );
+  assert.equal(
+    extractNewsImage('<media:thumbnail url="https://media.vandal.net/game.webp"/>'),
+    'https://media.vandal.net/game.webp',
+  );
+  assert.equal(
+    extractNewsImage('<img src="https://videos.vandalimg.com/game.jpg"/>'),
+    'https://videos.vandalimg.com/game.jpg',
+  );
+  assert.equal(
+    extractNewsImage(
+      '&lt;img src=&quot;https://sm.ign.com/game.jpg?width=88&amp;height=50&quot;&gt;',
+    ),
+    'https://sm.ign.com/game.jpg?width=88&height=50',
+  );
+  assert.equal(
+    extractNewsImage('&lt;img src=&#34;https://media.vandal.net/game.png&#34;&gt;'),
+    'https://media.vandal.net/game.png',
+  );
+  assert.equal(
+    extractNewsImage('<description><![CDATA[https://media.vandal.net/game.avif]]></description>'),
+    'https://media.vandal.net/game.avif',
+  );
+  assert.equal(
+    extractNewsImage('<enclosure url="https://sm.ign.com/video.mp4"/><img src="' + image + '"/>'),
+    image,
+  );
+  assert.equal(extractNewsImage('<img src="javascript:alert(1)"/>'), null);
+  assert.equal(extractNewsImage('<img src="https://sm.ign.com.evil.example/game.jpg"/>'), null);
+  assert.equal(extractNewsImage('<img src="https://user:password@sm.ign.com/game.jpg"/>'), null);
+  assert.equal(extractNewsImage('Sin imagen'), null);
+  const row = parseGamingRss(
+    item('Juego', 'https://es.ign.com/news/1').replace(
+      '</item>',
+      '<enclosure url="' + image + '"/></item>',
+    ),
+    'ign',
+    now,
+  );
+  assert.equal(row[0]?.imageUrl, image);
 });

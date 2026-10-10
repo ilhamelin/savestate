@@ -2,6 +2,30 @@
 import { useState } from 'react';
 import type { GamingNewsItem, GamingNewsSource } from '@/domain/gaming-news';
 
+function NewsThumbnail({ src }: { src?: string | null }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <div className="news-thumbnail">
+      {src && !failed ? (
+        <img
+          src={src}
+          alt=""
+          className="news-thumb-img"
+          loading="lazy"
+          decoding="async"
+          width={88}
+          height={50}
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <span className="news-thumb-placeholder" aria-hidden="true">
+          🎮
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function RecentNewsSection({ news }: { news: GamingNewsItem[] }) {
   const [source, setSource] = useState<GamingNewsSource | 'all'>('all');
   const visible = news.filter((item) => source === 'all' || source === item.source);
@@ -59,6 +83,7 @@ export function RecentNewsSection({ news }: { news: GamingNewsItem[] }) {
               <span className={`news-source-tag badge-${item.source}`}>
                 [{item.source.toUpperCase()}]
               </span>
+              <NewsThumbnail key={item.imageUrl} src={item.imageUrl} />
               <div className="news-copy">
                 <a className="news-title" href={item.url} target="_blank" rel="noopener noreferrer">
                   {item.title}

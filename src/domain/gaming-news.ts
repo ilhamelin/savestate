@@ -6,8 +6,9 @@ export interface GamingNewsItem {
   description: string;
   source: GamingNewsSource;
   relativeTime: string;
+  imageUrl?: string | null;
 }
-export function newsText(input: string) {
+function decodeNewsEntities(input: string) {
   let text = input.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1');
   const entities: Record<string, string> = {
     amp: '&',
@@ -32,13 +33,54 @@ export function newsText(input: string) {
       },
     );
   }
-  return text
+  return text;
+}
+export function newsText(input: string) {
+  return decodeNewsEntities(input)
     .replace(/<!--[\s\S]*?-->/g, ' ')
     .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/[\p{Cc}\p{Cf}]/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+export function extractNewsImage(itemXml: string): string | null {
+  const xml = decodeNewsEntities(itemXml);
+  const patterns = [
+    /<enclosure\b[^>]*\burl\s*=\s*(["'])(.*?)\1/gi,
+    /<media:(?:thumbnail|content)\b[^>]*\burl\s*=\s*(["'])(.*?)\1/gi,
+    /<img\b[^>]*\bsrc\s*=\s*(["'])(.*?)\1/gi,
+  ];
+  function safeImage(value: string | undefined) {
+    if (!value || value.length > 2000 || /[\p{Cc}\p{Cf}]/u.test(value)) return null;
+    try {
+      const url = new URL(value);
+      if (
+        !['https:', 'http:'].includes(url.protocol) ||
+        !['sm.ign.com', 'media.vandal.net', 'videos.vandalimg.com'].includes(url.hostname) ||
+        url.username ||
+        url.password ||
+        url.port ||
+        /\.(?:mp4|webm|mp3|ogg)$/i.test(url.pathname)
+      )
+        return null;
+      url.protocol = 'https:';
+      return url.href;
+    } catch {
+      return null;
+    }
+  }
+  for (const pattern of patterns) {
+    for (const match of xml.matchAll(pattern)) {
+      const url = safeImage(match[2]);
+      if (url) return url;
+    }
+  }
+  for (const match of xml.matchAll(/https?:\/\/[^"'\s<>&]+?\.(?:jpg|jpeg|png|webp|avif)/gi)) {
+    const url = safeImage(match[0]);
+    if (url && /\.(?:jpg|jpeg|png|webp|avif)$/i.test(new URL(url).pathname)) return url;
+  }
+  return null;
 }
 export function newsAge(publishedAt: string, now: number) {
   const minutes = Math.max(0, Math.floor((now - Date.parse(publishedAt)) / 60000));
@@ -83,6 +125,7 @@ export function parseGamingRss(
         publishedAt,
         source,
         relativeTime: newsAge(publishedAt, now),
+        imageUrl: extractNewsImage(item),
         description:
           description.length > 180 ? description.slice(0, 177).trimEnd() + '…' : description,
       });
