@@ -1,6 +1,6 @@
 # Savestate: Rastreador de Juegos Indie y Notificador de Versiones de itch.io
 
-**Versión:** 1.0  
+**Versión:** 1.1 (Actualizada: Sin hitos + Alarma de Versión Activa)  
 **Fecha:** 9 de octubre de 2026  
 **Área:** Perfil de Jugador, Automatizaciones y Puente de Notificaciones  
 **Estado:** Documento de Especificación y Manual Funcional  
@@ -9,55 +9,28 @@
 
 ## 1. Resumen Ejecutivo
 
-En plataformas tradicionales como Steam, Xbox o PlayStation, el tiempo de juego y los logros se registran y actualizan de forma automática en los servidores de la compañía. Sin embargo, en **juegos independientes distribuidos en itch.io**, novelas visuales o títulos episódicos en desarrollo continuo:
+En juegos independientes distribuidos en `itch.io`, novelas visuales o títulos con actualizaciones periódicas:
+1. **No hay aviso centralizado de nuevas versiones:** Cuando el desarrollador lanza un nuevo parche o capítulo (por ejemplo, el paso de la versión `1.8D/1.8E` a la `1.9` en *Starmaker Story*), el jugador suele enterarse tarde o debe revisar manualmente la página web.
+2. **Falta de visibilidad sobre si el juego está siendo vigilado:** El jugador necesita tener la certeza de que el sistema realmente le avisará en cuanto esté lista la próxima entrega.
 
-1. **No existe un cliente que sincronice logros:** El jugador no tiene dónde registrar su avance, rutas completadas ni hitos alcanzados.
-2. **No hay aviso centralizado de nuevas versiones:** Cuando el desarrollador lanza un nuevo parche, capítulo o actualización (por ejemplo, el paso de la versión `1.8E` a la `1.9` en *Starmaker Story*), el jugador suele enterarse tarde o debe revisar manualmente la página web.
+Esta implementación introduce en el **Perfil de Savestate** un **Rastreador de Versiones Indie**. Permite pegar la URL de cualquier proyecto de itch.io para monitorizar actualizaciones en tiempo real, mostrar claramente que la **Alarma de Notificación está ACTIVA**, y recibir avisos duales (en la campana de Savestate y en Discord) cuando el autor publique una versión más reciente.
 
-Esta implementación introduce en el **Perfil de Savestate** una herramienta denominada **"Indie Tracker & Notificador de Versiones"**. Permite pegar la URL de cualquier proyecto de itch.io para monitorizar actualizaciones en tiempo real, recibir alertas duales (en la web y en Discord) y llevar un diario de progreso personalizado creado a medida por el propio usuario.
+*(A petición del diseño final, se ha retirado el sistema de hitos/checklists para ofrecer una interfaz limpia, directa y enfocada en lo verdaderamente importante: las actualizaciones de versión).*
 
 ---
 
 ## 2. Los Métodos Técnicos Descubiertos en itch.io
 
-Durante la investigación técnica del sitio `https://arvusgames.itch.io/starmakerstory`, se identificaron 4 mecanismos nativos y gratuitos que permiten consultar datos sin requerir API keys complejas ni realizar web scraping frágil:
+Durante la investigación técnica del sitio `https://arvusgames.itch.io/starmakerstory`, se identificaron los siguientes mecanismos nativos y gratuitos:
 
-```
-                  ┌────────────────────────────────────────┐
-                  │          itch.io Game Page             │
-                  └───────────────────┬────────────────────┘
-                                      │
-        ┌─────────────────────────────┼─────────────────────────────┐
-        │                             │                             │
-        ▼                             ▼                             ▼
-   /data.json                    /devlog.rss                 /embed/:game_id
-(Metadatos Puros)          (Historial de Versiones)         (Widget Interactivo)
-- ID único del juego        - Título de la actualización     - Tarjeta con botón
-- Portada y capturas        - Fecha exacta de release          de compra/descarga
-- Título y autor            - Enlace a notas de parche       - Soporte tema oscuro
-- Etiquetas y género        - Detección de parches
-```
-
-### 2.1. Endpoint de Metadatos Directos (`/data.json`)
-Al agregar `/data.json` a cualquier enlace de itch.io, el servidor responde con un objeto JSON estructurado que incluye:
-* `id`: Identificador numérico del proyecto en los servidores de itch.io (`2854233`).
-* `title`: Título oficial (`Starmaker Story`).
-* `cover_image`: Portada oficial en alta resolución.
-* `authors`: Nombre y perfil del creador (`Arvus Games`).
-* `tags`: Lista de etiquetas (`visual-novel`, `pixel-art`, `adult`, etc.).
-* `screenshots`: Galería de capturas de pantalla oficiales.
-
-### 2.2. Canal de Novedades y Parches (`/devlog.rss`)
-itch.io genera un canal RSS con cada entrada del cuaderno de desarrollo (Devlog). Al consultar este archivo XML, Savestate obtiene de inmediato:
-* El título del último parche o versión (ej. `Starmaker 1.8D Bugfix`).
-* La fecha y hora exacta de publicación.
-* El enlace directo para leer el comunicado o descargar los archivos nuevos.
+* **Endpoint de Metadatos (`/data.json`):** Extrae de manera oficial el ID único, título, autor, portada en alta resolución, etiquetas y capturas sin scraping.
+* **Canal de Novedades y Parches (`/devlog.rss`):** Proporciona un feed XML en tiempo real con el título del último devlog, versión anunciada y fecha exacta de lanzamiento.
 
 ---
 
 ## 3. Experiencia de Usuario dentro del Perfil de Savestate
 
-El módulo se integra directamente en la pantalla de Perfil (`/players/[username]` o en la pestaña personal de Biblioteca/Rastreador):
+El módulo se ubica en el Perfil (`/players/[username]` o en la pestaña de Biblioteca/Rastreador):
 
 ### 3.1. Añadir un Juego al Rastreador
 1. El usuario pega el enlace de itch.io en el campo de texto (ejemplo: `https://arvusgames.itch.io/starmakerstory`).
@@ -66,37 +39,40 @@ El módulo se integra directamente en la pantalla de Perfil (`/players/[username
 
 ### 3.2. Comparador de Versiones Activo
 La tarjeta muestra una comparativa visual clara entre la partida del usuario y el estado en la red:
-* **Tu versión jugada:** Un campo editable donde el usuario indica qué versión tiene instalada en su computadora (ej. `1.8E`).
-* **Última versión en itch.io:** El valor detectado en el devlog más reciente.
-* **Semáforo de estado:**
-  * 🟢 **Al día:** Tu versión coincide con la última publicada.
-  * 🟡 **¡Nueva versión disponible!:** El sistema detecta que el desarrollador lanzó una actualización superior (por ejemplo, `1.9`). Se enciende una alerta neón con un botón que lleva directo a la descarga.
+* **Versión que estoy jugando:** Campo editable donde el usuario indica qué versión tiene instalada en su computadora (ej. `1.8D`).
+* **Botón rápido:** *"Estoy jugando la última detectada (1.8D)"*.
+* **Estado:** Menú desplegable (*Esperando actualización*, *Jugando*, *En pausa*, *Completado*).
+
+### 3.3. Panel de Alarma de Nueva Versión (Función Clave)
+Justo debajo del estado del juego, se presenta una caja estilizada que confirma el estado de la vigilancia:
 
 ```
 +--------------------------------------------------------------------------+
-|  [PORTADA]  Starmaker Story                                              |
-|             Desarrollador: Arvus Games                                   |
+|  🔔 ALARMA DE NUEVA VERSIÓN: ACTIVA                                      |
 |                                                                          |
-|  ESTADO: 🟡 ¡NUEVA ACTUALIZACIÓN DETECTADA! (v1.9)                      |
-|  Tu versión actual: [ v1.8E ]  vs  Última en itch.io: [ v1.9 ]           |
-|  [Descargar Actualización]  [Ver Notas del Parche]                       |
+|  Savestate está vigilando itch.io para este juego.                       |
+|  Cuando el desarrollador publique una versión superior a la tuya        |
+|  (actualmente 1.8D), te notificaremos al instante por:                   |
 |                                                                          |
-|  PROGRESO: [████████████░░░░░░░░] 60%                                    |
-|  [x] Prólogo completado                                                  |
-|  [x] Ruta Anna terminada                                                 |
-|  [ ] Desbloquear galería 100%                                            |
-|  [+ Añadir nuevo hito...]                                                |
-|                                                                          |
-|  NOTAS DE PARTIDA:                                                       |
-|  "Partida guardada en Slot 3 antes del evento del festival".             |
+|  ✓ Campana de Notificaciones en la Web                                   |
+|  ✓ Alerta con tarjeta interactiva en tu Servidor de Discord              |
 +--------------------------------------------------------------------------+
 ```
 
-### 3.3. Cuaderno de Hitos y Progreso Personalizado
-Como estos juegos no poseen trofeos de consola predefinidos, el usuario puede estructurar su propio camino:
-* **Checklist interactivo:** Crear tareas u objetivos propios (rutas, finales, secretos, logros inventados).
-* **Barra de porcentaje dinámica:** Se recalcula automáticamente a medida que se marcan casillas.
-* **Bloc de notas de guardado:** Espacio privado para recordar decisiones, rutas abiertas o slots de guardado donde se dejó la partida antes de actualizar.
+Si el sistema detecta que salió una versión superior (por ejemplo, la `1.9`):
+```
++--------------------------------------------------------------------------+
+|  🚨 ¡ALARMA DISPARADA: NUEVA VERSIÓN DETECTADA! (v1.9)                  |
+|                                                                          |
+|  Se ha detectado una nueva versión en el devlog oficial.                 |
+|  Tu versión actual: 1.8D  -->  Nueva versión: 1.9                        |
+|                                                                          |
+|  [Ver devlog ↗]   [Descargar Nueva Versión ↗]                            |
++--------------------------------------------------------------------------+
+```
+
+### 3.4. Bloc de Notas Privadas de Guardado
+Un desplegable compacto donde anotar recordatorios de la partida (ej: *"Slot 3 de guardado antes de la decisión del festival"*).
 
 ---
 
@@ -119,40 +95,8 @@ A través de las credenciales del bot de Discord ya configuradas en Savestate (`
 
 ---
 
-## 5. Arquitectura Técnica de Código
+## 5. Resumen de Ajustes Solicitados sobre la UI Actual
 
-### 5.1. Definición del Modelo de Datos (`src/domain/itch-tracker.ts`)
-```typescript
-export interface ItchTrackedGame {
-  id: string; // ID numérico de itch.io
-  url: string; // URL canónica del juego
-  title: string;
-  author: string;
-  coverImage: string;
-  currentPlayedVersion: string; // Versión que tiene el usuario (ej: "1.8E")
-  latestDetectedVersion: string; // Versión extraída del RSS
-  latestDevlogTitle?: string;
-  latestDevlogUrl?: string;
-  latestDevlogDate?: string;
-  status: 'playing' | 'waiting_update' | 'completed' | 'on_hold';
-  milestones: {
-    id: string;
-    title: string;
-    completed: boolean;
-  }[];
-  privateNotes?: string;
-  lastCheckedAt: string;
-}
-```
-
-### 5.2. API Routes en Next.js (`src/app/api/tracker/itch/route.ts`)
-* **`POST /api/tracker/itch/inspect`**: Recibe `{ url }`, valida que pertenezca al dominio `itch.io`, realiza fetch en paralelo a `/data.json` y `/devlog.rss`, y devuelve los metadatos limpios para la interfaz.
-* **`POST /api/tracker/itch/check-updates`**: Compara la lista de juegos registrados con las fuentes remotas. Si hay discrepancias de versión, dispara la notificación interna y el webhook de Discord.
-
----
-
-## 6. Beneficios de la Implementación
-
-1. **Autonomía:** Funciona con cualquier enlace público de itch.io sin depender de APIs de terceros de pago ni límites de peticiones.
-2. **Paz mental para el jugador:** Ya no es necesario entrar periódicamente a itch.io para verificar si salió un parche; el sistema y el bot de Discord avisan en cuanto esté disponible.
-3. **Registro histórico:** Permite que las novelas visuales y juegos independientes tengan el mismo nivel de seguimiento y presencia en el perfil de Savestate que los grandes títulos de consolas.
+1. **Eliminar Bloque de Hitos:** Se retira la barra `Hitos: 0 / 0 · 0%`, la barra de progreso, la lista de checkboxes y el input *"Nuevo hito"*.
+2. **Integrar Indicador de Alarma Activa:** Se añade el panel retro de confirmación de vigilancia activa (Web + Discord).
+3. **Mantener todo lo demás:** Portada, título, autor, devlogs, versión jugada, selector de estado, notas privadas, botones de guardar, comprobar actualizaciones y dejar de rastrear.
