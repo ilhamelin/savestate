@@ -19,9 +19,9 @@ export function filterLolMatches(matches: LolMatchSummary[], queue: LolQueueFilt
       case 'aram':
         return match.queueId === 450;
       case 'arena':
-        return match.queueId === 1700 || match.queueId === 1710;
+        return [1700, 1710, 1750].includes(match.queueId);
       case 'other':
-        return ![420, 400, 430, 450, 1700, 1710].includes(match.queueId);
+        return ![420, 400, 430, 450, 1700, 1710, 1750].includes(match.queueId);
       default:
         return true;
     }
@@ -54,8 +54,28 @@ export function lolMatchMedals(match: LolMatchSummary) {
 }
 export function lolMomentLink(match: LolMatchSummary) {
   const player = match.player;
-  const title = `¡Partidaza con ${player.championName} en ${match.gameMode}!`.slice(0, 120);
-  const draft = `${title} ${player.kills}/${player.deaths}/${player.assists} (${player.kda} KDA) · ${player.win ? 'Victoria' : 'Derrota'}.`;
+  const medals = lolMatchMedals(match);
+  const title =
+    `🎮 League of Legends: ¡Partidaza con ${player.championName} en ${match.gameMode}!`.slice(
+      0,
+      120,
+    );
+  const heading = [
+    '🎮 **Juego:** League of Legends',
+    `🗺️ **Modo:** ${match.gameMode}`,
+    `⚔️ **Campeón:** ${player.championName} (Nivel ${player.championLevel})`,
+    `🏆 **Resultado:** ${player.win ? 'Victoria 🟢' : 'Derrota 🔴'}`,
+  ].join('  \n');
+  const stats = [
+    `• **KDA:** ${player.kills}/${player.deaths}/${player.assists} (${player.kda} KDA)`,
+    `• **Daño a campeones:** ${player.totalDamage.toLocaleString('es-CL')}`,
+    `• **Oro acumulado:** ${player.gold.toLocaleString('es-CL')}`,
+    `• **Súbditos (CS):** ${player.cs} (${player.csPerMin}/min)`,
+    `• **Participación en bajas:** ${medals.killParticipation}% P/K`,
+    ...(medals.multikill ? [`• **Hazaña:** ⚡ ${medals.multikill}`] : []),
+    ...(medals.mvp ? ['• **Distintivo:** 👑 MVP del equipo'] : []),
+  ].join('  \n');
+  const draft = `${heading}\n\n${stats}\n\n🔗 Partida analizada en el [Rift Tracker](/rift).`;
   return `/highlights?${new URLSearchParams({ draft, draftTitle: title })}`;
 }
 export const LOL_ROLES = {

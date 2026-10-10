@@ -25,7 +25,7 @@ Las partidas personalizadas se excluyen de las búsquedas por Riot ID: para most
 
 ## Filtros y analíticas
 
-El historial filtra localmente por Todas, Solo/Dúo (420), Normales (400/430), ARAM (450), Arena (1700/1710) y Otros / Caos (el resto, incluyendo Flexible). Los paneles ROLES y TOP CHAMPIONS usan la muestra filtrada de todas las partidas cargadas, no toda la trayectoria del jugador. Las posiciones desconocidas se excluyen solo del panel de roles. Los cinco campeones más jugados se ordenan por cantidad y nombre en caso de empate. WR = victorias / partidas; KDA = (kills + assists) / deaths acumuladas (Perfecto cuando no hay muertes); los promedios K/D/A son por partida. Una nueva consulta restablece Todas.
+El historial filtra localmente por Todas, Solo/Dúo (420), Normales (400/430), ARAM (450), Arena (1700/1710/1750) y Otros / Caos (el resto, incluyendo Flexible). Los paneles ROLES y TOP CHAMPIONS usan la muestra filtrada de todas las partidas cargadas, no toda la trayectoria del jugador. Las posiciones desconocidas se excluyen solo del panel de roles. Los cinco campeones más jugados se ordenan por cantidad y nombre en caso de empate. WR = victorias / partidas; KDA = (kills + assists) / deaths acumuladas (Perfecto cuando no hay muertes); los promedios K/D/A son por partida. Una nueva consulta restablece Todas.
 
 ## Cuenta principal, medallas y maestría
 
@@ -40,3 +40,5 @@ Las medallas MVP son una heurística de SaveState por mayor daño o mejor KDA de
 La vista usa ProfileWallpaper con rift_arcane.jpg y fullScreen, conservando la capa oscura de contraste existente. La API acepta start (0–10000) y count (1–10), con valores por defecto 0/10. Cada página tiene su propia entrada de caché. La respuesta añade nextStart y hasMore. El cursor cuenta los IDs examinados de Riot, incluyendo partidas personalizadas o fallos de detalle, en lugar del número de tarjetas visibles. Si se interrumpe por 429, continúa desde el final del lote examinado, sin saltar los lotes no solicitados. Los errores parciales se mantienen visibles.
 
 Cargar más acumula partidas únicas por matchId, conserva los filtros y recalcula las analíticas sobre la muestra acumulada. Las búsquedas y cargas adicionales se excluyen mutuamente; los errores conservan las partidas existentes y permiten reintentar. Un listado vacío o corto indica el final del historial; un fallo del listado no avanza el cursor.
+
+Los borradores de partidas incluyen juego, modo traducido (CHERRY → Arena), campeón y nivel, resultado, KDA, daño, oro, CS, participación y medallas obtenidas. Se formatean como Markdown con saltos de línea y enlace interno a `/rift`; los totales numéricos usan formato es-CL. El título conserva el límite de 120 caracteres.

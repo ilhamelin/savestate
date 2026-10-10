@@ -277,7 +277,7 @@ export async function inspectLol(
   try {
     return await unstable_cache(
       () => loadProfile(gameName, tagLine, platform, start, count),
-      ['rift-tracker-v3', fingerprint, platform, gameName, tagLine, String(start), String(count)],
+      ['rift-tracker-v4', fingerprint, platform, gameName, tagLine, String(start), String(count)],
       { revalidate: 120 },
     )();
   } catch (error) {

@@ -159,8 +159,10 @@ export function lolQueueName(queue: number, mode: string) {
     490: 'Normal · Partida rápida',
     1700: 'Arena',
     1710: 'Arena',
+    1750: 'Arena',
   };
-  return labels[queue] ?? `${mode || 'LoL'} · Cola ${queue}`;
+  if (mode.trim().toUpperCase() === 'CHERRY') return 'Arena';
+  return labels[queue] ?? (mode.trim() || 'League of Legends');
 }
 export function dataDragonVersion(versions: string[], gameVersion?: string): string {
   const valid = versions.filter((value) => /^\d+\.\d+\.\d+$/.test(value));

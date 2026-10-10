@@ -55,10 +55,10 @@ function match(
   };
 }
 test('Rift queue filters cover exact queues and preserve input order', () => {
-  const rows = [420, 400, 430, 450, 440, 1700, 1710, 900, 490].map((id) =>
+  const rows = [420, 400, 430, 450, 440, 1700, 1710, 1750, 900, 490].map((id) =>
     match(id, 'Ahri', 'MIDDLE', true),
   );
-  assert.equal(filterLolMatches(rows, 'all').length, 9);
+  assert.equal(filterLolMatches(rows, 'all').length, 10);
   assert.deepEqual(
     filterLolMatches(rows, 'solo').map((m) => m.queueId),
     [420],
@@ -77,9 +77,9 @@ test('Rift queue filters cover exact queues and preserve input order', () => {
   );
   assert.deepEqual(
     filterLolMatches(rows, 'arena').map((m) => m.queueId),
-    [1700, 1710],
+    [1700, 1710, 1750],
   );
-  assert.equal(rows.length, 9);
+  assert.equal(rows.length, 10);
 });
 test('Rift analytics aggregate KDA from totals, averages and truthful roles', () => {
   const rows = [
@@ -151,4 +151,49 @@ test('Rift medals compare only teammates, allow tied MVP and handle zero team ki
   assert.equal(link.pathname, '/highlights');
   assert.ok(link.searchParams.get('draft')?.includes('Rammus'));
   assert.ok(link.searchParams.get('draftTitle')!.length <= 120);
+});
+
+test('Rift highlights preserve rich Markdown statistics and only earned medals', () => {
+  const row = match(420, 'Rammus', 'JUNGLE', true, 5, 2, 22);
+  row.gameMode = 'Solo/Dúo';
+  row.player.kda = '13.5';
+  row.player.largestMultiKill = 5;
+  row.participants = [
+    row.player,
+    { ...row.player, puuid: 'ally', kills: 35, deaths: 5, assists: 0, totalDamage: 30000 },
+  ];
+  const params = new URL(lolMomentLink(row), 'https://savestate.test').searchParams;
+  assert.equal(
+    params.get('draftTitle'),
+    '🎮 League of Legends: ¡Partidaza con Rammus en Solo/Dúo!',
+  );
+  const draft = params.get('draft')!;
+  for (const text of [
+    '**Juego:** League of Legends',
+    '**Modo:** Solo/Dúo',
+    '**Campeón:** Rammus (Nivel 18)',
+    '**Resultado:** Victoria 🟢',
+    '**KDA:** 5/2/22 (13.5 KDA)',
+    '**Daño a campeones:** 20.000',
+    '**Oro acumulado:** 15.000',
+    '**Súbditos (CS):** 200 (6.67/min)',
+    '**Participación en bajas:** 68% P/K',
+    '**Hazaña:** ⚡ PENTAKILL',
+    '**Distintivo:** 👑 MVP del equipo',
+    '[Rift Tracker](/rift)',
+  ])
+    assert.ok(draft.includes(text), text);
+  assert.ok(draft.includes('\n\n'));
+  row.player.win = false;
+  row.player.largestMultiKill = 0;
+  row.participants = [row.player];
+  const defeat = new URL(lolMomentLink(row), 'https://savestate.test').searchParams.get('draft')!;
+  assert.ok(defeat.includes('Derrota 🔴'));
+  assert.equal(defeat.includes('**Hazaña:**'), false);
+  assert.equal(defeat.includes('**Distintivo:**'), false);
+  row.player.championName = 'A'.repeat(200);
+  assert.equal(
+    new URL(lolMomentLink(row), 'https://savestate.test').searchParams.get('draftTitle')!.length,
+    120,
+  );
 });

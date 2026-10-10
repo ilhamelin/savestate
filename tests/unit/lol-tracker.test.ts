@@ -10,7 +10,16 @@ import {
   dataDragonAssets,
   normalizeLolRank,
   normalizeLolMatch,
+  lolQueueName,
 } from '../../src/domain/lol-tracker.ts';
+
+test('Rift translates Arena queues and internal CHERRY mode without technical suffixes', () => {
+  for (const queue of [1700, 1710, 1750]) assert.equal(lolQueueName(queue, 'CHERRY'), 'Arena');
+  assert.equal(lolQueueName(9999, 'CHERRY'), 'Arena');
+  assert.equal(lolQueueName(420, 'CLASSIC'), 'Solo/Dúo');
+  assert.equal(lolQueueName(9999, 'URF'), 'URF');
+  assert.equal(lolQueueName(9999, ''), 'League of Legends');
+});
 
 const assets = dataDragonAssets(
   '16.20.1',
