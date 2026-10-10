@@ -123,7 +123,6 @@ export function CommandMenu({
     ['Momentos Gamer', '/highlights'],
     ['Foro · SaveState Boards', '/forum'],
     ['Discord · Terminal comunitaria', '/community/discord'],
-    ['Savestate Comms · Frecuencias de voz', '/community/voice'],
     [
       authenticated ? 'Mi perfil' : 'Iniciar sesión',
       authenticated

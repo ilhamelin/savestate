@@ -12,7 +12,7 @@ test('HTTP: cabeceras del proxy en páginas y errores API', { skip: !base }, asy
     assert.equal(response.status, status);
     assert.equal(
       response.headers.get('permissions-policy'),
-      'camera=(), microphone=(self), geolocation=()',
+      'camera=(), microphone=(), geolocation=()',
     );
     assert.equal(response.headers.get('referrer-policy'), 'strict-origin-when-cross-origin');
     assert.equal(response.headers.get('x-frame-options'), 'DENY');
