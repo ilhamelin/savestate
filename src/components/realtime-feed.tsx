@@ -63,20 +63,17 @@ export function RealtimeFeed() {
   }, [synchronize]);
   return (
     <div className="feed-telemetry" data-state={connection} aria-label="Telemetría de transmisión">
-      <div>
-        <p className="eyebrow" role="status">
-          <span className="status-dot" />{' '}
+      <div className="feed-telemetry-details">
+        <p className="feed-sync-status" role="status">
+          <span className="status-dot" aria-hidden="true" />{' '}
           {connection === 'SUBSCRIBED'
-            ? 'EN VIVO · WebSocket conectado'
+            ? 'EN VIVO · WebSocket'
             : connection === 'CONNECTING'
               ? 'Conectando WebSocket…'
               : 'WebSocket desconectado · respaldo activo'}
         </p>
         <p className="muted">
-          Sincronización automática cada 30s ·{' '}
-          {seconds === null
-            ? 'Esperando primera señal'
-            : `Última señal: hace ${seconds}s (${source})`}
+          Auto 30s · {seconds === null ? 'Esperando primera señal' : `hace ${seconds}s (${source})`}
         </p>
       </div>
       <button
@@ -86,7 +83,7 @@ export function RealtimeFeed() {
         onClick={() => synchronize('Sincronización manual')}
       >
         <RefreshCw size={16} aria-hidden="true" className={pending ? 'sync-spin' : undefined} />
-        {pending ? 'Sincronizando…' : 'Sincronizar'}
+        {pending ? 'Actualizando…' : 'Actualizar'}
       </button>
     </div>
   );

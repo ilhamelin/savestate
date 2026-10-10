@@ -5,13 +5,25 @@ import { isConfigured } from '@/lib/env';
 import { SetupNotice } from '@/components/setup-notice';
 import { RealtimeFeed } from '@/components/realtime-feed';
 import { dbCheck } from '@/lib/http';
-import { STATUS_LABELS, type GameStatus } from '@/domain/model';
+import { FeedActivityCard } from '@/components/feed-activity-card';
 import { redirect } from 'next/navigation';
 export const metadata = { title: 'Transmisión' };
-export default async function FeedPage() {
+const filters = [
+  { id: 'all', label: 'Todos' },
+  { id: 'platinum', label: '🏆 Platinados' },
+  { id: 'rated', label: '⭐ Con Nota' },
+  { id: 'playing', label: '🎮 Jugando' },
+] as const;
+export default async function FeedPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ filter?: string | string[] }>;
+}) {
   if (!isConfigured()) return <SetupNotice />;
   const user = await currentUser();
   if (!user) redirect('/login?next=/feed');
+  const requested = (await searchParams).filter;
+  const filter = filters.find((item) => item.id === requested)?.id ?? 'all';
   const db = await serverClient();
   const [followResult, friendResult] = await Promise.all([
     db.from('follows').select('*').eq('follower_id', user.id),
@@ -32,27 +44,28 @@ export default async function FeedPage() {
       ),
     ]),
   ];
-  const { data: events, error } = await db
+  let query = db
     .from('activity_logs')
     .select('*')
     .in('user_id', ids)
     .order('created_at', { ascending: false })
-    .limit(50);
+    .order('id', { ascending: false });
+  if (filter === 'platinum' || filter === 'playing')
+    query = query.eq('event_data->>status', filter);
+  if (filter === 'rated') query = query.not('event_data->>rating', 'is', null);
+  const { data: events, error } = await query.limit(50);
   dbCheck(error);
+  const gameIds = [...new Set((events ?? []).map((event) => event.target_game_id).filter(Boolean))];
   const [players, games] = await Promise.all([
     db.from('profiles').select('*').in('id', ids),
-    events?.length
-      ? db
-          .from('games')
-          .select('*')
-          .in(
-            'id',
-            events.map((e) => e.target_game_id),
-          )
+    gameIds.length
+      ? db.from('games').select('*').in('id', gameIds)
       : Promise.resolve({ data: [], error: null }),
   ]);
   dbCheck(players.error);
   dbCheck(games.error);
+  const playerById = new Map(players.data?.map((player) => [player.id, player]));
+  const gameById = new Map(games.data?.map((game) => [game.id, game]));
   return (
     <>
       <div className="page-heading">
@@ -63,51 +76,37 @@ export default async function FeedPage() {
         </div>
       </div>
       <RealtimeFeed />
-      <section className="panel">
+      <nav className="filter-buttons feed-filters" aria-label="Filtrar actividad">
+        {filters.map((item) => (
+          <Link
+            key={item.id}
+            href={item.id === 'all' ? '/feed' : `/feed?filter=${item.id}`}
+            className={`button small ${filter === item.id ? '' : 'outline'}`}
+            aria-current={filter === item.id ? 'page' : undefined}
+            scroll={false}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+      <section className="feed-cards" aria-label="Actividad de jugadores">
         {events?.map((event) => {
-          const player = players.data?.find((p) => p.id === event.user_id),
-            game = games.data?.find((g) => g.id === event.target_game_id);
-          const state = STATUS_LABELS[event.event_data.status as GameStatus] ?? 'Actualizado';
-          const moment = event.event_type === 'moment_shared';
           return (
-            <article className="feed-item" key={event.id}>
-              <span className="accent" aria-hidden="true">
-                ▣
-              </span>
-              <div>
-                <p>
-                  <Link className="accent" href={`/players/${player?.username}`}>
-                    @{player?.username}
-                  </Link>{' '}
-                  {moment ? 'compartió un momento en ' : 'guardó un checkpoint en '}
-                  <Link className="accent" href={`/games/${game?.slug}`}>
-                    {game?.title}
-                  </Link>
-                </p>
-                {moment && typeof event.event_data.post_id === 'string' ? (
-                  <Link
-                    className="accent"
-                    href={`/highlights?post=${encodeURIComponent(event.event_data.post_id)}`}
-                  >
-                    {typeof event.event_data.title === 'string'
-                      ? event.event_data.title
-                      : 'Ver momento'}
-                  </Link>
-                ) : null}
-                <small>
-                  [{moment ? 'Momento Gamer' : state}]{' '}
-                  {typeof event.event_data.rating === 'number'
-                    ? `· ★ ${event.event_data.rating}/10 `
-                    : ''}
-                  · {new Date(event.created_at).toISOString().slice(0, 10)}
-                </small>
-              </div>
-            </article>
+            <FeedActivityCard
+              key={event.id}
+              event={event}
+              player={playerById.get(event.user_id)}
+              game={gameById.get(event.target_game_id)}
+            />
           );
         })}
         {!events?.length ? (
           <div className="empty-state">
-            <h2>La transmisión está en silencio.</h2>
+            <h2>
+              {filter === 'all'
+                ? 'La transmisión está en silencio.'
+                : 'No hay checkpoints con este filtro.'}
+            </h2>
             <Link className="button" href="/players">
               Encuentra jugadores
             </Link>
