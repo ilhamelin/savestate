@@ -2639,6 +2639,262 @@ a.feed-card-cover:hover {
   border: 1px solid var(--line);
   border-radius: 8px;
 }
+.lol-tracker {
+  margin: 2rem 0;
+  min-width: 0;
+}
+.lol-search-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.75rem;
+}
+.lol-search-form label {
+  min-width: 0;
+}
+.lol-results,
+.lol-match-list {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  min-width: 0;
+}
+.lol-summoner-card {
+  border-color: var(--accent);
+  background: linear-gradient(120deg, #00f0ff08, transparent), var(--surface);
+}
+.lol-summoner-identity,
+.lol-champion,
+.lol-rank-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+.lol-summoner-identity h3 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.lol-summoner-identity p {
+  margin: 0.4rem 0;
+}
+.lol-icon {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: #111a24;
+  color: var(--muted);
+  vertical-align: middle;
+}
+.lol-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.lol-ranks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+.lol-rank-card {
+  padding: 1rem;
+  border: 1px solid var(--line);
+  background: #00000030;
+}
+.lol-rank-card > div {
+  flex: 1;
+  min-width: 0;
+}
+.lol-rank-card p {
+  margin: 0.25rem 0;
+}
+.lol-rank-emblem {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 60px;
+  flex-shrink: 0;
+  color: #8393a3;
+  background: #8393a312;
+  border: 1px solid currentColor;
+  border-radius: 8px 8px 20px 20px;
+}
+.tier-bronze {
+  color: #cd9966;
+}
+.tier-silver {
+  color: #bbc9d8;
+}
+.tier-gold,
+.tier-challenger {
+  color: #ffd700;
+}
+.tier-platinum,
+.tier-diamond {
+  color: #78d7f7;
+}
+.tier-emerald {
+  color: #33ff99;
+}
+.tier-master {
+  color: #c591ff;
+}
+.tier-grandmaster {
+  color: #ff718b;
+}
+.lol-winrate {
+  font-size: 0.75rem;
+  gap: 0.3rem;
+}
+.lol-winrate progress {
+  width: 100%;
+  height: 8px;
+  accent-color: var(--accent);
+}
+.lol-match-card {
+  min-width: 0;
+  border-left-width: 4px;
+}
+.lol-victory {
+  border-left-color: #33ff66;
+}
+.lol-defeat {
+  border-left-color: #ff537f;
+}
+.lol-victory .lol-match-heading > strong,
+.lol-kda-good {
+  color: #33ff66;
+}
+.lol-defeat .lol-match-heading > strong,
+.lol-kda-low {
+  color: #ff8ba7;
+}
+.lol-match-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  font-size: 0.8rem;
+  margin-bottom: 1rem;
+}
+.lol-match-heading time {
+  margin-left: auto;
+  color: var(--muted);
+}
+.lol-match-overview {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) auto minmax(150px, 1fr) minmax(0, 248px);
+  align-items: center;
+  gap: 1rem;
+}
+.lol-champion small,
+.lol-kda small,
+.lol-team-table small,
+.lol-match-stats span {
+  display: block;
+  font-size: 0.75rem;
+}
+.lol-champion strong {
+  overflow-wrap: anywhere;
+}
+.lol-kda {
+  text-align: center;
+}
+.lol-kda strong {
+  font-size: 1.05rem;
+  white-space: nowrap;
+}
+.lol-build {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 32px));
+  gap: 4px;
+  align-items: center;
+  max-width: 100%;
+}
+.lol-trinket .lol-icon {
+  border-color: var(--accent);
+}
+.lol-spells {
+  display: flex;
+  gap: 4px;
+  margin: 0.3rem 0;
+}
+.lol-match-details {
+  margin-top: 1rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.75rem;
+}
+.lol-match-details summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 0.8rem;
+}
+.lol-team-table-scroll {
+  overflow-x: auto;
+  margin-top: 1rem;
+  max-width: 100%;
+}
+.lol-team-table-scroll:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.lol-team-table {
+  width: 100%;
+  min-width: 820px;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+.lol-team-table caption {
+  text-align: left;
+  padding: 0.5rem;
+  color: var(--muted);
+}
+.lol-team-table th,
+.lol-team-table td {
+  text-align: left;
+  padding: 0.65rem;
+  border-bottom: 1px solid var(--line);
+}
+.lol-table-player {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow-wrap: anywhere;
+}
+.lol-team-heading {
+  background: #111a24;
+  color: var(--accent);
+}
+.lol-selected-player {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+.lol-attribution {
+  font-size: 0.65rem;
+  margin-top: 1.5rem;
+}
+@media (max-width: 1000px) {
+  .lol-match-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .lol-search-form,
+  .lol-ranks,
+  .lol-match-overview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .lol-kda {
+    text-align: left;
+  }
+  .lol-match-heading time {
+    margin-left: 0;
+  }
+}
 .indie-tracker {
   margin: 2rem 0;
   min-width: 0;
