@@ -7,6 +7,81 @@ export interface DiscordMessage {
   createdAt: string;
   attachments: { name: string; url: string }[];
 }
+export function discordMessageOrigin(content: string) {
+  const match = /^(?:\*\*)?\[@([a-zA-Z0-9_]{1,30}) en Savestate\]:(?:\*\*)?\s*/.exec(content);
+  return {
+    web: Boolean(match),
+    author: match?.[1],
+    content: match ? content.slice(match[0].length) : content,
+  };
+}
+export function discordCoverUrl(input?: string | null): string | null {
+  try {
+    const url = new URL(input ?? '');
+    return url.protocol === 'https:' &&
+      url.hostname === 'images.igdb.com' &&
+      !url.port &&
+      !url.username &&
+      !url.password
+      ? url.toString()
+      : null;
+  } catch {
+    return null;
+  }
+}
+export function discordImageAttachment(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.protocol === 'https:' &&
+      !parsed.port &&
+      !parsed.username &&
+      !parsed.password &&
+      ['cdn.discordapp.com', 'media.discordapp.net'].includes(parsed.hostname) &&
+      /\.(png|jpe?g|webp|gif)$/i.test(parsed.pathname)
+    );
+  } catch {
+    return false;
+  }
+}
+// Keep inline image origins aligned with the proxy's img-src policy.
+export function discordInlineMedia(content: string): { text: string; urls: string[] } {
+  const urls: string[] = [];
+  const text = content.replace(/https?:\/\/[^\s<>]+/gi, (raw) => {
+    const candidate = raw.replace(/[.,!?;:)\]]+$/, '');
+    try {
+      const url = new URL(candidate);
+      const gifProvider =
+        ['media.tenor.com', 'c.tenor.com', 'klipy.com'].includes(url.hostname) ||
+        url.hostname.endsWith('.giphy.com') ||
+        url.hostname.endsWith('.klipy.com');
+      const directImage = /\.(png|jpe?g|webp|gif)$/i.test(url.pathname);
+      const imageHost = [
+        'cdn.discordapp.com',
+        'media.discordapp.net',
+        'images.igdb.com',
+        'img.itch.zone',
+      ].includes(url.hostname);
+      if (
+        url.protocol !== 'https:' ||
+        url.username ||
+        url.password ||
+        url.port ||
+        !(gifProvider || (imageHost && directImage))
+      )
+        return raw;
+      const normalized = url.toString();
+      if (!urls.includes(normalized)) {
+        if (urls.length >= 5) return raw;
+        urls.push(normalized);
+      }
+      return raw.slice(candidate.length);
+    } catch {
+      return raw;
+    }
+  });
+  return { text: text.trim(), urls };
+}
 export function discordInvite(input: string): string | null {
   try {
     const url = new URL(input);

@@ -8,6 +8,7 @@ import {
   discordWebhook,
   normalizedDiscordMessages,
   completedDiscordProgress,
+  discordCoverUrl,
 } from '@/domain/discord';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/database.types';
@@ -98,6 +99,7 @@ export type DiscordCheckpoint = {
   username: string;
   details: string;
   path?: string;
+  coverUrl?: string | null;
 };
 export async function notifyDiscordCheckpoint(event: DiscordCheckpoint) {
   const webhook = discordWebhook(process.env.DISCORD_WEBHOOK_URL ?? '');
@@ -118,6 +120,7 @@ export async function notifyDiscordCheckpoint(event: DiscordCheckpoint) {
     }
   }
   const endpoint = new URL(webhook);
+  const coverUrl = discordCoverUrl(event.coverUrl);
   endpoint.searchParams.set('with_components', 'true');
   endpoint.searchParams.set('wait', 'true');
   await discordRequest(endpoint.toString(), {
@@ -131,6 +134,7 @@ export async function notifyDiscordCheckpoint(event: DiscordCheckpoint) {
           description: `@${event.username}: ${event.details}`.slice(0, 1500),
           timestamp: new Date().toISOString(),
           url: target.toString(),
+          ...(coverUrl ? { thumbnail: { url: coverUrl } } : {}),
         },
       ],
       components: [
@@ -172,7 +176,7 @@ export async function notifyDiscordProgress(
       db.from('profiles').select('username,library_private').eq('id', userId).maybeSingle(),
       db
         .from('user_games')
-        .select('status,games!inner(title)')
+        .select('status,games!inner(title,cover_url)')
         .eq('id', entryId)
         .eq('user_id', userId)
         .maybeSingle(),
@@ -195,6 +199,7 @@ export async function notifyDiscordProgress(
     scheduleDiscordCheckpoint({
       type: 'platinum',
       username: profile.data.username,
+      coverUrl: entry.data.games.cover_url,
       details: `completó el 100% de logros/trofeos de ${entry.data.games.title} (${(logs.data ?? []).reduce((sum, log) => sum + Number(log.hours_played), 0).toFixed(2)} horas registradas).`,
       path: `/players/${encodeURIComponent(profile.data.username)}#achievements-showcase-heading`,
     });

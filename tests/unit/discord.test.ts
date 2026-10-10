@@ -6,7 +6,69 @@ import {
   completedDiscordProgress,
   discordWebhook,
   normalizedDiscordMessages,
+  discordMessageOrigin,
+  discordCoverUrl,
+  discordImageAttachment,
+  discordInlineMedia,
 } from '../../src/domain/discord.ts';
+test('Discord inline media preserves text, signed URLs and restricts external origins', () => {
+  const gif = 'https://media.tenor.com/example/retro.gif';
+  assert.deepEqual(discordInlineMedia(`Hola ${gif} ¡GG!`), { text: 'Hola  ¡GG!', urls: [gif] });
+  assert.deepEqual(discordInlineMedia(`${gif} ${gif}`), { text: '', urls: [gif] });
+  for (const url of [
+    'https://cdn.discordapp.com/attachments/a.png?ex=123&sig=abc',
+    'https://media.giphy.com/media/example/giphy.gif',
+    'https://i.giphy.com/example.webp',
+    'https://c.tenor.com/example',
+    'https://klipy.com/gifs/example',
+    'https://media.klipy.com/example.gif',
+  ])
+    assert.equal(discordInlineMedia(url).urls.length, 1);
+  for (const url of [
+    'http://media.tenor.com/example.gif',
+    'https://media.tenor.com.evil.test/example.gif',
+    'https://user@media.giphy.com/example.gif',
+    'https://media.tenor.com:8080/example.gif',
+    'https://evil.test/example.png',
+    'https://cdn.discordapp.com/attachments/example.svg',
+  ])
+    assert.deepEqual(discordInlineMedia(url), { text: url, urls: [] });
+  assert.equal(
+    discordInlineMedia(
+      Array.from({ length: 6 }, (_, n) => `https://i.giphy.com/${n}.gif`).join(' '),
+    ).urls.length,
+    5,
+  );
+  assert.deepEqual(discordInlineMedia(`Mira (${gif}).`), { text: 'Mira ().', urls: [gif] });
+});
+test('Discord presentation cleans web prefixes and validates image origins', () => {
+  assert.deepEqual(discordMessageOrigin('**[@player en Savestate]:** Hola'), {
+    web: true,
+    author: 'player',
+    content: 'Hola',
+  });
+  assert.equal(discordMessageOrigin('[@player en Savestate]: Hola').content, 'Hola');
+  assert.equal(discordMessageOrigin('Hola [@player en Savestate]:').web, false);
+  assert.equal(discordImageAttachment('https://cdn.discordapp.com/a.JPG?ex=123'), true);
+  assert.equal(discordImageAttachment('https://media.discordapp.net/a.gif'), true);
+  for (const url of [
+    'https://evil.test/a.png',
+    'https://cdn.discordapp.com/a.svg',
+    'https://user@cdn.discordapp.com/a.png',
+  ])
+    assert.equal(discordImageAttachment(url), false);
+  assert.equal(
+    discordCoverUrl('https://images.igdb.com/igdb/image/upload/t_cover_big/test.jpg'),
+    'https://images.igdb.com/igdb/image/upload/t_cover_big/test.jpg',
+  );
+  for (const url of [
+    undefined,
+    'http://images.igdb.com/a.jpg',
+    'https://images.igdb.com.evil.test/a.jpg',
+    'https://user@images.igdb.com/a.jpg',
+  ])
+    assert.equal(discordCoverUrl(url), null);
+});
 test('Discord invite links and 100% checkpoints reject unsafe or incomplete values', () => {
   assert.equal(
     discordInvite('https://discord.gg/SaveState?source=web'),

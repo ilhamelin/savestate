@@ -2288,6 +2288,65 @@ nav a:hover,
   flex: 1;
   min-width: 0;
 }
+.discord-live,
+.badge-savestate,
+.badge-discord {
+  font-size: 0.75rem;
+}
+.discord-live,
+.badge-savestate {
+  color: #00f0ff;
+}
+.badge-discord {
+  color: #bc9bff;
+}
+.badge-savestate,
+.badge-discord {
+  display: inline-block;
+  padding: 0.15rem 0.35rem;
+  border: 1px solid currentColor;
+  background: #00000040;
+}
+.discord-attachment-thumb {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 160px;
+  object-fit: contain;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+}
+.discord-character-count {
+  display: block;
+  text-align: right;
+  font-size: 0.75rem;
+}
+.discord-inline-media {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 240px;
+  object-fit: contain;
+  border: 1px solid var(--border, var(--line));
+  border-radius: 4px;
+  margin-top: 0.5rem;
+}
+.live-pulse {
+  display: inline-block;
+  animation: discord-live-pulse 1.8s ease-in-out infinite;
+}
+@keyframes discord-live-pulse {
+  50% {
+    opacity: 0.4;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-pulse {
+    animation: none;
+  }
+}
 
 .collection-dashboard {
   display: grid;
