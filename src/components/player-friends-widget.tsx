@@ -8,13 +8,7 @@ import { api } from '@/lib/client-api';
 import { friendLevelTier } from '@/domain/player-friends';
 import type { FriendProfile, FriendRequest, PlayerFriend } from '@/domain/player-friends';
 
-function FriendIdentity({
-  profile,
-  currentGame,
-}: {
-  profile: FriendProfile;
-  currentGame?: string | null;
-}) {
+function FriendIdentity({ profile }: { profile: FriendProfile }) {
   return (
     <Link className="friend-identity" href={`/players/${profile.username}`}>
       <span className="friend-avatar">
@@ -26,9 +20,6 @@ function FriendIdentity({
       </span>
       <span className="friend-copy">
         <strong>@{profile.username}</strong>
-        <span className={currentGame ? 'friend-playing' : 'muted'}>
-          {currentGame ? `Jugando ${currentGame}` : profile.terminal_status || 'Ready to play'}
-        </span>
       </span>
       <span
         className={`friend-level-circle friend-level-${friendLevelTier(profile.level)}`}
@@ -120,7 +111,7 @@ export function PlayerFriendsWidget({
           <ul className="friend-list">
             {friends.map((friend) => (
               <li key={friend.id}>
-                <FriendIdentity profile={friend} currentGame={friend.current_game} />
+                <FriendIdentity profile={friend} />
               </li>
             ))}
           </ul>
