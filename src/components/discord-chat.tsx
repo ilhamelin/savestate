@@ -18,12 +18,74 @@ function formatMessageDate(date: string) {
     hour12: false,
   });
 }
-function InlineMedia({ url }: { url: string }) {
+type ActiveMedia = { url: string; alt?: string };
+function MediaLightbox({ media, onClose }: { media: ActiveMedia; onClose: () => void }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    const element = dialog.current;
+    const previousOverflow = document.body.style.overflow;
+    element?.showModal();
+    document.body.style.overflow = 'hidden';
+    return () => {
+      element?.close();
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+  return (
+    <dialog
+      ref={dialog}
+      className="discord-lightbox-overlay"
+      aria-label="Visor de imágenes y GIFs"
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+    >
+      <div className="discord-lightbox-dialog">
+        <div className="filter-buttons">
+          <button type="button" className="button outline small" onClick={onClose}>
+            ✕ Cerrar
+          </button>
+          <a
+            className="button outline small"
+            href={media.url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            ↗ Abrir original
+          </a>
+        </div>
+        {failed ? (
+          <p role="status">No se pudo cargar el medio. Puedes abrir el original.</p>
+        ) : (
+          <Image
+            className="discord-lightbox-image"
+            src={media.url}
+            width={1200}
+            height={800}
+            alt={media.alt ?? 'Imagen o GIF compartido'}
+            unoptimized
+            referrerPolicy="no-referrer"
+            onError={() => setFailed(true)}
+          />
+        )}
+      </div>
+    </dialog>
+  );
+}
+function InlineMedia({ url, onOpen }: { url: string; onOpen: (media: ActiveMedia) => void }) {
   const [failed, setFailed] = useState(false);
   return (
     <div>
       {!failed ? (
-        <a href={url} target="_blank" rel="noopener noreferrer">
+        <button
+          type="button"
+          className="discord-media-button"
+          aria-label="Ampliar imagen o GIF compartido"
+          aria-haspopup="dialog"
+          onClick={() => onOpen({ url, alt: 'Imagen o GIF compartido' })}
+        >
           <Image
             className="discord-inline-media"
             src={url}
@@ -35,7 +97,7 @@ function InlineMedia({ url }: { url: string }) {
             referrerPolicy="no-referrer"
             onError={() => setFailed(true)}
           />
-        </a>
+        </button>
       ) : (
         <p className="muted">No se pudo cargar la imagen o el GIF.</p>
       )}
@@ -46,6 +108,7 @@ function InlineMedia({ url }: { url: string }) {
   );
 }
 export function DiscordChat({ inviteUrl, siteUrl }: { inviteUrl: string | null; siteUrl: string }) {
+  const [activeMedia, setActiveMedia] = useState<ActiveMedia | null>(null);
   const [messages, setMessages] = useState<DiscordMessage[]>([]);
   const [content, setContent] = useState(''),
     [error, setError] = useState('');
@@ -202,12 +265,18 @@ export function DiscordChat({ inviteUrl, siteUrl }: { inviteUrl: string | null; 
                   <p>Mensaje sin texto disponible.</p>
                 ) : null}
                 {media.urls.map((url) => (
-                  <InlineMedia key={url} url={url} />
+                  <InlineMedia key={url} url={url} onOpen={setActiveMedia} />
                 ))}
                 {message.attachments.map((file) => (
                   <p key={file.url}>
-                    <a href={file.url} target="_blank" rel="noopener noreferrer">
-                      {discordImageAttachment(file.url) ? (
+                    {discordImageAttachment(file.url) ? (
+                      <button
+                        type="button"
+                        className="discord-media-button"
+                        aria-label={`Ampliar ${file.name}`}
+                        aria-haspopup="dialog"
+                        onClick={() => setActiveMedia({ url: file.url, alt: file.name })}
+                      >
                         <Image
                           className="discord-attachment-thumb"
                           src={file.url}
@@ -216,10 +285,12 @@ export function DiscordChat({ inviteUrl, siteUrl }: { inviteUrl: string | null; 
                           alt={file.name}
                           unoptimized
                         />
-                      ) : (
-                        `↗ ${file.name}`
-                      )}
-                    </a>
+                      </button>
+                    ) : (
+                      <a href={file.url} target="_blank" rel="noopener noreferrer">
+                        ↗ {file.name}
+                      </a>
+                    )}
                   </p>
                 ))}
               </div>
@@ -258,6 +329,13 @@ export function DiscordChat({ inviteUrl, siteUrl }: { inviteUrl: string | null; 
       <p className="muted">
         Lo que envíes se publicará en el canal de Discord con tu nombre de usuario de SaveState.
       </p>
+      {activeMedia ? (
+        <MediaLightbox
+          key={activeMedia.url}
+          media={activeMedia}
+          onClose={() => setActiveMedia(null)}
+        />
+      ) : null}
     </section>
   );
 }
