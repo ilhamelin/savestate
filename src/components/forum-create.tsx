@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ForumCategory } from '@/domain/forum';
 import type { Game } from '@/domain/model';
@@ -10,10 +11,12 @@ export function ForumCreate({
   categories,
   initialCategory,
   initialGame,
+  toolbar,
 }: {
   categories: ForumCategory[];
   initialCategory?: string;
   initialGame?: Game | null;
+  toolbar?: ReactNode;
 }) {
   const [open, setOpen] = useState(Boolean(initialGame)),
     [category, setCategory] = useState(initialCategory ?? categories[0]?.id ?? 'general-gaming'),
@@ -46,14 +49,17 @@ export function ForumCreate({
   }, [query, open]);
   return (
     <section className="forum-create">
-      <button
-        type="button"
-        className="button"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-      >
-        {open ? 'Cerrar editor' : '+ Crear nuevo hilo'}
-      </button>
+      <div className="forum-toolbar">
+        {toolbar}
+        <button
+          type="button"
+          className="button"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+        >
+          {open ? 'Cerrar editor' : '+ Crear nuevo hilo'}
+        </button>
+      </div>
       {open ? (
         <form
           className="panel"

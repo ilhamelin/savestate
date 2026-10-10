@@ -11,6 +11,9 @@ import {
   FORUM_REACTIONS,
   forumText,
   forumReaction,
+  forumSearch,
+  forumSearchPattern,
+  type ForumSort,
   validateForumReply,
   validateForumThread,
   type ForumAuthor,
@@ -75,22 +78,26 @@ async function enrich(
 }
 // Anonymous, public data only. No cookies or viewer-dependent values enter this cache.
 const cachedDirectory = unstable_cache(
-  async (projectUrl: string) => {
+  async (projectUrl: string, search: string, sort: ForumSort) => {
     const db = createClient<Database>(projectUrl, publicEnv().key, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
+    let threads = db
+      .from('forum_threads')
+      .select('*,forum_replies(user_id,created_at)')
+      .order('created_at', { referencedTable: 'forum_replies', ascending: false })
+      .order('id', { referencedTable: 'forum_replies', ascending: false })
+      .limit(1, { referencedTable: 'forum_replies' });
+    if (search) threads = threads.ilike('title', forumSearchPattern(search));
+    if (sort === 'unanswered') threads = threads.eq('replies_count', 0);
+    if (sort === 'active') threads = threads.order('replies_count', { ascending: false });
     const [categories, stats, hot] = await Promise.all([
       db.from('forum_categories').select('*').order('sort_order'),
       db.rpc('forum_category_stats'),
-      db
-        .from('forum_threads')
-        .select('*,forum_replies(user_id,created_at)')
-        .order('created_at', { referencedTable: 'forum_replies', ascending: false })
-        .order('id', { referencedTable: 'forum_replies', ascending: false })
-        .limit(1, { referencedTable: 'forum_replies' })
+      threads
         .order('last_reply_at', { ascending: false })
         .order('id', { ascending: false })
-        .limit(5),
+        .limit(search ? 20 : 5),
     ]);
     [categories, stats, hot].forEach((r) => dbCheck(r.error));
     return {
@@ -99,11 +106,11 @@ const cachedDirectory = unstable_cache(
       hot: await enrich(hot.data ?? [], db),
     };
   },
-  ['forum-directory-v1'],
+  ['forum-directory-v2'],
   { revalidate: 30, tags: ['forum-directory'] },
 );
-export async function forumDirectory() {
-  return cachedDirectory(publicEnv().url);
+export async function forumDirectory(search = '', sort: ForumSort = 'recent') {
+  return cachedDirectory(publicEnv().url, forumSearch(search), sort);
 }
 export async function forumCategories() {
   const result = await (

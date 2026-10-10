@@ -66,7 +66,7 @@ export default async function CategoryPage({
           Conectar para crear un hilo
         </Link>
       )}
-      <ForumThreadList threads={list.threads} />
+      <ForumThreadList threads={list.threads} categories={directory} />
       <ForumPagination
         page={page}
         total={list.total}

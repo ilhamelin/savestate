@@ -7,6 +7,32 @@ export const FORUM_CATEGORIES = [
   'indie-sanctuary',
   'off-topic',
 ] as const;
+const channels = {
+  'retro-corner': { name: 'La Taberna Retro', theme: 'taberna' },
+  'general-gaming': { name: 'Actualidad y Debate', theme: 'debate' },
+  'guides-secrets': { name: 'Guías, Trucos y Secretos', theme: 'guias' },
+  'indie-sanctuary': { name: 'El Rincón Indie', theme: 'indie' },
+  'off-topic': { name: 'Zona de Descanso (Off-Topic)', theme: 'offtopic' },
+} as const;
+export function forumChannel(id: string) {
+  return Object.hasOwn(channels, id) ? channels[id as keyof typeof channels] : null;
+}
+export const FORUM_SORTS = ['recent', 'active', 'unanswered'] as const;
+export type ForumSort = (typeof FORUM_SORTS)[number];
+export function forumSearch(input: unknown) {
+  return typeof input === 'string'
+    ? [...input]
+        .map((character) =>
+          character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127 ? ' ' : character,
+        )
+        .join('')
+        .trim()
+        .slice(0, 100)
+    : '';
+}
+export function forumSearchPattern(query: string) {
+  return `%${query.replace(/[\\%_]/g, '\\$&')}%`;
+}
 export const FORUM_REACTIONS = ['like', 'gg', 'mind_blown', 'game_over'] as const;
 export type ForumReactionType = (typeof FORUM_REACTIONS)[number];
 export interface ForumCategory {
