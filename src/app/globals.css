@@ -27,7 +27,14 @@
 }
 body {
   margin: 0;
-  background: var(--bg);
+  background-color: var(--bg, #08090c);
+  background-image:
+    radial-gradient(ellipse at 50% 15%, rgba(8, 9, 12, 0.55) 0%, rgba(8, 9, 12, 0.92) 80%),
+    url('/wallpapers/savestate_retro_grid.jpg');
+  background-repeat: no-repeat;
+  background-position: top center;
+  background-attachment: fixed;
+  background-size: cover;
   color: #f2f4f8;
   font-family: var(--font-mono), monospace;
   font-size: 14px;
