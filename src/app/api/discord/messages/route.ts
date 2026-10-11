@@ -2,12 +2,21 @@ import { authenticated } from '@/lib/session';
 import { AppError, dbCheck, errorResponse, mutation } from '@/lib/http';
 import { object } from '@/domain/validation';
 import { discordContent } from '@/domain/discord';
-import { discordConfigured, fetchDiscordMessages, sendDiscordMessage } from '@/services/discord';
+import {
+  discordConfigured,
+  fetchDiscordMessages,
+  fetchDiscordPresence,
+  sendDiscordMessage,
+} from '@/services/discord';
 export async function GET() {
   try {
     await authenticated();
+    const [messages, presence] = await Promise.all([
+      fetchDiscordMessages(),
+      fetchDiscordPresence(),
+    ]);
     return Response.json(
-      { messages: await fetchDiscordMessages() },
+      { messages, presence },
       { headers: { 'Cache-Control': 'private, no-store' } },
     );
   } catch (error) {

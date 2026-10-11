@@ -7,6 +7,7 @@ import {
   discordContent,
   discordWebhook,
   normalizedDiscordMessages,
+  normalizedDiscordPresence,
   completedDiscordProgress,
   discordCoverUrl,
 } from '@/domain/discord';
@@ -62,6 +63,40 @@ const cachedMessages = unstable_cache(
 export async function fetchDiscordMessages(limit = 30) {
   const { channel } = configuration();
   return cachedMessages(channel, Math.max(1, Math.min(30, Math.floor(limit) || 30)));
+}
+const cachedGuildId = unstable_cache(
+  async (channel: string) => {
+    const { token } = configuration();
+    const response = await discordRequest(`https://discord.com/api/v10/channels/${channel}`, {
+      headers: { Authorization: `Bot ${token}` },
+    });
+    const data: unknown = await response.json();
+    const guildId = data && typeof data === 'object' && 'guild_id' in data ? data.guild_id : null;
+    if (typeof guildId !== 'string' || !/^\d{16,22}$/.test(guildId))
+      throw new AppError('Servidor Discord no disponible.', 503);
+    return guildId;
+  },
+  ['discord-channel-guild-v1'],
+  { revalidate: 300 },
+);
+const cachedPresence = unstable_cache(
+  async (guildId: string) => {
+    const response = await discordRequest(
+      `https://discord.com/api/v10/guilds/${guildId}/widget.json`,
+      {},
+    );
+    return normalizedDiscordPresence(await response.json());
+  },
+  ['discord-presence-v1'],
+  { revalidate: 15 },
+);
+export async function fetchDiscordPresence() {
+  try {
+    const { channel } = configuration();
+    return await cachedPresence(await cachedGuildId(channel));
+  } catch {
+    return { onlineCount: 0, members: [] };
+  }
 }
 export async function sendDiscordMessage(username: string, content: string) {
   const { token, channel } = configuration();

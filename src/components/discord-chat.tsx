@@ -1,7 +1,7 @@
 'use client';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
-import type { DiscordMessage } from '@/domain/discord';
+import type { DiscordMessage, DiscordOnlineMember } from '@/domain/discord';
 import { discordMessageOrigin, discordImageAttachment, discordInlineMedia } from '@/domain/discord';
 import { api } from '@/lib/client-api';
 import { readJsonResponse } from '@/lib/api-response';
@@ -115,6 +115,9 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [activeMedia, setActiveMedia] = useState<ActiveMedia | null>(null);
   const [messages, setMessages] = useState<DiscordMessage[]>([]);
+  const [presence, setPresence] = useState<{ onlineCount: number; members: DiscordOnlineMember[] }>(
+    { onlineCount: 0, members: [] },
+  );
   const [content, setContent] = useState(''),
     [error, setError] = useState('');
   const [loading, setLoading] = useState(true),
@@ -154,15 +157,20 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
           signal: request.signal,
           cache: 'no-store',
         });
-        const data = await readJsonResponse<{ messages: DiscordMessage[] }>(response);
+        const data = await readJsonResponse<{
+          messages: DiscordMessage[];
+          presence: typeof presence;
+        }>(response);
         if (!disposed && !request.signal.aborted) {
           if (!busy.current) setMessages(data.messages);
+          setPresence(data.presence);
           setError('');
           setNode({ online: true, latency: Math.round(performance.now() - started) });
         }
       } catch (failure) {
         if (!disposed && !request.signal.aborted) {
           setNode({ online: false, latency: null });
+          setPresence({ onlineCount: 0, members: [] });
           setError(failure instanceof Error ? failure.message : 'No se pudo leer Discord.');
         }
       } finally {
@@ -376,6 +384,43 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
         ) : null}
       </section>
       <aside className="discord-sidebar" aria-label="Centro de mando Discord">
+        <section className="panel discord-presence" aria-labelledby="discord-presence-heading">
+          <h2 id="discord-presence-heading">MIEMBROS EN LÍNEA</h2>
+          <p className="discord-presence-count" role="status">
+            {loading ? 'Consultando presencia…' : `🟢 ${presence.onlineCount} conectados`}
+          </p>
+          <ul className="discord-presence-list">
+            {presence.members.map((member) => (
+              <li key={member.id} className="discord-presence-member">
+                <span className="discord-presence-avatar">
+                  {member.avatar ? (
+                    <Image src={member.avatar} alt="" width={28} height={28} unoptimized />
+                  ) : (
+                    <span aria-hidden="true">▣</span>
+                  )}
+                  <span
+                    className={`discord-presence-dot status-${member.status}`}
+                    role="img"
+                    aria-label={
+                      member.status === 'online'
+                        ? 'En línea'
+                        : member.status === 'idle'
+                          ? 'Ausente'
+                          : 'No molestar'
+                    }
+                  />
+                </span>
+                <span className="discord-presence-copy">
+                  <strong>{member.username}</strong>
+                  {member.game ? <small>🕹️ Jugando a {member.game}</small> : null}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {!loading && !presence.members.length ? (
+            <p className="muted">Sin miembros visibles en el widget.</p>
+          ) : null}
+        </section>
         <section className="panel">
           <h2>FRECUENCIAS DISCORD</h2>
           <ul className="discord-channel-list">

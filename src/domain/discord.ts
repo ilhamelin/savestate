@@ -7,6 +7,73 @@ export interface DiscordMessage {
   createdAt: string;
   attachments: { name: string; url: string }[];
 }
+export type DiscordOnlineMember = {
+  id: string;
+  username: string;
+  status: 'online' | 'idle' | 'dnd';
+  avatar: string | null;
+  game: string | null;
+};
+export function normalizedDiscordPresence(payload: unknown): {
+  onlineCount: number;
+  members: DiscordOnlineMember[];
+} {
+  const input = record(payload);
+  const cleanText = (value: unknown, max: number) =>
+    typeof value === 'string'
+      ? [...value]
+          .filter((character) => character.charCodeAt(0) >= 32 && character.charCodeAt(0) !== 127)
+          .join('')
+          .trim()
+          .slice(0, max)
+      : '';
+  const members: DiscordOnlineMember[] = [];
+  const ids = new Set<string>();
+  for (const item of (Array.isArray(input.members) ? input.members : []).slice(0, 100)) {
+    const member = record(item);
+    const username = cleanText(member.username, 80);
+    // Widget IDs are anonymized indices, not Discord user snowflakes.
+    if (
+      typeof member.id !== 'string' ||
+      !/^\d{1,22}$/.test(member.id) ||
+      ids.has(member.id) ||
+      !username ||
+      (member.status !== 'online' && member.status !== 'idle' && member.status !== 'dnd')
+    )
+      continue;
+    let avatar: string | null = null;
+    try {
+      const url = new URL(typeof member.avatar_url === 'string' ? member.avatar_url : '');
+      if (
+        url.protocol === 'https:' &&
+        !url.port &&
+        !url.username &&
+        !url.password &&
+        ['cdn.discordapp.com', 'media.discordapp.net'].includes(url.hostname)
+      )
+        avatar = url.toString();
+    } catch {
+      /* Keep the avatar placeholder. */
+    }
+    ids.add(member.id);
+    members.push({
+      id: member.id,
+      username,
+      status: member.status,
+      avatar,
+      game: cleanText(record(member.game).name, 120) || null,
+    });
+  }
+  return {
+    onlineCount:
+      typeof input.presence_count === 'number' &&
+      Number.isSafeInteger(input.presence_count) &&
+      input.presence_count >= 0
+        ? input.presence_count
+        : 0,
+    members,
+  };
+}
 export function discordMessageOrigin(content: string) {
   const match = /^(?:\*\*)?\[@([a-zA-Z0-9_]{1,30}) en Savestate\]:(?:\*\*)?\s*/.exec(content);
   return {

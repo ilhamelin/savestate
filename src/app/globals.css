@@ -4306,3 +4306,63 @@ a.feed-card-cover:hover {
   background: rgba(8, 20, 14, 0.85);
   box-shadow: 0 0 10px rgba(0, 255, 102, 0.2);
 }
+.discord-presence-count {
+  color: #00ff66;
+  font-weight: bold;
+}
+.discord-presence-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 360px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) transparent;
+}
+.discord-presence-member {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--line);
+}
+.discord-presence-avatar {
+  position: relative;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  background: var(--surface);
+}
+.discord-presence-avatar > img {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 3px;
+}
+.discord-presence-dot {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+}
+.discord-presence-dot.status-online {
+  background: #00ff66;
+}
+.discord-presence-dot.status-idle {
+  background: #ffb000;
+}
+.discord-presence-dot.status-dnd {
+  background: #ff0055;
+}
+.discord-presence-copy {
+  min-width: 0;
+  display: grid;
+  overflow-wrap: anywhere;
+}
+.discord-presence-copy small {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
