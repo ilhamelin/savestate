@@ -42,9 +42,18 @@ export const fetchGameLiveTelemetry = unstable_cache(
       const first = record(Array.isArray(data.items) ? data.items[0] : null);
       // Avoid attaching another game's prices or player count to a fuzzy first result.
       const normalized = (name: string) =>
-        name.normalize('NFKC').replace(/[™®©]/g, '').toLowerCase().trim();
+        name
+          .normalize('NFKC')
+          .replace(/[^a-zA-Z0-9\s]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .toLowerCase()
+          .trim();
+      const normA = normalized(String(first.name ?? '')),
+        normB = normalized(title);
       result.steamAppId =
-        normalized(String(first.name ?? '')) === normalized(title) &&
+        !!normA &&
+        !!normB &&
+        (normA === normB || normA.includes(normB) || normB.includes(normA)) &&
         Number.isSafeInteger(first.id) &&
         Number(first.id) > 0
           ? Number(first.id)
@@ -68,7 +77,7 @@ export const fetchGameLiveTelemetry = unstable_cache(
       (async () => {
         const id = await steam;
         const data = await json(
-          `https://www.cheapshark.com/api/1.0/deals?${id ? `steamAppID=${id}` : `title=${encodeURIComponent(title)}&exact=1`}&pageSize=6`,
+          `https://www.cheapshark.com/api/1.0/deals?${id ? `steamAppID=${id}` : `title=${encodeURIComponent(title)}`}&pageSize=6`,
         );
         result.deals = mapDeals(data);
         const first = record(Array.isArray(data) ? data[0] : null);
@@ -92,7 +101,16 @@ export const fetchGameLiveTelemetry = unstable_cache(
             headers,
           ),
         );
-        const game = record(Array.isArray(games.data) ? games.data[0] : null);
+        let game = record(Array.isArray(games.data) ? games.data[0] : null);
+        if (typeof game.id !== 'string') {
+          const search = record(
+            await json(
+              `https://api.twitch.tv/helix/search/categories?query=${encodeURIComponent(title)}&first=1`,
+              headers,
+            ),
+          );
+          game = record(Array.isArray(search.data) ? search.data[0] : null);
+        }
         if (typeof game.id !== 'string') return;
         const streams = record(
           await json(
@@ -109,6 +127,6 @@ export const fetchGameLiveTelemetry = unstable_cache(
     ]);
     return result;
   },
-  ['game-live-telemetry-v1'],
+  ['game-live-telemetry-v2'],
   { revalidate: 300 },
 );

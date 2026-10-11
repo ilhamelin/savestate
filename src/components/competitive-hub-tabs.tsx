@@ -1,9 +1,11 @@
 'use client';
 import { useEffect, useRef, useState, type ReactNode, type FormEvent } from 'react';
 import { api } from '@/lib/client-api';
+import { GenshinProfileView } from '@/components/genshin-profile-view';
+import { GameLiveRadarSearch } from '@/components/game-live-radar-search';
 import { VALORANT_REGIONS, type CompetitiveProfile } from '@/domain/competitive-tracker';
 export function CompetitiveHubTabs({ children }: { children: ReactNode }) {
-  const [tab, setTab] = useState<'lol' | 'valorant' | 'genshin'>('lol');
+  const [tab, setTab] = useState<'lol' | 'valorant' | 'genshin' | 'radar'>('lol');
   const [identity, setIdentity] = useState('');
   const [region, setRegion] = useState('latam');
   const [data, setData] = useState<CompetitiveProfile | null>(null);
@@ -21,7 +23,7 @@ export function CompetitiveHubTabs({ children }: { children: ReactNode }) {
   }
   async function inspect(event: FormEvent) {
     event.preventDefault();
-    if (busy || tab === 'lol') return;
+    if (busy || tab === 'lol' || tab === 'radar') return;
     const request = new AbortController();
     controller.current = request;
     setBusy(true);
@@ -49,6 +51,7 @@ export function CompetitiveHubTabs({ children }: { children: ReactNode }) {
             ['lol', '⚔️ League of Legends'],
             ['valorant', '🎯 Valorant (Riot ID)'],
             ['genshin', '✨ Genshin Impact'],
+            ['radar', '📡 Radar en Vivo (Steam · Ofertas · Twitch)'],
           ] as const
         ).map(([id, label]) => (
           <button key={id} type="button" aria-pressed={tab === id} onClick={() => select(id)}>
@@ -57,7 +60,8 @@ export function CompetitiveHubTabs({ children }: { children: ReactNode }) {
         ))}
       </div>
       <div hidden={tab !== 'lol'}>{children}</div>
-      {tab !== 'lol' && (
+      {tab === 'radar' && <GameLiveRadarSearch />}
+      {(tab === 'valorant' || tab === 'genshin') && (
         <section className="panel">
           <p className="eyebrow">COMPETITIVE ACCOUNT TERMINAL</p>
           <h1>{tab === 'genshin' ? 'Genshin Impact · Enka.Network' : 'Valorant · Cuenta Riot'}</h1>
@@ -93,33 +97,7 @@ export function CompetitiveHubTabs({ children }: { children: ReactNode }) {
               {error}
             </p>
           )}
-          {data?.game === 'genshin' && (
-            <div className="competitive-profile">
-              <h2>{data.nickname}</h2>
-              <p>{data.signature}</p>
-              <div className="tags">
-                <span className="tag">AR {data.level}</span>
-                <span className="tag">WL {data.worldLevel}</span>
-                <span className="tag">🏆 {data.achievements} logros</span>
-                <span className="tag">Abismo {data.abyss}</span>
-                <span className="tag">Amistad máxima: {data.fetterCount}</span>
-              </div>
-              <h3>Escaparate público de personajes</h3>
-              <div className="competitive-showcase">
-                {data.showcase.map((character) => (
-                  <article className="panel" key={character.avatarId}>
-                    <strong>Personaje #{character.avatarId}</strong>
-                    <p>
-                      Nivel {character.level} · {character.element}
-                    </p>
-                  </article>
-                ))}
-              </div>
-              {!data.showcase.length && (
-                <p className="muted">El jugador no tiene personajes públicos en su escaparate.</p>
-              )}
-            </div>
-          )}
+          {data?.game === 'genshin' && <GenshinProfileView data={data} />}
           {data?.game === 'valorant' && (
             <div className="competitive-profile">
               <h2>

@@ -7,6 +7,7 @@ import {
 } from '@/domain/competitive-tracker';
 import { record } from '@/domain/game-live-telemetry';
 import { AppError } from '@/lib/http';
+import { getEnkaStore } from '@/services/genshin-enka-store';
 async function upstream(url: string, headers: Record<string, string> = {}) {
   let response: Response;
   try {
@@ -36,11 +37,13 @@ async function upstream(url: string, headers: Record<string, string> = {}) {
 }
 const inspectCached = unstable_cache(
   async (input: ReturnType<typeof competitiveInput>): Promise<CompetitiveProfile> => {
-    if (input.game === 'genshin')
-      return normalizedGenshin(
-        await upstream(`https://enka.network/api/uid/${input.uid}/`),
-        input.uid,
-      );
+    if (input.game === 'genshin') {
+      const [payload, store] = await Promise.all([
+        upstream(`https://enka.network/api/uid/${input.uid}/`),
+        getEnkaStore(),
+      ]);
+      return normalizedGenshin(payload, input.uid, store);
+    }
     if (!process.env.RIOT_API_KEY?.trim())
       throw new AppError('Se requiere configurar RIOT_API_KEY para consultar Valorant.', 503);
     const cluster =
@@ -79,7 +82,7 @@ const inspectCached = unstable_cache(
       verifiedAt: new Date().toISOString(),
     };
   },
-  ['competitive-tracker-v1'],
+  ['competitive-tracker-v2'],
   { revalidate: 60 },
 );
 export async function inspectCompetitive(input: unknown) {

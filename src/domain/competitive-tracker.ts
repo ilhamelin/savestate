@@ -1,5 +1,7 @@
 import { object, text, ValidationError } from './validation.ts';
 import { record, nonnegative } from './game-live-telemetry.ts';
+import { genshinBuild, type EnkaStore, type GenshinShowcaseCharacter } from './genshin-build.ts';
+export type { GenshinShowcaseCharacter } from './genshin-build.ts';
 export const VALORANT_REGIONS = ['latam', 'br', 'na', 'eu', 'ap', 'kr'] as const;
 export type ValorantRegion = (typeof VALORANT_REGIONS)[number];
 export type GenshinProfile = {
@@ -12,7 +14,9 @@ export type GenshinProfile = {
   achievements: number;
   abyss: string;
   fetterCount: number;
-  showcase: { avatarId: number; level: number; element: string }[];
+  stygian: string | null;
+  theater: string | null;
+  showcase: GenshinShowcaseCharacter[];
 };
 export type ValorantProfile = {
   game: 'valorant';
@@ -50,7 +54,11 @@ export function competitiveInput(input: unknown) {
     region: data.region as ValorantRegion,
   };
 }
-export function normalizedGenshin(payload: unknown, uid: string): GenshinProfile {
+export function normalizedGenshin(
+  payload: unknown,
+  uid: string,
+  store: EnkaStore = { characters: {}, locEs: {}, locEn: {} },
+): GenshinProfile {
   const data = record(payload),
     player = record(data.playerInfo);
   if (typeof player.nickname !== 'string')
@@ -82,13 +90,35 @@ export function normalizedGenshin(payload: unknown, uid: string): GenshinProfile
       const detail = full.find((avatar) => avatar.avatarId === item.avatarId);
       const energy = record(detail?.fightPropMap);
       const element = Object.keys(elements).find((key) => Number(energy[key]) > 0);
+      const build = genshinBuild(Number(item.avatarId), detail, store);
+      const metadataElements: Record<string, string> = {
+        Fire: 'Pyro 🔥',
+        Water: 'Hydro 💧',
+        Grass: 'Dendro 🌿',
+        Electric: 'Electro ⚡',
+        Ice: 'Cryo ❄️',
+        Wind: 'Anemo 🌪️',
+        Rock: 'Geo 🪨',
+      };
+      const elementName =
+        metadataElements[build.metadataElement ?? ''] ??
+        (element
+          ? elements[element]!
+          : (energyTypes[String(item.energyType)] ?? 'Elemento no disponible'));
+      const code = elementName.split(' ')[0]!.toLowerCase();
+      const { metadataElement: _metadataElement, ...details } = build;
+      void _metadataElement;
       return [
         {
           avatarId: Number(item.avatarId),
+          ...details,
           level: nonnegative(item.level) ?? 0,
-          element: element
-            ? elements[element]!
-            : (energyTypes[String(item.energyType)] ?? 'Elemento no disponible'),
+          element: elementName,
+          elementCode: (['pyro', 'electro', 'dendro', 'hydro', 'cryo', 'geo', 'anemo'].includes(
+            code,
+          )
+            ? code
+            : 'neutral') as GenshinShowcaseCharacter['elementCode'],
         },
       ];
     });
@@ -104,6 +134,10 @@ export function normalizedGenshin(payload: unknown, uid: string): GenshinProfile
       ? `${player.towerFloorIndex}-${player.towerLevelIndex ?? 1}`
       : 'Sin registro',
     fetterCount: nonnegative(player.fetterCount) ?? 0,
+    stygian: nonnegative(player.stygianIndex)
+      ? `Nivel ${player.stygianIndex} · ${nonnegative(player.stygianSeconds) ?? 0}s`
+      : null,
+    theater: nonnegative(player.theaterActIndex) ? `Acto ${player.theaterActIndex}` : null,
     showcase,
   };
 }

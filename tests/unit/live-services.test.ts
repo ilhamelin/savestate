@@ -30,6 +30,11 @@ test('Chat endpoints enforce session, friendship, origin and latest-message orde
           url: 'data:text/javascript,export const unstable_cache = fn => fn;',
           shortCircuit: true,
         };
+      if (specifier === '@/services/game-live-telemetry')
+        return {
+          url: 'data:text/javascript,export const fetchGameLiveTelemetry = async title => ({ queriedTitle: title });',
+          shortCircuit: true,
+        };
       if (specifier === '@/lib/session') return { url: fixture, shortCircuit: true };
       if (specifier.startsWith('@/'))
         return {
@@ -102,6 +107,22 @@ test('Chat endpoints enforce session, friendship, origin and latest-message orde
       });
     assert.equal((await multi.POST(request({ game: 'genshin', uid: '618285856' }))).status, 401);
     state.authenticated = true;
+    const radar = await import('../../src/app/api/tracker/radar/route.ts');
+    const radarRequest = (title: unknown) =>
+      new Request('http://localhost/api/tracker/radar', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', origin: 'http://localhost' },
+        body: JSON.stringify({ title }),
+      });
+    state.authenticated = false;
+    assert.equal((await radar.POST(radarRequest('Test'))).status, 401);
+    state.authenticated = true;
+    for (const title of ['', 'x', 'x'.repeat(101), 123])
+      assert.equal((await radar.POST(radarRequest(title))).status, 400);
+    assert.equal(
+      (await (await radar.POST(radarRequest(' Test Game '))).json()).data.queriedTitle,
+      'Test Game',
+    );
     const originalFetch = globalThis.fetch,
       oldKey = process.env.RIOT_API_KEY;
     const calls: string[] = [];
@@ -183,7 +204,7 @@ test('Telemetry partial failures preserve independent sources and cache argument
     globalThis.fetch = async (input) => {
       const url = String(input);
       if (url.includes('storesearch'))
-        return Response.json({ items: [{ id: 42, name: 'Test Game' }] });
+        return Response.json({ items: [{ id: 42, name: 'Test Game™ - Deluxe' }] });
       if (url.includes('GetNumberOfCurrentPlayers')) throw new Error('Timeout');
       if (url.includes('cheapshark') && url.includes('/deals'))
         return Response.json([
@@ -210,6 +231,28 @@ test('Telemetry partial failures preserve independent sources and cache argument
     assert.equal(result.deals.length, 1);
     assert.equal(result.historicalLow, null);
     assert.equal(result.twitchTotalTopViewers, 10);
+    const fallbackCalls: string[] = [];
+    globalThis.fetch = async (input) => {
+      const url = String(input);
+      fallbackCalls.push(url);
+      if (url.includes('storesearch')) return Response.json({ items: [] });
+      if (url.includes('cheapshark')) return Response.json([]);
+      if (url.includes('helix/games')) return Response.json({ data: [] });
+      if (url.includes('search/categories')) return Response.json({ data: [{ id: 'category' }] });
+      return Response.json({ data: [{ id: 'live', user_login: 'test', viewer_count: 7 }] });
+    };
+    const fallback = await fetchGameLiveTelemetry('Variant Game');
+    assert.equal(fallback.twitchTotalTopViewers, 7);
+    assert.equal(fallback.steamAppId, null);
+    assert.ok(fallbackCalls.some((url) => url.includes('search/categories?query=Variant%20Game')));
+    assert.ok(
+      fallbackCalls.some(
+        (url) =>
+          url.includes('cheapshark') &&
+          url.includes('title=Variant%20Game') &&
+          !url.includes('exact=1'),
+      ),
+    );
     globalThis.fetch = async () => {
       throw new Error('Offline');
     };

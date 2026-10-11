@@ -4653,3 +4653,173 @@ button.discord-channel-pill:focus-visible {
     flex: 1 1 100%;
   }
 }
+/* Enka build cards. */
+.genshin-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-block: 1.5rem;
+}
+.genshin-kpi-grid article {
+  padding: 1rem;
+  background: #0b1422;
+  border: 1px solid var(--line);
+  min-width: 0;
+}
+.genshin-kpi-grid .eyebrow {
+  font-size: 0.65rem;
+  margin: 0 0 0.5rem;
+}
+.genshin-kpi-grid strong {
+  font-size: 1.2rem;
+  overflow-wrap: anywhere;
+}
+.competitive-showcase.genshin-showcase {
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+  gap: 16px;
+}
+.genshin-character-card {
+  --element: #94a3b8;
+  min-width: 0;
+  padding: 1rem;
+  background: #0b1220e8;
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--element);
+  border-left: 3px solid var(--element);
+  border-radius: 6px;
+}
+.genshin-character-card.element-pyro {
+  --element: #ff7555;
+}
+.genshin-character-card.element-electro {
+  --element: #b688ff;
+}
+.genshin-character-card.element-dendro {
+  --element: #8cdb51;
+}
+.genshin-character-card.element-hydro {
+  --element: #42baff;
+}
+.genshin-character-card.element-cryo {
+  --element: #92e7f4;
+}
+.genshin-character-card.element-geo {
+  --element: #f4c456;
+}
+.genshin-character-card.element-anemo {
+  --element: #58dfb5;
+}
+.genshin-character-heading {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+.genshin-character-heading > div {
+  min-width: 0;
+}
+.genshin-character-heading strong {
+  display: block;
+  font-size: 1.15rem;
+  color: var(--element);
+  overflow-wrap: anywhere;
+}
+.genshin-character-heading .tags {
+  gap: 0.4rem;
+  font-size: 0.7rem;
+}
+.genshin-portrait {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border: 2px solid #b688ff;
+  border-radius: 8px;
+  background: #1b2334;
+  object-fit: contain;
+}
+.genshin-portrait.rarity-5 {
+  border-color: #f4c456;
+}
+.genshin-portrait-placeholder {
+  display: grid;
+  place-items: center;
+}
+.genshin-stars {
+  display: block;
+  color: #b688ff;
+}
+.genshin-stars.rarity-5 {
+  color: #f4c456;
+}
+.genshin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-block: 1rem;
+}
+.genshin-stats-grid > div {
+  background: #141e30;
+  padding: 0.6rem;
+  border: 1px solid #29354c;
+}
+.genshin-stats-grid dt {
+  font-size: 0.7rem;
+  color: #b5c7dd;
+}
+.genshin-stats-grid dd {
+  margin: 0.3rem 0 0;
+  color: #f2f4f8;
+  font-size: 0.85rem;
+}
+.genshin-weapon-box {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.75rem;
+  border: 1px solid #465064;
+  background: #141c28;
+}
+.genshin-weapon-box img {
+  flex-shrink: 0;
+  object-fit: contain;
+}
+.genshin-weapon-box div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.genshin-weapon-box p {
+  margin: 0.25rem 0;
+  font-size: 0.72rem;
+}
+.genshin-weapon-box span {
+  font-size: 0.72rem;
+}
+.genshin-artifact-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+}
+.genshin-artifact-row li {
+  display: grid;
+  place-items: center;
+  padding: 0.25rem;
+  background: #202134;
+  border: 1px solid #465064;
+  border-radius: 4px;
+}
+.genshin-artifact-row span {
+  font-size: 0.65rem;
+  color: #f4c456;
+}
+@media (max-width: 700px) {
+  .genshin-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
+  .genshin-kpi-grid strong {
+    font-size: 1rem;
+  }
+}
