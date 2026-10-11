@@ -4388,3 +4388,31 @@ a.feed-card-cover:hover {
 .friend-presence.is-online .friend-presence-dot {
   box-shadow: 0 0 6px currentColor;
 }
+.discord-history-wrap {
+  position: relative;
+}
+.discord-new-messages {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  border-radius: 999px;
+  white-space: nowrap;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+button.discord-channel-pill {
+  display: block;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+button.discord-channel-pill:hover,
+button.discord-channel-pill:focus-visible {
+  border-color: var(--accent);
+}
+.discord-readonly {
+  margin-top: 0.75rem;
+}

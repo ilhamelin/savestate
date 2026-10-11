@@ -6,6 +6,28 @@ export interface DiscordMessage {
   content: string;
   createdAt: string;
   attachments: { name: string; url: string }[];
+  bot?: boolean;
+  pinned?: boolean;
+}
+export type DiscordFrequency = 'web-chat' | 'checkpoints' | 'announcements';
+export function discordFrequencyMessages(messages: DiscordMessage[], frequency: DiscordFrequency) {
+  if (frequency === 'web-chat') return messages;
+  return messages.filter((message) =>
+    frequency === 'announcements'
+      ? message.pinned === true
+      : message.bot === true && !discordMessageOrigin(message.content).web,
+  );
+}
+export function sameDiscordMessages(current: DiscordMessage[], next: DiscordMessage[]) {
+  // Keep unchanged snapshots stable while still accepting edits and deletions.
+  return (
+    current.length === next.length &&
+    current.at(-1)?.id === next.at(-1)?.id &&
+    JSON.stringify(current) === JSON.stringify(next)
+  );
+}
+export function discordNearBottom(scrollTop: number, clientHeight: number, scrollHeight: number) {
+  return scrollHeight - scrollTop - clientHeight <= 80;
 }
 export type DiscordOnlineMember = {
   id: string;
@@ -264,14 +286,27 @@ export function normalizedDiscordMessages(input: unknown): DiscordMessage[] {
         /^(?:a_)?[a-f0-9]{32}$/.test(author.avatar)
           ? `https://cdn.discordapp.com/avatars/${author.id}/${author.avatar}.png?size=64`
           : null;
+      const embedText = (Array.isArray(message.embeds) ? message.embeds : [])
+        .slice(0, 5)
+        .map((item) => {
+          const embed = record(item);
+          return [embed.title, embed.description]
+            .filter((value): value is string => typeof value === 'string')
+            .join('\n');
+        })
+        .filter(Boolean)
+        .join('\n\n')
+        .slice(0, 4000);
       return [
         {
           id: message.id,
           author: String(author.global_name ?? author.username ?? 'Discord').slice(0, 80),
           avatar,
-          content,
+          content: [content, embedText].filter(Boolean).join('\n\n').slice(0, 6000),
           createdAt: new Date(message.timestamp).toISOString(),
           attachments,
+          bot: author.bot === true || typeof message.webhook_id === 'string',
+          pinned: message.pinned === true,
         },
       ];
     })

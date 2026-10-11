@@ -56,7 +56,7 @@ const cachedMessages = unstable_cache(
     );
     return normalizedDiscordMessages(await response.json());
   },
-  ['discord-messages-v1'],
+  ['discord-messages-v2'],
   { revalidate: 5, tags: ['discord-messages'] },
 );
 

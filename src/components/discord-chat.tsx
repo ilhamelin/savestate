@@ -1,8 +1,16 @@
 'use client';
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
-import type { DiscordMessage, DiscordOnlineMember } from '@/domain/discord';
-import { discordMessageOrigin, discordImageAttachment, discordInlineMedia } from '@/domain/discord';
+import Link from 'next/link';
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { DiscordMessage, DiscordOnlineMember, DiscordFrequency } from '@/domain/discord';
+import {
+  discordMessageOrigin,
+  discordImageAttachment,
+  discordInlineMedia,
+  discordFrequencyMessages,
+  sameDiscordMessages,
+  discordNearBottom,
+} from '@/domain/discord';
 import { api } from '@/lib/client-api';
 import { readJsonResponse } from '@/lib/api-response';
 function formatMessageDate(date: string) {
@@ -107,6 +115,74 @@ function InlineMedia({ url, onOpen }: { url: string; onOpen: (media: ActiveMedia
     </div>
   );
 }
+const DiscordMessageCard = memo(function DiscordMessageCard({
+  message,
+  onOpen,
+}: {
+  message: DiscordMessage;
+  onOpen: (media: ActiveMedia) => void;
+}) {
+  const origin = discordMessageOrigin(message.content);
+  const media = discordInlineMedia(origin.content);
+  return (
+    <article key={message.id} className="discord-message">
+      {message.avatar ? (
+        <Image src={message.avatar} width={36} height={36} alt="" unoptimized />
+      ) : (
+        <span aria-hidden="true">▣</span>
+      )}
+      <div className="discord-message-bubble">
+        <span className={origin.web ? 'badge-savestate' : 'badge-discord'}>
+          {origin.web ? '[SAVESTATE_WEB]' : '[DISCORD]'}
+        </span>{' '}
+        {origin.web && origin.author ? (
+          <Link className="accent" href={`/players/${encodeURIComponent(origin.author)}`}>
+            @{origin.author}
+          </Link>
+        ) : (
+          <strong className="accent">{message.author}</strong>
+        )}{' '}
+        <time dateTime={message.createdAt} title="Hora de Chile · America/Santiago">
+          {formatMessageDate(message.createdAt)}
+        </time>
+        {media.text ? (
+          <p>{media.text}</p>
+        ) : !media.urls.length && !message.attachments.length ? (
+          <p>Mensaje sin texto disponible.</p>
+        ) : null}
+        {media.urls.map((url) => (
+          <InlineMedia key={url} url={url} onOpen={onOpen} />
+        ))}
+        {message.attachments.map((file) => (
+          <p key={file.url}>
+            {discordImageAttachment(file.url) ? (
+              <button
+                type="button"
+                className="discord-media-button"
+                aria-label={`Ampliar ${file.name}`}
+                aria-haspopup="dialog"
+                onClick={() => onOpen({ url: file.url, alt: file.name })}
+              >
+                <Image
+                  className="discord-attachment-thumb"
+                  src={file.url}
+                  width={240}
+                  height={160}
+                  alt={file.name}
+                  unoptimized
+                />
+              </button>
+            ) : (
+              <a href={file.url} target="_blank" rel="noopener noreferrer">
+                ↗ {file.name}
+              </a>
+            )}
+          </p>
+        ))}
+      </div>
+    </article>
+  );
+});
 export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
   const [node, setNode] = useState<{ online: boolean; latency: number | null }>({
     online: false,
@@ -124,19 +200,38 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
     [sending, setSending] = useState(false);
   const [revision, setRevision] = useState(0);
   const busy = useRef(false);
-  const endRef = useRef<HTMLDivElement>(null);
-  const cooldownUntil = useRef(0);
-  const [cooldown, setCooldown] = useState(0);
-  const messageSignature = messages.map((message) => `${message.id}:${message.content}`).join('|');
-  useEffect(() => {
-    if (!messageSignature) return;
-    endRef.current?.scrollIntoView({
+  const listRef = useRef<HTMLDivElement>(null);
+  const [frequency, setFrequency] = useState<DiscordFrequency>('web-chat');
+  const [newMessages, setNewMessages] = useState(false);
+  const pendingScroll = useRef(true);
+  const messagesRef = useRef<DiscordMessage[]>([]);
+  const visibleMessages = useMemo(
+    () => discordFrequencyMessages(messages, frequency),
+    [messages, frequency],
+  );
+  const lastVisibleId = visibleMessages.at(-1)?.id;
+  function scrollToEnd() {
+    const list = listRef.current;
+    list?.scrollTo({
+      top: list.scrollHeight,
       behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
         ? 'instant'
         : 'smooth',
-      block: 'nearest',
     });
-  }, [messageSignature]);
+  }
+  function selectFrequency(next: DiscordFrequency) {
+    pendingScroll.current = true;
+    setNewMessages(false);
+    setFrequency(next);
+  }
+  const cooldownUntil = useRef(0);
+  const [cooldown, setCooldown] = useState(0);
+  useLayoutEffect(() => {
+    if (!pendingScroll.current) return;
+    pendingScroll.current = false;
+    const list = listRef.current;
+    list?.scrollTo({ top: list.scrollHeight, behavior: 'instant' });
+  }, [lastVisibleId, frequency]);
   useEffect(() => {
     const timer = setInterval(() => {
       setCooldown(Math.max(0, Math.ceil((cooldownUntil.current - Date.now()) / 1000)));
@@ -162,8 +257,24 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
           presence: typeof presence;
         }>(response);
         if (!disposed && !request.signal.aborted) {
-          if (!busy.current) setMessages(data.messages);
-          setPresence(data.presence);
+          if (!busy.current && !sameDiscordMessages(messagesRef.current, data.messages)) {
+            const previous = messagesRef.current;
+            const hasNew = discordFrequencyMessages(data.messages, frequency).some(
+              (message) => !previous.some((item) => item.id === message.id),
+            );
+            const list = listRef.current;
+            const nearBottom =
+              !list || discordNearBottom(list.scrollTop, list.clientHeight, list.scrollHeight);
+            if (hasNew) {
+              pendingScroll.current = !previous.length || nearBottom;
+              if (previous.length && !nearBottom) setNewMessages(true);
+            }
+            messagesRef.current = data.messages;
+            setMessages(data.messages);
+          }
+          setPresence((current) =>
+            JSON.stringify(current) === JSON.stringify(data.presence) ? current : data.presence,
+          );
           setError('');
           setNode({ online: true, latency: Math.round(performance.now() - started) });
         }
@@ -189,9 +300,15 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
       clearInterval(timer);
       document.removeEventListener('visibilitychange', visible);
     };
-  }, [revision]);
+  }, [revision, frequency]);
   async function send() {
-    if (busy.current || Date.now() < cooldownUntil.current || !content.trim()) return;
+    if (
+      frequency !== 'web-chat' ||
+      busy.current ||
+      Date.now() < cooldownUntil.current ||
+      !content.trim()
+    )
+      return;
     busy.current = true;
     setSending(true);
     setError('');
@@ -199,13 +316,16 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
     setCooldown(3);
     try {
       const result = await api<{ message: DiscordMessage | null }>('discord/messages', { content });
-      if (result.message)
-        setMessages((current) =>
-          [
-            ...current.filter((message) => message.id !== result.message!.id),
-            result.message!,
-          ].slice(-30),
-        );
+      if (result.message) {
+        const next = [
+          ...messagesRef.current.filter((message) => message.id !== result.message!.id),
+          result.message,
+        ].slice(-30);
+        pendingScroll.current = true;
+        setNewMessages(false);
+        messagesRef.current = next;
+        setMessages(next);
+      }
       setContent('');
       cooldownUntil.current = Date.now() + 3000;
       setCooldown(3);
@@ -233,7 +353,8 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
             <span className={node.online ? 'live-pulse' : ''} aria-hidden="true">
               {node.online ? '🟢' : '◌'}
             </span>{' '}
-            {loading ? 'CONECTANDO' : node.online ? 'LIVE SYNC' : 'SYNC EN PAUSA'} // #web-chat
+            {loading ? 'CONECTANDO' : node.online ? 'LIVE SYNC' : 'SYNC EN PAUSA'} // #
+            {frequency === 'announcements' ? 'anuncios-savestate' : frequency}
           </span>
           <button
             type="button"
@@ -261,120 +382,101 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
             <span className="muted">Invitación al servidor pendiente de configuración.</span>
           )}
         </div>
-        <div className="discord-message-list" aria-label="Mensajes del canal">
-          {loading ? <p role="status">[ Conectando con Discord… ]</p> : null}
-          {!loading && !messages.length && !error ? <p>No hay mensajes todavía.</p> : null}
-          {messages.map((message) => {
-            const origin = discordMessageOrigin(message.content);
-            const media = discordInlineMedia(origin.content);
-            return (
-              <article key={message.id} className="discord-message">
-                {message.avatar ? (
-                  <Image src={message.avatar} width={36} height={36} alt="" unoptimized />
-                ) : (
-                  <span aria-hidden="true">▣</span>
-                )}
-                <div className="discord-message-bubble">
-                  <span className={origin.web ? 'badge-savestate' : 'badge-discord'}>
-                    {origin.web ? '[SAVESTATE_WEB]' : '[DISCORD]'}
-                  </span>{' '}
-                  <strong className="accent">{origin.author ?? message.author}</strong>{' '}
-                  <time dateTime={message.createdAt} title="Hora de Chile · America/Santiago">
-                    {formatMessageDate(message.createdAt)}
-                  </time>
-                  {media.text ? (
-                    <p>{media.text}</p>
-                  ) : !media.urls.length && !message.attachments.length ? (
-                    <p>Mensaje sin texto disponible.</p>
-                  ) : null}
-                  {media.urls.map((url) => (
-                    <InlineMedia key={url} url={url} onOpen={setActiveMedia} />
-                  ))}
-                  {message.attachments.map((file) => (
-                    <p key={file.url}>
-                      {discordImageAttachment(file.url) ? (
-                        <button
-                          type="button"
-                          className="discord-media-button"
-                          aria-label={`Ampliar ${file.name}`}
-                          aria-haspopup="dialog"
-                          onClick={() => setActiveMedia({ url: file.url, alt: file.name })}
-                        >
-                          <Image
-                            className="discord-attachment-thumb"
-                            src={file.url}
-                            width={240}
-                            height={160}
-                            alt={file.name}
-                            unoptimized
-                          />
-                        </button>
-                      ) : (
-                        <a href={file.url} target="_blank" rel="noopener noreferrer">
-                          ↗ {file.name}
-                        </a>
-                      )}
-                    </p>
-                  ))}
-                </div>
-              </article>
-            );
-          })}
-          <div ref={endRef} aria-hidden="true" />
+        <div className="discord-history-wrap">
+          <div
+            ref={listRef}
+            className="discord-message-list"
+            aria-label="Mensajes del canal"
+            onScroll={() => {
+              const list = listRef.current;
+              if (list && discordNearBottom(list.scrollTop, list.clientHeight, list.scrollHeight))
+                setNewMessages(false);
+            }}
+          >
+            {loading ? <p role="status">[ Conectando con Discord… ]</p> : null}
+            {!loading && !visibleMessages.length && !error ? (
+              <p>No hay mensajes en esta frecuencia.</p>
+            ) : null}
+            {visibleMessages.map((message) => (
+              <DiscordMessageCard key={message.id} message={message} onOpen={setActiveMedia} />
+            ))}
+          </div>
+          {newMessages ? (
+            <button
+              type="button"
+              className="button small discord-new-messages"
+              onClick={() => {
+                scrollToEnd();
+                setNewMessages(false);
+              }}
+            >
+              ↓ Nuevos mensajes
+            </button>
+          ) : null}
         </div>
         {error ? (
           <p className="error-text" role="alert">
             {error}
           </p>
         ) : null}
-        <form
-          className="discord-chat-form"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void send();
-          }}
-        >
-          <label>
-            <span className="discord-input-label">Mensaje para Discord</span>
-            <input
-              ref={inputRef}
-              value={content}
-              maxLength={500}
-              disabled={sending}
-              onChange={(event) => setContent(event.target.value)}
-              placeholder="Escribe y pulsa Enter…"
-              aria-describedby="discord-message-count"
-            />
-            <span id="discord-message-count" className="muted discord-character-count">
-              {content.length}/500
-            </span>
-          </label>
-          <div className="discord-emoji-buttons" role="group" aria-label="Insertar emoji gamer">
-            {(['👾', '💾', '🏆', '🔥'] as const).map((emoji) => (
-              <button
-                type="button"
-                className="button outline small"
-                key={emoji}
-                aria-label={`Insertar ${emoji}`}
-                disabled={sending || content.length + emoji.length > 500}
-                onClick={() => {
-                  setContent((current) =>
-                    current.length + emoji.length <= 500 ? current + emoji : current,
-                  );
-                  inputRef.current?.focus();
-                }}
-              >
-                {emoji}
+        {frequency === 'web-chat' ? (
+          <>
+            <form
+              className="discord-chat-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void send();
+              }}
+            >
+              <label>
+                <span className="discord-input-label">Mensaje para Discord</span>
+                <input
+                  ref={inputRef}
+                  value={content}
+                  maxLength={500}
+                  disabled={sending}
+                  onChange={(event) => setContent(event.target.value)}
+                  placeholder="Escribe y pulsa Enter…"
+                  aria-describedby="discord-message-count"
+                />
+                <span id="discord-message-count" className="muted discord-character-count">
+                  {content.length}/500
+                </span>
+              </label>
+              <div className="discord-emoji-buttons" role="group" aria-label="Insertar emoji gamer">
+                {(['👾', '💾', '🏆', '🔥'] as const).map((emoji) => (
+                  <button
+                    type="button"
+                    className="button outline small"
+                    key={emoji}
+                    aria-label={`Insertar ${emoji}`}
+                    disabled={sending || content.length + emoji.length > 500}
+                    onClick={() => {
+                      setContent((current) =>
+                        current.length + emoji.length <= 500 ? current + emoji : current,
+                      );
+                      inputRef.current?.focus();
+                    }}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+              <button className="button" disabled={sending || cooldown > 0 || !content.trim()}>
+                {sending ? 'Enviando…' : cooldown > 0 ? `Espera ${cooldown}s…` : 'Enviar →'}
               </button>
-            ))}
-          </div>
-          <button className="button" disabled={sending || cooldown > 0 || !content.trim()}>
-            {sending ? 'Enviando…' : cooldown > 0 ? `Espera ${cooldown}s…` : 'Enviar →'}
-          </button>
-        </form>
-        <p className="muted">
-          Lo que envíes se publicará en el canal de Discord con tu nombre de usuario de SaveState.
-        </p>
+            </form>
+            <p className="muted">
+              Lo que envíes se publicará en el canal de Discord con tu nombre de usuario de
+              SaveState.
+            </p>
+          </>
+        ) : (
+          <p className="notice discord-readonly">
+            [ MODO LECTURA //{' '}
+            {frequency === 'checkpoints' ? 'REGISTRO DE CHECKPOINTS' : 'ANUNCIOS DESTACADOS'} ]
+          </p>
+        )}
         {activeMedia ? (
           <MediaLightbox
             key={activeMedia.url}
@@ -423,19 +525,27 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
         </section>
         <section className="panel">
           <h2>FRECUENCIAS DISCORD</h2>
+          <p className="muted">Filtros del canal sincronizado.</p>
           <ul className="discord-channel-list">
-            <li className="discord-channel-pill">
-              <strong>#💾-checkpoints</strong>
-              <span>Registro automático de platinos y 100%</span>
-            </li>
-            <li className="discord-channel-pill active">
-              <strong>#💬-web-chat</strong>
-              <span>Canal sincronizado activo</span>
-            </li>
-            <li className="discord-channel-pill">
-              <strong>#📢-anuncios-savestate</strong>
-              <span>Noticias y parches</span>
-            </li>
+            {(
+              [
+                ['checkpoints', '#💾-checkpoints', 'Avisos de bots y webhooks'],
+                ['web-chat', '#💬-web-chat', 'Todos los mensajes · envío habilitado'],
+                ['announcements', '#📢-anuncios-savestate', 'Mensajes fijados · modo lectura'],
+              ] as const
+            ).map(([value, label, description]) => (
+              <li key={value}>
+                <button
+                  type="button"
+                  className={`discord-channel-pill${frequency === value ? ' active' : ''}`}
+                  aria-pressed={frequency === value}
+                  onClick={() => selectFrequency(value)}
+                >
+                  <strong>{label}</strong>
+                  <span>{description}</span>
+                </button>
+              </li>
+            ))}
           </ul>
         </section>
         <section className="panel">
