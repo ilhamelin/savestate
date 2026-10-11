@@ -7,6 +7,7 @@ import { SocialControls } from '@/components/social-controls';
 import { dbCheck } from '@/lib/http';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { restoreProfileAppearance } from '@/domain/profile-appearance';
 export const metadata = { title: 'Ajustes del jugador' };
 export default async function SettingsPage() {
   if (!isConfigured()) return <SetupNotice />;
@@ -40,7 +41,10 @@ export default async function SettingsPage() {
           <h1>Ajusta tu checkpoint.</h1>
         </div>
       </div>
-      <Settings key={profileResult.data.username} profile={profileResult.data} />
+      <Settings
+        key={profileResult.data.username}
+        profile={restoreProfileAppearance(profileResult.data)}
+      />
       <section className="panel">
         <h2>Importación multiplataforma</h2>
         <p>Revisa títulos y horas antes de añadirlos a SaveState.</p>

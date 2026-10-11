@@ -3,6 +3,8 @@ export const WALLPAPERS = [
   { id: 'arcade_90s', name: 'Habitación 90s', url: '/wallpapers/arcade_90s.svg' },
   { id: 'synthwave_grid', name: 'Synthwave', url: '/wallpapers/synthwave_grid.svg' },
   { id: 'deep_space', name: 'Espacio', url: '/wallpapers/deep_space.svg' },
+  { id: 'halloween_night', name: '🎃 Halloween', url: '/wallpapers/halloween_night.svg' },
+  { id: 'christmas_snow', name: '🎄 Navidad', url: '/wallpapers/christmas_snow.svg' },
 ] as const;
 export function isWallpaperPreset(value: unknown): value is string {
   return typeof value === 'string' && WALLPAPERS.some((preset) => preset.url === value);

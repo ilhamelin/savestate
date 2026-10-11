@@ -4446,3 +4446,49 @@ button.discord-channel-pill:focus-visible {
 #player-friends {
   scroll-margin-top: 180px;
 }
+.studio-custom-color,
+.studio-hex-color {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+}
+.studio-custom-color input[type='color'] {
+  width: 72px;
+  height: 42px;
+  padding: 4px;
+  cursor: pointer;
+}
+.studio-hex-color input {
+  width: 130px;
+  min-width: 0;
+}
+.studio-avatar-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 0.7rem;
+}
+.studio-avatar-option {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.7rem;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.studio-avatar-option img {
+  image-rendering: pixelated;
+  width: 48px;
+  height: 48px;
+}
+.studio-avatar-option[aria-pressed='true'],
+.studio-avatar-option:hover,
+.studio-avatar-option:focus-visible {
+  border-color: var(--profile-accent);
+  color: #f2f4f8;
+  background: var(--profile-bg);
+}

@@ -4,6 +4,7 @@ import { dbCheck } from '@/lib/http';
 import { authenticated } from '@/lib/session';
 import type { PlayerFriend, FriendRequest } from '@/domain/player-friends';
 import type { Friendship } from '@/domain/model';
+import { restoreProfileAppearance } from '@/domain/profile-appearance';
 
 export async function playerFriends(userId: string) {
   const db = await serverClient();
@@ -134,5 +135,5 @@ export async function profileByName(name: string) {
     .eq('username_normalized', name.toLowerCase())
     .maybeSingle();
   dbCheck(error);
-  return data;
+  return data ? restoreProfileAppearance(data) : null;
 }

@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import type { CSSProperties } from 'react';
+import { resolveThemeColor } from '@/domain/profile-studio';
 import { notFound } from 'next/navigation';
 import {
   profileByName,
@@ -95,7 +97,17 @@ export default async function Player({ params }: { params: Promise<{ username: s
       fullScreen
       url={wallpaperForDisplay(profile.wallpaper_url, profile.id, publicEnv().url)}
     >
-      <div className={`theme-${profile.theme_color}`}>
+      <div
+        className={
+          profile.theme_color.startsWith('#') ? 'theme-custom' : `theme-${profile.theme_color}`
+        }
+        style={
+          {
+            '--accent': resolveThemeColor(profile.theme_color),
+            '--profile-accent': resolveThemeColor(profile.theme_color),
+          } as CSSProperties
+        }
+      >
         <div className="page-heading">
           <Link href="/players" className="text-link">
             ← Jugadores

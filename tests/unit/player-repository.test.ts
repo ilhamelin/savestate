@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { registerHooks, stripTypeScriptTypes } from 'node:module';
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { resolve } from 'node:path';
 
 test('Pending friend requests reuse the authenticated viewer ID and retain the safe default', async () => {
   const fixtureUrl = `data:text/javascript,${encodeURIComponent(`
@@ -23,6 +24,11 @@ test('Pending friend requests reuse the authenticated viewer ID and retain the s
         return { url: 'data:text/javascript,export {};', shortCircuit: true };
       if (['@/integrations/supabase/server', '@/lib/session', '@/lib/http'].includes(specifier))
         return { url: fixtureUrl, shortCircuit: true };
+      if (specifier.startsWith('@/'))
+        return {
+          url: pathToFileURL(resolve('src', specifier.slice(2) + '.ts')).href,
+          shortCircuit: true,
+        };
       return next(specifier, context);
     },
     load(url, context, next) {

@@ -1,11 +1,16 @@
 'use client';
 import { useEffect, useId, useRef, useState, type CSSProperties, type FormEvent } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Camera, Monitor, Smartphone, Save, Undo2 } from 'lucide-react';
-import type { Profile, Theme } from '@/domain/model';
+import type { Profile, ThemePreset } from '@/domain/model';
 import {
   PROFILE_COLORS,
+  PROFILE_COLOR_LABELS,
+  GALLERY_AVATARS,
+  resolveThemeColor,
+  themeColor,
   QUICK_STATUSES,
   SOCIAL_KEYS,
   profileChanged,
@@ -40,6 +45,7 @@ const MEDIA_KEYS = {
 export function ProfileStudio({ profile }: { profile: Profile }) {
   const [saved, setSaved] = useState(() => profileDraft(profile));
   const [draft, setDraft] = useState(() => profileDraft(profile));
+  const [hexColor, setHexColor] = useState(() => resolveThemeColor(profile.theme_color));
   const [mobile, setMobile] = useState(false),
     [preparing, setPreparing] = useState(false),
     [saving, setSaving] = useState(false);
@@ -55,8 +61,10 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
     id = useId(),
     router = useRouter();
   const alive = useRef(true);
-  const isDirty = profileChanged(draft, saved);
+  const isDirty =
+    profileChanged(draft, saved) || hexColor.toLowerCase() !== resolveThemeColor(draft.theme_color);
   function update<K extends keyof DraftProfile>(key: K, value: DraftProfile[K]) {
+    if (key === 'theme_color' && typeof value === 'string') setHexColor(resolveThemeColor(value));
     setDraft((previous) => ({ ...previous, [key]: value }));
     setMessage('');
   }
@@ -148,6 +156,7 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
     clearMedia('banner');
     clearMedia('wallpaper');
     setDraft(profileDraft(saved));
+    setHexColor(resolveThemeColor(saved.theme_color));
     setMessage('Cambios descartados.');
     setError(false);
     if (avatarInput.current) avatarInput.current.value = '';
@@ -165,6 +174,8 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
     let committed = false;
     try {
       const next = profileDraft(draft);
+      themeColor(hexColor);
+      next.theme_color = themeColor(next.theme_color);
       next.username = username(next.username);
       next.terminal_status = text(next.terminal_status, 'Estado', 160, 0);
       next.social_links = socialLinks(next.social_links);
@@ -210,6 +221,7 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
       const persisted = profileDraft(result);
       setSaved(persisted);
       setDraft(profileDraft(persisted));
+      setHexColor(resolveThemeColor(persisted.theme_color));
       setError(false);
       setMessage('Perfil guardado.');
       router.refresh();
@@ -245,9 +257,9 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
     }
   }
   const style = {
-    '--profile-accent': PROFILE_COLORS[draft.theme_color],
-    '--profile-bg': `${PROFILE_COLORS[draft.theme_color]}18`,
-    '--accent': PROFILE_COLORS[draft.theme_color],
+    '--profile-accent': resolveThemeColor(draft.theme_color),
+    '--profile-bg': `${resolveThemeColor(draft.theme_color)}18`,
+    '--accent': resolveThemeColor(draft.theme_color),
   } as CSSProperties;
   const blocked = saving || preparing;
   return (
@@ -349,17 +361,45 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
               ))}
             </div>
             <div className="studio-palette" role="group" aria-label="Color del perfil">
-              {(Object.keys(PROFILE_COLORS) as Theme[]).map((color) => (
+              {(Object.keys(PROFILE_COLORS) as ThemePreset[]).map((color) => (
                 <button
                   key={color}
                   type="button"
-                  aria-label={`Color ${color}`}
+                  aria-label={`Color ${PROFILE_COLOR_LABELS[color]}`}
+                  title={PROFILE_COLOR_LABELS[color]}
                   aria-pressed={draft.theme_color === color}
                   className="studio-swatch"
                   style={{ background: PROFILE_COLORS[color] }}
                   onClick={() => update('theme_color', color)}
                 />
               ))}
+              <label className="studio-custom-color">
+                Paleta de color libre
+                <input
+                  type="color"
+                  value={resolveThemeColor(draft.theme_color)}
+                  onChange={(event) => update('theme_color', themeColor(event.target.value))}
+                />
+              </label>
+              <label className="studio-hex-color">
+                Hex (#RRGGBB)
+                <input
+                  type="text"
+                  value={hexColor}
+                  maxLength={7}
+                  required
+                  pattern="#[0-9a-fA-F]{6}"
+                  placeholder="#7c3aed"
+                  aria-invalid={!/^#[0-9a-fA-F]{6}$/.test(hexColor)}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setHexColor(value);
+                    setMessage('');
+                    if (/^#[0-9a-fA-F]{6}$/.test(value))
+                      setDraft((previous) => ({ ...previous, theme_color: themeColor(value) }));
+                  }}
+                />
+              </label>
             </div>
             <p className="muted">Edita sobre tu tarjeta. Los cambios se aplican al guardar.</p>
           </div>
@@ -516,13 +556,36 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
                   Avatar personalizado
                 </option>
                 <option value="">Sin avatar</option>
-                {(Object.keys(PROFILE_COLORS) as Theme[]).map((color) => (
-                  <option key={color} value={`/avatars/${color}.svg`}>
-                    Pixel {color}
+                {GALLERY_AVATARS.map((avatar) => (
+                  <option key={avatar.id} value={avatar.url}>
+                    {avatar.name}
                   </option>
                 ))}
               </select>
             </label>
+            <div
+              className="studio-avatar-gallery"
+              role="group"
+              aria-label="Elegir avatar de galería"
+            >
+              {GALLERY_AVATARS.map((avatar) => (
+                <button
+                  key={avatar.id}
+                  type="button"
+                  className="studio-avatar-option"
+                  aria-label={avatar.name}
+                  title={avatar.name}
+                  aria-pressed={draft.avatar_url === avatar.url}
+                  onClick={() => {
+                    clearMedia('avatar');
+                    update('avatar_url', avatar.url);
+                  }}
+                >
+                  <Image src={avatar.url} width={48} height={48} alt="" unoptimized />
+                  <span>{avatar.name}</span>
+                </button>
+              ))}
+            </div>
             <label className="checkbox-label">
               <input
                 type="checkbox"

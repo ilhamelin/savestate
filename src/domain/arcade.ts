@@ -1,11 +1,25 @@
 import { object, text, uuid, ValidationError } from './validation.ts';
 import type { Game, Profile } from './model.ts';
-export const ROOM_THEMES = ['crt_terminal', 'handheld_console', 'retro_shelf'] as const;
+export const ROOM_THEMES = [
+  'crt_terminal',
+  'handheld_console',
+  'retro_shelf',
+  'arcade_cabinet',
+  'cyber_deck',
+  'vaporwave_shrine',
+  'halloween_crypt',
+  'christmas_lodge',
+] as const;
 export type RoomTheme = (typeof ROOM_THEMES)[number];
 export const ROOM_LABELS: Record<RoomTheme, string> = {
   crt_terminal: 'Terminal CRT',
   handheld_console: 'Consola portátil',
   retro_shelf: 'Estantería retro',
+  arcade_cabinet: '👾 Cabina Arcade 80s',
+  cyber_deck: '⚡ Cyberdeck HUD',
+  vaporwave_shrine: '🌅 Santuario Vaporwave',
+  halloween_crypt: '🎃 Noche de Halloween (Spooky)',
+  christmas_lodge: '🎄 Cabaña de Navidad (Holiday)',
 };
 export function roomTheme(input: unknown): RoomTheme {
   if (!ROOM_THEMES.includes(input as RoomTheme)) throw new ValidationError('Habitación inválida.');

@@ -17,7 +17,9 @@ export const STATUS_LABELS: Record<GameStatus, string> = {
 };
 export const REACTIONS = ['critical_hit', 'gg', 'game_over'] as const;
 export type Reaction = (typeof REACTIONS)[number];
-export type Theme = 'cyan' | 'green' | 'pink' | 'amber';
+export type ThemePreset =
+  'cyan' | 'green' | 'pink' | 'amber' | 'halloween' | 'purple' | 'christmas' | 'ice';
+export type Theme = ThemePreset | `#${string}`;
 export interface Profile {
   xp: number;
   level: number;

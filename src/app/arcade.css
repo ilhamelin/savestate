@@ -262,3 +262,135 @@
     transition: none;
   }
 }
+.room-arcade_cabinet,
+.room-cyber_deck,
+.room-vaporwave_shrine,
+.room-halloween_crypt,
+.room-christmas_lodge {
+  --room-primary: var(--profile-accent, var(--accent));
+  --room-secondary: #ff0055;
+  padding: 16px;
+  border: 2px solid var(--room-primary);
+  background: #0c0d16;
+  box-shadow: 0 0 24px color-mix(in srgb, var(--room-primary) 15%, transparent);
+}
+.room-marquee {
+  position: relative;
+  padding: 18px 12px;
+  margin-bottom: 16px;
+  border: 1px solid var(--room-primary);
+  text-align: center;
+  color: var(--room-primary);
+  font-family: var(--font-pixel), monospace;
+  font-size: 12px;
+  letter-spacing: 2px;
+  overflow-wrap: anywhere;
+  background: #08090cbb;
+  text-shadow: 0 0 12px color-mix(in srgb, var(--room-primary) 45%, transparent);
+}
+.room-arcade_cabinet {
+  border-width: 3px 12px 8px;
+  border-radius: 12px 12px 4px 4px;
+  background: linear-gradient(130deg, #201325, #080c18 60%);
+  box-shadow:
+    inset 0 0 0 3px #08090c,
+    0 12px 0 #090910,
+    0 0 20px #ff00552a;
+}
+.room-arcade_cabinet .room-marquee {
+  color: #ffd166;
+  border-color: #ff0055;
+  background: repeating-linear-gradient(90deg, #161320 0 20px, #26142b 20px 40px);
+  box-shadow: inset 0 0 20px #ff005533;
+}
+.room-arcade_cabinet .room-screen {
+  border: 6px solid #232432;
+  padding: 10px;
+  background: #08090c;
+}
+.room-cyber_deck {
+  background: linear-gradient(135deg, #0b252d, #0c1118 60%);
+  border-radius: 24px 4px 24px 4px;
+  border-left-width: 5px;
+  border-right-width: 5px;
+}
+.room-cyber_deck .room-marquee {
+  text-align: left;
+  border: 0;
+  border-bottom: 1px dashed var(--room-primary);
+}
+.room-cyber_deck .room-screen {
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--room-primary) 40%, transparent);
+}
+.room-vaporwave_shrine {
+  --room-primary: #ff62ce;
+  --room-secondary: #00f0ff;
+  border-radius: 8px;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 31px, #00f0ff12 31px 32px),
+    repeating-linear-gradient(90deg, transparent 0 31px, #ff62ce12 31px 32px),
+    linear-gradient(135deg, #281135, #101a32);
+  border-color: #ff62ce #00f0ff;
+}
+.room-halloween_crypt {
+  --room-primary: #ff6b00;
+  --room-secondary: #9d4edd;
+  background: radial-gradient(ellipse at top right, #362046, #140e1d 70%);
+  border-color: #ff6b00 #9d4edd;
+  border-radius: 20px 20px 4px 4px;
+  box-shadow:
+    inset 0 0 45px #9d4edd18,
+    0 0 20px #ff6b0025;
+}
+.room-christmas_lodge {
+  --room-primary: #ffd166;
+  --room-secondary: #ff2e4c;
+  background: linear-gradient(135deg, #17231d, #101315 70%);
+  border-color: #ff2e4c #15803d;
+  border-radius: 8px;
+  box-shadow:
+    inset 0 0 35px #15803d18,
+    0 0 20px #ffd16620;
+}
+.room-christmas_lodge .room-marquee {
+  border-color: #15803d;
+  padding-top: 24px;
+}
+.room-christmas_lodge .room-marquee::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 4px;
+  height: 8px;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 13px,
+    #ff2e4c 13px 19px,
+    transparent 19px 36px,
+    #ffd166 36px 42px,
+    transparent 42px 59px,
+    #4ade80 59px 65px,
+    transparent 65px 82px
+  );
+  filter: drop-shadow(0 0 3px #ffd16666);
+}
+@media (max-width: 639px) {
+  .room-arcade_cabinet,
+  .room-cyber_deck,
+  .room-vaporwave_shrine,
+  .room-halloween_crypt,
+  .room-christmas_lodge {
+    padding: 8px;
+    border-width: 2px;
+  }
+  .room-marquee {
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+  .room-arcade_cabinet .room-screen {
+    border-width: 3px;
+    padding: 6px;
+  }
+}
