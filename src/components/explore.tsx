@@ -7,7 +7,11 @@ import { readJsonResponse } from '@/lib/api-response';
 import { QuickAdd } from '@/components/quick-add';
 import { CatalogueSkeleton } from '@/components/ui/loading-skeleton';
 interface Result {
-  games: (Game & { community_rating: number | null })[];
+  games: (Game & {
+    community_rating: number | null;
+    release_date: string | null;
+    days_until_release: number | null;
+  })[];
   source: string;
   message: string | null;
   nextOffset: number | null;
@@ -25,7 +29,10 @@ export function Explore({
     genre: initial.genre ?? '',
     year: initial.year ?? '',
     rating: initial.rating ?? '',
-    sort: initial.sort === 'recent' || initial.sort === 'classics' ? initial.sort : 'relevance',
+    sort:
+      initial.sort === 'recent' || initial.sort === 'classics' || initial.sort === 'upcoming'
+        ? initial.sort
+        : 'relevance',
     offset: 0,
   }));
   const { q, platform, genre, year, rating, sort, offset } = filters;
@@ -86,6 +93,26 @@ export function Explore({
   return (
     <>
       <div className="panel">
+        <div className="explore-mode-tabs" role="group" aria-label="Modo del catálogo">
+          {(
+            [
+              ['relevance', '🔥 Populares'],
+              ['upcoming', '🚀 Próximos Estrenos'],
+              ['recent', '⚡ Recientes'],
+              ['classics', '🕹️ Clásicos'],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className={`button small${sort === value ? '' : ' outline'}`}
+              aria-pressed={sort === value}
+              onClick={() => change('sort', value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <form className="search-grid" onSubmit={(event) => event.preventDefault()} role="search">
           <label>
             Buscar juego, estudio o saga
@@ -154,6 +181,7 @@ export function Explore({
             <select value={sort} onChange={(event) => change('sort', event.target.value)}>
               <option value="relevance">Relevancia / más opiniones en IGDB</option>
               <option value="recent">Lanzamientos recientes</option>
+              <option value="upcoming">Próximos lanzamientos (Cuenta regresiva)</option>
               <option value="classics">Clásicos (antes de 2010)</option>
             </select>
           </label>
@@ -172,7 +200,11 @@ export function Explore({
       <div className="game-grid" aria-busy={loading}>
         {result.games.map((game) => (
           <article key={game.id}>
-            <GameCard game={game} score={game.community_rating} />
+            <GameCard
+              game={game}
+              score={game.community_rating}
+              daysUntil={game.days_until_release}
+            />
             <QuickAdd gameId={game.id} authenticated={authenticated} />
           </article>
         ))}

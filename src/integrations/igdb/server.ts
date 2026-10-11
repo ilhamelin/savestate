@@ -58,8 +58,11 @@ export const fetchCatalogue = unstable_cache(
       throw new AppError('IGDB no está disponible. Se utilizará la copia local.', 503);
     const data: unknown = await response.json();
     if (!Array.isArray(data)) throw new AppError('Respuesta inválida del catálogo.', 503);
-    return (data as IgdbGame[]).map(mapIgdbGame);
+    return (data as IgdbGame[]).map((game) => ({
+      ...mapIgdbGame(game),
+      first_release_date: game.first_release_date ?? null,
+    }));
   },
-  ['igdb-catalogue-v1'],
+  ['igdb-catalogue-v2'],
   { revalidate: 86400 },
 );

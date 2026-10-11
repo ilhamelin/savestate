@@ -4,6 +4,7 @@ import { fetchCatalogue } from '@/integrations/igdb/server';
 import { catalogueAdmin } from '@/integrations/supabase/admin';
 import { localCatalogue } from '@/repositories/catalogue';
 import type { CatalogueFilters } from '@/integrations/igdb/query';
+import { daysUntilRelease } from '@/integrations/igdb/query';
 import { dbCheck } from '@/lib/http';
 export async function catalogue(filters: CatalogueFilters) {
   if (!isConfigured())
@@ -15,6 +16,7 @@ export async function catalogue(filters: CatalogueFilters) {
     };
   let source: 'igdb' | 'local' = 'local';
   let igdbIds: number[] | undefined;
+  const releaseDates = new Map<number, number | null>();
   // The 24h cache in fetchCatalogue is keyed by the complete query. Fresh local
   // rows alone cannot establish that a broader or different search is complete.
   if (
@@ -24,10 +26,14 @@ export async function catalogue(filters: CatalogueFilters) {
   ) {
     try {
       const games = await fetchCatalogue({ ...filters, minRating: null });
+      const rows = games.map(({ first_release_date, ...row }) => {
+        releaseDates.set(row.igdb_id, first_release_date);
+        return row;
+      });
       if (games.length) {
         const { error } = await catalogueAdmin()
           .from('games')
-          .upsert(games, { onConflict: 'igdb_id' });
+          .upsert(rows, { onConflict: 'igdb_id' });
         dbCheck(error);
       }
       source = 'igdb';
@@ -44,12 +50,22 @@ export async function catalogue(filters: CatalogueFilters) {
     : page;
   const pageSize = igdbIds?.length ?? page.length;
   return {
-    games,
+    games: games.map((game) => {
+      const timestamp = source === 'igdb' ? releaseDates.get(game.igdb_id) : null;
+      const date = timestamp && Number.isFinite(timestamp) ? new Date(timestamp * 1000) : null;
+      return {
+        ...game,
+        release_date: date && Number.isFinite(date.getTime()) ? date.toISOString() : null,
+        days_until_release: daysUntilRelease(timestamp),
+      };
+    }),
     nextOffset: pageSize === 24 && filters.offset < 960 ? filters.offset + 24 : null,
     source,
     message:
       source === 'local'
-        ? 'Consultando el catálogo almacenado. IGDB no está disponible o aún no está configurado.'
+        ? filters.sort === 'upcoming'
+          ? 'Catálogo local por año: puede incluir juegos ya estrenados. Las fechas exactas y cuentas regresivas requieren IGDB.'
+          : 'Consultando el catálogo almacenado. IGDB no está disponible o aún no está configurado.'
         : null,
   };
 }

@@ -15,7 +15,7 @@ export async function localCatalogue(filters: CatalogueFilters, igdbIds?: number
   let query = db
     .from('games')
     .select('*')
-    .order('release_year', { ascending: false, nullsFirst: false })
+    .order('release_year', { ascending: filters.sort === 'upcoming', nullsFirst: false })
     .order('id');
   if (igdbIds) {
     if (!igdbIds.length) return [];
@@ -24,6 +24,7 @@ export async function localCatalogue(filters: CatalogueFilters, igdbIds?: number
     query = query.range(filters.offset, filters.offset + 23);
     if (filters.sort === 'classics') query = query.lt('release_year', 2010);
     if (filters.sort === 'recent') query = query.lte('release_year', new Date().getUTCFullYear());
+    if (filters.sort === 'upcoming') query = query.gte('release_year', new Date().getUTCFullYear());
   }
   // Remove PostgREST structural characters. External IGDB uses independently escaped strings.
   if (!igdbIds && filters.q) {

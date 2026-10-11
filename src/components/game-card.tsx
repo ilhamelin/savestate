@@ -6,10 +6,12 @@ export function GameCard({
   game,
   score,
   prefetch,
+  daysUntil,
 }: {
   game: Game;
   score?: number | null;
   prefetch?: boolean;
+  daysUntil?: number | null;
 }) {
   return (
     <Link href={`/games/${game.slug}`} className="game-card" prefetch={prefetch}>
@@ -28,6 +30,11 @@ export function GameCard({
       <div className="game-card-badges">
         <span className="game-poster-badge">{game.release_year ?? 'TBA'}</span>
         {score ? <span className="game-poster-badge score">★ {score}</span> : null}
+        {daysUntil != null && daysUntil > 0 ? (
+          <span className="game-poster-badge countdown">
+            ⏳ {daysUntil === 1 ? 'Mañana' : `Faltan ${daysUntil}d`}
+          </span>
+        ) : null}
       </div>
       <div className="game-card-body">
         <h3 className="line-clamp-2" title={game.title}>
