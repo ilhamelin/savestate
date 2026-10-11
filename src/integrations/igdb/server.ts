@@ -34,6 +34,9 @@ async function accessToken() {
     tokenRequest = null;
   }
 }
+export async function twitchAccessToken() {
+  return accessToken();
+}
 export const fetchCatalogue = unstable_cache(
   async (filters: CatalogueFilters) => {
     if (!process.env.TWITCH_CLIENT_ID || !process.env.TWITCH_CLIENT_SECRET)

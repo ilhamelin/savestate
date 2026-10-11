@@ -1,4 +1,5 @@
-import { cache } from 'react';
+import { cache, Suspense } from 'react';
+import { GameLiveRadar } from '@/components/game-live-radar';
 import { GameForum } from '@/components/game-forum';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -155,6 +156,15 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
           )}
         </div>
       </section>
+      <Suspense
+        fallback={
+          <section className="panel muted" aria-busy="true">
+            Cargando telemetría en vivo, ofertas y streams de Twitch…
+          </section>
+        }
+      >
+        <GameLiveRadar title={game.title} />
+      </Suspense>
       <section className="panel">
         <h2>Estadísticas públicas</h2>
         <p className="muted">

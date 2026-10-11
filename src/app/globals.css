@@ -4492,3 +4492,164 @@ button.discord-channel-pill:focus-visible {
   color: #f2f4f8;
   background: var(--profile-bg);
 }
+/* Live game telemetry, private messages and competitive trackers. */
+.game-live-radar {
+  margin-block: 1.5rem;
+  min-width: 0;
+}
+.live-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.65rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  background: #08090ce6;
+}
+.steam-pill {
+  color: #4ade80;
+}
+.twitch-pill {
+  color: #ff718e;
+}
+.low-pill {
+  color: #ffb800;
+}
+.live-deals {
+  display: grid;
+  gap: 0.65rem;
+}
+.live-deals article {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.8rem;
+  border: 1px solid var(--line);
+}
+.live-deals article strong {
+  margin-right: auto;
+}
+.live-deals del {
+  color: var(--muted);
+}
+.live-stream-grid,
+.competitive-showcase {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  gap: 1rem;
+}
+.live-stream-card {
+  min-width: 0;
+  border: 1px solid var(--line);
+  padding: 0.65rem;
+  text-decoration: none;
+}
+.live-stream-card p {
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+.live-stream-image {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #111a24;
+  margin-bottom: 0.65rem;
+}
+.live-stream-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.live-stream-image .live-pill {
+  position: absolute;
+  bottom: 0.3rem;
+  left: 0.3rem;
+  font-size: 0.7rem;
+}
+.friend-chat-drawer {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 110;
+  width: min(390px, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  margin: 0;
+  padding: 1rem;
+  background: #0b101bf5;
+  border-color: var(--accent);
+  box-shadow: 0 0 28px #0009;
+}
+.friend-chat-drawer header,
+.friend-chat-drawer form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.friend-chat-drawer header strong {
+  margin-right: auto;
+}
+.friend-chat-drawer header span,
+.friend-chat-drawer time {
+  font-size: 0.72rem;
+}
+.friend-chat-drawer input {
+  min-width: 0;
+  flex: 1;
+}
+.friend-chat-messages {
+  height: min(320px, 45dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin-bottom: 0.75rem;
+}
+.friend-chat-messages article {
+  margin: 0.5rem 1.5rem 0.5rem 0;
+  padding: 0.6rem;
+  background: #151c28;
+  border-left: 2px solid #526079;
+}
+.friend-chat-messages article.dm-own {
+  margin: 0.5rem 0 0.5rem 1.5rem;
+  border-color: var(--accent);
+}
+.friend-chat-messages p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 0.25rem 0;
+}
+.friend-chat-btn {
+  flex-shrink: 0;
+}
+.competitive-hub-tabs {
+  min-width: 0;
+}
+.competitive-hub-tabs > [hidden] {
+  display: none;
+}
+.competitive-profile {
+  margin-top: 1.5rem;
+}
+.competitive-profile p {
+  overflow-wrap: anywhere;
+}
+.competitive-hub-tabs form label {
+  flex: 1 1 180px;
+}
+.competitive-hub-tabs form input,
+.competitive-hub-tabs form select {
+  width: 100%;
+}
+@media (max-width: 600px) {
+  .friend-chat-drawer {
+    right: 0.5rem;
+    bottom: 0.5rem;
+    width: calc(100vw - 1rem);
+  }
+  .live-deals article strong {
+    width: 100%;
+  }
+  .competitive-hub-tabs > .filter-buttons button {
+    flex: 1 1 100%;
+  }
+}

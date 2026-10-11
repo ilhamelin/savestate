@@ -8,6 +8,7 @@ import { api } from '@/lib/client-api';
 import { useOnlineUsers } from '@/lib/presence';
 import { friendLevelTier } from '@/domain/player-friends';
 import type { FriendProfile, FriendRequest, PlayerFriend } from '@/domain/player-friends';
+import { FriendChatDrawer } from '@/components/friend-chat-drawer';
 
 function FriendIdentity({ profile, isOnline }: { profile: FriendProfile; isOnline: boolean }) {
   return (
@@ -42,14 +43,17 @@ export function PlayerFriendsWidget({
   sentRequests = [],
   isOwner,
   available = true,
+  currentUserId,
 }: {
   friends: PlayerFriend[];
   receivedRequests?: FriendRequest[];
   sentRequests?: FriendRequest[];
   isOwner: boolean;
   available?: boolean;
+  currentUserId?: string | null;
 }) {
   const [tab, setTab] = useState<'friends' | 'received' | 'sent'>('friends');
+  const [activeChatFriend, setActiveChatFriend] = useState<FriendProfile | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState(false);
@@ -118,6 +122,15 @@ export function PlayerFriendsWidget({
             {friends.map((friend) => (
               <li key={friend.id}>
                 <FriendIdentity profile={friend} isOnline={onlineUsers.has(friend.id)} />
+                {isOwner && currentUserId && (
+                  <button
+                    type="button"
+                    className="button outline small friend-chat-btn"
+                    onClick={() => setActiveChatFriend(friend)}
+                  >
+                    💬 Chat
+                  </button>
+                )}
               </li>
             ))}
           </ul>
@@ -177,6 +190,15 @@ export function PlayerFriendsWidget({
           {message}
         </p>
       ) : null}
+      {activeChatFriend && isOwner && currentUserId && (
+        <FriendChatDrawer
+          key={activeChatFriend.id}
+          currentUserId={currentUserId}
+          friend={activeChatFriend}
+          isOnline={onlineUsers.has(activeChatFriend.id)}
+          onClose={() => setActiveChatFriend(null)}
+        />
+      )}
     </section>
   );
 }

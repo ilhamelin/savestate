@@ -3,8 +3,9 @@ import { currentUser } from '@/lib/session';
 import { ProfileLolTracker } from '@/components/profile-lol-tracker';
 import { lolAccount } from '@/domain/lol-accounts';
 import { ProfileWallpaper } from '@/components/profile-wallpaper';
+import { CompetitiveHubTabs } from '@/components/competitive-hub-tabs';
 
-export const metadata = { title: 'Rift Tracker · League of Legends' };
+export const metadata = { title: 'Rift · Hub de trackers' };
 export default async function RiftPage({
   searchParams,
 }: {
@@ -19,16 +20,18 @@ export default async function RiftPage({
   if (!(await currentUser())) redirect(`/login?next=${encodeURIComponent(next)}`);
   return (
     <ProfileWallpaper url="/wallpapers/rift_arcane.jpg" fullScreen>
-      <ProfileLolTracker
-        key={next + String(hasLink)}
-        configured={Boolean(process.env.RIOT_API_KEY?.trim())}
-        initialAccount={account}
-        initialError={
-          hasLink && !account
-            ? 'El enlace debe incluir un Riot ID Nombre#TAG y una plataforma válida.'
-            : ''
-        }
-      />
+      <CompetitiveHubTabs>
+        <ProfileLolTracker
+          key={next + String(hasLink)}
+          configured={Boolean(process.env.RIOT_API_KEY?.trim())}
+          initialAccount={account}
+          initialError={
+            hasLink && !account
+              ? 'El enlace debe incluir un Riot ID Nombre#TAG y una plataforma válida.'
+              : ''
+          }
+        />
+      </CompetitiveHubTabs>
     </ProfileWallpaper>
   );
 }

@@ -178,6 +178,7 @@ export default async function Player({ params }: { params: Promise<{ username: s
         <div className="profile-dual-grid" id="player-friends">
           <HardwareBadges platforms={hardware} />
           <PlayerFriendsWidget
+            currentUserId={user?.id ?? null}
             key={profile.id}
             friends={friendships.friends}
             available={friendships.available}
