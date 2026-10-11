@@ -4366,3 +4366,25 @@ a.feed-card-cover:hover {
   color: var(--muted);
   font-size: 0.75rem;
 }
+.friend-presence {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+}
+.friend-presence.is-online {
+  color: #4ade80;
+}
+.friend-presence.is-offline {
+  color: var(--muted);
+}
+.friend-presence-dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: currentColor;
+}
+.friend-presence.is-online .friend-presence-dot {
+  box-shadow: 0 0 6px currentColor;
+}

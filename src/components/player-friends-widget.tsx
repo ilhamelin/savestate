@@ -5,10 +5,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/client-api';
+import { useOnlineUsers } from '@/lib/presence';
 import { friendLevelTier } from '@/domain/player-friends';
 import type { FriendProfile, FriendRequest, PlayerFriend } from '@/domain/player-friends';
 
-function FriendIdentity({ profile }: { profile: FriendProfile }) {
+function FriendIdentity({ profile, isOnline }: { profile: FriendProfile; isOnline: boolean }) {
   return (
     <Link className="friend-identity" href={`/players/${profile.username}`}>
       <span className="friend-avatar">
@@ -20,6 +21,10 @@ function FriendIdentity({ profile }: { profile: FriendProfile }) {
       </span>
       <span className="friend-copy">
         <strong>@{profile.username}</strong>
+        <span className={`friend-presence ${isOnline ? 'is-online' : 'is-offline'}`}>
+          <span className="friend-presence-dot" aria-hidden="true" />
+          {isOnline ? 'Activo' : 'Inactivo'}
+        </span>
       </span>
       <span
         className={`friend-level-circle friend-level-${friendLevelTier(profile.level)}`}
@@ -51,6 +56,7 @@ export function PlayerFriendsWidget({
   const [refreshing, startTransition] = useTransition();
   const locked = useRef(false);
   const router = useRouter();
+  const onlineUsers = useOnlineUsers();
   const requests = tab === 'received' ? receivedRequests : sentRequests;
 
   async function mutate(id: string, status?: 'accepted' | 'rejected') {
@@ -111,7 +117,7 @@ export function PlayerFriendsWidget({
           <ul className="friend-list">
             {friends.map((friend) => (
               <li key={friend.id}>
-                <FriendIdentity profile={friend} />
+                <FriendIdentity profile={friend} isOnline={onlineUsers.has(friend.id)} />
               </li>
             ))}
           </ul>
@@ -122,7 +128,10 @@ export function PlayerFriendsWidget({
         <ul className="friend-list">
           {requests.map((request) => (
             <li key={request.id}>
-              <FriendIdentity profile={request.profile} />
+              <FriendIdentity
+                profile={request.profile}
+                isOnline={onlineUsers.has(request.profile.id)}
+              />
               <div className="friend-request-actions">
                 {tab === 'received' ? (
                   <>

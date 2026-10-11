@@ -4,6 +4,7 @@ import { Bell } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { browserClient } from '@/integrations/supabase/browser';
+import { useOnlineUsers } from '@/lib/presence';
 import { api } from '@/lib/client-api';
 import { readJsonResponse } from '@/lib/api-response';
 import {
@@ -13,6 +14,7 @@ import {
 } from '@/domain/notifications';
 
 export function NotificationBell({ userId }: { userId: string }) {
+  useOnlineUsers(userId);
   const [summary, setSummary] = useState<NotificationSummary | null>(null);
   const [open, setOpen] = useState(false),
     [pending, setPending] = useState(false);
