@@ -25,6 +25,9 @@ import { GamerRoom } from '@/components/gamer-room';
 import { BadgeGallery } from '@/components/badge-gallery';
 import { playerBadges } from '@/services/badges';
 import { dossierFor } from '@/repositories/dossier';
+import { profileDossier } from '@/domain/dossier';
+import { ProfilePresenceBadge } from '@/components/profile-presence-badge';
+import { ProfileContentTabs } from '@/components/profile-content-tabs';
 import { hardwareForDisplay } from '@/domain/hardware';
 import { StatsDossier, HardwareBadges } from '@/components/profile-dossier';
 import { MemoryCardExport } from '@/components/memory-card-export';
@@ -64,12 +67,15 @@ export default async function Player({ params }: { params: Promise<{ username: s
       : Promise.resolve({ data: null, error: null }),
     playerBadges(profile.id),
     playerFriends(profile.id),
-    isOwner ? pendingFriendRequests() : Promise.resolve({ received: [], sent: [] }),
+    isOwner ? pendingFriendRequests(user!.id) : Promise.resolve({ received: [], sent: [] }),
   ]);
   [access, following, friendship].forEach((result) => dbCheck(result.error));
-  const [library, dossier] = access.data
-    ? await Promise.all([libraryFor(profile.id), dossierFor(profile.id)])
-    : [null, null];
+  const library = access.data ? await libraryFor(profile.id) : null;
+  const dossier = library
+    ? library.count <= 500 && library.logs.length < 1000
+      ? profileDossier(library.entries, library.logs)
+      : await dossierFor(profile.id)
+    : null;
   const hardware = hardwareForDisplay(profile.owned_platforms);
   const favorites =
     library?.entries
@@ -101,7 +107,11 @@ export default async function Player({ params }: { params: Promise<{ username: s
           ) : null}
         </div>
         <GamerRoom theme={profile.room_theme}>
-          <ProfileIdentity profile={profile} animateTerminal>
+          <ProfileIdentity
+            profile={profile}
+            animateTerminal
+            presenceBadge={<ProfilePresenceBadge userId={profile.id} />}
+          >
             <div className="tags">
               {profile.psn_id ? <span className="tag">🎮 PSN: @{profile.psn_id}</span> : null}
               {profile.xbox_gamertag ? (
@@ -115,50 +125,9 @@ export default async function Player({ params }: { params: Promise<{ username: s
             </div>
           </ProfileIdentity>
         </GamerRoom>
-        <div className="profile-dual-grid" id="player-friends">
-          <HardwareBadges platforms={hardware} />
-          <PlayerFriendsWidget
-            key={profile.id}
-            friends={friendships.friends}
-            available={friendships.available}
-            receivedRequests={requests.received}
-            sentRequests={requests.sent}
-            isOwner={isOwner}
-          />
-        </div>
-        <BadgeGallery {...badges} />
-        {isOwner ? <ProfileIndieTracker /> : null}
-        <p>
-          <Link className="button secondary" href={`/players/${profile.username}/wrapped`}>
-            Ver SaveState Wrapped →
-          </Link>
-        </p>
-        <nav className="tabs" aria-label="Momentos del jugador">
-          <Link href={`/highlights?player=${profile.id}`}>Momentos</Link>
-          <a href="#player-friends">Amigos ({friendships.friends.length})</a>
-        </nav>
-        {user ? (
-          <SocialControls
-            targetId={profile.id}
-            viewerId={user.id}
-            following={Boolean(following.data)}
-            friendship={friendship.data}
-          />
-        ) : (
-          <Link className="accent" href="/login">
-            Conecta para seguir o solicitar amistad.
-          </Link>
-        )}
-        {!library ? (
-          <div className="empty-state">
-            <h2>Biblioteca visible solo para amigos.</h2>
-            <p>
-              El seguimiento permite ver actividad pública. Una amistad aceptada concede acceso a
-              esta biblioteca.
-            </p>
-          </div>
-        ) : (
+        {library ? (
           <>
+            {' '}
             <div className="page-heading">
               <div>
                 <p className="eyebrow">FOUR GAMES. ONE PLAYER.</p>
@@ -186,48 +155,96 @@ export default async function Player({ params }: { params: Promise<{ username: s
                 dossier calcula toda la biblioteca.
               </p>
             ) : null}
-            <nav className="tabs" aria-label="Secciones del perfil">
-              <a href="#player-library">Biblioteca</a>
-              <a href="#player-stats">Estadísticas</a>
-              <a href="#player-dossier">Dossier</a>
-              <Link href={`/lists?player=${profile.id}`}>Listas</Link>
-            </nav>
-            {dossier ? (
-              <>
-                <StatsDossier stats={dossier} />
-                <AchievementsShowcase
-                  games={library.games}
-                  entries={library.entries}
-                  logs={library.logs}
-                />
-                <MemoryCardExport
-                  data={{
-                    profile: {
-                      username: profile.username,
-                      avatar_url: profile.avatar_url,
-                      terminal_status: profile.terminal_status,
-                      owned_platforms: hardware,
-                    },
-                    clearRate: dossier.clearRate,
-                    hours: dossier.hours,
-                    favorites: favorites.flatMap((entry) => {
-                      const game = library.games.find((g) => g.id === entry.game_id);
-                      return game
-                        ? [{ id: game.id, title: game.title, cover_url: game.cover_url }]
-                        : [];
-                    }),
-                  }}
-                />
-              </>
-            ) : null}
-            <PlayerStatistics {...library} />
-            <section
-              id="player-library"
-              className={profile.room_theme === 'retro_shelf' ? 'retro-library' : undefined}
-            >
-              <Library {...library} editable={user?.id === profile.id} />
-            </section>
           </>
+        ) : null}
+        <nav className="tabs profile-shortcuts" aria-label="Accesos del jugador">
+          <Link href={`/highlights?player=${profile.id}`}>Momentos</Link>
+          <Link href={`/lists?player=${profile.id}`}>Listas</Link>
+          <a href="#player-friends">Amigos ({friendships.friends.length})</a>
+          <Link href={`/players/${profile.username}/wrapped`}>🎁 SaveState Wrapped →</Link>
+        </nav>
+        <div className="profile-dual-grid" id="player-friends">
+          <HardwareBadges platforms={hardware} />
+          <PlayerFriendsWidget
+            key={profile.id}
+            friends={friendships.friends}
+            available={friendships.available}
+            receivedRequests={requests.received}
+            sentRequests={requests.sent}
+            isOwner={isOwner}
+          />
+        </div>
+        <BadgeGallery {...badges} />
+        {isOwner ? <ProfileIndieTracker /> : null}
+        {user ? (
+          <SocialControls
+            targetId={profile.id}
+            viewerId={user.id}
+            following={Boolean(following.data)}
+            friendship={friendship.data}
+          />
+        ) : (
+          <Link className="accent" href="/login">
+            Conecta para seguir o solicitar amistad.
+          </Link>
+        )}
+        {!library ? (
+          <div className="empty-state">
+            <h2>Biblioteca visible solo para amigos.</h2>
+            <p>
+              El seguimiento permite ver actividad pública. Una amistad aceptada concede acceso a
+              esta biblioteca.
+            </p>
+          </div>
+        ) : (
+          <ProfileContentTabs
+            library={
+              <section
+                id="player-library"
+                className={profile.room_theme === 'retro_shelf' ? 'retro-library' : undefined}
+              >
+                <Library {...library} editable={user?.id === profile.id} />
+              </section>
+            }
+            statistics={
+              <>
+                {dossier ? <StatsDossier stats={dossier} /> : null}
+                <PlayerStatistics {...library} />
+              </>
+            }
+            showcase={
+              <section id="player-showcase">
+                {dossier ? (
+                  <>
+                    {' '}
+                    <AchievementsShowcase
+                      games={library.games}
+                      entries={library.entries}
+                      logs={library.logs}
+                    />
+                    <MemoryCardExport
+                      data={{
+                        profile: {
+                          username: profile.username,
+                          avatar_url: profile.avatar_url,
+                          terminal_status: profile.terminal_status,
+                          owned_platforms: hardware,
+                        },
+                        clearRate: dossier.clearRate,
+                        hours: dossier.hours,
+                        favorites: favorites.flatMap((entry) => {
+                          const game = library.games.find((g) => g.id === entry.game_id);
+                          return game
+                            ? [{ id: game.id, title: game.title, cover_url: game.cover_url }]
+                            : [];
+                        }),
+                      }}
+                    />
+                  </>
+                ) : null}
+              </section>
+            }
+          />
         )}
       </div>
     </ProfileWallpaper>

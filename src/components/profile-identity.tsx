@@ -17,6 +17,7 @@ export function ProfileIdentity({
   bannerOverlay,
   usernameEditor,
   terminalEditor,
+  presenceBadge,
 }: {
   profile: Identity;
   headingLevel?: 1 | 2;
@@ -26,6 +27,7 @@ export function ProfileIdentity({
   bannerOverlay?: ReactNode;
   usernameEditor?: ReactNode;
   terminalEditor?: ReactNode;
+  presenceBadge?: ReactNode;
 }) {
   const Heading = headingLevel === 1 ? 'h1' : 'h2';
   const terminal = `${profile.username}@savestate:~$ ${profile.terminal_status || 'Ready to play'}`;
@@ -64,6 +66,7 @@ export function ProfileIdentity({
           <div className="profile-identity-info">
             <p className="eyebrow">PLAYER PROFILE</p>
             <Heading>{usernameEditor ?? <>@{profile.username}</>}</Heading>
+            {presenceBadge}
             <p className="player-rank">
               <LevelBadge level={profile.level ?? 1} />{' '}
               <span>{profile.equipped_title ?? 'Insert Coin'}</span>

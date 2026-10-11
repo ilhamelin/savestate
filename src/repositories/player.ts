@@ -21,9 +21,11 @@ export async function playerFriends(userId: string) {
   return { friends, available: true };
 }
 
-// No caller-provided owner ID: requests always belong to the authenticated viewer.
-export async function pendingFriendRequests() {
-  const { db, user } = await authenticated();
+// Server callers may reuse the authenticated viewer ID; RLS still protects pending requests.
+export async function pendingFriendRequests(userId?: string) {
+  const { db, user } = userId
+    ? { db: await serverClient(), user: { id: userId } }
+    : await authenticated();
   const requests: Friendship[] = [];
   for (let offset = 0; ; offset += 1000) {
     const result = await db
