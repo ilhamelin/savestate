@@ -4416,3 +4416,8 @@ button.discord-channel-pill:focus-visible {
 .discord-readonly {
   margin-top: 0.75rem;
 }
+@media (max-width: 1024px) {
+  body {
+    background-attachment: scroll;
+  }
+}

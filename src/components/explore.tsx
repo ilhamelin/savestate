@@ -37,9 +37,22 @@ export function Explore({
   }));
   const { q, platform, genre, year, rating, sort, offset } = filters;
   const [attempt, setAttempt] = useState(0);
-  function change(key: string, value: string) {
-    setLoading(true);
-    setFilters((previous) => ({ ...previous, [key]: value, offset: 0 }));
+  const cacheRef = useRef<Map<string, Result>>(new Map());
+  const delayRef = useRef(0);
+  const requestRevision = useRef(0);
+  const lastAttempt = useRef(attempt);
+  function change(key: keyof Omit<typeof filters, 'offset'>, value: string) {
+    if (filters[key] === value && offset === 0) return;
+    requestRevision.current++;
+    const next = { ...filters, [key]: value, offset: 0 };
+    const { offset: nextOffset, ...query } = next;
+    const cached =
+      nextOffset === 0 ? cacheRef.current.get(new URLSearchParams(query).toString()) : undefined;
+    delayRef.current = ['q', 'platform', 'year'].includes(key) ? 300 : 0;
+    setError('');
+    if (cached) setResult(cached);
+    setLoading(!cached);
+    setFilters(next);
   }
   const [result, setResult] = useState<Result>({
       games: [],
@@ -56,16 +69,27 @@ export function Explore({
   }, []);
   useEffect(() => {
     const controller = new AbortController();
+    const version = requestRevision.current;
+    const params = new URLSearchParams({ q, platform, genre, year, rating, sort });
+    const key = params.toString();
+    window.history.replaceState(null, '', `/explore?${params}`);
+    const retry = lastAttempt.current !== attempt;
+    lastAttempt.current = attempt;
+    // Cache hits are already restored in the input event, avoiding a loading frame.
+    if (!offset && !retry && cacheRef.current.has(key)) return () => controller.abort();
+    params.set('offset', String(offset));
     const timer = setTimeout(async () => {
       setLoading(true);
       setError('');
       try {
-        const params = new URLSearchParams({ q, platform, genre, year, rating, sort });
-        window.history.replaceState(null, '', `/explore?${params}`);
-        params.set('offset', String(offset));
         const response = await fetch(`/api/catalogue?${params}`, { signal: controller.signal });
         const data = await readJsonResponse<Result>(response);
-        if (!controller.signal.aborted)
+        if (!controller.signal.aborted && version === requestRevision.current) {
+          if (!offset) {
+            cacheRef.current.set(key, data);
+            if (cacheRef.current.size > 30)
+              cacheRef.current.delete(cacheRef.current.keys().next().value!);
+          }
           setResult((previous) => ({
             ...data,
             games: offset
@@ -76,15 +100,16 @@ export function Explore({
                 ]
               : data.games,
           }));
+        }
       } catch (error) {
-        if (!controller.signal.aborted) {
+        if (!controller.signal.aborted && version === requestRevision.current) {
           setError(error instanceof Error ? error.message : 'No se pudo cargar el catálogo.');
           if (!offset) setResult({ games: [], source: '', message: null, nextOffset: null });
         }
       } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        if (!controller.signal.aborted && version === requestRevision.current) setLoading(false);
       }
-    }, 350);
+    }, delayRef.current);
     return () => {
       clearTimeout(timer);
       controller.abort();
@@ -214,6 +239,8 @@ export function Explore({
           className="button secondary"
           disabled={loading}
           onClick={() => {
+            requestRevision.current++;
+            delayRef.current = 0;
             setLoading(true);
             setAttempt((previous) => previous + 1);
             setFilters((previous) => ({ ...previous, offset: result.nextOffset! }));

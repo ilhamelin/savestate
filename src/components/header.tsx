@@ -3,21 +3,9 @@ import { Gamepad2, ArrowUpRight } from 'lucide-react';
 import { CommandMenu } from '@/components/command-menu';
 import { NotificationBell } from '@/components/notification-bell';
 import { HeaderNav } from '@/components/header-nav';
-import { currentUser } from '@/lib/session';
-import { serverClient } from '@/integrations/supabase/server';
+import { currentUser, currentViewerProfile } from '@/lib/session';
 export async function Header() {
-  const user = await currentUser();
-  const profile = user
-    ? (
-        await (
-          await serverClient()
-        )
-          .from('profiles')
-          .select('username')
-          .eq('id', user.id)
-          .maybeSingle()
-      ).data
-    : null;
+  const [user, profile] = await Promise.all([currentUser(), currentViewerProfile()]);
   return (
     <header className="site-header">
       <Link href="/" className="brand" aria-label="Savestate, inicio">

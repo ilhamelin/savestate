@@ -1,12 +1,18 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { ArrowUpRight, Gamepad2 } from 'lucide-react';
 import { SetupNotice } from '@/components/setup-notice';
 import { getRecentGamingNews } from '@/services/gaming-news';
 import { RecentNewsSection } from '@/components/recent-news-section';
 import { getActiveFreebies } from '@/services/freebies';
 import { FreebiesTracker } from '@/components/freebies-tracker';
-export default async function Home() {
-  const [news, freebies] = await Promise.all([getRecentGamingNews(), getActiveFreebies()]);
+async function NewsStream() {
+  return <RecentNewsSection news={await getRecentGamingNews()} />;
+}
+async function FreebiesStream() {
+  return <FreebiesTracker freebies={await getActiveFreebies()} />;
+}
+export default function Home() {
   return (
     <>
       <section className="hero">
@@ -68,8 +74,24 @@ export default async function Home() {
         </div>
       </section>
       <SetupNotice />
-      <RecentNewsSection news={news} />
-      <FreebiesTracker freebies={freebies} />
+      <Suspense
+        fallback={
+          <div className="panel skeleton" aria-busy="true">
+            Cargando noticias…
+          </div>
+        }
+      >
+        <NewsStream />
+      </Suspense>
+      <Suspense
+        fallback={
+          <div className="panel skeleton" aria-busy="true">
+            Cargando juegos gratis…
+          </div>
+        }
+      >
+        <FreebiesStream />
+      </Suspense>
     </>
   );
 }
