@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Gamepad2, ArrowUpRight } from 'lucide-react';
 import { CommandMenu } from '@/components/command-menu';
 import { NotificationBell } from '@/components/notification-bell';
+import { HeaderNav } from '@/components/header-nav';
 import { currentUser } from '@/lib/session';
 import { serverClient } from '@/integrations/supabase/server';
 export async function Header() {
@@ -26,18 +27,7 @@ export async function Header() {
           <small>YOUR NEXT CHECKPOINT</small>
         </span>
       </Link>
-      <nav aria-label="Navegación principal">
-        <Link href="/explore">Explorar</Link>
-        <Link href="/library">Biblioteca</Link>
-        <Link href="/feed">Transmisión</Link>
-        <Link href="/highlights">Momentos</Link>
-        <Link href="/forum">Foro</Link>
-        <Link href="/parties">Compañeros</Link>
-        <Link href="/lists">Listas</Link>
-        <Link href="/players">Jugadores</Link>
-        <Link href="/community/discord">Discord</Link>
-        <Link href="/rift">Rift</Link>
-      </nav>
+      <HeaderNav />
       <div className="header-actions">
         <CommandMenu
           authenticated={Boolean(user)}

@@ -13,7 +13,7 @@ export function GameCard({
 }) {
   return (
     <Link href={`/games/${game.slug}`} className="game-card" prefetch={prefetch}>
-      <div className="cover aspect-[3/4]">
+      <div className="cover">
         {game.cover_url ? (
           <Image
             src={game.cover_url}
@@ -25,10 +25,11 @@ export function GameCard({
           <Gamepad2 size={48} aria-hidden="true" />
         )}
       </div>
+      <div className="game-card-badges">
+        <span className="game-poster-badge">{game.release_year ?? 'TBA'}</span>
+        {score ? <span className="game-poster-badge score">★ {score}</span> : null}
+      </div>
       <div className="game-card-body">
-        <div className="eyebrow">
-          {game.release_year ?? 'SIN FECHA'} <span>{score ? `★ ${score}/10` : '—'}</span>
-        </div>
         <h3 className="line-clamp-2" title={game.title}>
           {game.title}
         </h3>
