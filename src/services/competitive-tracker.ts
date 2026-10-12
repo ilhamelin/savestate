@@ -5,7 +5,7 @@ import {
   normalizedGenshin,
   type CompetitiveProfile,
 } from '@/domain/competitive-tracker';
-import { record } from '@/domain/game-live-telemetry';
+import { inspectValorant } from '@/services/valorant';
 import { AppError } from '@/lib/http';
 import { getEnkaStore } from '@/services/genshin-enka-store';
 async function upstream(url: string, headers: Record<string, string> = {}) {
@@ -44,45 +44,9 @@ const inspectCached = unstable_cache(
       ]);
       return normalizedGenshin(payload, input.uid, store);
     }
-    if (!process.env.RIOT_API_KEY?.trim())
-      throw new AppError('Se requiere configurar RIOT_API_KEY para consultar Valorant.', 503);
-    const cluster =
-      input.region === 'eu'
-        ? 'europe'
-        : input.region === 'ap' || input.region === 'kr'
-          ? 'asia'
-          : 'americas';
-    const base = `https://${cluster}.api.riotgames.com/riot/account/v1`;
-    const headers = { 'X-Riot-Token': process.env.RIOT_API_KEY };
-    const account = record(
-      await upstream(
-        `${base}/accounts/by-riot-id/${encodeURIComponent(input.gameName)}/${encodeURIComponent(input.tagLine)}`,
-        headers,
-      ),
-    );
-    if (
-      typeof account.puuid !== 'string' ||
-      typeof account.gameName !== 'string' ||
-      typeof account.tagLine !== 'string'
-    )
-      throw new AppError('Respuesta de Riot inválida.', 503);
-    const shard = record(
-      await upstream(
-        `${base}/active-shards/by-game/val/by-puuid/${encodeURIComponent(account.puuid)}`,
-        headers,
-      ).catch(() => null),
-    );
-    return {
-      game: 'valorant',
-      gameName: account.gameName,
-      tagLine: account.tagLine,
-      puuid: account.puuid,
-      region: input.region,
-      activeShard: typeof shard.activeShard === 'string' ? shard.activeShard : null,
-      verifiedAt: new Date().toISOString(),
-    };
+    return inspectValorant(input);
   },
-  ['competitive-tracker-v2'],
+  ['competitive-tracker-v3'],
   { revalidate: 60 },
 );
 export async function inspectCompetitive(input: unknown) {

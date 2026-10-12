@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState, type ReactNode, type FormEvent } from 'react';
 import { api } from '@/lib/client-api';
+import { ValorantProfileView } from '@/components/valorant-profile-view';
 import { GenshinProfileView } from '@/components/genshin-profile-view';
 import { GameLiveRadarSearch } from '@/components/game-live-radar-search';
 import { VALORANT_REGIONS, type CompetitiveProfile } from '@/domain/competitive-tracker';
@@ -98,34 +99,7 @@ export function CompetitiveHubTabs({ children }: { children: ReactNode }) {
             </p>
           )}
           {data?.game === 'genshin' && <GenshinProfileView data={data} />}
-          {data?.game === 'valorant' && (
-            <div className="competitive-profile">
-              <h2>
-                {data.gameName}#{data.tagLine}
-              </h2>
-              <p className="accent">✓ Cuenta Riot verificada</p>
-              <p>
-                Shard activo: {data.activeShard ?? 'No disponible'} · Región solicitada:{' '}
-                {data.region.toUpperCase()}
-              </p>
-              <p className="muted">
-                PUUID: {data.puuid.slice(0, 12)}… · Verificada:{' '}
-                {new Date(data.verifiedAt).toLocaleString('es-CL')}
-              </p>
-              <p className="notice">
-                Esta consulta verifica la identidad y el shard; no proporciona rango, estadísticas
-                ni historial competitivo.
-              </p>
-              <a
-                className="button outline"
-                href={`https://tracker.gg/valorant/profile/riot/${encodeURIComponent(`${data.gameName}#${data.tagLine}`)}/overview`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Consultar estadísticas externas ↗
-              </a>
-            </div>
-          )}
+          {data?.game === 'valorant' && <ValorantProfileView data={data} />}
         </section>
       )}
     </div>

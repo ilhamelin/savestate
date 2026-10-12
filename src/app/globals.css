@@ -4823,3 +4823,125 @@ button.discord-channel-pill:focus-visible {
     font-size: 1rem;
   }
 }
+/* Valorant account HUD and match history. */
+.valorant-profile-header {
+  position: relative;
+  overflow: hidden;
+  min-height: 180px;
+  padding: 1.5rem;
+  border: 1px solid #ff6b79;
+  border-radius: 6px;
+  background: #161c2b;
+}
+.valorant-banner {
+  object-fit: cover;
+  opacity: 0.23;
+}
+.valorant-identity {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.valorant-identity > div {
+  min-width: 0;
+}
+.valorant-identity h2 {
+  margin: 0 0 0.5rem;
+  overflow-wrap: anywhere;
+}
+.valorant-avatar {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.valorant-kpi-grid article {
+  border-top: 2px solid #ff6b79;
+}
+.valorant-rank {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+}
+.valorant-cross {
+  padding: 1rem;
+  border: 1px solid var(--line);
+  margin-bottom: 1.5rem;
+  background: #111a24;
+}
+.valorant-match-list {
+  display: grid;
+  gap: 0.75rem;
+}
+.valorant-match-card {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-left: 3px solid #607088;
+  background: #111b2c;
+  min-width: 0;
+}
+.valorant-match-card.is-victory {
+  border-left-color: #4ade80;
+}
+.valorant-match-card.is-defeat {
+  border-left-color: #ff6b79;
+}
+.valorant-match-card img {
+  flex-shrink: 0;
+  object-fit: contain;
+}
+.valorant-match-card p {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin: 0.3rem 0;
+}
+.valorant-match-card > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.valorant-match-stats {
+  display: grid;
+  gap: 0.3rem;
+  margin-left: auto;
+  font-size: 0.75rem;
+}
+.valorant-match-stats strong {
+  font-size: 1rem;
+  color: var(--accent);
+}
+.valorant-leaderboard {
+  list-style: none;
+  padding: 0;
+}
+.valorant-leaderboard li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--line);
+}
+.valorant-leaderboard li span:last-child {
+  margin-left: auto;
+  color: #ffc857;
+}
+@media (max-width: 700px) {
+  .valorant-match-card {
+    flex-wrap: wrap;
+  }
+  .valorant-match-stats {
+    width: 100%;
+    margin-left: 0;
+  }
+  .valorant-profile-header {
+    padding: 1rem;
+  }
+}

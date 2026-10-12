@@ -26,6 +26,47 @@ export type ValorantProfile = {
   region: ValorantRegion;
   activeShard: string | null;
   verifiedAt: string;
+  accountLevel: number | null;
+  cardSmallUrl: string | null;
+  cardWideUrl: string | null;
+  currentRank: string | null;
+  rankIconUrl: string | null;
+  rankingInTier: number | null;
+  lastMmrChange: number | null;
+  elo: number | null;
+  peakRank: string | null;
+  activeActName: string | null;
+  matches: {
+    matchId: string;
+    map: string;
+    mode: string;
+    startedAt: string;
+    agentName: string;
+    agentIconUrl: string | null;
+    kills: number;
+    deaths: number;
+    assists: number;
+    score: number;
+    headshotPercent: number;
+    won: boolean | null;
+    roundsWon: number | null;
+    roundsLost: number | null;
+  }[];
+  regionalLeaderboard: {
+    rank: number;
+    gameName: string;
+    tagLine: string;
+    rankedRating: number;
+    numberOfWins: number;
+  }[];
+  riotCrossProfile: {
+    summonerLevel: number | null;
+    profileIconUrl: string | null;
+    tftTier: string | null;
+    tftWins: number | null;
+    tftLosses: number | null;
+  } | null;
+  dataSource: 'henrik_full' | 'riot_official';
 };
 export type CompetitiveProfile = GenshinProfile | ValorantProfile;
 export function competitiveInput(input: unknown) {
