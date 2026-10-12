@@ -16,6 +16,7 @@ export function steamProfile(input: unknown): { steamid: string } | { vanity: st
     return { steamid: id };
   };
   if (/^\d+$/.test(value)) return numeric(value);
+  if (/^[A-Za-z0-9_-]{2,64}$/.test(value)) return { vanity: value };
   let url: URL;
   try {
     url = new URL(value);

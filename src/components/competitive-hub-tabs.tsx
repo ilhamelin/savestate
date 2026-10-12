@@ -3,10 +3,11 @@ import { useEffect, useRef, useState, type ReactNode, type FormEvent } from 'rea
 import { api } from '@/lib/client-api';
 import { ValorantProfileView } from '@/components/valorant-profile-view';
 import { GenshinProfileView } from '@/components/genshin-profile-view';
-import { GameLiveRadarSearch } from '@/components/game-live-radar-search';
+import { HsrProfileView } from '@/components/hsr-profile-view';
+import { RustProfileView } from '@/components/rust-profile-view';
 import { VALORANT_REGIONS, type CompetitiveProfile } from '@/domain/competitive-tracker';
 export function CompetitiveHubTabs({ children }: { children: ReactNode }) {
-  const [tab, setTab] = useState<'lol' | 'valorant' | 'genshin' | 'radar'>('lol');
+  const [tab, setTab] = useState<'lol' | 'valorant' | 'genshin' | 'hsr' | 'rust'>('lol');
   const [identity, setIdentity] = useState('');
   const [region, setRegion] = useState('latam');
   const [data, setData] = useState<CompetitiveProfile | null>(null);
@@ -24,7 +25,7 @@ export function CompetitiveHubTabs({ children }: { children: ReactNode }) {
   }
   async function inspect(event: FormEvent) {
     event.preventDefault();
-    if (busy || tab === 'lol' || tab === 'radar') return;
+    if (busy || tab === 'lol') return;
     const request = new AbortController();
     controller.current = request;
     setBusy(true);
@@ -33,7 +34,11 @@ export function CompetitiveHubTabs({ children }: { children: ReactNode }) {
     try {
       const result = await api<CompetitiveProfile>(
         'tracker/multi/inspect',
-        tab === 'genshin' ? { game: tab, uid: identity } : { game: tab, riotId: identity, region },
+        tab === 'genshin' || tab === 'hsr'
+          ? { game: tab, uid: identity }
+          : tab === 'rust'
+            ? { game: tab, steamId: identity }
+            : { game: tab, riotId: identity, region },
         request.signal,
       );
       if (!request.signal.aborted) setData(result);
@@ -52,7 +57,8 @@ export function CompetitiveHubTabs({ children }: { children: ReactNode }) {
             ['lol', '⚔️ League of Legends'],
             ['valorant', '🎯 Valorant (Riot ID)'],
             ['genshin', '✨ Genshin Impact'],
-            ['radar', '📡 Radar en Vivo (Steam · Ofertas · Twitch)'],
+            ['hsr', '🚂 Honkai: Star Rail'],
+            ['rust', '☢️ Rust (Steam)'],
           ] as const
         ).map(([id, label]) => (
           <button key={id} type="button" aria-pressed={tab === id} onClick={() => select(id)}>
@@ -61,18 +67,35 @@ export function CompetitiveHubTabs({ children }: { children: ReactNode }) {
         ))}
       </div>
       <div hidden={tab !== 'lol'}>{children}</div>
-      {tab === 'radar' && <GameLiveRadarSearch />}
-      {(tab === 'valorant' || tab === 'genshin') && (
+      {tab !== 'lol' && (
         <section className="panel">
           <p className="eyebrow">COMPETITIVE ACCOUNT TERMINAL</p>
-          <h1>{tab === 'genshin' ? 'Genshin Impact · Enka.Network' : 'Valorant · Cuenta Riot'}</h1>
+          <h1>
+            {tab === 'genshin'
+              ? 'Genshin Impact · Enka.Network'
+              : tab === 'hsr'
+                ? 'Honkai: Star Rail · Enka.Network'
+                : tab === 'rust'
+                  ? 'Rust · Steam'
+                  : 'Valorant · Cuenta Riot'}
+          </h1>
           <form onSubmit={inspect} className="filter-buttons">
             <label>
-              {tab === 'genshin' ? 'UID (9 o 10 dígitos)' : 'Riot ID (Nombre#TAG)'}
+              {tab === 'genshin' || tab === 'hsr'
+                ? 'UID (9 o 10 dígitos)'
+                : tab === 'rust'
+                  ? 'Steam ID 64, enlace de perfil o nombre personalizado'
+                  : 'Riot ID (Nombre#TAG)'}
               <input
                 required
-                maxLength={tab === 'genshin' ? 10 : 80}
-                pattern={tab === 'genshin' ? '[0-9]{9,10}' : '.+#.+'}
+                maxLength={tab === 'genshin' || tab === 'hsr' ? 10 : tab === 'rust' ? 200 : 80}
+                pattern={
+                  tab === 'genshin' || tab === 'hsr'
+                    ? '[0-9]{9,10}'
+                    : tab === 'rust'
+                      ? undefined
+                      : '.+#.+'
+                }
                 value={identity}
                 onChange={(e) => setIdentity(e.target.value)}
               />
@@ -100,6 +123,8 @@ export function CompetitiveHubTabs({ children }: { children: ReactNode }) {
           )}
           {data?.game === 'genshin' && <GenshinProfileView data={data} />}
           {data?.game === 'valorant' && <ValorantProfileView data={data} />}
+          {data?.game === 'hsr' && <HsrProfileView data={data} />}
+          {data?.game === 'rust' && <RustProfileView data={data} />}
         </section>
       )}
     </div>

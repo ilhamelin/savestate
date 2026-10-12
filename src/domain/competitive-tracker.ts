@@ -1,6 +1,16 @@
 import { object, text, ValidationError } from './validation.ts';
 import { record, nonnegative } from './game-live-telemetry.ts';
 import { genshinBuild, type EnkaStore, type GenshinShowcaseCharacter } from './genshin-build.ts';
+import { steamProfile } from './steam.ts';
+import type { HsrProfile } from './hsr-profile.ts';
+import type { RustProfile } from './rust-profile.ts';
+export {
+  normalizedHsr,
+  type HsrProfile,
+  type HsrShowcaseCharacter,
+  type HsrEnkaStore,
+} from './hsr-profile.ts';
+export { normalizedRust, type RustProfile } from './rust-profile.ts';
 export type { GenshinShowcaseCharacter } from './genshin-build.ts';
 export const VALORANT_REGIONS = ['latam', 'br', 'na', 'eu', 'ap', 'kr'] as const;
 export type ValorantRegion = (typeof VALORANT_REGIONS)[number];
@@ -68,13 +78,14 @@ export type ValorantProfile = {
   } | null;
   dataSource: 'henrik_full' | 'riot_official';
 };
-export type CompetitiveProfile = GenshinProfile | ValorantProfile;
+export type CompetitiveProfile = GenshinProfile | ValorantProfile | HsrProfile | RustProfile;
 export function competitiveInput(input: unknown) {
   const data = object(input);
-  if (data.game === 'genshin') {
+  if (data.game === 'rust') return { game: 'rust' as const, target: steamProfile(data.steamId) };
+  if (data.game === 'hsr' || data.game === 'genshin') {
     const uid = text(data.uid, 'UID', 10, 9);
     if (!/^\d{9,10}$/.test(uid)) throw new ValidationError('El UID debe tener 9 o 10 dígitos.');
-    return { game: 'genshin' as const, uid };
+    return data.game === 'hsr' ? { game: 'hsr' as const, uid } : { game: 'genshin' as const, uid };
   }
   if (data.game !== 'valorant') throw new ValidationError('Tracker no permitido.');
   const riotId = text(data.riotId, 'Riot ID', 80);

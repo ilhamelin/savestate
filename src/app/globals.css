@@ -4945,3 +4945,50 @@ button.discord-channel-pill:focus-visible {
     padding: 1rem;
   }
 }
+
+/* HSR and Rust account telemetry. */
+.rust-profile-heading {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.rust-profile-heading > div {
+  min-width: 0;
+}
+.rust-profile-heading h2 {
+  overflow-wrap: anywhere;
+}
+.rust-avatar {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border: 2px solid #d77a4b;
+  border-radius: 6px;
+}
+.rust-telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.rust-telemetry-panel {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-top: 3px solid #d77a4b;
+  padding: 1rem;
+  background: #0b1220e8;
+}
+.rust-telemetry-panel h3 {
+  overflow-wrap: anywhere;
+}
+.rust-private-notice {
+  padding: 1rem;
+  border: 1px solid #ffb000;
+  background: #211b12;
+  color: #ffd689;
+}
+@media (max-width: 900px) {
+  .rust-telemetry-grid {
+    grid-template-columns: 1fr;
+  }
+}
