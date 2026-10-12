@@ -30,7 +30,19 @@ test('resolves Xbox and Steam hardware and account labels', () => {
 });
 
 test('returns null for unsupported hardware and unrelated text', () => {
-  for (const label of ['', 'PC', 'Nintendo Switch', 'PS6', 'GPS5', 'ps10', 'epsilon', 'Discord']) {
+  for (const label of ['', 'PC', 'PS6', 'GPS5', 'ps10', 'epsilon', 'Discord']) {
     assert.equal(resolvePlatformIcon(label), null, label);
   }
+});
+
+test('resolves Nintendo systems case-insensitively', () => {
+  for (const label of [
+    'Nintendo Switch',
+    'NINTENDO SWITCH 2',
+    'Switch',
+    'SNES',
+    'N64',
+    'Game Boy Advance',
+  ])
+    assert.equal(resolvePlatformIcon(label), PLATFORM_ICON_PATHS.nintendo, label);
 });

@@ -22,8 +22,14 @@ import { getActiveFreebies } from '@/services/freebies';
 import { discordFreebieMessage, unseenDiscordFreebies } from '@/domain/discord-bot-cards';
 import { discordRetryDelay } from '@/domain/discord-rate-limit';
 import { record } from '@/domain/game-live-telemetry';
-import { shouldAnnounceGta6Countdown } from '@/domain/gta6-countdown';
-import { discordGta6CountdownMessage } from '@/domain/discord-bot-cards';
+import {
+  shouldAnnounceGta6Countdown,
+  shouldAnnounceZeldaOotCountdown,
+} from '@/domain/gta6-countdown';
+import {
+  discordGta6CountdownMessage,
+  discordZeldaOotCountdownMessage,
+} from '@/domain/discord-bot-cards';
 export async function registerDiscordCommandsAndRoleMetadata() {
   return registerDiscordApplication(
     process.env.DISCORD_APPLICATION_ID ?? '',
@@ -237,7 +243,10 @@ export function scheduleDiscordFreebies() {
   });
 }
 // GTA VI announcements share the daily cron and the nonblocking Bridge refresh.
-const gta6Runs = new Map<string, Promise<{ published: boolean; checkedAt: number }>>();
+const gta6Runs = new Map<
+  string,
+  Promise<{ published: boolean; zeldaPublished: boolean; checkedAt: number }>
+>();
 const invalidatedGta6Runs = new Map<string, number>();
 const announceGta6Cached = unstable_cache(
   async (channel: string) => {
@@ -253,23 +262,42 @@ const announceGta6Cached = unstable_cache(
       if (!Array.isArray(history))
         throw new AppError('No se pudo comprobar el historial de anuncios.', 503);
       const now = Date.now();
-      const decision = shouldAnnounceGta6Countdown(history, now);
-      if (!decision.shouldAnnounce) return { published: false, checkedAt: now };
-      const sent = await discordRequest(
-        `https://discord.com/api/v10/channels/${channel}/messages`,
+      const decisions = [
         {
-          method: 'POST',
-          headers: { Authorization: `Bot ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...discordGta6CountdownMessage(now, appUrl()),
-            nonce: decision.nonce,
-            enforce_nonce: true,
-          }),
+          id: 'gta6',
+          decision: shouldAnnounceGta6Countdown(history, now),
+          message: () => discordGta6CountdownMessage(now, appUrl()),
         },
-        true,
-      );
-      await sent.arrayBuffer();
-      return { published: true, checkedAt: now };
+        {
+          id: 'zelda-oot',
+          decision: shouldAnnounceZeldaOotCountdown(history, now),
+          message: () => discordZeldaOotCountdownMessage(now, appUrl()),
+        },
+      ].filter((item) => item.decision.shouldAnnounce);
+      let zeldaPublished = false;
+      for (const [index, item] of decisions.entries()) {
+        const sent = await discordRequest(
+          `https://discord.com/api/v10/channels/${channel}/messages`,
+          {
+            method: 'POST',
+            headers: { Authorization: `Bot ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...item.message(),
+              nonce: item.decision.nonce,
+              enforce_nonce: true,
+            }),
+          },
+          true,
+        );
+        await sent.arrayBuffer();
+        if (item.id === 'zelda-oot') zeldaPublished = true;
+        if (index < decisions.length - 1 && sent.headers.get('X-RateLimit-Remaining') === '0') {
+          const delay = discordRetryDelay(sent.headers.get('X-RateLimit-Reset-After'));
+          if (delay === null) throw new AppError('Discord está limitando las solicitudes.', 429);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+      }
+      return { published: decisions.length > 0, zeldaPublished, checkedAt: now };
     })();
     gta6Runs.set(channel, run);
     try {
@@ -278,10 +306,10 @@ const announceGta6Cached = unstable_cache(
       gta6Runs.delete(channel);
     }
   },
-  ['discord-gta6-countdown-v1'],
+  ['discord-release-countdowns-v2'],
   { revalidate: 3600 },
 );
-export async function announceGta6CountdownToDiscord() {
+async function announceCountdownsToDiscord() {
   const target = (await fetchAuthorizedChannels()).announcements;
   if (!target) throw new AppError('El canal autorizado de anuncios no está disponible.', 503);
   const result = await announceGta6Cached(target);
@@ -289,7 +317,13 @@ export async function announceGta6CountdownToDiscord() {
     revalidateTag('discord-messages', { expire: 0 });
     invalidatedGta6Runs.set(target, result.checkedAt);
   }
-  return { published: result.published };
+  return result;
+}
+export async function announceGta6CountdownToDiscord() {
+  return { published: (await announceCountdownsToDiscord()).published };
+}
+export async function announceZeldaOotCountdownToDiscord() {
+  return { published: (await announceCountdownsToDiscord()).zeldaPublished };
 }
 export async function fetchDiscordPresence() {
   try {

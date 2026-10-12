@@ -2,7 +2,13 @@ import type { FreebieItem } from './freebies.ts';
 import type { ValorantProfile, GenshinProfile } from './competitive-tracker.ts';
 import type { LolProfileData } from './lol-tracker.ts';
 import { record } from './game-live-telemetry.ts';
-import { getGta6Countdown, shouldAnnounceGta6Countdown } from './gta6-countdown.ts';
+import {
+  getGta6Countdown,
+  shouldAnnounceGta6Countdown,
+  getZeldaOotCountdown,
+  shouldAnnounceZeldaOotCountdown,
+  ZELDA_OOT_RELEASE_TEXT,
+} from './gta6-countdown.ts';
 import {
   discordCommandMessage,
   discordCommandError,
@@ -20,6 +26,32 @@ function claimUrl(item: FreebieItem) {
   )
     throw new Error('Invalid giveaway URL');
   return url.toString();
+}
+export function discordZeldaOotCountdownMessage(nowMs: number, baseAppUrl: string) {
+  const countdown = getZeldaOotCountdown(nowMs),
+    { bucket } = shouldAnnounceZeldaOotCountdown([], nowMs),
+    base = new URL(baseAppUrl).origin;
+  return {
+    allowed_mentions: { parse: [] },
+    embeds: [
+      {
+        title: `🗡️⏳ CUENTA REGRESIVA ZELDA: OCARINA OF TIME · Faltan ${countdown.days} días`,
+        description: `${ZELDA_OOT_RELEASE_TEXT}.\n⏳ ${countdown.days}d ${countdown.hours}h ${countdown.minutes}m · referencia 05/11/2026 12:00 AM EST (05:00 UTC)`,
+        color: 0xd4af37,
+        thumbnail: { url: `${base}/zelda/icon-512.png` },
+        image: { url: `${base}/zelda/hero.jpg` },
+        footer: { text: `savestate-zelda-oot-countdown:${bucket} · Aviso automático cada 5 días` },
+      },
+    ],
+    components: [
+      {
+        type: 1,
+        components: [
+          { type: 2, style: 5, label: '🌐 Ver cuenta regresiva en vivo en SaveState', url: base },
+        ],
+      },
+    ],
+  };
 }
 export function discordGta6CountdownMessage(nowMs: number, baseAppUrl: string) {
   const countdown = getGta6Countdown(nowMs);

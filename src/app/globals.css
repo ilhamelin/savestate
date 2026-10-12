@@ -5385,3 +5385,114 @@ button.discord-channel-pill:focus-visible {
 .studio-banner-help {
   font-size: 0.8rem;
 }
+
+/* Manual release-countdown selector: one shared clock, no automatic rotation. */
+.countdown-showcase {
+  margin: 2rem 0;
+  min-width: 0;
+}
+.countdown-selector-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.65rem;
+}
+.countdown-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.countdown-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #10121ccc;
+  color: var(--muted);
+  padding: 0.65rem 0.8rem;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.countdown-tab img {
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 4px;
+}
+.countdown-tab.active {
+  border-color: #ff4fd880;
+  color: #ffd2f2;
+  background: #ff4fd810;
+}
+.countdown-tab.active:nth-child(2) {
+  border-color: #eab30875;
+  color: #fef08a;
+  background: #eab30810;
+}
+.countdown-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.countdown-tab-index {
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  padding: 0 0.25rem;
+}
+.countdown-slider-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+.countdown-slider-status {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+  color: var(--muted);
+  min-width: 3rem;
+  text-align: center;
+}
+.countdown-showcase .gta6-countdown-banner {
+  margin: 0;
+  background-image:
+    linear-gradient(110deg, rgba(8, 9, 12, 0.93), rgba(33, 10, 41, 0.6), rgba(8, 9, 12, 0.87)),
+    var(--countdown-hero);
+}
+.gta6-countdown-banner.countdown-theme-zelda {
+  background-image: linear-gradient(180deg, #061512cc, #0a1f19eb), var(--countdown-hero);
+  border-color: #eab30875;
+  box-shadow:
+    0 18px 50px #00000080,
+    inset 0 0 32px #eab30822;
+}
+.countdown-theme-zelda .gta6-clock strong {
+  color: #fef08a;
+  text-shadow: 0 0 16px #eab30855;
+}
+.countdown-theme-zelda .gta6-clock > div {
+  border-color: #eab30855;
+  background: #061512bf;
+}
+.countdown-theme-zelda .gta6-clock span,
+.countdown-theme-zelda .gta6-radar,
+.countdown-theme-zelda .gta6-released {
+  color: #fef08a;
+}
+@media (max-width: 600px) {
+  .countdown-tabs {
+    width: 100%;
+  }
+  .countdown-tab {
+    flex: 1;
+    justify-content: center;
+    padding: 0.5rem;
+    font-size: 0.7rem;
+  }
+  .countdown-tab-index {
+    display: none;
+  }
+}
