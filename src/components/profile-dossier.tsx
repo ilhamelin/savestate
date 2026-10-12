@@ -1,3 +1,5 @@
+import { resolvePlatformIcon } from '@/domain/platform-icons';
+import Image from 'next/image';
 import type { ProfileDossier } from '@/domain/dossier';
 import { STATUS_LABELS } from '@/domain/model';
 import { NumberTicker } from '@/components/ui/number-ticker';
@@ -7,11 +9,19 @@ export function HardwareBadges({ platforms }: { platforms: string[] }) {
       <p className="eyebrow">HARDWARE INVENTORY</p>
       <h2>Mis consolas y hardware</h2>
       <div className="tags">
-        {platforms.map((platform) => (
-          <span className="hardware-badge" key={platform}>
-            <span aria-hidden="true">▣</span> {platform}
-          </span>
-        ))}
+        {platforms.map((platform) => {
+          const icon = resolvePlatformIcon(platform);
+          return (
+            <span className="hardware-badge" key={platform}>
+              {icon ? (
+                <Image src={icon} alt="" width={16} height={16} unoptimized />
+              ) : (
+                <span aria-hidden="true">▣</span>
+              )}
+              {platform}
+            </span>
+          );
+        })}
       </div>
       {!platforms.length ? <p className="muted">Todavía no hay plataformas declaradas.</p> : null}
     </section>

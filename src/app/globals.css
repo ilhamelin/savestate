@@ -5342,3 +5342,28 @@ button.discord-channel-pill:focus-visible {
     padding: 1rem;
   }
 }
+
+.platform-tag,
+.gta6-platforms span,
+.hardware-badge,
+.console-progress-heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.platform-tag img,
+.gta6-platforms span img,
+.hardware-badge img,
+.console-progress-heading img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+.gta6-platforms span img {
+  width: 18px;
+  height: 18px;
+}

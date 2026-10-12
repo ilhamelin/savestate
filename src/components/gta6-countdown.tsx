@@ -31,8 +31,14 @@ export function Gta6Countdown() {
       </h2>
       <p>{GTA6_RELEASE_TEXT}</p>
       <div className="gta6-platforms">
-        <span>🎮 PlayStation 5</span>
-        <span>🟩 Xbox Series X|S</span>
+        <span className="platform-tag">
+          <Image src="/platforms/playstation.png" alt="" width={18} height={18} unoptimized />{' '}
+          PlayStation 5
+        </span>
+        <span className="platform-tag">
+          <Image src="/platforms/xbox.png" alt="" width={18} height={18} unoptimized /> Xbox Series
+          X|S
+        </span>
       </div>
       {countdown?.released ? (
         <p className="gta6-released">🌴 La fecha de lanzamiento ha llegado.</p>

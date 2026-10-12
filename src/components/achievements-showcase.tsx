@@ -1,4 +1,5 @@
 'use client';
+import { resolvePlatformIcon } from '@/domain/platform-icons';
 
 import { useMemo, useState } from 'react';
 import Image from 'next/image';
@@ -81,20 +82,25 @@ export function AchievementsShowcase({
         </div>
         <div className="achievement-browser">
           <div className="filter-buttons" aria-label="Plataforma de logros">
-            {PLATFORMS.map(([value, label]) => (
-              <button
-                type="button"
-                key={value}
-                aria-pressed={platform === value}
-                onClick={() => {
-                  setPlatform(value);
-                  setPage(0);
-                  setSelectedId(null);
-                }}
-              >
-                {label}
-              </button>
-            ))}
+            {PLATFORMS.map(([value, label]) => {
+              const icon = resolvePlatformIcon(label);
+              return (
+                <button
+                  type="button"
+                  className={icon ? 'platform-tag' : undefined}
+                  key={value}
+                  aria-pressed={platform === value}
+                  onClick={() => {
+                    setPlatform(value);
+                    setPage(0);
+                    setSelectedId(null);
+                  }}
+                >
+                  {icon ? <Image src={icon} alt="" width={16} height={16} unoptimized /> : null}
+                  {label}
+                </button>
+              );
+            })}
           </div>
           <label className="achievement-completed-filter">
             <input

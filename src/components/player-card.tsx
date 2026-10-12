@@ -53,9 +53,21 @@ export function PlayerCard({ profile }: { profile: CardProfile }) {
         </span>
       </div>
       <div className="tags" aria-label="Plataformas conectadas">
-        {profile.steam_id ? <span className="tag">🖥️ Steam</span> : null}
-        {profile.xbox_gamertag ? <span className="tag">🟩 Xbox</span> : null}
-        {profile.psn_id ? <span className="tag">🎮 PSN</span> : null}
+        {profile.steam_id ? (
+          <span className="tag platform-tag">
+            <Image src="/platforms/steam.png" alt="" width={16} height={16} unoptimized /> Steam
+          </span>
+        ) : null}
+        {profile.xbox_gamertag ? (
+          <span className="tag platform-tag">
+            <Image src="/platforms/xbox.png" alt="" width={16} height={16} unoptimized /> Xbox
+          </span>
+        ) : null}
+        {profile.psn_id ? (
+          <span className="tag platform-tag">
+            <Image src="/platforms/playstation.png" alt="" width={16} height={16} unoptimized /> PSN
+          </span>
+        ) : null}
       </div>
       <p className="profile-terminal player-card-terminal">
         {profile.username}@savestate:~$ {profile.terminal_status || 'Ready to play'}

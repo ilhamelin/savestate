@@ -1,3 +1,5 @@
+import { PLATFORM_ICON_PATHS } from '@/domain/platform-icons';
+import Image from 'next/image';
 import type { ConsoleProgress } from '@/domain/console-progress';
 export function ConsoleProgressBadge({
   progress,
@@ -12,7 +14,20 @@ export function ConsoleProgressBadge({
   return (
     <div className="console-progress-badge" role="group" aria-label={`Progreso de ${source}`}>
       <span className="console-progress-heading">
-        {steam ? '🏆 Logros' : xbox ? '🎮 Gamerscore' : '🏆 Trofeos'} · {source}
+        <Image
+          src={
+            steam
+              ? PLATFORM_ICON_PATHS.steam
+              : xbox
+                ? PLATFORM_ICON_PATHS.xbox
+                : PLATFORM_ICON_PATHS.playstation
+          }
+          alt=""
+          width={16}
+          height={16}
+          unoptimized
+        />
+        {steam ? 'Logros' : xbox ? 'Gamerscore' : 'Trofeos'} · {source}
       </span>
       <strong>
         {progress.current} / {progress.total} {steam ? 'logros' : xbox ? 'G' : 'trofeos'}

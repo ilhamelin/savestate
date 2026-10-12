@@ -1,3 +1,5 @@
+import { resolvePlatformIcon } from '@/domain/platform-icons';
+import Image from 'next/image';
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
 import { resolveThemeColor } from '@/domain/profile-studio';
@@ -119,16 +121,40 @@ export default async function Player({ params }: { params: Promise<{ username: s
             presenceBadge={<ProfilePresenceBadge userId={profile.id} />}
           >
             <div className="tags">
-              {profile.psn_id ? <span className="tag">🎮 PSN: @{profile.psn_id}</span> : null}
+              {profile.psn_id ? (
+                <span className="tag platform-tag">
+                  <Image
+                    src="/platforms/playstation.png"
+                    alt=""
+                    width={16}
+                    height={16}
+                    unoptimized
+                  />{' '}
+                  PSN: @{profile.psn_id}
+                </span>
+              ) : null}
               {profile.xbox_gamertag ? (
-                <span className="tag">🟩 Xbox: @{profile.xbox_gamertag}</span>
+                <span className="tag platform-tag">
+                  <Image src="/platforms/xbox.png" alt="" width={16} height={16} unoptimized />{' '}
+                  Xbox: @{profile.xbox_gamertag}
+                </span>
               ) : null}
               <TrackerUidTags genshinUid={genshinUid} hsrUid={hsrUid} />
-              {Object.entries(externalLinks).map(([label, url]) => (
-                <a className="tag" key={label} href={url} target="_blank" rel="noopener noreferrer">
-                  {label} ↗
-                </a>
-              ))}
+              {Object.entries(externalLinks).map(([label, url]) => {
+                const icon = resolvePlatformIcon(label);
+                return (
+                  <a
+                    className={icon ? 'tag platform-tag' : 'tag'}
+                    key={label}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {icon ? <Image src={icon} alt="" width={16} height={16} unoptimized /> : null}
+                    {label} ↗
+                  </a>
+                );
+              })}
             </div>
           </ProfileIdentity>
         </GamerRoom>

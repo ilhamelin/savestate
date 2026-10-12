@@ -1,4 +1,5 @@
 'use client';
+import { resolvePlatformIcon } from '@/domain/platform-icons';
 import { useEffect, useId, useRef, useState, type CSSProperties, type FormEvent } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -348,22 +349,48 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
                   }
                 >
                   <div className="tags">
-                    {draft.psn_id && <span className="tag">🎮 PSN: @{draft.psn_id}</span>}
+                    {draft.psn_id && (
+                      <span className="tag platform-tag">
+                        <Image
+                          src="/platforms/playstation.png"
+                          alt=""
+                          width={16}
+                          height={16}
+                          unoptimized
+                        />{' '}
+                        PSN: @{draft.psn_id}
+                      </span>
+                    )}
                     {draft.xbox_gamertag && (
-                      <span className="tag">🟩 Xbox: @{draft.xbox_gamertag}</span>
+                      <span className="tag platform-tag">
+                        <Image
+                          src="/platforms/xbox.png"
+                          alt=""
+                          width={16}
+                          height={16}
+                          unoptimized
+                        />{' '}
+                        Xbox: @{draft.xbox_gamertag}
+                      </span>
                     )}
                     <TrackerUidTags genshinUid={genshinUid} hsrUid={hsrUid} />
-                    {Object.entries(externalLinks).map(([label, url]) => (
-                      <a
-                        className="tag"
-                        key={label}
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {label} ↗
-                      </a>
-                    ))}
+                    {Object.entries(externalLinks).map(([label, url]) => {
+                      const icon = resolvePlatformIcon(label);
+                      return (
+                        <a
+                          className={icon ? 'tag platform-tag' : 'tag'}
+                          key={label}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {icon ? (
+                            <Image src={icon} alt="" width={16} height={16} unoptimized />
+                          ) : null}
+                          {label} ↗
+                        </a>
+                      );
+                    })}
                   </div>
                 </ProfileIdentity>
               </GamerRoom>

@@ -1,4 +1,6 @@
 'use client';
+import { resolvePlatformIcon } from '@/domain/platform-icons';
+import Image from 'next/image';
 import { useId, useState } from 'react';
 import { SteamImporter } from '@/components/steam-importer';
 import { ConsoleImporter } from '@/components/console-importer';
@@ -17,17 +19,22 @@ export function ImportHub({
   return (
     <>
       <div className="filter-buttons" aria-label="Plataforma de importación">
-        {Object.entries(labels).map(([value, label]) => (
-          <button
-            type="button"
-            key={value}
-            aria-pressed={tab === value}
-            aria-controls={`${id}-${value}`}
-            onClick={() => setTab(value)}
-          >
-            {label}
-          </button>
-        ))}
+        {Object.entries(labels).map(([value, label]) => {
+          const icon = resolvePlatformIcon(label);
+          return (
+            <button
+              type="button"
+              className={icon ? 'platform-tag' : undefined}
+              key={value}
+              aria-pressed={tab === value}
+              aria-controls={`${id}-${value}`}
+              onClick={() => setTab(value)}
+            >
+              {icon ? <Image src={icon} alt="" width={16} height={16} unoptimized /> : null}
+              {label}
+            </button>
+          );
+        })}
       </div>
       <div id={`${id}-Steam`} hidden={tab !== 'Steam'}>
         <SteamImporter configured={steamConfigured} />
