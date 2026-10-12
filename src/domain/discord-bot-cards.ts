@@ -11,6 +11,9 @@ import {
   getTga2026Countdown,
   shouldAnnounceTga2026Countdown,
   TGA_2026_EVENT_TEXT,
+  getAvengersDoomsdayCountdown,
+  shouldAnnounceAvengersDoomsdayCountdown,
+  AVENGERS_DOOMSDAY_RELEASE_TEXT,
 } from './gta6-countdown.ts';
 import {
   discordCommandMessage,
@@ -29,6 +32,43 @@ function claimUrl(item: FreebieItem) {
   )
     throw new Error('Invalid giveaway URL');
   return url.toString();
+}
+export function discordAvengersDoomsdayCountdownMessage(nowMs: number, baseAppUrl: string) {
+  const countdown = getAvengersDoomsdayCountdown(nowMs),
+    { bucket } = shouldAnnounceAvengersDoomsdayCountdown([], nowMs),
+    base = new URL(baseAppUrl).origin;
+  return {
+    allowed_mentions: { parse: [] },
+    embeds: [
+      {
+        title: '🦾⏳ CUENTA REGRESIVA AVENGERS: DOOMSDAY · Faltan ' + countdown.days + ' días',
+        description:
+          AVENGERS_DOOMSDAY_RELEASE_TEXT +
+          '.\n⏳ ' +
+          countdown.days +
+          'd ' +
+          countdown.hours +
+          'h ' +
+          countdown.minutes +
+          'm · referencia 17/12/2026 00:00 UTC',
+        color: 0x16a34a,
+        thumbnail: { url: base + '/avengers/icon-512.png' },
+        image: { url: base + '/avengers/hero.jpg' },
+        footer: {
+          text:
+            'savestate-avengers-doomsday-countdown:' + bucket + ' · Aviso automático cada 5 días',
+        },
+      },
+    ],
+    components: [
+      {
+        type: 1,
+        components: [
+          { type: 2, style: 5, label: '🌐 Ver cuenta regresiva en vivo en SaveState', url: base },
+        ],
+      },
+    ],
+  };
 }
 export function discordTga2026CountdownMessage(nowMs: number, baseAppUrl: string) {
   const countdown = getTga2026Countdown(nowMs),

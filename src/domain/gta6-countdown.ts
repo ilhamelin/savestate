@@ -8,6 +8,20 @@ export const ZELDA_OOT_RELEASE_TEXT =
 export const TGA_2026_EVENT_DATE = '2026-12-11T00:30:00.000Z';
 export const TGA_2026_EVENT_TEXT =
   'La gala anual The Game Awards 2026 se celebrará oficialmente el jueves 10 de diciembre de 2026 en vivo desde el Peacock Theater';
+export const AVENGERS_DOOMSDAY_RELEASE_DATE = '2026-12-17T00:00:00.000Z';
+export const AVENGERS_DOOMSDAY_RELEASE_TEXT =
+  'Avengers: Doomsday se estrenará oficialmente en cines el 17 de diciembre de 2026';
+export function getAvengersDoomsdayCountdown(nowMs = Date.now()) {
+  return getCountdownTo(AVENGERS_DOOMSDAY_RELEASE_DATE, nowMs);
+}
+export function shouldAnnounceAvengersDoomsdayCountdown(history: unknown[], nowMs = Date.now()) {
+  return shouldAnnounceCountdown(
+    history,
+    getAvengersDoomsdayCountdown(nowMs),
+    'avengers-doomsday',
+    nowMs,
+  );
+}
 export function getCountdownTo(releaseIsoDate: string, nowMs = Date.now()) {
   const releaseMs = Date.parse(releaseIsoDate);
   if (!Number.isFinite(releaseMs) || !Number.isFinite(nowMs))
@@ -68,7 +82,7 @@ function shouldAnnounceCountdown(
   });
   return { shouldAnnounce: !countdown.released && !blocked, bucket, nonce };
 }
-export type ReleaseCountdownId = 'gta6' | 'zelda-oot' | 'tga-2026';
+export type ReleaseCountdownId = 'gta6' | 'zelda-oot' | 'tga-2026' | 'avengers-doomsday';
 export interface ReleaseCountdownConfig {
   id: ReleaseCountdownId;
   tabNumber: number;
@@ -143,6 +157,27 @@ export const RELEASE_COUNTDOWNS: readonly ReleaseCountdownConfig[] = [
     platforms: [
       { label: 'Gala en Vivo · Peacock Theater', icon: '/tga/icon-128.png' },
       { label: 'Steam Broadcast', icon: '/platforms/steam.png' },
+    ],
+  },
+  {
+    id: 'avengers-doomsday',
+    tabNumber: 4,
+    tabLabel: 'Avengers: Doomsday',
+    title: 'Avengers: Doomsday',
+    radarLabel: 'MARVEL STUDIOS // ESTRENO MUNDIAL EN CINES',
+    releaseDate: AVENGERS_DOOMSDAY_RELEASE_DATE,
+    releaseText: AVENGERS_DOOMSDAY_RELEASE_TEXT,
+    referenceNote: 'Cuenta regresiva al 17/12/2026 · 00:00 UTC.',
+    timerAriaLabel:
+      'Tiempo restante hasta el estreno de Avengers: Doomsday el 17 de diciembre de 2026, 00:00 UTC',
+    releasedText: '🦾 ¡Avengers: Doomsday ya está en cines!',
+    heroImage: '/avengers/hero.jpg',
+    iconImage: '/avengers/icon.webp',
+    logoImage: '/avengers/logo.png',
+    themeClass: 'countdown-theme-avengers',
+    platforms: [
+      { label: 'Estreno en Cines · Marvel Studios', icon: '/avengers/icon.webp' },
+      { label: 'IMAX · Gran Pantalla', icon: '/avengers/icon-128.png' },
     ],
   },
 ];

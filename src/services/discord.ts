@@ -26,11 +26,13 @@ import {
   shouldAnnounceGta6Countdown,
   shouldAnnounceZeldaOotCountdown,
   shouldAnnounceTga2026Countdown,
+  shouldAnnounceAvengersDoomsdayCountdown,
 } from '@/domain/gta6-countdown';
 import {
   discordGta6CountdownMessage,
   discordZeldaOotCountdownMessage,
   discordTga2026CountdownMessage,
+  discordAvengersDoomsdayCountdownMessage,
 } from '@/domain/discord-bot-cards';
 export async function registerDiscordCommandsAndRoleMetadata() {
   return registerDiscordApplication(
@@ -247,7 +249,13 @@ export function scheduleDiscordFreebies() {
 // GTA VI announcements share the daily cron and the nonblocking Bridge refresh.
 const gta6Runs = new Map<
   string,
-  Promise<{ published: boolean; zeldaPublished: boolean; tgaPublished: boolean; checkedAt: number }>
+  Promise<{
+    published: boolean;
+    zeldaPublished: boolean;
+    tgaPublished: boolean;
+    avengersPublished: boolean;
+    checkedAt: number;
+  }>
 >();
 const invalidatedGta6Runs = new Map<string, number>();
 const announceGta6Cached = unstable_cache(
@@ -280,9 +288,15 @@ const announceGta6Cached = unstable_cache(
           decision: shouldAnnounceTga2026Countdown(history, now),
           message: () => discordTga2026CountdownMessage(now, appUrl()),
         },
+        {
+          id: 'avengers-doomsday',
+          decision: shouldAnnounceAvengersDoomsdayCountdown(history, now),
+          message: () => discordAvengersDoomsdayCountdownMessage(now, appUrl()),
+        },
       ].filter((item) => item.decision.shouldAnnounce);
       let zeldaPublished = false;
       let tgaPublished = false;
+      let avengersPublished = false;
       for (const [index, item] of decisions.entries()) {
         const sent = await discordRequest(
           `https://discord.com/api/v10/channels/${channel}/messages`,
@@ -300,13 +314,20 @@ const announceGta6Cached = unstable_cache(
         await sent.arrayBuffer();
         if (item.id === 'zelda-oot') zeldaPublished = true;
         if (item.id === 'tga-2026') tgaPublished = true;
+        if (item.id === 'avengers-doomsday') avengersPublished = true;
         if (index < decisions.length - 1 && sent.headers.get('X-RateLimit-Remaining') === '0') {
           const delay = discordRetryDelay(sent.headers.get('X-RateLimit-Reset-After'));
           if (delay === null) throw new AppError('Discord está limitando las solicitudes.', 429);
           await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
-      return { published: decisions.length > 0, zeldaPublished, tgaPublished, checkedAt: now };
+      return {
+        published: decisions.length > 0,
+        zeldaPublished,
+        tgaPublished,
+        avengersPublished,
+        checkedAt: now,
+      };
     })();
     gta6Runs.set(channel, run);
     try {
@@ -315,7 +336,7 @@ const announceGta6Cached = unstable_cache(
       gta6Runs.delete(channel);
     }
   },
-  ['discord-release-countdowns-v3'],
+  ['discord-release-countdowns-v4'],
   { revalidate: 3600 },
 );
 async function announceCountdownsToDiscord() {
@@ -336,6 +357,9 @@ export async function announceZeldaOotCountdownToDiscord() {
 }
 export async function announceTga2026CountdownToDiscord() {
   return { published: (await announceCountdownsToDiscord()).tgaPublished };
+}
+export async function announceAvengersDoomsdayCountdownToDiscord() {
+  return { published: (await announceCountdownsToDiscord()).avengersPublished };
 }
 export async function fetchDiscordPresence() {
   try {

@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   getCountdownTo,
+  getAvengersDoomsdayCountdown,
+  shouldAnnounceAvengersDoomsdayCountdown,
+  AVENGERS_DOOMSDAY_RELEASE_DATE,
   getTga2026Countdown,
   shouldAnnounceTga2026Countdown,
   TGA_2026_EVENT_DATE,
@@ -15,6 +18,7 @@ import {
 } from './gta6-countdown.ts';
 import {
   discordZeldaOotCountdownMessage,
+  discordAvengersDoomsdayCountdownMessage,
   discordTga2026CountdownMessage,
 } from './discord-bot-cards.ts';
 const release = Date.parse(ZELDA_OOT_RELEASE_DATE);
@@ -76,7 +80,7 @@ test('Zelda and GTA five-day decisions are independent and block duplicate windo
 test('Countdown catalog and Zelda Discord card keep assets, platform, reference time and safe links', () => {
   assert.deepEqual(
     RELEASE_COUNTDOWNS.map((c) => c.id),
-    ['gta6', 'zelda-oot', 'tga-2026'],
+    ['gta6', 'zelda-oot', 'tga-2026', 'avengers-doomsday'],
   );
   assert.equal(RELEASE_COUNTDOWNS[0]?.releaseDate, GTA6_RELEASE_DATE);
   assert.equal(RELEASE_COUNTDOWNS[1]?.releaseDate, ZELDA_OOT_RELEASE_DATE);
@@ -171,5 +175,93 @@ test('TGA Discord card includes the gala artwork, reference time and independent
     'https://savestate-eight.vercel.app/tga/icon-512.png',
   );
   assert.match(message.embeds[0]!.footer.text, /^savestate-tga-2026-countdown:0/);
+  assert.deepEqual(message.allowed_mentions.parse, []);
+});
+
+test('Avengers countdown uses December 17 UTC and clamps at release', () => {
+  assert.equal(AVENGERS_DOOMSDAY_RELEASE_DATE, '2026-12-17T00:00:00.000Z');
+  const release = Date.parse(AVENGERS_DOOMSDAY_RELEASE_DATE);
+  assert.deepEqual(getAvengersDoomsdayCountdown(release - 90061000), {
+    released: false,
+    totalMs: 90061000,
+    days: 1,
+    hours: 1,
+    minutes: 1,
+    seconds: 1,
+  });
+  assert.equal(getAvengersDoomsdayCountdown(release).released, true);
+  assert.equal(getAvengersDoomsdayCountdown(release + 1).totalMs, 0);
+  assert.equal(RELEASE_COUNTDOWNS[3]?.releaseDate, AVENGERS_DOOMSDAY_RELEASE_DATE);
+  assert.equal(RELEASE_COUNTDOWNS[3]?.iconImage, '/avengers/icon.webp');
+});
+test('Avengers announcements have an independent five-day window and no post-release notices', () => {
+  const now = Date.parse('2026-10-20T00:00:00Z');
+  const decision = shouldAnnounceAvengersDoomsdayCountdown([], now);
+  const message = (id: string, bucket: number, age: number) => ({
+    timestamp: new Date(now - age).toISOString(),
+    embeds: [
+      {
+        footer: {
+          text: 'savestate-' + id + '-countdown:' + bucket + ' · Aviso automático cada 5 días',
+        },
+      },
+    ],
+  });
+  assert.equal(decision.nonce, 'avengers-doomsday:' + decision.bucket);
+  for (const [id, check] of [
+    ['gta6', shouldAnnounceGta6Countdown],
+    ['zelda-oot', shouldAnnounceZeldaOotCountdown],
+    ['tga-2026', shouldAnnounceTga2026Countdown],
+  ] as const) {
+    assert.equal(
+      shouldAnnounceAvengersDoomsdayCountdown([message(id, check([], now).bucket, 0)], now)
+        .shouldAnnounce,
+      true,
+    );
+    assert.equal(
+      check([message('avengers-doomsday', decision.bucket, 0)], now).shouldAnnounce,
+      true,
+    );
+  }
+  assert.equal(
+    shouldAnnounceAvengersDoomsdayCountdown(
+      [message('avengers-doomsday', 99, GTA6_ANNOUNCEMENT_INTERVAL - 1)],
+      now,
+    ).shouldAnnounce,
+    false,
+  );
+  assert.equal(
+    shouldAnnounceAvengersDoomsdayCountdown(
+      [message('avengers-doomsday', 99, GTA6_ANNOUNCEMENT_INTERVAL)],
+      now,
+    ).shouldAnnounce,
+    true,
+  );
+  assert.equal(
+    shouldAnnounceAvengersDoomsdayCountdown(
+      [message('avengers-doomsday', decision.bucket, GTA6_ANNOUNCEMENT_INTERVAL)],
+      now,
+    ).shouldAnnounce,
+    false,
+  );
+  assert.equal(
+    shouldAnnounceAvengersDoomsdayCountdown([], Date.parse(AVENGERS_DOOMSDAY_RELEASE_DATE))
+      .shouldAnnounce,
+    false,
+  );
+});
+test('Avengers Discord embed uses emerald artwork, reference date and a safe link', () => {
+  const message = discordAvengersDoomsdayCountdownMessage(
+    Date.parse(AVENGERS_DOOMSDAY_RELEASE_DATE) - 86400000,
+    'https://savestate-eight.vercel.app/',
+  );
+  const embed = message.embeds[0]!;
+  assert.match(embed.title, /AVENGERS: DOOMSDAY · Faltan 1 días/);
+  assert.ok(embed.description.includes('17/12/2026 00:00 UTC'));
+  assert.equal(embed.color, 0x16a34a);
+  assert.equal(embed.thumbnail.url, 'https://savestate-eight.vercel.app/avengers/icon-512.png');
+  assert.equal(embed.image.url, 'https://savestate-eight.vercel.app/avengers/hero.jpg');
+  assert.match(embed.footer.text, /^savestate-avengers-doomsday-countdown:0/);
+  assert.equal(message.components[0]!.components[0]!.url, 'https://savestate-eight.vercel.app');
   assert.deepEqual(message.allowed_mentions.parse, []);
 });
