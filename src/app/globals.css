@@ -5367,3 +5367,21 @@ button.discord-channel-pill:focus-visible {
   width: 18px;
   height: 18px;
 }
+
+/* Profile banners retain the same frame across image and video formats. */
+.profile-banner {
+  height: 180px;
+  overflow: hidden;
+}
+.profile-banner img,
+.profile-banner video,
+.profile-banner-media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+.studio-banner-help {
+  font-size: 0.8rem;
+}

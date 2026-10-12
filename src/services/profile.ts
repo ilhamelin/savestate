@@ -9,20 +9,25 @@ import { wallpaperForDisplay } from '@/domain/wallpaper';
 import { consoleIdentity } from '@/domain/console-import';
 import { equippedRewards } from '@/domain/progression';
 import { GALLERY_AVATARS, themeColor } from '@/domain/profile-studio';
+import { isValidBannerStoragePath } from '@/domain/banner-media';
 import {
   appearanceNeedsFallback,
   legacyAppearance,
   restoreProfileAppearance,
 } from '@/domain/profile-appearance';
-function mediaUrl(input: unknown, userId: string, wallpaper = false): string | null {
+function mediaUrl(
+  input: unknown,
+  userId: string,
+  kind: 'avatar' | 'banner' | 'wallpaper' = 'avatar',
+): string | null {
   if (input === null || input === '') return null;
   const value = text(input, 'Imagen', 500);
-  if (wallpaper) {
+  if (kind === 'wallpaper') {
     const safe = wallpaperForDisplay(value, userId, publicEnv().url);
     if (!safe) throw new AppError('Wallpaper inválido.', 400);
     return safe;
   }
-  if (GALLERY_AVATARS.some((avatar) => avatar.url === value)) return value;
+  if (kind === 'avatar' && GALLERY_AVATARS.some((avatar) => avatar.url === value)) return value;
   let url: URL;
   try {
     url = new URL(value);
@@ -32,8 +37,10 @@ function mediaUrl(input: unknown, userId: string, wallpaper = false): string | n
   const expected = new URL(publicEnv().url);
   if (
     url.origin !== expected.origin ||
-    !url.pathname.startsWith(`/storage/v1/object/public/profiles/${userId}/`) ||
-    !url.pathname.endsWith('.webp')
+    (kind === 'banner'
+      ? !isValidBannerStoragePath(url.pathname, userId)
+      : !url.pathname.startsWith(`/storage/v1/object/public/profiles/${userId}/`) ||
+        !url.pathname.endsWith('.webp'))
   )
     throw new AppError('Imagen de perfil inválida.', 400);
   return url.toString();
@@ -72,10 +79,10 @@ export async function profileMutation(input: unknown) {
       ? {}
       : { owned_platforms: ownedPlatforms(data.owned_platforms) }),
     avatar_url: mediaUrl(data.avatar_url, user.id),
-    banner_url: mediaUrl(data.banner_url, user.id),
+    banner_url: mediaUrl(data.banner_url, user.id, 'banner'),
     ...(data.wallpaper_url === undefined
       ? {}
-      : { wallpaper_url: mediaUrl(data.wallpaper_url, user.id, true) }),
+      : { wallpaper_url: mediaUrl(data.wallpaper_url, user.id, 'wallpaper') }),
   };
   let result = await db.from('profiles').update(update).eq('id', user.id).select().single();
   if (

@@ -4,6 +4,7 @@ import type { Profile } from '@/domain/model';
 import { DecryptedText } from '@/components/ui/decrypted-text';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { LevelBadge, LevelProgress } from '@/components/level-progression';
+import { isVideoBannerSource } from '@/domain/banner-media';
 
 type Identity = Pick<Profile, 'username' | 'avatar_url' | 'banner_url' | 'terminal_status'> &
   Partial<Pick<Profile, 'xp' | 'level' | 'equipped_title' | 'equipped_frame'>>;
@@ -18,6 +19,7 @@ export function ProfileIdentity({
   usernameEditor,
   terminalEditor,
   presenceBadge,
+  bannerMimeType,
 }: {
   profile: Identity;
   headingLevel?: 1 | 2;
@@ -28,6 +30,7 @@ export function ProfileIdentity({
   usernameEditor?: ReactNode;
   terminalEditor?: ReactNode;
   presenceBadge?: ReactNode;
+  bannerMimeType?: string | null;
 }) {
   const Heading = headingLevel === 1 ? 'h1' : 'h2';
   const terminal = `${profile.username}@savestate:~$ ${profile.terminal_status || 'Ready to play'}`;
@@ -35,13 +38,27 @@ export function ProfileIdentity({
     <>
       <div className="profile-banner">
         {profile.banner_url ? (
-          <Image
-            src={profile.banner_url}
-            alt={`Banner de ${profile.username}`}
-            fill
-            sizes="(max-width: 800px) 100vw, 1200px"
-            unoptimized
-          />
+          isVideoBannerSource(profile.banner_url, bannerMimeType) ? (
+            <video
+              src={profile.banner_url}
+              className="profile-banner-media"
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="metadata"
+              aria-label={`Banner de ${profile.username}`}
+            />
+          ) : (
+            <Image
+              src={profile.banner_url}
+              alt={`Banner de ${profile.username}`}
+              fill
+              sizes="(max-width: 800px) 100vw, 1200px"
+              unoptimized
+              className="profile-banner-media"
+            />
+          )
         ) : null}
         {bannerOverlay}
       </div>

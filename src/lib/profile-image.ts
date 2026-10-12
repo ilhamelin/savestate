@@ -1,11 +1,25 @@
 'use client';
+import { bannerExtension, isAnimatedBannerBytes } from '@/domain/banner-media';
 export async function profileImage(
   file: File,
   kind: 'avatar' | 'banner' | 'wallpaper',
 ): Promise<Blob> {
+  if (kind === 'banner') {
+    bannerExtension(file.type, file.size);
+    const header = new Uint8Array(await file.slice(0, 4096).arrayBuffer());
+    // PNG ancillary chunks may place acTL beyond the first 4 KB; never flatten such APNGs.
+    const animated =
+      isAnimatedBannerBytes(header, file.type) ||
+      (file.type === 'image/png' &&
+        isAnimatedBannerBytes(new Uint8Array(await file.arrayBuffer()), file.type));
+    if (animated || file.type === 'image/avif')
+      return new Blob([file], {
+        type: file.type === 'image/png' && animated ? 'image/apng' : file.type,
+      });
+  }
   if (
-    !['image/png', 'image/jpeg', 'image/webp'].includes(file.type) ||
-    file.size > 10 * 1024 * 1024
+    kind !== 'banner' &&
+    (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 10 * 1024 * 1024)
   )
     throw new Error('Selecciona PNG, JPG o WebP de hasta 10 MB.');
   const bitmap = await createImageBitmap(file);

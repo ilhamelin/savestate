@@ -23,6 +23,8 @@ import { GamerRoom } from '@/components/gamer-room';
 import { ROOM_THEMES, ROOM_LABELS, roomTheme } from '@/domain/arcade';
 import { browserClient } from '@/integrations/supabase/browser';
 import { profileImage } from '@/lib/profile-image';
+import { BANNER_ACCEPT, bannerExtension } from '@/domain/banner-media';
+import { uploadProfileBanner } from '@/lib/banner-upload';
 import { api } from '@/lib/client-api';
 import { username, text, socialLinks, splitSocialAndTrackerLinks } from '@/domain/validation';
 import { TrackerUidTags } from '@/components/tracker-uid-tags';
@@ -46,6 +48,7 @@ const MEDIA_KEYS = {
 } as const;
 export function ProfileStudio({ profile }: { profile: Profile }) {
   const [saved, setSaved] = useState(() => profileDraft(profile));
+  const [bannerMimeType, setBannerMimeType] = useState<string | null>(null);
   const [draft, setDraft] = useState(() => profileDraft(profile));
   const [hexColor, setHexColor] = useState(() => resolveThemeColor(profile.theme_color));
   const [mobile, setMobile] = useState(false),
@@ -72,6 +75,7 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
     setMessage('');
   }
   function clearMedia(kind: Media) {
+    if (kind === 'banner') setBannerMimeType(null);
     const url = previews.current[kind];
     if (url) URL.revokeObjectURL(url);
     delete previews.current[kind];
@@ -142,6 +146,7 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
       if (!alive.current) return;
       clearMedia(kind);
       pendingMedia.current[kind] = blob;
+      if (kind === 'banner') setBannerMimeType(blob.type);
       const url = URL.createObjectURL(blob);
       previews.current[kind] = url;
       update(MEDIA_KEYS[kind], url);
@@ -173,7 +178,7 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
     setSaving(true);
     setMessage('');
     const db = browserClient();
-    const undo: { path: string; previous: Blob | null }[] = [];
+    const undo: { path: string; previous: Blob | null; contentType: string }[] = [];
     let committed = false;
     try {
       const next = profileDraft(draft);
@@ -190,22 +195,27 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
       );
       const hasMedia = Object.keys(pendingMedia.current).length > 0;
       const objects = hasMedia
-        ? await db.storage.from('profiles').list(profile.id, { limit: 10 })
+        ? await db.storage.from('profiles').list(profile.id, { limit: 100 })
         : { data: [], error: null };
       if (objects.error)
         throw new Error('No se pudo comprobar el archivo anterior. Reintenta guardar.');
       for (const kind of ['avatar', 'banner', 'wallpaper'] as const) {
         const blob = pendingMedia.current[kind];
         if (!blob) continue;
-        const path = `${profile.id}/${kind}.webp`;
+        const extension = kind === 'banner' ? bannerExtension(blob.type, blob.size) : 'webp';
+        const path = `${profile.id}/${kind}.${extension}`;
         let previous: Blob | null = null;
-        if (objects.data?.some((file) => file.name === `${kind}.webp`)) {
+        if (objects.data?.some((file) => file.name === `${kind}.${extension}`)) {
           const backup = await db.storage.from('profiles').download(path);
           if (backup.error || !backup.data)
             throw new Error('No se pudo respaldar la imagen anterior. Reintenta guardar.');
           previous = backup.data;
         }
-        undo.push({ path, previous });
+        undo.push({ path, previous, contentType: previous?.type || blob.type });
+        if (kind === 'banner') {
+          next.banner_url = (await uploadProfileBanner(db, profile.id, blob)).url;
+          continue;
+        }
         const result = await db.storage
           .from('profiles')
           .upload(path, blob, { contentType: 'image/webp', upsert: true, cacheControl: '0' });
@@ -235,7 +245,7 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
           try {
             const rollback = item.previous
               ? await db.storage.from('profiles').upload(item.path, item.previous, {
-                  contentType: 'image/webp',
+                  contentType: item.contentType,
                   upsert: true,
                   cacheControl: '0',
                 })
@@ -296,6 +306,7 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
                 <ProfileIdentity
                   profile={{ ...draft, xp: profile.xp ?? 0, level: profile.level ?? 1 }}
                   headingLevel={2}
+                  bannerMimeType={bannerMimeType}
                   avatarOverlay={
                     <button
                       type="button"
@@ -468,7 +479,7 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
             ref={bannerInput}
             hidden
             type="file"
-            accept="image/png,image/jpeg,image/webp"
+            accept={BANNER_ACCEPT}
             aria-label="Seleccionar banner"
             className="sr-only"
             tabIndex={-1}
@@ -477,6 +488,11 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
               event.target.value = '';
             }}
           />
+          <p className="muted studio-banner-help">
+            El banner acepta WebP estático o animado, GIF, APNG, AVIF, PNG, JPG y video corto
+            WebM/MP4 de hasta 8 MB. Las animaciones se conservan; el video se reproduce sin sonido y
+            en bucle.
+          </p>
           <div className="panel form-stack">
             <h2>Detalles y privacidad</h2>
             <div className="form-stack">
