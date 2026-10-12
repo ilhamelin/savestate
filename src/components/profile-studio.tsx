@@ -23,7 +23,8 @@ import { ROOM_THEMES, ROOM_LABELS, roomTheme } from '@/domain/arcade';
 import { browserClient } from '@/integrations/supabase/browser';
 import { profileImage } from '@/lib/profile-image';
 import { api } from '@/lib/client-api';
-import { username, text, socialLinks } from '@/domain/validation';
+import { username, text, socialLinks, splitSocialAndTrackerLinks } from '@/domain/validation';
+import { TrackerUidTags } from '@/components/tracker-uid-tags';
 import { HardwareSelector } from '@/components/hardware-selector';
 import { ownedPlatforms } from '@/domain/hardware';
 import { WALLPAPERS } from '@/domain/wallpaper';
@@ -63,6 +64,7 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
   const alive = useRef(true);
   const isDirty =
     profileChanged(draft, saved) || hexColor.toLowerCase() !== resolveThemeColor(draft.theme_color);
+  const { externalLinks, genshinUid, hsrUid } = splitSocialAndTrackerLinks(draft.social_links);
   function update<K extends keyof DraftProfile>(key: K, value: DraftProfile[K]) {
     if (key === 'theme_color' && typeof value === 'string') setHexColor(resolveThemeColor(value));
     setDraft((previous) => ({ ...previous, [key]: value }));
@@ -344,7 +346,26 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
                       />
                     </label>
                   }
-                />
+                >
+                  <div className="tags">
+                    {draft.psn_id && <span className="tag">🎮 PSN: @{draft.psn_id}</span>}
+                    {draft.xbox_gamertag && (
+                      <span className="tag">🟩 Xbox: @{draft.xbox_gamertag}</span>
+                    )}
+                    <TrackerUidTags genshinUid={genshinUid} hsrUid={hsrUid} />
+                    {Object.entries(externalLinks).map(([label, url]) => (
+                      <a
+                        className="tag"
+                        key={label}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {label} ↗
+                      </a>
+                    ))}
+                  </div>
+                </ProfileIdentity>
               </GamerRoom>
             </ProfileWallpaper>
             <div className="studio-statuses" role="group" aria-label="Estados rápidos">
@@ -632,6 +653,40 @@ export function ProfileStudio({ profile }: { profile: Profile }) {
                   maxLength={30}
                   value={draft.xbox_gamertag ?? ''}
                   onChange={(event) => update('xbox_gamertag', event.target.value || null)}
+                />
+              </label>
+            </div>
+            <div className="form-row">
+              <label>
+                Genshin Impact UID (público)
+                <input
+                  inputMode="numeric"
+                  pattern="[0-9]{9,10}"
+                  maxLength={10}
+                  placeholder="Ej: 607358180"
+                  value={draft.social_links.genshin_uid ?? ''}
+                  onChange={(event) =>
+                    update('social_links', {
+                      ...draft.social_links,
+                      genshin_uid: event.target.value.replace(/\D/g, '').slice(0, 10),
+                    })
+                  }
+                />
+              </label>
+              <label>
+                Honkai: Star Rail UID (público)
+                <input
+                  inputMode="numeric"
+                  pattern="[0-9]{9,10}"
+                  maxLength={10}
+                  placeholder="Ej: 600000124"
+                  value={draft.social_links.hsr_uid ?? ''}
+                  onChange={(event) =>
+                    update('social_links', {
+                      ...draft.social_links,
+                      hsr_uid: event.target.value.replace(/\D/g, '').slice(0, 10),
+                    })
+                  }
                 />
               </label>
             </div>

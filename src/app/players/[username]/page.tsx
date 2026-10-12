@@ -21,7 +21,8 @@ import { SocialControls } from '@/components/social-controls';
 import { SetupNotice } from '@/components/setup-notice';
 import { PlayerStatistics, PlayerSummary } from '@/components/player-statistics';
 import { playerStatistics } from '@/domain/statistics';
-import { socialLinks } from '@/domain/validation';
+import { splitSocialAndTrackerLinks } from '@/domain/validation';
+import { TrackerUidTags } from '@/components/tracker-uid-tags';
 import { ProfileIdentity } from '@/components/profile-identity';
 import { GamerRoom } from '@/components/gamer-room';
 import { BadgeGallery } from '@/components/badge-gallery';
@@ -84,14 +85,7 @@ export default async function Player({ params }: { params: Promise<{ username: s
       .filter((e) => e.favorite_position)
       .sort((a, b) => a.favorite_position! - b.favorite_position!) ?? [];
   const stats = library ? playerStatistics(library.entries, library.games, library.logs) : null;
-  const links: Record<string, string> = {};
-  for (const [key, value] of Object.entries(profile.social_links)) {
-    try {
-      Object.assign(links, socialLinks({ [key]: value }));
-    } catch {
-      /* Stored links are untrusted, including direct database writes. */
-    }
-  }
+  const { externalLinks, genshinUid, hsrUid } = splitSocialAndTrackerLinks(profile.social_links);
   return (
     <ProfileWallpaper
       fullScreen
@@ -129,7 +123,8 @@ export default async function Player({ params }: { params: Promise<{ username: s
               {profile.xbox_gamertag ? (
                 <span className="tag">🟩 Xbox: @{profile.xbox_gamertag}</span>
               ) : null}
-              {Object.entries(links).map(([label, url]) => (
+              <TrackerUidTags genshinUid={genshinUid} hsrUid={hsrUid} />
+              {Object.entries(externalLinks).map(([label, url]) => (
                 <a className="tag" key={label} href={url} target="_blank" rel="noopener noreferrer">
                   {label} ↗
                 </a>

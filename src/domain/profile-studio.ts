@@ -89,7 +89,10 @@ export function profileDraft(profile: DraftProfile): DraftProfile {
     terminal_status: profile.terminal_status,
     library_private: profile.library_private,
     social_links: Object.fromEntries(
-      SOCIAL_KEYS.map((key) => [key, profile.social_links[key] ?? '']),
+      [...SOCIAL_KEYS, 'genshin_uid', 'hsr_uid'].map((key) => [
+        key,
+        profile.social_links?.[key] ?? '',
+      ]),
     ),
     owned_platforms: hardwareForDisplay(profile.owned_platforms),
   };

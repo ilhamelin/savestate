@@ -114,6 +114,14 @@ export function socialLinks(input: unknown): Record<string, string> {
   };
   const result: Record<string, string> = {};
   for (const [key, raw] of Object.entries(data)) {
+    if (key === 'genshin_uid' || key === 'hsr_uid') {
+      const valid = trackerUid(
+        raw,
+        key === 'genshin_uid' ? 'Genshin Impact UID' : 'Honkai: Star Rail UID',
+      );
+      if (valid) result[key] = valid;
+      continue;
+    }
     if (!hosts[key]) throw new ValidationError('Red social no permitida.');
     if (raw === '') continue;
     let url: URL;
@@ -128,6 +136,32 @@ export function socialLinks(input: unknown): Record<string, string> {
     result[key] = url.toString();
   }
   return result;
+}
+export function trackerUid(input: unknown, label: string): string | null {
+  if (input === null || input === undefined || (typeof input === 'string' && !input.trim()))
+    return null;
+  if (typeof input !== 'string' || !/^\d{9,10}$/.test(input.trim()))
+    throw new ValidationError(`${label}: debe tener 9 o 10 dígitos numéricos.`);
+  return input.trim();
+}
+export function splitSocialAndTrackerLinks(links: Record<string, string>) {
+  const externalLinks: Record<string, string> = {};
+  for (const key of ['steam', 'discord', 'twitch', 'github', 'x']) {
+    try {
+      if (links?.[key]) Object.assign(externalLinks, socialLinks({ [key]: links[key] }));
+    } catch {
+      /* Ignore invalid stored links, never turn UIDs into URLs. */
+    }
+  }
+  return {
+    externalLinks,
+    genshinUid:
+      typeof links?.genshin_uid === 'string' && /^\d{9,10}$/.test(links.genshin_uid)
+        ? links.genshin_uid
+        : null,
+    hsrUid:
+      typeof links?.hsr_uid === 'string' && /^\d{9,10}$/.test(links.hsr_uid) ? links.hsr_uid : null,
+  };
 }
 export function safeNext(input: string | null): string {
   return input && input.startsWith('/') && !input.startsWith('//') && !/[\\\r\n]/.test(input)

@@ -1,12 +1,14 @@
 'use client';
 import Image from 'next/image';
-import { useEffect, useRef, useState, type ReactNode, type FormEvent } from 'react';
+import Link from 'next/link';
+import { useCallback, useEffect, useRef, useState, type ReactNode, type FormEvent } from 'react';
 import { api } from '@/lib/client-api';
 import { ValorantProfileView } from '@/components/valorant-profile-view';
 import { GenshinProfileView } from '@/components/genshin-profile-view';
 import { HsrProfileView } from '@/components/hsr-profile-view';
 import { RustProfileView } from '@/components/rust-profile-view';
 import { VALORANT_REGIONS, type CompetitiveProfile } from '@/domain/competitive-tracker';
+import { recentTrackerUids, type TrackerTab } from '@/domain/tracker-accounts';
 const TRACKER_TABS = [
   ['lol', 'League of Legends', '/icons/games/lol.png'],
   ['valorant', 'Valorant (Riot ID)', '/icons/games/valorant.png'],
@@ -14,14 +16,46 @@ const TRACKER_TABS = [
   ['hsr', 'Honkai: Star Rail', '/icons/games/hsr.png'],
   ['rust', 'Rust (Steam)', '/icons/games/rust.png'],
 ] as const;
-export function CompetitiveHubTabs({ children }: { children: ReactNode }) {
-  const [tab, setTab] = useState<'lol' | 'valorant' | 'genshin' | 'hsr' | 'rust'>('lol');
-  const [identity, setIdentity] = useState('');
+export function CompetitiveHubTabs({
+  children,
+  savedGenshinUid,
+  savedHsrUid,
+  savedSteamId,
+  initialTab = 'lol',
+  initialIdentity,
+  initialError,
+}: {
+  children: ReactNode;
+  savedGenshinUid?: string | null;
+  savedHsrUid?: string | null;
+  savedSteamId?: string | null;
+  initialTab?: TrackerTab;
+  initialIdentity?: string;
+  initialError?: string | null;
+}) {
+  function defaultIdentityForTab(targetTab: TrackerTab) {
+    return targetTab === 'genshin'
+      ? (savedGenshinUid ?? '')
+      : targetTab === 'hsr'
+        ? (savedHsrUid ?? '')
+        : targetTab === 'rust'
+          ? (savedSteamId ?? '')
+          : '';
+  }
+  const [tab, setTab] = useState<TrackerTab>(initialTab);
+  const [identity, setIdentity] = useState(
+    () => initialIdentity ?? defaultIdentityForTab(initialTab),
+  );
   const [region, setRegion] = useState('latam');
   const [data, setData] = useState<CompetitiveProfile | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(initialError ?? '');
   const controller = useRef<AbortController | null>(null);
+  const recentRef = useRef<{ genshin: string[]; hsr: string[] }>({ genshin: [], hsr: [] });
+  const [recents, setRecents] = useState<{ genshin: string[]; hsr: string[] }>({
+    genshin: [],
+    hsr: [],
+  });
   const activeIcon = TRACKER_TABS.find(([id]) => id === tab)![2];
   useEffect(() => () => controller.current?.abort(), []);
   function select(next: typeof tab) {
@@ -30,33 +64,86 @@ export function CompetitiveHubTabs({ children }: { children: ReactNode }) {
     setTab(next);
     setData(null);
     setError('');
-    setIdentity('');
+    setIdentity(defaultIdentityForTab(next));
   }
-  async function inspect(event: FormEvent) {
+  const runInspect = useCallback(
+    async (targetTab: Exclude<TrackerTab, 'lol'>, value: string, selectedRegion = 'latam') => {
+      controller.current?.abort();
+      const request = new AbortController();
+      controller.current = request;
+      setTab(targetTab);
+      setIdentity(value);
+      setBusy(true);
+      setError('');
+      setData(null);
+      try {
+        const result = await api<CompetitiveProfile>(
+          'tracker/multi/inspect',
+          targetTab === 'genshin' || targetTab === 'hsr'
+            ? { game: targetTab, uid: value }
+            : targetTab === 'rust'
+              ? { game: targetTab, steamId: value }
+              : { game: targetTab, riotId: value, region: selectedRegion },
+          request.signal,
+        );
+        if (!request.signal.aborted) {
+          setData(result);
+          if (result.game === 'genshin' || result.game === 'hsr') {
+            const next = {
+              ...recentRef.current,
+              [result.game]: recentTrackerUids(recentRef.current[result.game], result.uid),
+            };
+            recentRef.current = next;
+            setRecents(next);
+            try {
+              window.localStorage.setItem(
+                `savestate_recent_${result.game}_uids`,
+                JSON.stringify(next[result.game]),
+              );
+            } catch {
+              /* Storage can be disabled. */
+            }
+          }
+        }
+      } catch (failure) {
+        if (!request.signal.aborted)
+          setError(failure instanceof Error ? failure.message : 'No se pudo consultar.');
+      } finally {
+        if (!request.signal.aborted) setBusy(false);
+      }
+    },
+    [],
+  );
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const next = { genshin: [] as string[], hsr: [] as string[] };
+      for (const game of ['genshin', 'hsr'] as const) {
+        try {
+          next[game] = recentTrackerUids(
+            JSON.parse(window.localStorage.getItem(`savestate_recent_${game}_uids`) ?? '[]'),
+          );
+        } catch {
+          /* Ignore malformed or blocked storage. */
+        }
+      }
+      recentRef.current = next;
+      setRecents(next);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+  useEffect(() => {
+    if (initialTab === 'lol' || !initialIdentity || initialError) return;
+    const timer = setTimeout(() => {
+      void runInspect(initialTab, initialIdentity);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      controller.current?.abort();
+    };
+  }, [initialTab, initialIdentity, initialError, runInspect]);
+  function inspect(event: FormEvent) {
     event.preventDefault();
-    if (busy || tab === 'lol') return;
-    const request = new AbortController();
-    controller.current = request;
-    setBusy(true);
-    setError('');
-    setData(null);
-    try {
-      const result = await api<CompetitiveProfile>(
-        'tracker/multi/inspect',
-        tab === 'genshin' || tab === 'hsr'
-          ? { game: tab, uid: identity }
-          : tab === 'rust'
-            ? { game: tab, steamId: identity }
-            : { game: tab, riotId: identity, region },
-        request.signal,
-      );
-      if (!request.signal.aborted) setData(result);
-    } catch (failure) {
-      if (!request.signal.aborted)
-        setError(failure instanceof Error ? failure.message : 'No se pudo consultar.');
-    } finally {
-      if (!request.signal.aborted) setBusy(false);
-    }
+    if (!busy && tab !== 'lol') void runInspect(tab, identity, region);
   }
   return (
     <div className="competitive-hub-tabs">
@@ -133,6 +220,63 @@ export function CompetitiveHubTabs({ children }: { children: ReactNode }) {
               {busy ? 'Consultando…' : 'Cargar perfil'}
             </button>
           </form>
+          {(tab === 'genshin' || tab === 'hsr' || tab === 'rust') && (
+            <div
+              className="filter-buttons tracker-account-suggestions"
+              aria-label="Sugerencias de cuenta"
+            >
+              {tab === 'genshin' &&
+                (savedGenshinUid ? (
+                  <button
+                    type="button"
+                    className="button secondary small"
+                    onClick={() => void runInspect('genshin', savedGenshinUid)}
+                  >
+                    ⭐ Mi UID Genshin: {savedGenshinUid}
+                  </button>
+                ) : (
+                  <Link className="text-link" href="/settings">
+                    Guardar mi UID de Genshin en Editar perfil →
+                  </Link>
+                ))}
+              {tab === 'hsr' &&
+                (savedHsrUid ? (
+                  <button
+                    type="button"
+                    className="button secondary small"
+                    onClick={() => void runInspect('hsr', savedHsrUid)}
+                  >
+                    ⭐ Mi UID Honkai: {savedHsrUid}
+                  </button>
+                ) : (
+                  <Link className="text-link" href="/settings">
+                    Guardar mi UID de Honkai en Editar perfil →
+                  </Link>
+                ))}
+              {tab === 'rust' && savedSteamId && (
+                <button
+                  type="button"
+                  className="button secondary small"
+                  onClick={() => void runInspect('rust', savedSteamId)}
+                >
+                  ⭐ Mi Steam ID: {savedSteamId}
+                </button>
+              )}
+              {(tab === 'genshin' || tab === 'hsr') &&
+                recents[tab]
+                  .filter((uid) => uid !== (tab === 'genshin' ? savedGenshinUid : savedHsrUid))
+                  .map((uid) => (
+                    <button
+                      type="button"
+                      className="button outline small"
+                      key={uid}
+                      onClick={() => void runInspect(tab, uid)}
+                    >
+                      Reciente: {uid}
+                    </button>
+                  ))}
+            </div>
+          )}
           {error && (
             <p className="error-text" role="alert">
               {error}

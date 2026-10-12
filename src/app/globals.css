@@ -5020,3 +5020,22 @@ button.discord-channel-pill:focus-visible {
   object-fit: contain;
   filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
 }
+
+/* Public account shortcuts for Genshin and Star Rail. */
+.tracker-uid-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  overflow-wrap: anywhere;
+}
+.tracker-uid-tag img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 3px;
+}
+.tracker-account-suggestions .button {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
