@@ -97,21 +97,24 @@ test('Release announcements share one history read, preserve independent cooldow
     await Promise.all([
       service.announceGta6CountdownToDiscord(),
       service.announceZeldaOotCountdownToDiscord(),
+      service.announceTga2026CountdownToDiscord(),
     ]);
     assert.equal(reads, 1);
-    assert.equal(posts.length, 1);
+    assert.equal(posts.length, 2);
     assert.match(posts[0]!.nonce, /^zelda-oot:/);
+    assert.match(posts[1]!.nonce, /^tga-2026:/);
     assert.equal(posts[0]!.enforce_nonce, true);
     assert.equal(state.invalidations, 1);
     for (const cache of state.caches) cache.clear();
     assert.deepEqual(await service.announceGta6CountdownToDiscord(), { published: false });
-    assert.equal(posts.length, 1);
+    assert.equal(posts.length, 2);
     now += 5 * 86400000;
     for (const cache of state.caches) cache.clear();
     await service.announceGta6CountdownToDiscord();
-    assert.equal(posts.length, 3);
-    assert.match(posts[1]!.nonce, /^gta6:/);
-    assert.match(posts[2]!.nonce, /^zelda-oot:/);
+    assert.equal(posts.length, 5);
+    assert.match(posts[2]!.nonce, /^gta6:/);
+    assert.match(posts[3]!.nonce, /^zelda-oot:/);
+    assert.match(posts[4]!.nonce, /^tga-2026:/);
     assert.equal(state.invalidations, 2);
   } finally {
     globalThis.fetch = oldFetch;

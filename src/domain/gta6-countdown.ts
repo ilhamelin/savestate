@@ -5,6 +5,9 @@ export const GTA6_ANNOUNCEMENT_INTERVAL = 5 * 86400000;
 export const ZELDA_OOT_RELEASE_DATE = '2026-11-05T05:00:00.000Z';
 export const ZELDA_OOT_RELEASE_TEXT =
   'The Legend of Zelda: Ocarina of Time saldrá oficialmente el 5 de noviembre de 2026 para Nintendo Switch 2';
+export const TGA_2026_EVENT_DATE = '2026-12-11T00:30:00.000Z';
+export const TGA_2026_EVENT_TEXT =
+  'La gala anual The Game Awards 2026 se celebrará oficialmente el jueves 10 de diciembre de 2026 en vivo desde el Peacock Theater';
 export function getCountdownTo(releaseIsoDate: string, nowMs = Date.now()) {
   const releaseMs = Date.parse(releaseIsoDate);
   if (!Number.isFinite(releaseMs) || !Number.isFinite(nowMs))
@@ -26,16 +29,22 @@ export function getGta6Countdown(nowMs = Date.now()) {
 export function getZeldaOotCountdown(nowMs = Date.now()) {
   return getCountdownTo(ZELDA_OOT_RELEASE_DATE, nowMs);
 }
+export function getTga2026Countdown(nowMs = Date.now()) {
+  return getCountdownTo(TGA_2026_EVENT_DATE, nowMs);
+}
 export function shouldAnnounceGta6Countdown(history: unknown[], nowMs = Date.now()) {
   return shouldAnnounceCountdown(history, getGta6Countdown(nowMs), 'gta6', nowMs);
 }
 export function shouldAnnounceZeldaOotCountdown(history: unknown[], nowMs = Date.now()) {
   return shouldAnnounceCountdown(history, getZeldaOotCountdown(nowMs), 'zelda-oot', nowMs);
 }
+export function shouldAnnounceTga2026Countdown(history: unknown[], nowMs = Date.now()) {
+  return shouldAnnounceCountdown(history, getTga2026Countdown(nowMs), 'tga-2026', nowMs);
+}
 function shouldAnnounceCountdown(
   history: unknown[],
   countdown: ReturnType<typeof getCountdownTo>,
-  id: 'gta6' | 'zelda-oot',
+  id: ReleaseCountdownId,
   nowMs: number,
 ) {
   const bucket = Math.floor(countdown.days / 5);
@@ -59,7 +68,7 @@ function shouldAnnounceCountdown(
   });
   return { shouldAnnounce: !countdown.released && !blocked, bucket, nonce };
 }
-export type ReleaseCountdownId = 'gta6' | 'zelda-oot';
+export type ReleaseCountdownId = 'gta6' | 'zelda-oot' | 'tga-2026';
 export interface ReleaseCountdownConfig {
   id: ReleaseCountdownId;
   tabNumber: number;
@@ -114,5 +123,26 @@ export const RELEASE_COUNTDOWNS: readonly ReleaseCountdownConfig[] = [
     logoImage: '/zelda/logo.png',
     themeClass: 'countdown-theme-zelda',
     platforms: [{ label: 'Nintendo Switch 2', icon: '/platforms/nintendo.png' }],
+  },
+  {
+    id: 'tga-2026',
+    tabNumber: 3,
+    tabLabel: 'The Game Awards',
+    title: 'The Game Awards 2026',
+    radarLabel: 'PEACOCK THEATER // GALA ANUAL EN VIVO',
+    releaseDate: TGA_2026_EVENT_DATE,
+    releaseText: TGA_2026_EVENT_TEXT,
+    referenceNote: 'Gala: jueves 10/12/2026 · 16:30 Los Ángeles (viernes 11/12 · 00:30 UTC).',
+    timerAriaLabel:
+      'Tiempo restante hasta The Game Awards: jueves 10 de diciembre de 2026, 16:30 Los Ángeles; viernes 11 de diciembre, 00:30 UTC',
+    releasedText: '🏆 ¡La gala de The Game Awards 2026 ha comenzado!',
+    heroImage: '/tga/hero.jpg',
+    iconImage: '/tga/icon-128.png',
+    logoImage: '/tga/logo.png',
+    themeClass: 'countdown-theme-tga',
+    platforms: [
+      { label: 'Gala en Vivo · Peacock Theater', icon: '/tga/icon-128.png' },
+      { label: 'Steam Broadcast', icon: '/platforms/steam.png' },
+    ],
   },
 ];

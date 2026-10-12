@@ -8,6 +8,9 @@ import {
   getZeldaOotCountdown,
   shouldAnnounceZeldaOotCountdown,
   ZELDA_OOT_RELEASE_TEXT,
+  getTga2026Countdown,
+  shouldAnnounceTga2026Countdown,
+  TGA_2026_EVENT_TEXT,
 } from './gta6-countdown.ts';
 import {
   discordCommandMessage,
@@ -26,6 +29,32 @@ function claimUrl(item: FreebieItem) {
   )
     throw new Error('Invalid giveaway URL');
   return url.toString();
+}
+export function discordTga2026CountdownMessage(nowMs: number, baseAppUrl: string) {
+  const countdown = getTga2026Countdown(nowMs),
+    { bucket } = shouldAnnounceTga2026Countdown([], nowMs),
+    base = new URL(baseAppUrl).origin;
+  return {
+    allowed_mentions: { parse: [] },
+    embeds: [
+      {
+        title: `🏆⏳ CUENTA REGRESIVA THE GAME AWARDS 2026 · Faltan ${countdown.days} días`,
+        description: `${TGA_2026_EVENT_TEXT}.\n⏳ ${countdown.days}d ${countdown.hours}h ${countdown.minutes}m · gala jueves 10/12 · 16:30 Los Ángeles (viernes 11/12 · 00:30 UTC).`,
+        color: 0xff9900,
+        thumbnail: { url: `${base}/tga/icon-512.png` },
+        image: { url: `${base}/tga/hero.jpg` },
+        footer: { text: `savestate-tga-2026-countdown:${bucket} · Aviso automático cada 5 días` },
+      },
+    ],
+    components: [
+      {
+        type: 1,
+        components: [
+          { type: 2, style: 5, label: '🌐 Ver cuenta regresiva en vivo en SaveState', url: base },
+        ],
+      },
+    ],
+  };
 }
 export function discordZeldaOotCountdownMessage(nowMs: number, baseAppUrl: string) {
   const countdown = getZeldaOotCountdown(nowMs),
