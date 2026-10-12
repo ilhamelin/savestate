@@ -6,6 +6,7 @@ import { getRecentGamingNews } from '@/services/gaming-news';
 import { RecentNewsSection } from '@/components/recent-news-section';
 import { getActiveFreebies } from '@/services/freebies';
 import { FreebiesTracker } from '@/components/freebies-tracker';
+import { Gta6Countdown } from '@/components/gta6-countdown';
 async function NewsStream() {
   return <RecentNewsSection news={await getRecentGamingNews()} />;
 }
@@ -74,6 +75,7 @@ export default function Home() {
         </div>
       </section>
       <SetupNotice />
+      <Gta6Countdown />
       <Suspense
         fallback={
           <div className="panel skeleton" aria-busy="true">

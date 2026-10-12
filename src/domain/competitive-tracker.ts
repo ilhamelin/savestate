@@ -77,6 +77,7 @@ export type ValorantProfile = {
     tftLosses: number | null;
   } | null;
   dataSource: 'henrik_full' | 'riot_official';
+  valorantStatus?: 'available' | 'no_recent_matches' | 'unavailable';
 };
 export type CompetitiveProfile = GenshinProfile | ValorantProfile | HsrProfile | RustProfile;
 export function competitiveInput(input: unknown) {

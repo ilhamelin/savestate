@@ -10,9 +10,26 @@ import {
   normalizedDiscordPresence,
   completedDiscordProgress,
   discordCoverUrl,
+  discordSendOptions,
+  discordOutgoingMessage,
 } from '@/domain/discord';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/database.types';
+import { registerDiscordApplication } from '@/integrations/discord/application';
+import { authorizedDiscordChannels, discordFrequency } from '@/domain/discord-channels';
+import type { DiscordFrequency, DiscordSendOptions } from '@/domain/discord-client';
+import { getActiveFreebies } from '@/services/freebies';
+import { discordFreebieMessage, unseenDiscordFreebies } from '@/domain/discord-bot-cards';
+import { discordRetryDelay } from '@/domain/discord-rate-limit';
+import { record } from '@/domain/game-live-telemetry';
+import { shouldAnnounceGta6Countdown } from '@/domain/gta6-countdown';
+import { discordGta6CountdownMessage } from '@/domain/discord-bot-cards';
+export async function registerDiscordCommandsAndRoleMetadata() {
+  return registerDiscordApplication(
+    process.env.DISCORD_APPLICATION_ID ?? '',
+    process.env.DISCORD_BOT_TOKEN ?? '',
+  );
+}
 
 function configuration() {
   const token = process.env.DISCORD_BOT_TOKEN,
@@ -21,26 +38,39 @@ function configuration() {
     throw new AppError('El chat de Discord aún no está configurado.', 503);
   return { token, channel };
 }
-async function discordRequest(url: string, options: RequestInit) {
-  let response: Response;
-  try {
-    response = await fetch(url, {
-      ...options,
-      signal: AbortSignal.timeout(7000),
-      redirect: 'error',
-      cache: 'no-store',
-    });
-  } catch {
-    throw new AppError('No se pudo conectar con Discord.', 503);
+async function discordRequest(url: string, options: RequestInit, retryRateLimits = false) {
+  async function attempt(retries: number): Promise<Response> {
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        ...options,
+        signal: AbortSignal.timeout(7000),
+        redirect: 'error',
+        cache: 'no-store',
+      });
+    } catch {
+      throw new AppError('No se pudo conectar con Discord.', 503);
+    }
+    if (response.status === 429 && retries > 0) {
+      const payload: unknown = await response.json().catch(() => null);
+      const delay = discordRetryDelay(
+        response.headers.get('Retry-After') || record(payload).retry_after,
+      );
+      if (delay !== null) {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        return attempt(retries - 1);
+      }
+    }
+    if (response.status === 429)
+      throw new AppError('Discord está limitando las solicitudes. Espera unos segundos.', 429);
+    if (!response.ok)
+      throw new AppError(
+        'Discord no pudo completar la solicitud. Revisa permisos y configuración del bot.',
+        503,
+      );
+    return response;
   }
-  if (response.status === 429)
-    throw new AppError('Discord está limitando las solicitudes. Espera unos segundos.', 429);
-  if (!response.ok)
-    throw new AppError(
-      'Discord no pudo completar la solicitud. Revisa permisos y configuración del bot.',
-      503,
-    );
-  return response;
+  return attempt(retryRateLimits ? 2 : 0);
 }
 const cachedMessages = unstable_cache(
   async (channel: string, limit: number) => {
@@ -56,13 +86,20 @@ const cachedMessages = unstable_cache(
     );
     return normalizedDiscordMessages(await response.json());
   },
-  ['discord-messages-v2'],
+  ['discord-messages-v3'],
   { revalidate: 5, tags: ['discord-messages'] },
 );
 
-export async function fetchDiscordMessages(limit = 30) {
+export async function fetchDiscordMessages(limit = 30, frequency: DiscordFrequency = 'web-chat') {
   const { channel } = configuration();
-  return cachedMessages(channel, Math.max(1, Math.min(30, Math.floor(limit) || 30)));
+  if (!discordFrequency(frequency)) throw new AppError('Frecuencia de Discord no válida.', 400);
+  const target = frequency === 'web-chat' ? channel : (await fetchAuthorizedChannels())[frequency];
+  if (!target)
+    throw new AppError(
+      'Esta frecuencia no tiene un canal autorizado disponible. Revisa su nombre, ID y los permisos del bot.',
+      503,
+    );
+  return cachedMessages(target, Math.max(1, Math.min(30, Math.floor(limit) || 30)));
 }
 const cachedGuildId = unstable_cache(
   async (channel: string) => {
@@ -90,6 +127,170 @@ const cachedPresence = unstable_cache(
   ['discord-presence-v1'],
   { revalidate: 15 },
 );
+const cachedAuthorizedChannels = unstable_cache(
+  async (primary: string, checkpoints: string, announcements: string) => {
+    const { token } = configuration();
+    const guildId = await cachedGuildId(primary);
+    const response = await discordRequest(
+      `https://discord.com/api/v10/guilds/${guildId}/channels`,
+      {
+        headers: { Authorization: `Bot ${token}` },
+      },
+    );
+    return authorizedDiscordChannels(await response.json(), guildId, primary, {
+      checkpoints,
+      announcements,
+    });
+  },
+  ['discord-authorized-channels-v1'],
+  { revalidate: 60 },
+);
+export async function fetchAuthorizedChannels() {
+  const { channel } = configuration();
+  return cachedAuthorizedChannels(
+    channel,
+    process.env.DISCORD_CHECKPOINTS_CHANNEL_ID?.trim() ?? '',
+    process.env.DISCORD_ANNOUNCEMENTS_CHANNEL_ID?.trim() ?? '',
+  );
+}
+const freebieRuns = new Map<
+  string,
+  Promise<{ published: number; skipped: number; checkedAt: number }>
+>();
+const invalidatedFreebieRuns = new Map<string, number>();
+const announceFreebiesCached = unstable_cache(
+  async (channel: string) => {
+    const existing = freebieRuns.get(channel);
+    if (existing) return existing;
+    const run = (async () => {
+      const { token } = configuration();
+      const [items, response] = await Promise.all([
+        getActiveFreebies(),
+        discordRequest(`https://discord.com/api/v10/channels/${channel}/messages?limit=100`, {
+          headers: { Authorization: `Bot ${token}` },
+        }),
+      ]);
+      const history: unknown = await response.json();
+      if (!Array.isArray(history))
+        throw new AppError('No se pudo comprobar el historial de anuncios.', 503);
+      const fresh = unseenDiscordFreebies(items, history);
+      for (const [index, item] of fresh.entries()) {
+        const sent = await discordRequest(
+          `https://discord.com/api/v10/channels/${channel}/messages`,
+          {
+            method: 'POST',
+            headers: { Authorization: `Bot ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...discordFreebieMessage(item, appUrl()),
+              nonce: `freebie:${item.id}`,
+              enforce_nonce: true,
+            }),
+          },
+          true,
+        );
+        await sent.arrayBuffer();
+        if (index < fresh.length - 1 && sent.headers.get('X-RateLimit-Remaining') === '0') {
+          const delay = discordRetryDelay(sent.headers.get('X-RateLimit-Reset-After'));
+          if (delay === null)
+            throw new AppError(
+              'Discord está limitando las solicitudes. Espera unos segundos.',
+              429,
+            );
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+      }
+      return {
+        published: fresh.length,
+        skipped: items.length - fresh.length,
+        checkedAt: Date.now(),
+      };
+    })();
+    freebieRuns.set(channel, run);
+    try {
+      return await run;
+    } finally {
+      freebieRuns.delete(channel);
+    }
+  },
+  ['discord-freebie-announcements-v3'],
+  { revalidate: 3600 },
+);
+export async function announceNewFreebiesToDiscord() {
+  const target = (await fetchAuthorizedChannels()).announcements;
+  if (!target) throw new AppError('El canal autorizado de anuncios no está disponible.', 503);
+  const result = await announceFreebiesCached(target);
+  // Next.js forbids revalidation inside unstable_cache; invalidate in the request context.
+  if (result.published && invalidatedFreebieRuns.get(target) !== result.checkedAt) {
+    revalidateTag('discord-messages', { expire: 0 });
+    invalidatedFreebieRuns.set(target, result.checkedAt);
+  }
+  return { published: result.published, skipped: result.skipped };
+}
+export function scheduleDiscordFreebies() {
+  after(async () => {
+    const results = await Promise.allSettled([
+      announceNewFreebiesToDiscord(),
+      announceGta6CountdownToDiscord(),
+    ]);
+    if (results.some((result) => result.status === 'rejected'))
+      console.warn('Discord announcement failed');
+  });
+}
+// GTA VI announcements share the daily cron and the nonblocking Bridge refresh.
+const gta6Runs = new Map<string, Promise<{ published: boolean; checkedAt: number }>>();
+const invalidatedGta6Runs = new Map<string, number>();
+const announceGta6Cached = unstable_cache(
+  async (channel: string) => {
+    const existing = gta6Runs.get(channel);
+    if (existing) return existing;
+    const run = (async () => {
+      const { token } = configuration();
+      const response = await discordRequest(
+        `https://discord.com/api/v10/channels/${channel}/messages?limit=100`,
+        { headers: { Authorization: `Bot ${token}` } },
+      );
+      const history: unknown = await response.json();
+      if (!Array.isArray(history))
+        throw new AppError('No se pudo comprobar el historial de anuncios.', 503);
+      const now = Date.now();
+      const decision = shouldAnnounceGta6Countdown(history, now);
+      if (!decision.shouldAnnounce) return { published: false, checkedAt: now };
+      const sent = await discordRequest(
+        `https://discord.com/api/v10/channels/${channel}/messages`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bot ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...discordGta6CountdownMessage(now, appUrl()),
+            nonce: decision.nonce,
+            enforce_nonce: true,
+          }),
+        },
+        true,
+      );
+      await sent.arrayBuffer();
+      return { published: true, checkedAt: now };
+    })();
+    gta6Runs.set(channel, run);
+    try {
+      return await run;
+    } finally {
+      gta6Runs.delete(channel);
+    }
+  },
+  ['discord-gta6-countdown-v1'],
+  { revalidate: 3600 },
+);
+export async function announceGta6CountdownToDiscord() {
+  const target = (await fetchAuthorizedChannels()).announcements;
+  if (!target) throw new AppError('El canal autorizado de anuncios no está disponible.', 503);
+  const result = await announceGta6Cached(target);
+  if (result.published && invalidatedGta6Runs.get(target) !== result.checkedAt) {
+    revalidateTag('discord-messages', { expire: 0 });
+    invalidatedGta6Runs.set(target, result.checkedAt);
+  }
+  return { published: result.published };
+}
 export async function fetchDiscordPresence() {
   try {
     const { channel } = configuration();
@@ -98,10 +299,35 @@ export async function fetchDiscordPresence() {
     return { onlineCount: 0, members: [] };
   }
 }
-export async function sendDiscordMessage(username: string, content: string) {
+export async function sendDiscordMessage(
+  username: string,
+  content: string,
+  options: DiscordSendOptions = {},
+) {
   const { token, channel } = configuration();
   const text = discordContent(content);
   const safeName = username.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 30);
+  const checked = discordSendOptions(options);
+  const recent =
+    checked.replyToMessageId || checked.mentions?.length || text.includes('@')
+      ? await cachedMessages(channel, 30)
+      : [];
+  if (
+    checked.replyToMessageId &&
+    !recent.some((message) => message.id === checked.replyToMessageId)
+  ) {
+    const reference = await discordRequest(
+      `https://discord.com/api/v10/channels/${channel}/messages/${checked.replyToMessageId}`,
+      { headers: { Authorization: `Bot ${token}` } },
+    );
+    const raw: unknown = await reference.json();
+    if (
+      record(raw).id !== checked.replyToMessageId ||
+      (record(raw).channel_id && record(raw).channel_id !== channel)
+    )
+      throw new AppError('La respuesta no pertenece a web-chat.', 400);
+  }
+  const outgoing = discordOutgoingMessage(text, checked, recent);
   const response = await discordRequest(
     `https://discord.com/api/v10/channels/${channel}/messages`,
     {
@@ -112,8 +338,8 @@ export async function sendDiscordMessage(username: string, content: string) {
         'User-Agent': 'SaveState (https://savestate-eight.vercel.app, 1.0)',
       },
       body: JSON.stringify({
-        content: `**[@${safeName} en Savestate]:** ${text}`,
-        allowed_mentions: { parse: [], replied_user: false },
+        ...outgoing,
+        content: `**[@${safeName} en Savestate]:** ${outgoing.content}`,
       }),
     },
   );

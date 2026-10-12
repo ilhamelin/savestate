@@ -5256,3 +5256,89 @@ button.discord-channel-pill:focus-visible {
     padding: 1rem;
   }
 }
+
+/* GTA VI live Vice City countdown. */
+.gta6-countdown-banner {
+  margin: 2rem 0;
+  padding: clamp(1.25rem, 4vw, 3rem);
+  border: 1px solid #ff4fd880;
+  border-radius: 12px;
+  overflow: hidden;
+  text-align: center;
+  background:
+    linear-gradient(110deg, rgba(8, 9, 12, 0.93), rgba(33, 10, 41, 0.6), rgba(8, 9, 12, 0.87)),
+    url('/gta6/hero.png') center / cover;
+  box-shadow: 0 0 35px #ff4fd812;
+}
+.gta6-radar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: #ffc8ef;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+}
+.gta6-radar img {
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.gta6-logo {
+  width: min(260px, 70%);
+  height: auto;
+  max-height: 190px;
+  object-fit: contain;
+  margin: 1rem auto;
+}
+.gta6-platforms {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+.gta6-platforms span {
+  padding: 0.35rem 0.75rem;
+  background: #08090cb3;
+  border: 1px solid #ffffff30;
+  border-radius: 4px;
+}
+.gta6-clock {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.4rem, 2vw, 1rem);
+  max-width: 720px;
+  margin: 1.5rem auto;
+}
+.gta6-clock > div {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 0.35rem;
+  border: 1px solid #ff4fd85c;
+  background: #08090cbd;
+  border-radius: 8px;
+}
+.gta6-clock strong {
+  font-size: clamp(1.6rem, 5vw, 3.8rem);
+  font-variant-numeric: tabular-nums;
+  color: #ffd2f2;
+  line-height: 1.2;
+}
+.gta6-clock span {
+  font-size: clamp(0.6rem, 1.5vw, 0.85rem);
+  color: #eac7e5;
+  margin-top: 0.6rem;
+}
+.gta6-released {
+  font-size: 1.5rem;
+  color: #ff9ee5;
+}
+@media (max-width: 480px) {
+  .gta6-radar {
+    letter-spacing: 0.04em;
+    font-size: 0.65rem;
+  }
+  .gta6-countdown-banner {
+    padding: 1rem;
+  }
+}
