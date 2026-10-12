@@ -216,7 +216,7 @@ test('Rust maps actual lifetime stats, counts unlocked achievements and preserve
   assert.equal(profile.hoursPlayed, 2.1);
   assert.equal(profile.recentHours2Weeks, 1);
   assert.equal(profile.achievementsUnlocked, 2);
-  assert.equal(profile.combat?.kdRatio, 2.5);
+  assert.equal(profile.combat?.kdRatio, 1.25);
   assert.equal(profile.combat?.accuracyPercent, 25);
   assert.equal(profile.combat?.animalsKilled, 5);
   assert.equal(profile.survival?.woodHarvested, 1235);

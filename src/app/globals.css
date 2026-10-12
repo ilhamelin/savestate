@@ -5039,3 +5039,220 @@ button.discord-channel-pill:focus-visible {
   white-space: normal;
   overflow-wrap: anywhere;
 }
+
+/* Rust tactical HUD: combat matrix, radar rings and modules. */
+.rust-hud {
+  --rust-orange: #ff5500;
+  --rust-cyan: #00f0ff;
+}
+.rust-top-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 1rem;
+  margin-block: 1.5rem;
+}
+.rust-hud .panel {
+  margin: 0;
+  min-width: 0;
+  background: rgba(8, 15, 23, 0.88);
+  backdrop-filter: blur(10px);
+  border-color: rgba(0, 240, 255, 0.28);
+}
+.rust-hud .rust-playtime-panel,
+.rust-hud .rust-module-card {
+  border-color: rgba(255, 85, 0, 0.35);
+}
+.rust-playtime-value {
+  display: block;
+  font-size: clamp(1.5rem, 3vw, 2.7rem);
+  color: var(--rust-orange);
+  line-height: 1.2;
+  margin-block: 1.5rem;
+  overflow-wrap: anywhere;
+}
+.rust-ratio-split {
+  margin-top: 1.5rem;
+  font-size: 0.75rem;
+}
+.rust-ratio-bar {
+  display: flex;
+  height: 8px;
+  background: #26323c;
+  margin-bottom: 0.75rem;
+}
+.rust-ratio-bar span:first-child {
+  background: var(--rust-orange);
+}
+.rust-ratio-bar span:last-child {
+  background: var(--rust-cyan);
+}
+.rust-ratio-split p {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.rust-ratio-split p:first-of-type strong {
+  color: var(--rust-orange);
+}
+.rust-ratio-split p:last-of-type strong {
+  color: var(--rust-cyan);
+}
+.rust-pvp-matrix {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 1rem 0 0;
+}
+.rust-pvp-matrix > div {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  background: #00f0ff06;
+  border: 1px solid #00f0ff15;
+  padding: 0.75rem;
+  min-width: 0;
+}
+.rust-pvp-matrix dt {
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+.rust-pvp-matrix dd {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0;
+  font-size: clamp(1.1rem, 2vw, 1.7rem);
+  color: var(--rust-cyan);
+  overflow-wrap: anywhere;
+}
+.rust-mini-gauge {
+  flex-shrink: 0;
+}
+.rust-breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-block: 1rem;
+}
+.rust-breakdown-card h3,
+.rust-module-card h3 {
+  overflow-wrap: anywhere;
+}
+.rust-telemetry-ring {
+  position: relative;
+  width: 168px;
+  height: 168px;
+  margin: 1.25rem auto;
+}
+.rust-telemetry-ring svg {
+  display: block;
+}
+.rust-ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  text-align: center;
+}
+.rust-ring-center small {
+  font-size: 0.48rem;
+  color: var(--muted);
+}
+.rust-ring-center strong {
+  font-size: 1.4rem;
+  color: #f2f4f8;
+  max-width: 105px;
+  overflow-wrap: anywhere;
+}
+.rust-breakdown-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.7rem;
+}
+.rust-breakdown-list li > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.72rem;
+}
+.rust-breakdown-list small {
+  color: var(--muted);
+  font-size: 0.65rem;
+  min-width: 3.2rem;
+  text-align: right;
+}
+.rust-segment-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.rust-segment-label i {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 0.3rem;
+}
+.rust-breakdown-track {
+  display: block;
+  height: 2px;
+  background: #26323c;
+  margin-top: 0.25rem;
+}
+.rust-breakdown-track > span {
+  display: block;
+  height: 100%;
+}
+.rust-modules-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-block: 1rem;
+}
+.rust-module-card dl {
+  display: grid;
+  gap: 0.65rem;
+  margin: 1rem 0 0;
+}
+.rust-module-card dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+}
+.rust-module-card dt {
+  color: var(--muted);
+}
+.rust-module-card dd {
+  margin: 0;
+  color: var(--rust-cyan);
+  white-space: nowrap;
+}
+@media (max-width: 1100px) {
+  .rust-top-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 900px) {
+  .rust-breakdown-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .rust-pvp-matrix {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .rust-modules-grid {
+    grid-template-columns: 1fr;
+  }
+  .rust-hud .panel {
+    padding: 1rem;
+  }
+}
