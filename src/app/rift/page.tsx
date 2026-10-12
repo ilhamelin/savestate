@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation';
 import { currentUser } from '@/lib/session';
 import { ProfileLolTracker } from '@/components/profile-lol-tracker';
 import { lolAccount } from '@/domain/lol-accounts';
-import { ProfileWallpaper } from '@/components/profile-wallpaper';
 import { CompetitiveHubTabs } from '@/components/competitive-hub-tabs';
 import { serverClient } from '@/integrations/supabase/server';
 import { splitSocialAndTrackerLinks } from '@/domain/validation';
@@ -32,27 +31,25 @@ export default async function RiftPage({
     .maybeSingle();
   const { genshinUid, hsrUid } = splitSocialAndTrackerLinks(viewerProfile?.social_links ?? {});
   return (
-    <ProfileWallpaper url="/wallpapers/rift_arcane.jpg" fullScreen>
-      <CompetitiveHubTabs
-        key={next}
-        savedGenshinUid={genshinUid}
-        savedHsrUid={hsrUid}
-        savedSteamId={viewerProfile?.steam_id ?? null}
-        initialTab={link.tab}
-        initialIdentity={link.identity}
-        initialError={link.error}
-      >
-        <ProfileLolTracker
-          key={next + String(hasLink)}
-          configured={Boolean(process.env.RIOT_API_KEY?.trim())}
-          initialAccount={account}
-          initialError={
-            hasLink && !account
-              ? 'El enlace debe incluir un Riot ID Nombre#TAG y una plataforma válida.'
-              : ''
-          }
-        />
-      </CompetitiveHubTabs>
-    </ProfileWallpaper>
+    <CompetitiveHubTabs
+      key={next}
+      savedGenshinUid={genshinUid}
+      savedHsrUid={hsrUid}
+      savedSteamId={viewerProfile?.steam_id ?? null}
+      initialTab={link.tab}
+      initialIdentity={link.identity}
+      initialError={link.error}
+    >
+      <ProfileLolTracker
+        key={next + String(hasLink)}
+        configured={Boolean(process.env.RIOT_API_KEY?.trim())}
+        initialAccount={account}
+        initialError={
+          hasLink && !account
+            ? 'El enlace debe incluir un Riot ID Nombre#TAG y una plataforma válida.'
+            : ''
+        }
+      />
+    </CompetitiveHubTabs>
   );
 }

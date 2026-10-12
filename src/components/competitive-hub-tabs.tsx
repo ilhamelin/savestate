@@ -9,6 +9,14 @@ import { HsrProfileView } from '@/components/hsr-profile-view';
 import { RustProfileView } from '@/components/rust-profile-view';
 import { VALORANT_REGIONS, type CompetitiveProfile } from '@/domain/competitive-tracker';
 import { recentTrackerUids, type TrackerTab } from '@/domain/tracker-accounts';
+import { ProfileWallpaper } from '@/components/profile-wallpaper';
+const RIFT_WALLPAPERS: Record<TrackerTab, string> = {
+  lol: '/wallpapers/rift_arcane.jpg',
+  valorant: '/wallpapers/rift_valorant.jpg',
+  genshin: '/wallpapers/rift_genshin.jpg',
+  hsr: '/wallpapers/rift_hsr.jpg',
+  rust: '/wallpapers/rift_rust.jpg',
+};
 const TRACKER_TABS = [
   ['lol', 'League of Legends', '/icons/games/lol.png'],
   ['valorant', 'Valorant (Riot ID)', '/icons/games/valorant.png'],
@@ -146,148 +154,150 @@ export function CompetitiveHubTabs({
     if (!busy && tab !== 'lol') void runInspect(tab, identity, region);
   }
   return (
-    <div className="competitive-hub-tabs">
-      <div className="filter-buttons" aria-label="Seleccionar tracker">
-        {TRACKER_TABS.map(([id, label, icon]) => (
-          <button key={id} type="button" aria-pressed={tab === id} onClick={() => select(id)}>
-            <Image
-              src={icon}
-              alt=""
-              width={22}
-              height={22}
-              className="tracker-tab-icon"
-              unoptimized
-            />
-            <span>{label}</span>
-          </button>
-        ))}
-      </div>
-      <div hidden={tab !== 'lol'}>{children}</div>
-      {tab !== 'lol' && (
-        <section className="panel">
-          <p className="eyebrow">COMPETITIVE ACCOUNT TERMINAL</p>
-          <h1>
-            <Image
-              src={activeIcon}
-              alt=""
-              width={36}
-              height={36}
-              className="tracker-heading-icon"
-              unoptimized
-            />
-            {tab === 'genshin'
-              ? 'Genshin Impact · Enka.Network'
-              : tab === 'hsr'
-                ? 'Honkai: Star Rail · Enka.Network'
-                : tab === 'rust'
-                  ? 'Rust · Steam'
-                  : 'Valorant · Cuenta Riot'}
-          </h1>
-          <form onSubmit={inspect} className="filter-buttons">
-            <label>
-              {tab === 'genshin' || tab === 'hsr'
-                ? 'UID (9 o 10 dígitos)'
-                : tab === 'rust'
-                  ? 'Steam ID 64, enlace de perfil o nombre personalizado'
-                  : 'Riot ID (Nombre#TAG)'}
-              <input
-                required
-                maxLength={tab === 'genshin' || tab === 'hsr' ? 10 : tab === 'rust' ? 200 : 80}
-                pattern={
-                  tab === 'genshin' || tab === 'hsr'
-                    ? '[0-9]{9,10}'
-                    : tab === 'rust'
-                      ? undefined
-                      : '.+#.+'
-                }
-                value={identity}
-                onChange={(e) => setIdentity(e.target.value)}
+    <ProfileWallpaper url={RIFT_WALLPAPERS[tab]} fullScreen>
+      <div className="competitive-hub-tabs">
+        <div className="filter-buttons" aria-label="Seleccionar tracker">
+          {TRACKER_TABS.map(([id, label, icon]) => (
+            <button key={id} type="button" aria-pressed={tab === id} onClick={() => select(id)}>
+              <Image
+                src={icon}
+                alt=""
+                width={22}
+                height={22}
+                className="tracker-tab-icon"
+                unoptimized
               />
-            </label>
-            {tab === 'valorant' && (
-              <label>
-                Región
-                <select value={region} onChange={(e) => setRegion(e.target.value)}>
-                  {VALORANT_REGIONS.map((value) => (
-                    <option key={value} value={value}>
-                      {value.toUpperCase()}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-            <button className="button" disabled={busy}>
-              {busy ? 'Consultando…' : 'Cargar perfil'}
+              <span>{label}</span>
             </button>
-          </form>
-          {(tab === 'genshin' || tab === 'hsr' || tab === 'rust') && (
-            <div
-              className="filter-buttons tracker-account-suggestions"
-              aria-label="Sugerencias de cuenta"
-            >
-              {tab === 'genshin' &&
-                (savedGenshinUid ? (
-                  <button
-                    type="button"
-                    className="button secondary small"
-                    onClick={() => void runInspect('genshin', savedGenshinUid)}
-                  >
-                    ⭐ Mi UID Genshin: {savedGenshinUid}
-                  </button>
-                ) : (
-                  <Link className="text-link" href="/settings">
-                    Guardar mi UID de Genshin en Editar perfil →
-                  </Link>
-                ))}
-              {tab === 'hsr' &&
-                (savedHsrUid ? (
-                  <button
-                    type="button"
-                    className="button secondary small"
-                    onClick={() => void runInspect('hsr', savedHsrUid)}
-                  >
-                    ⭐ Mi UID Honkai: {savedHsrUid}
-                  </button>
-                ) : (
-                  <Link className="text-link" href="/settings">
-                    Guardar mi UID de Honkai en Editar perfil →
-                  </Link>
-                ))}
-              {tab === 'rust' && savedSteamId && (
-                <button
-                  type="button"
-                  className="button secondary small"
-                  onClick={() => void runInspect('rust', savedSteamId)}
-                >
-                  ⭐ Mi Steam ID: {savedSteamId}
-                </button>
+          ))}
+        </div>
+        <div hidden={tab !== 'lol'}>{children}</div>
+        {tab !== 'lol' && (
+          <section className="panel">
+            <p className="eyebrow">COMPETITIVE ACCOUNT TERMINAL</p>
+            <h1>
+              <Image
+                src={activeIcon}
+                alt=""
+                width={36}
+                height={36}
+                className="tracker-heading-icon"
+                unoptimized
+              />
+              {tab === 'genshin'
+                ? 'Genshin Impact · Enka.Network'
+                : tab === 'hsr'
+                  ? 'Honkai: Star Rail · Enka.Network'
+                  : tab === 'rust'
+                    ? 'Rust · Steam'
+                    : 'Valorant · Cuenta Riot'}
+            </h1>
+            <form onSubmit={inspect} className="filter-buttons">
+              <label>
+                {tab === 'genshin' || tab === 'hsr'
+                  ? 'UID (9 o 10 dígitos)'
+                  : tab === 'rust'
+                    ? 'Steam ID 64, enlace de perfil o nombre personalizado'
+                    : 'Riot ID (Nombre#TAG)'}
+                <input
+                  required
+                  maxLength={tab === 'genshin' || tab === 'hsr' ? 10 : tab === 'rust' ? 200 : 80}
+                  pattern={
+                    tab === 'genshin' || tab === 'hsr'
+                      ? '[0-9]{9,10}'
+                      : tab === 'rust'
+                        ? undefined
+                        : '.+#.+'
+                  }
+                  value={identity}
+                  onChange={(e) => setIdentity(e.target.value)}
+                />
+              </label>
+              {tab === 'valorant' && (
+                <label>
+                  Región
+                  <select value={region} onChange={(e) => setRegion(e.target.value)}>
+                    {VALORANT_REGIONS.map((value) => (
+                      <option key={value} value={value}>
+                        {value.toUpperCase()}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               )}
-              {(tab === 'genshin' || tab === 'hsr') &&
-                recents[tab]
-                  .filter((uid) => uid !== (tab === 'genshin' ? savedGenshinUid : savedHsrUid))
-                  .map((uid) => (
+              <button className="button" disabled={busy}>
+                {busy ? 'Consultando…' : 'Cargar perfil'}
+              </button>
+            </form>
+            {(tab === 'genshin' || tab === 'hsr' || tab === 'rust') && (
+              <div
+                className="filter-buttons tracker-account-suggestions"
+                aria-label="Sugerencias de cuenta"
+              >
+                {tab === 'genshin' &&
+                  (savedGenshinUid ? (
                     <button
                       type="button"
-                      className="button outline small"
-                      key={uid}
-                      onClick={() => void runInspect(tab, uid)}
+                      className="button secondary small"
+                      onClick={() => void runInspect('genshin', savedGenshinUid)}
                     >
-                      Reciente: {uid}
+                      ⭐ Mi UID Genshin: {savedGenshinUid}
                     </button>
+                  ) : (
+                    <Link className="text-link" href="/settings">
+                      Guardar mi UID de Genshin en Editar perfil →
+                    </Link>
                   ))}
-            </div>
-          )}
-          {error && (
-            <p className="error-text" role="alert">
-              {error}
-            </p>
-          )}
-          {data?.game === 'genshin' && <GenshinProfileView data={data} />}
-          {data?.game === 'valorant' && <ValorantProfileView data={data} />}
-          {data?.game === 'hsr' && <HsrProfileView data={data} />}
-          {data?.game === 'rust' && <RustProfileView data={data} />}
-        </section>
-      )}
-    </div>
+                {tab === 'hsr' &&
+                  (savedHsrUid ? (
+                    <button
+                      type="button"
+                      className="button secondary small"
+                      onClick={() => void runInspect('hsr', savedHsrUid)}
+                    >
+                      ⭐ Mi UID Honkai: {savedHsrUid}
+                    </button>
+                  ) : (
+                    <Link className="text-link" href="/settings">
+                      Guardar mi UID de Honkai en Editar perfil →
+                    </Link>
+                  ))}
+                {tab === 'rust' && savedSteamId && (
+                  <button
+                    type="button"
+                    className="button secondary small"
+                    onClick={() => void runInspect('rust', savedSteamId)}
+                  >
+                    ⭐ Mi Steam ID: {savedSteamId}
+                  </button>
+                )}
+                {(tab === 'genshin' || tab === 'hsr') &&
+                  recents[tab]
+                    .filter((uid) => uid !== (tab === 'genshin' ? savedGenshinUid : savedHsrUid))
+                    .map((uid) => (
+                      <button
+                        type="button"
+                        className="button outline small"
+                        key={uid}
+                        onClick={() => void runInspect(tab, uid)}
+                      >
+                        Reciente: {uid}
+                      </button>
+                    ))}
+              </div>
+            )}
+            {error && (
+              <p className="error-text" role="alert">
+                {error}
+              </p>
+            )}
+            {data?.game === 'genshin' && <GenshinProfileView data={data} />}
+            {data?.game === 'valorant' && <ValorantProfileView data={data} />}
+            {data?.game === 'hsr' && <HsrProfileView data={data} />}
+            {data?.game === 'rust' && <RustProfileView data={data} />}
+          </section>
+        )}
+      </div>
+    </ProfileWallpaper>
   );
 }
