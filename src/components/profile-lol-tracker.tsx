@@ -2,7 +2,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Trophy } from 'lucide-react';
 import { api } from '@/lib/client-api';
 import { notificationAge } from '@/domain/notifications';
 import { mergeLolMatches } from '@/domain/lol-pages';
@@ -31,6 +30,18 @@ import {
   type LolMatchSummary,
 } from '@/domain/lol-tracker';
 
+const LOL_RANK_EMBLEMS: Record<string, string> = {
+  IRON: '/icons/lol-ranks/iron.png',
+  BRONZE: '/icons/lol-ranks/bronze.png',
+  SILVER: '/icons/lol-ranks/silver.png',
+  GOLD: '/icons/lol-ranks/gold.png',
+  PLATINUM: '/icons/lol-ranks/platinum.png',
+  EMERALD: '/icons/lol-ranks/emerald.png',
+  DIAMOND: '/icons/lol-ranks/diamond.png',
+  MASTER: '/icons/lol-ranks/master.png',
+  GRANDMASTER: '/icons/lol-ranks/grandmaster.png',
+  CHALLENGER: '/icons/lol-ranks/challenger.png',
+};
 const format = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 1 });
 const masteryPoints = new Intl.NumberFormat('en-US', {
   notation: 'compact',
@@ -161,13 +172,22 @@ function RankCard({
   title: string;
 }) {
   const tier = rank && Object.hasOwn(LOL_TIERS, rank.tier) ? LOL_TIERS[rank.tier] : '';
+  const ranked = rank && status === 'available' && Object.hasOwn(LOL_RANK_EMBLEMS, rank.tier);
+  const emblemSrc = ranked ? LOL_RANK_EMBLEMS[rank.tier]! : '/icons/lol-ranks/unranked.png';
   return (
     <div className="lol-rank-card">
       <span
-        className={`lol-rank-emblem ${rank ? `tier-${rank.tier.toLowerCase()}` : ''}`}
+        className={`lol-rank-emblem ${ranked ? `tier-${rank.tier.toLowerCase()}` : 'tier-unranked'}`}
         aria-hidden="true"
       >
-        <Trophy size={30} />
+        <Image
+          src={emblemSrc}
+          alt=""
+          width={58}
+          height={58}
+          className="lol-rank-emblem-img"
+          unoptimized
+        />
       </span>
       <div>
         <p className="eyebrow">{title}</p>
@@ -496,7 +516,17 @@ export function ProfileLolTracker({
       <div className="page-heading">
         <div>
           <p className="eyebrow">RIFT TRACKER // LEAGUE OF LEGENDS</p>
-          <h1>Tu señal en la Grieta.</h1>
+          <h1>
+            <Image
+              src="/icons/games/lol.png"
+              alt=""
+              width={36}
+              height={36}
+              className="tracker-heading-icon"
+              unoptimized
+            />
+            Tu señal en la Grieta.
+          </h1>
         </div>
       </div>
       <p className="muted">

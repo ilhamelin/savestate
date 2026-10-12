@@ -2723,8 +2723,8 @@ a.feed-card-cover:hover {
 .lol-rank-emblem {
   display: grid;
   place-items: center;
-  width: 52px;
-  height: 60px;
+  width: 68px;
+  height: 68px;
   flex-shrink: 0;
   color: #8393a3;
   background: #8393a312;
@@ -4991,4 +4991,32 @@ button.discord-channel-pill:focus-visible {
   .rust-telemetry-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Local tracker icons and League rank emblems. */
+.competitive-hub-tabs .filter-buttons button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.tracker-tab-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+.tracker-heading-icon {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: 8px;
+  vertical-align: middle;
+  margin-right: 10px;
+}
+.lol-rank-emblem-img {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
 }

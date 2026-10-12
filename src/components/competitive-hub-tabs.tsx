@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 import { useEffect, useRef, useState, type ReactNode, type FormEvent } from 'react';
 import { api } from '@/lib/client-api';
 import { ValorantProfileView } from '@/components/valorant-profile-view';
@@ -6,6 +7,13 @@ import { GenshinProfileView } from '@/components/genshin-profile-view';
 import { HsrProfileView } from '@/components/hsr-profile-view';
 import { RustProfileView } from '@/components/rust-profile-view';
 import { VALORANT_REGIONS, type CompetitiveProfile } from '@/domain/competitive-tracker';
+const TRACKER_TABS = [
+  ['lol', 'League of Legends', '/icons/games/lol.png'],
+  ['valorant', 'Valorant (Riot ID)', '/icons/games/valorant.png'],
+  ['genshin', 'Genshin Impact', '/icons/games/genshin.png'],
+  ['hsr', 'Honkai: Star Rail', '/icons/games/hsr.png'],
+  ['rust', 'Rust (Steam)', '/icons/games/rust.png'],
+] as const;
 export function CompetitiveHubTabs({ children }: { children: ReactNode }) {
   const [tab, setTab] = useState<'lol' | 'valorant' | 'genshin' | 'hsr' | 'rust'>('lol');
   const [identity, setIdentity] = useState('');
@@ -14,6 +22,7 @@ export function CompetitiveHubTabs({ children }: { children: ReactNode }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const controller = useRef<AbortController | null>(null);
+  const activeIcon = TRACKER_TABS.find(([id]) => id === tab)![2];
   useEffect(() => () => controller.current?.abort(), []);
   function select(next: typeof tab) {
     controller.current?.abort();
@@ -52,17 +61,17 @@ export function CompetitiveHubTabs({ children }: { children: ReactNode }) {
   return (
     <div className="competitive-hub-tabs">
       <div className="filter-buttons" aria-label="Seleccionar tracker">
-        {(
-          [
-            ['lol', '⚔️ League of Legends'],
-            ['valorant', '🎯 Valorant (Riot ID)'],
-            ['genshin', '✨ Genshin Impact'],
-            ['hsr', '🚂 Honkai: Star Rail'],
-            ['rust', '☢️ Rust (Steam)'],
-          ] as const
-        ).map(([id, label]) => (
+        {TRACKER_TABS.map(([id, label, icon]) => (
           <button key={id} type="button" aria-pressed={tab === id} onClick={() => select(id)}>
-            {label}
+            <Image
+              src={icon}
+              alt=""
+              width={22}
+              height={22}
+              className="tracker-tab-icon"
+              unoptimized
+            />
+            <span>{label}</span>
           </button>
         ))}
       </div>
@@ -71,6 +80,14 @@ export function CompetitiveHubTabs({ children }: { children: ReactNode }) {
         <section className="panel">
           <p className="eyebrow">COMPETITIVE ACCOUNT TERMINAL</p>
           <h1>
+            <Image
+              src={activeIcon}
+              alt=""
+              width={36}
+              height={36}
+              className="tracker-heading-icon"
+              unoptimized
+            />
             {tab === 'genshin'
               ? 'Genshin Impact · Enka.Network'
               : tab === 'hsr'
