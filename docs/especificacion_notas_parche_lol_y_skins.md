@@ -125,12 +125,17 @@ Para abrir el video emergente de cada skin sin depender de una API key de pago:
    - **Grid de 2 Columnas (en `Vista General`)**:
      - **Columna Izquierda**:
        - **Div Superior (`Los platos fuertes de la versión`)**: Imagen resumen oficial del parche con zoom/lightbox opcional y resumen de aspectos destacados.
-       - **Div Inferior (`Campeones`)**: Tarjetas sucesivas por campeón con su avatar oficial, frase de contexto de Riot y desglose de cambios por habilidad (`Pasiva`, `Q`, `W`, `E`, `R`, `Estadísticas básicas`) con sus iconos.
+       - **Div Inferior (`Campeones`)**:
+         - Muestra **hasta 3 campeones por página** y se pagina de **3 en 3** (`rows.slice(champPage * 3, (champPage + 1) * 3)`), incluyendo controles de paginación (`← Anterior`, `{champPage + 1} / {champPages}`, `Siguiente →`) cuando haya más de 3 campeones.
+         - Cada tarjeta muestra su avatar oficial, frase de contexto de Riot y desglose de cambios por habilidad (`Pasiva`, `Q`, `W`, `E`, `R`, `Estadísticas básicas`) con sus iconos.
      - **Columna Derecha**:
-       - **Div Superior (`Corrección de errores y mejoras de calidad`)**: Panel con scroll estilizado listando todas las correcciones del parche.
+       - **Div Superior (`Corrección de errores y mejoras de calidad`)**: Panel con scroll estilizado más largo (`min-height: 560px; max-height: 760px;` en `Vista General`) listando todas las correcciones del parche.
        - **Div Inferior (`Próximos aspectos y chromas`)**: Grid `2×2` con controles de slider (`← Anterior` / `Siguiente →` + indicadores de página) para deslizar cuando haya más de 4 skins/chromas. Cada tarjeta muestra el splash art, nombre del aspecto/chroma y un badge `▶ Ver Spotlight`.
-4. **Ventana Emergente (Modal de Video `@SkinSpotlights`)**:
-   - Al hacer clic en cualquier skin/chroma del bloque `Próximos aspectos y chromas`, se abre un modal con:
-     - `<iframe>` del video de YouTube de `@SkinSpotlights` (o estado de carga mientras resuelve `/api/lol-patches/skin-video`).
-     - Imagen splash art de respaldo y botón directo a `https://www.youtube.com/@SkinSpotlights/search?query=...`.
-     - Cierre con `Escape`, botón `✕` o clic fuera del modal.
+4. **Ventanas Emergentes Centradas (`<dialog className="patch-media-dialog">`)**:
+   - **Centrado en pantalla**: Como `src/app/globals.css` aplica un reset global `* { margin: 0; }`, el elemento `<dialog>` pierde el `margin: auto` nativo del navegador y se pega arriba a la izquierda. Por ello, `.patch-media-dialog` debe definir explícitamente `margin: auto; inset: 0; position: fixed;` para quedar perfectamente centrado vertical y horizontalmente en el viewport.
+   - **Modal de Skins (Solo Video, Sin Imagen)**:
+     - Cuando el modal se abre para una **skin** (`skin !== null`), debe mostrar **únicamente el reproductor de video de `@SkinSpotlights` (`<iframe>`)** (más su título y botones de enlace a YouTube), **sin renderizar la imagen (`PatchImage` / `.patch-modal-art`) debajo del video**.
+   - **Modal de Imagen Resumen (`Los platos fuertes de la versión`)**:
+     - Solo cuando `skin === null` y se abre para ampliar la imagen resumen (`image !== null`), se renderiza `<PatchImage src={image} className="patch-modal-art" />` centrada en pantalla.
+   - Cierre con `Escape`, botón `✕ Cerrar` o clic en el backdrop fuera del modal.
+
