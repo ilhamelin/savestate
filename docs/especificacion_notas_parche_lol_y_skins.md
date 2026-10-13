@@ -139,3 +139,42 @@ Para abrir el video emergente de cada skin sin depender de una API key de pago:
      - Solo cuando `skin === null` y se abre para ampliar la imagen resumen (`image !== null`), se renderiza `<PatchImage src={image} className="patch-modal-art" />` centrada en pantalla.
    - Cierre con `Escape`, botón `✕ Cerrar` o clic en el backdrop fuera del modal.
 
+---
+
+## 5. Mejoras de Jerarquía Visual, Espaciado y Denotación Semántica de Estadísticas (Verde / Rojo)
+
+### 5.1. Espaciado entre Opciones Superiores, Barra de Retorno y Título del Parche
+- En `Vista 2`, separar visualmente la barra de filtros superior, la barra `.patch-nav` (`← Volver a parches 2026` / `↗ Nota oficial de Riot`), el título del parche (`<h3 className="patch-title">`) y la botonera de secciones (`.patch-tabs`):
+  - `.lol-patch-hub`: `margin-top: 1.35rem;`
+  - `.patch-nav`: `margin-bottom: 1.25rem; padding-bottom: 0.85rem; border-bottom: 1px solid var(--line);`
+  - `.patch-title`: `margin: 0.35rem 0 1.2rem; font-size: 1.35rem; color: #f8fafc; letter-spacing: 0.02em;`
+  - `.patch-tabs`: `margin: 0 0 1.4rem; gap: 0.55rem;`
+
+### 5.2. Denotación Semántica de Estadísticas en `Campeones`, `ARAM: Caos` y `ARAM` (Verde = Positivo, Rojo = Negativo)
+- Implementar en `src/domain/lol-patch-notes.ts` el analizador puro `analyzePatchStatChange(line: string): ParsedStatChange`:
+  - Separa `label` (antes de `:`), `before` (antes de `⇒`) y `after` (después de `⇒`).
+  - Extrae los valores numéricos de `before` y `after` (soportando decimales con coma como `3,5`, rangos `5 - 30` o `22-12` y escalados `20/30/40`).
+  - Identifica si el `label` es una estadística **inversa** donde una reducción numérica es positiva para el campeón (`/enfriamiento|recarga|coste|costo|man[aá]|energ[ií]a necesaria|da[ñn]o recibido|tiempo de|retardo|demora/i`):
+    - **Positivo (`buff` — Verde)**: Cuando una estadística directa sube (ej. `Relación de PH: 50 % ⇒ 67 %`, `Escudo: 60-240 ⇒ 80-320`) o cuando una estadística inversa baja (ej. `Enfriamiento de la W: 22-12 ⇒ 18-12`, `Recarga de los meeps: 8 s ⇒ 5 s`), o cuando la línea empieza por `Nuevo:`.
+    - **Negativo (`nerf` — Rojo)**: Cuando una estadística directa baja (ej. `Daño: 5 - 30 (+25 % del DA adicional) ⇒ 5 - 25 (+20 % del DA adicional)`, `Daño de ataque por nivel: 3,5 ⇒ 3`) o cuando una estadística inversa sube (ej. `Daño recibido: 105 % ⇒ 108 %`), o cuando empieza por `Eliminado:`.
+    - **Ajuste (`adjust` — Cian/Ámbar)**: Cuando los rangos se redistribuyen o es un cambio mecánico sin dirección numérica única.
+- **Renderizado visual (`<StatChangeRow />`)**:
+  - **Badge lateral**: `▲ MEJORA` (verde `#4ade80`), `▼ REDUCCIÓN` (rojo `#f87171`), o `◆ AJUSTE` (cian `#38bdf8`).
+  - **Atributo (`label`)**: En dorado claro (`#f3e5ab`, `font-weight: 600`).
+  - **Valor anterior (`before`)**: En gris atenuado tachado (`#94a3b8`, `text-decoration: line-through`, fondo sutil `#1e293b99`).
+  - **Flecha `⇒`**: En dorado (`#d4af37`).
+  - **Valor nuevo (`after`)**:
+    - Si es positivo (`buff`): **Píldora y texto en Verde brillante (`color: #4ade80; background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(74, 222, 128, 0.45); font-weight: 700;`)**.
+    - Si es negativo (`nerf`): **Píldora y texto en Rojo coral (`color: #f87171; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(248, 113, 113, 0.45); font-weight: 700;`)**.
+    - Si es ajuste (`adjust`): **Píldora y texto en Cian (`color: #38bdf8; background: rgba(56, 189, 248, 0.14); border: 1px solid rgba(56, 189, 248, 0.4); font-weight: 700;`)**.
+  - Además, cada tarjeta de campeón muestra junto a su nombre un badge general del campeón (`▲ BUFF`, `▼ NERF` o `◆ AJUSTADO`).
+
+### 5.3. Rediseño Visual de `ARAM: Caos`, `ARAM` y `Corrección de errores y mejoras de calidad`
+1. **`ARAM: Caos` y `ARAM`**:
+   - Mostrar el resumen introductorio en un bloque destacado `.patch-mode-intro` con borde izquierdo dorado y mejor interlineado.
+   - Renderizar cada campeón o grupo (`Bardo`, `Garen`, `K'Sante`, `Lee Sin`, `Swain`, etc.) dentro de su propia tarjeta `.patch-mode-card` con borde lateral según su balance general (`buff`/`nerf`/`adjust`), cabecera destacada y todas sus líneas de cambio renderizadas con `<StatChangeRow />` (colores verdes y rojos en lugar de texto blanco plano).
+2. **`Corrección de errores y mejoras de calidad`**:
+   - Reemplazar la lista monótona de texto blanco por tarjetas/filas estilizadas `.patch-bug-item` con fondo alternado, borde izquierdo de acento y un badge `🛠️ FIX` (o `✨ MEJORA`).
+   - Atenuar en gris (`#94a3b8`) el prefijo repetitivo (`"Hemos corregido un error que provocaba que"` / `"Hemos corregido un error que impedía que"`), resaltar en dorado/cian las teclas de habilidad (`(Q)`, `(W)`, `(E)`, `(R)`, `(Pasiva)`, `la R de`, `la Q de`, `la E de`, `la W de`) con badges `.patch-inline-key` y destacar los términos clave del resto de la oración para una lectura rápida y escaneable.
+
+
