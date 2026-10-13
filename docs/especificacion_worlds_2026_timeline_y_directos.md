@@ -130,3 +130,66 @@ export interface WorldsStageGroup {
      - Muestra el título de la serie, fase, horario local, formato (`Bo5` / `Bo3`), descripción narrativa de lo que está en juego en esa llave y:
        - Si hay equipos confirmados: tarjetas comparativas de ambos equipos con sus logos oficiales, victorias en la serie y tabla de los mapas (`Juego 1` a `Juego N`) indicando qué equipo juega en el **Lado Azul** y cuál en el **Lado Rojo**.
        - Si aún no hay tabla oficial para esa fecha: explicación de cómo se clasifican los equipos hacia esa llave.
+
+---
+
+## 6. Ampliación: Plantillas Oficiales de Jugadores (Rosters) y Métricas de Desempeño por Equipo y Jugador en Vivo / Post-Partido
+
+### 6.1. Fuentes de Datos Oficiales de Riot / LoL Esports
+1. **Plantillas Oficiales de Jugadores por Equipo (`getTeams`)**:
+   - Endpoint: `GET https://esports-api.lolesports.com/persisted/gw/getTeams?hl=es-ES&id={teamId}` (una petición en paralelo por cada `team.id` confirmado en `getEventDetails`).
+   - Devuelve para cada equipo:
+     - `homeLeague`: `{ name: string, region: string }` (ej. `LCS`, `LEC`, `CBLOL`, `LCP`, `LCK`, `LPL`).
+     - `players`: arreglo de jugadores oficiales con:
+       - `id`: ID oficial de jugador
+       - `summonerName`: nick competitivo (`Blaber`, `Thanatos`, `Zven`, `Vulcan`, `Canna`, `Yike`, `Caliste`, `kyeahoo`, `Busio`, `Guigo`, `Tatu`, `Tutsz`, `Ayu`, `JoJo`, `Kratos`, `Gury`, `Chika`, `Harky`, `SiuLoong`, etc.)
+       - `firstName` y `lastName`: nombre completo real
+       - `role`: `'top' | 'jungle' | 'mid' | 'bottom' | 'support'`
+       - `imageUrl`: foto oficial en alta resolución (`https://static.lolesports.com/players/...`, descartando `default-headshot.png`).
+   - **Ordenamiento canónico por línea**: `top` → `jungle` → `mid` → `bottom` → `support`.
+
+2. **Telemetría de Desempeño Post-Partido y en Vivo (`feed.lolesports.com/livestats/v1/window/{gameId}`)**:
+   - Para cualquier juego (`game.id`) de la serie cuyo estado sea `inProgress` o `completed` (o consultando el primer/activo juego disponible):
+     - Paso 1: `GET https://feed.lolesports.com/livestats/v1/window/{gameId}` obtiene `gameMetadata` y el primer frame (`frames[0].rfc460Timestamp`).
+     - Paso 2: Para obtener el estado final (o el más reciente en curso), se calcula `probeMs = Math.floor((Date.parse(firstTimestamp) + 2 * 3600 * 1000) / 10000) * 10000` (`+2 horas` redondeado a múltiplos de 10 segundos) y se consulta `GET https://feed.lolesports.com/livestats/v1/window/{gameId}?startingTime={isoStringWithoutMs}`. `livestats` devuelve automáticamente la última ventana registrada del juego (`gameState: 'finished'` o `'in_game'`).
+   - **Métricas de Desempeño del Equipo (`WorldsGameTeamStats`)** extraídas del último frame (`lastFrame.blueTeam` y `lastFrame.redTeam`):
+     - `totalGold`: Oro total acumulado (ej. `74,955` vs `55,162`) y ventaja de oro (`goldDiff`).
+     - `totalKills`: Asesinatos totales del equipo (ej. `22` vs `8`).
+     - `towers`: Torretas derribadas (`11` vs `1`).
+     - `barons`: Barones Nashor asegurados (`2` vs `0`).
+     - `inhibitors`: Inhibidores destruidos (`1` vs `0`).
+     - `dragons`: Arreglo de dragones elementales obtenidos (`['hextech', 'infernal', 'infernal', 'infernal']` vs `['mountain']`).
+     - `durationSeconds`: Duración del mapa calculada entre `frames[0].rfc460Timestamp` y `lastFrame.rfc460Timestamp`.
+   - **Métricas de Desempeño por Jugador (`WorldsGamePlayerStats`)** combinando `gameMetadata.{blueTeamMetadata|redTeamMetadata}.participantMetadata` con `lastFrame.{blueTeam|redTeam}.participants`:
+     - `participantId`: `1..10`
+     - `summonerName`: Nombre competitivo
+     - `championId`: Campeón jugado (`Renekton`, `Vi`, `Aurora`, `Kaisa`, `Rell`, etc.) y su icono oficial en Data Dragon (`https://ddragon.leagueoflegends.com/cdn/16.17.1/img/champion/{championId}.png`)
+     - `role`: `'top' | 'jungle' | 'mid' | 'bottom' | 'support'`
+     - `level`: Nivel alcanzado (`1..18`)
+     - `kills`, `deaths`, `assists` y `kdaRatio`: `Number(((kills + assists) / Math.max(1, deaths)).toFixed(2))`
+     - `killParticipationPct`: `Math.round(((kills + assists) / Math.max(1, teamTotalKills)) * 100)`
+     - `creepScore`: Súbditos (`CS`) y `csPerMin`
+     - `totalGold` y `goldSharePct`: `Math.round((totalGold / Math.max(1, teamTotalGold)) * 100)`
+     - `isMvp`: `true` para el jugador con mayor puntaje de impacto en el mapa.
+
+---
+
+### 6.2. Nuevas Secciones Visuales en `/worlds` (`src/components/worlds-hub.tsx`)
+Dentro del **Bloque 3 (Dossier de la Serie / Descripción de la Partida)** en `/worlds`, añadir dos paneles interactivos cuando la serie tenga equipos confirmados (`hasConfirmedTeams === true`):
+
+1. **Panel A — Plantillas Cara a Cara: Jugadores por Rol (`TOP`, `JNG`, `MID`, `BOT`, `SUP`)**:
+   - Muestra las 5 líneas enfrentadas (`Carril Superior`, `Jungla`, `Carril Central`, `Tirador (Bot)`, `Soporte`) comparando cara a cara a los titulares de ambos equipos (más suplentes si existen), con:
+     - Foto oficial del jugador, `summonerName`, nombre real, badge de rol (`TOP`, `JNG`, `MID`, `BOT`, `SUP`) y liga de origen del equipo (`LCS`, `LEC`, `CBLOL`, `LCP`, `LCK`, `LPL`).
+   - Incluye fallback verificado en `src/domain/worlds-schedule.ts` con las plantillas reales de **Cloud9 Kia (`C9`)**, **Karmine Corp (`KC`)**, **FURIA (`FUR`)** y **MVK Esports (`MVK`)** para que siempre se muestren incluso si la red externa falla.
+
+2. **Panel B — Centro de Telemetría y Desempeño por Mapa (Equipo y Jugadores)**:
+   - Selector de mapa (`Juego 1`, `Juego 2`, ..., `Juego N`):
+   - **Si el mapa está `inProgress` o `completed` y tiene telemetría (`telemetry`)**:
+     - **Comparativa de Desempeño de Equipos (Lado Azul vs Lado Rojo)**:
+       - Barra de dominio de **Oro Total** (`75.0k vs 55.2k · +19.8k`) y barra de **Asesinatos** (`22 vs 8`).
+       - Tarjetas de objetivos: **Torretas (`🗼`)**, **Barones (`👑`)**, **Inhibidores (`🏛️`)**, **Dragones Elementales (`🐉` con badges por tipo: Infernal, Hextech, Montaña, Océano, Nube, Quimtech, Ancestral)** y **Duración del mapa (`⏱️ MM:SS`)**.
+     - **Tabla de Desempeño de Jugadores (Scoreboard 5v5)**:
+       - Para ambos equipos, muestra el retrato del campeón jugado (`championIconUrl`), rol, `summonerName`, nivel, **K / D / A**, badge de **KDA** (coloreado en verde si `>= 4.0`, dorado si `>= 2.5`, rojo si `< 1.5`), **KP% (Participación en kills)**, **CS (Súbditos)**, **Oro (`17.7k · 24%`)** y badge **`★ MVP`** para el jugador más destacado del mapa.
+   - **Si la serie aún está `unstarted` (antes del partido)**:
+     - Muestra el panel en modo **"Radar Pre-Partido · Telemetría en Espera"** indicando qué métricas de equipo (Oro, Asesinatos, Torretas, Dragones, Barones) y de jugadores (Campeón, KDA, KP%, CS, % de Oro y MVP) se activarán y actualizarán automáticamente apenas inicie el `Juego 1`.
+
