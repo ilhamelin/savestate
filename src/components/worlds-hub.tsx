@@ -69,10 +69,23 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
   const [hostname, setHostname] = useState('');
   const [now, setNow] = useState(Date.parse(initial.fetchedAt));
   const [refreshError, setRefreshError] = useState('');
+  const [theaterMode, setTheaterMode] = useState(false);
+  const theaterToggle = useRef<HTMLButtonElement>(null);
   const cache = useRef(new Map<string, { value: WorldsMatchDetail; expires: number }>());
   const matches = schedule.stages.flatMap((stage) => stage.matches);
   const match = matches.find((event) => event.id === selectedId) ?? null;
   const stage = schedule.stages.find((item) => item.slug === stageSlug)!;
+  useEffect(() => {
+    if (!theaterMode) return;
+    function escape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setTheaterMode(false);
+        theaterToggle.current?.focus();
+      }
+    }
+    document.addEventListener('keydown', escape);
+    return () => document.removeEventListener('keydown', escape);
+  }, [theaterMode]);
   useEffect(() => {
     const timer = setTimeout(() => {
       setHostname(window.location.hostname);
@@ -183,6 +196,7 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
   }
   return (
     <div className="worlds-hub">
+      <div className="worlds-backdrop" aria-hidden="true" />
       <header className="page-heading">
         <div>
           <p className="eyebrow">SUMMONER'S CUP // WORLDS 2026</p>
@@ -198,6 +212,18 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
           LoL Esports ↗
         </a>
       </header>
+      <div className="worlds-hall-banner" aria-label="Legado de Worlds">
+        <strong className="worlds-legend-badge">
+          👑 HALL OF LEGENDS // FAKER · UNKILLABLE DEMON KING (5× CAMPEÓN MUNDIAL · T1)
+        </strong>
+        <span className="worlds-legacy-period">Legado hasta Worlds 2024</span>
+        <div className="worlds-champion-badges">
+          {['2024 T1', '2023 T1', '2022 DRX', '2021 EDG', '2020 DWG'].map((champion) => (
+            <span key={champion}>🏆 {champion}</span>
+          ))}
+          <span className="worlds-cup-badge">⚔️ SUMMONER'S CUP 2026</span>
+        </div>
+      </div>
       {schedule.source !== 'official' && (
         <p className="worlds-source-notice" role="status">
           {schedule.source === 'fallback'
@@ -216,7 +242,7 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
         <div className="worlds-stage-track" aria-label="Seleccionar fase">
           {schedule.stages.map((item, index) => (
             <button
-              className="worlds-stage-node"
+              className={`worlds-stage-node${item.slug === 'final' ? ' is-grand-final' : ''}`}
               type="button"
               key={item.slug}
               aria-pressed={stageSlug === item.slug}
@@ -225,6 +251,7 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
               <span className="worlds-stage-number">{index + 1}</span>
               <strong>{item.label}</strong>
               <span>{item.dateRangeLabel}</span>
+              {item.slug === 'final' && <span className="worlds-cup-badge">🏆 SUMMONER'S CUP</span>}
               {item.state === 'inProgress' && <span className="worlds-live">EN VIVO</span>}
             </button>
           ))}
@@ -273,7 +300,10 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
       </section>
       {match && description ? (
         <>
-          <section className="panel worlds-player" aria-labelledby="worlds-player-title">
+          <section
+            className={`panel worlds-player${theaterMode ? ' is-theater' : ''}`}
+            aria-labelledby="worlds-player-title"
+          >
             <p className="eyebrow">02 // SEÑAL OFICIAL</p>
             <h2 id="worlds-player-title">Directo de la partida correspondiente</h2>
             <div className="worlds-player-status">
@@ -284,6 +314,15 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
               </span>
             </div>
             <div className="filter-buttons" aria-label="Elegir señal de transmisión">
+              <button
+                ref={theaterToggle}
+                type="button"
+                className="button outline small worlds-theater-toggle"
+                aria-pressed={theaterMode}
+                onClick={() => setTheaterMode((value) => !value)}
+              >
+                {theaterMode ? '✕ Salir de Modo Teatro' : '🎬 Modo Teatro'}
+              </button>
               {SIGNALS.map((item) => (
                 <button
                   type="button"
