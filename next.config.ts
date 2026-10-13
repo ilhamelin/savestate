@@ -2,7 +2,12 @@ import type { NextConfig } from 'next';
 
 const config: NextConfig = {
   poweredByHeader: false,
-  images: { remotePatterns: [{ protocol: 'https', hostname: 'images.igdb.com' }] },
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'images.igdb.com' },
+      { protocol: 'https', hostname: 'image.tmdb.org' },
+    ],
+  },
   async redirects() {
     return [
       { source: '/parties', destination: '/chat', permanent: true },

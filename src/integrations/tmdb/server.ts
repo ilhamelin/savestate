@@ -1,7 +1,7 @@
 import 'server-only';
 import { AppError } from '@/lib/http';
 export function tmdbConfigured() {
-  return Boolean(process.env.TMDB_READ_TOKEN || process.env.TMDB_API_KEY);
+  return Boolean(process.env.TMDB_API_KEY?.trim() || process.env.TMDB_READ_TOKEN?.trim());
 }
 export async function tmdbRequest(
   path: string,
@@ -21,12 +21,15 @@ export async function tmdbRequest(
   const url = new URL(`https://api.themoviedb.org/3/${path}`);
   url.searchParams.set('language', 'es-ES');
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
-  const token = process.env.TMDB_READ_TOKEN;
-  if (!token) url.searchParams.set('api_key', process.env.TMDB_API_KEY!);
+  const apiKey = process.env.TMDB_API_KEY?.trim();
+  const token = process.env.TMDB_READ_TOKEN?.trim();
+  if (apiKey) {
+    url.searchParams.set('api_key', apiKey);
+  }
   let response: Response;
   try {
     response = await fetch(url, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: !apiKey && token ? { Authorization: `Bearer ${token}` } : {},
       next: { revalidate: 3600 },
       redirect: 'error',
       signal: AbortSignal.timeout(6000),
