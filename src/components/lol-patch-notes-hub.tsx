@@ -54,11 +54,13 @@ function PatchImage({
   );
 }
 function Champions({ rows }: { rows: PatchChampion[] }) {
+  const [page, setPage] = useState(0);
+  const totalPages = Math.max(1, Math.ceil(rows.length / 3));
   return (
     <section className="patch-panel">
       <h3>Campeones</h3>
       {rows.length ? (
-        rows.map((c) => (
+        rows.slice(page * 3, (page + 1) * 3).map((c) => (
           <article className="patch-champion" key={c.name}>
             <header>
               <PatchImage src={c.iconUrl} className="patch-champion-icon" />
@@ -83,6 +85,33 @@ function Champions({ rows }: { rows: PatchChampion[] }) {
       ) : (
         <p className="muted">Este parche no incluye cambios de campeones en esta sección.</p>
       )}
+      {totalPages > 1 ? (
+        <div
+          className="filter-buttons patch-pagination"
+          role="group"
+          aria-label="Paginación de campeones"
+        >
+          <button
+            type="button"
+            className="button outline small"
+            disabled={page === 0}
+            onClick={() => setPage((p) => p - 1)}
+          >
+            ← Anterior
+          </button>
+          <span aria-live="polite">
+            {page + 1} / {totalPages}
+          </span>
+          <button
+            type="button"
+            className="button outline small"
+            disabled={page >= totalPages - 1}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Siguiente →
+          </button>
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -195,7 +224,9 @@ function PatchMediaDialog({
           No se pudo resolver un video disponible. Busca el aspecto en el canal oficial.
         </p>
       ) : null}
-      <PatchImage src={skin?.imageUrl ?? image} className="patch-modal-art" />
+      {skin === null && image !== null ? (
+        <PatchImage src={image} className="patch-modal-art" />
+      ) : null}
       {skin ? (
         <div className="filter-buttons">
           {video?.youtubeUrl ? (
@@ -432,7 +463,7 @@ export function LolPatchNotesHub({
                   />
                   <p>{patch.highlightsSummary || patch.description}</p>
                 </section>
-                <Champions rows={patch.champions} />
+                <Champions key={patch.id} rows={patch.champions} />
               </div>
               <aside>
                 {bugs}
@@ -440,7 +471,7 @@ export function LolPatchNotesHub({
               </aside>
             </div>
           ) : section === 'champions' ? (
-            <Champions rows={patch.champions} />
+            <Champions key={patch.id} rows={patch.champions} />
           ) : section === 'mayhem' && patch.aramMayhem ? (
             <Mode mode={patch.aramMayhem} title="ARAM: Caos" />
           ) : section === 'aram' && patch.aram ? (

@@ -5672,7 +5672,8 @@ button.discord-channel-pill:focus-visible {
   margin: 1rem 0;
 }
 .patch-bug-scroll {
-  max-height: 440px;
+  min-height: 560px;
+  max-height: 760px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #d4af37 #080c12;
@@ -5732,7 +5733,10 @@ button.discord-channel-pill:focus-visible {
   color: var(--muted);
 }
 .patch-media-dialog {
-  width: min(1000px, 92vw);
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(960px, 92vw);
   max-height: 88vh;
   overflow-y: auto;
   color: #f2f4f8;
@@ -5785,4 +5789,14 @@ button.discord-channel-pill:focus-visible {
   .patch-dialog-heading h3 {
     overflow-wrap: anywhere;
   }
+}
+
+.patch-panel > .filter-buttons,
+.patch-media-dialog .filter-buttons {
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.patch-pagination {
+  justify-content: space-between;
 }
