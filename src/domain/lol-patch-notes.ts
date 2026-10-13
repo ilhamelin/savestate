@@ -347,3 +347,9 @@ export function parseSpotlightVideos(
       .map(({ videoId, videoTitle }) => ({ videoId, videoTitle }))[0] ?? null
   );
 }
+export {
+  analyzePatchStatChange,
+  summarizeStatDirections,
+  formatBugfixRichText,
+} from './patch-stat-change.ts';
+export type { StatDirection, ParsedStatChange } from './patch-stat-change.ts';

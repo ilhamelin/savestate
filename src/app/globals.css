@@ -5800,3 +5800,202 @@ button.discord-channel-pill:focus-visible {
 .patch-pagination {
   justify-content: space-between;
 }
+
+/* Patch stat semantics and visual hierarchy. */
+.lol-patch-hub {
+  margin-top: 1.35rem;
+}
+.patch-nav {
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--line);
+}
+.patch-title {
+  margin: 0.4rem 0 1.25rem;
+  font-size: 1.35rem;
+  color: #f8fafc;
+  letter-spacing: 0.02em;
+}
+.patch-tabs {
+  margin: 0 0 1.4rem;
+  gap: 0.55rem;
+}
+.patch-champion header {
+  flex-wrap: wrap;
+}
+.patch-stat-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.55rem 0;
+  line-height: 1.85;
+}
+.patch-ability ul,
+.patch-mode-card ul {
+  padding: 0;
+  list-style: none;
+}
+.patch-stat-content {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.patch-stat-badge {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  padding: 0.15rem 0.4rem;
+  white-space: nowrap;
+}
+.patch-stat-badge.is-buff {
+  color: #4ade80;
+  background: #22c55e14;
+}
+.patch-stat-badge.is-nerf {
+  color: #f87171;
+  background: #ef444414;
+}
+.patch-stat-badge.is-adjust {
+  color: #38bdf8;
+  background: #38bdf814;
+}
+.patch-stat-label {
+  color: #f3e5ab;
+  font-weight: 600;
+}
+.patch-stat-before {
+  color: #94a3b8;
+  text-decoration: line-through;
+  background: #1e293b99;
+  border-radius: 4px;
+  padding: 0.1rem 0.3rem;
+}
+.patch-stat-arrow {
+  color: #d4af37;
+  font-weight: 700;
+}
+.patch-stat-after {
+  display: inline;
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  font-weight: 700;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.patch-stat-after.is-buff {
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.14);
+  border: 1px solid rgba(74, 222, 128, 0.4);
+}
+.patch-stat-after.is-nerf {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(248, 113, 113, 0.4);
+}
+.patch-stat-after.is-adjust {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.14);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+.patch-mode-intro {
+  padding: 1rem;
+  margin-bottom: 1.2rem;
+  border-left: 3px solid #d4af37;
+  background: #0d1520;
+  color: #cbd5e1;
+  line-height: 1.9;
+}
+.patch-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.patch-mode-card {
+  padding: 1rem;
+  background: #0d1520;
+  border: 1px solid var(--line);
+  border-left-width: 3px;
+  min-width: 0;
+}
+.patch-mode-card.is-buff {
+  border-left-color: #4ade80;
+}
+.patch-mode-card.is-nerf {
+  border-left-color: #f87171;
+}
+.patch-mode-card.is-adjust {
+  border-left-color: #38bdf8;
+}
+.patch-mode-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-bottom: 0.7rem;
+}
+.patch-mode-card h4 {
+  color: #f3e5ab;
+  margin: 0;
+}
+.patch-bug-scroll > ul {
+  list-style: none;
+  padding: 0;
+}
+.patch-bug-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.85rem;
+  background: #0c131d;
+  border-left: 2px solid #38bdf8;
+  line-height: 1.9;
+}
+.patch-bug-item:nth-child(even) {
+  background: #101926;
+  border-left-color: #d4af37;
+}
+.patch-bug-badge {
+  flex-shrink: 0;
+  color: #f3e5ab;
+  font-size: 0.65rem;
+  border: 1px solid #d4af3755;
+  border-radius: 4px;
+  padding: 0.15rem 0.35rem;
+  white-space: nowrap;
+}
+.patch-bug-prefix {
+  color: #94a3b8;
+}
+.patch-inline-key {
+  color: #38bdf8;
+  background: #38bdf814;
+  border: 1px solid #38bdf855;
+  border-radius: 4px;
+  padding: 0.05rem 0.25rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+@media (max-width: 900px) {
+  .patch-mode-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .patch-stat-row {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .patch-stat-content {
+    flex-basis: 100%;
+  }
+  .patch-bug-item {
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+}

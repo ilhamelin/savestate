@@ -8,6 +8,11 @@ import type {
   PatchSkin,
   SkinVideo,
 } from '@/domain/lol-patch-notes';
+import {
+  analyzePatchStatChange,
+  summarizeStatDirections,
+  formatBugfixRichText,
+} from '@/domain/patch-stat-change';
 import { readJsonResponse } from '@/lib/api-response';
 export interface LolPatchIndex {
   patches: LolPatchListItem[];
@@ -53,6 +58,80 @@ function PatchImage({
     image
   );
 }
+function StatChangeRow({ text }: { text: string }) {
+  const parsed = analyzePatchStatChange(text);
+  const tone =
+    parsed.direction === 'buff' || parsed.direction === 'new'
+      ? 'buff'
+      : parsed.direction === 'nerf' || parsed.direction === 'removed'
+        ? 'nerf'
+        : 'adjust';
+  const badge =
+    parsed.direction === 'new'
+      ? '✦ NUEVO'
+      : parsed.direction === 'removed'
+        ? '✕ ELIM.'
+        : tone === 'buff'
+          ? '▲ +'
+          : tone === 'nerf'
+            ? '▼ −'
+            : '◆ AJUSTE';
+  return (
+    <li className="patch-stat-row">
+      <span className={'patch-stat-badge is-' + tone}>{badge}</span>
+      <span className="patch-stat-content">
+        {parsed.label ? <strong className="patch-stat-label">{parsed.label}: </strong> : null}
+        {parsed.before !== null ? <span className="patch-stat-before">{parsed.before}</span> : null}
+        {parsed.before !== null && parsed.after !== null ? (
+          <span className="patch-stat-arrow"> ⇒ </span>
+        ) : null}
+        {parsed.after !== null ? (
+          <span className={'patch-stat-after is-' + tone}>{parsed.after}</span>
+        ) : null}
+        {parsed.before === null && parsed.after === null ? <span>{parsed.raw}</span> : null}
+      </span>
+    </li>
+  );
+}
+function DirectionBadge({ changes, mode = false }: { changes: string[]; mode?: boolean }) {
+  const direction = summarizeStatDirections(changes);
+  return (
+    <span className={'patch-stat-badge is-' + direction}>
+      {direction === 'buff'
+        ? mode
+          ? '▲ BUFF'
+          : '▲ MEJORA'
+        : direction === 'nerf'
+          ? '▼ NERF'
+          : mode
+            ? '◆ AJUSTE'
+            : '◆ AJUSTADO'}
+    </span>
+  );
+}
+function BugfixRow({ text }: { text: string }) {
+  return (
+    <li className="patch-bug-item">
+      <span className="patch-bug-badge">🛠️ FIX</span>
+      <span>
+        {formatBugfixRichText(text).map((part, index) => (
+          <span
+            key={index}
+            className={
+              part.kind === 'prefix'
+                ? 'patch-bug-prefix'
+                : part.kind === 'key'
+                  ? 'patch-inline-key'
+                  : undefined
+            }
+          >
+            {part.text}
+          </span>
+        ))}
+      </span>
+    </li>
+  );
+}
 function Champions({ rows }: { rows: PatchChampion[] }) {
   const [page, setPage] = useState(0);
   const totalPages = Math.max(1, Math.ceil(rows.length / 3));
@@ -65,6 +144,7 @@ function Champions({ rows }: { rows: PatchChampion[] }) {
             <header>
               <PatchImage src={c.iconUrl} className="patch-champion-icon" />
               <h4>{c.name}</h4>
+              <DirectionBadge changes={c.abilities.flatMap((a) => a.changes)} />
             </header>
             {c.summary ? <blockquote>{c.summary}</blockquote> : null}
             {c.abilities.map((a, i) => (
@@ -75,7 +155,7 @@ function Champions({ rows }: { rows: PatchChampion[] }) {
                 </h5>
                 <ul>
                   {a.changes.map((change, n) => (
-                    <li key={n}>{change}</li>
+                    <StatChangeRow key={n} text={change} />
                   ))}
                 </ul>
               </div>
@@ -119,17 +199,25 @@ function Mode({ mode, title }: { mode: PatchMode; title: string }) {
   return (
     <section className="patch-panel">
       <h3>{title}</h3>
-      {mode.summary ? <blockquote>{mode.summary}</blockquote> : null}
-      {mode.changes.map((group, i) => (
-        <article className="patch-ability" key={i}>
-          <h4>{group.title}</h4>
-          <ul>
-            {group.changes.map((c, n) => (
-              <li key={n}>{c}</li>
-            ))}
-          </ul>
-        </article>
-      ))}
+      {mode.summary ? <div className="patch-mode-intro">{mode.summary}</div> : null}
+      <div className="patch-mode-grid">
+        {mode.changes.map((group, index) => (
+          <article
+            key={index}
+            className={'patch-mode-card is-' + summarizeStatDirections(group.changes)}
+          >
+            <header>
+              <h4>{group.title}</h4>
+              <DirectionBadge changes={group.changes} mode />
+            </header>
+            <ul>
+              {group.changes.map((change, n) => (
+                <StatChangeRow key={n} text={change} />
+              ))}
+            </ul>
+          </article>
+        ))}
+      </div>
     </section>
   );
 }
@@ -323,7 +411,7 @@ export function LolPatchNotesHub({
         {patch.bugfixes.length ? (
           <ul>
             {patch.bugfixes.map((b, i) => (
-              <li key={i}>{b}</li>
+              <BugfixRow key={i} text={b} />
             ))}
           </ul>
         ) : (
@@ -428,7 +516,7 @@ export function LolPatchNotesHub({
               ↗ Nota oficial de Riot
             </a>
           </div>
-          <h3>{patch.title}</h3>
+          <h3 className="patch-title">{patch.title}</h3>
           <div className="filter-buttons patch-tabs" role="group" aria-label="Secciones del parche">
             {[
               ['overview', 'Vista General'],
