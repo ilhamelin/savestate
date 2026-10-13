@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Film, Gamepad2, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Film, Gamepad2, Plus, ChevronLeft, ChevronRight, Play } from 'lucide-react';
+import { ScreenTrailerModal } from './screen-trailer-modal';
 import { screenAdaptation } from '@/domain/game-adaptations';
 import { screenPercent, type ScreenMediaItem, type ScreenUserProgress } from '@/domain/screen';
 export function ScreenHeroRadar({
@@ -15,6 +16,7 @@ export function ScreenHeroRadar({
   onSelect: (item: ScreenMediaItem) => void;
 }) {
   const [slot, setSlot] = useState(0);
+  const [trailer, setTrailer] = useState<{ id: string; title: string } | null>(null);
   const item = items[slot];
   if (!item) return null;
   const adaptation = screenAdaptation(item.tmdbId, item.mediaType),
@@ -57,6 +59,15 @@ export function ScreenHeroRadar({
           <button className="button" type="button" onClick={() => onSelect(item)}>
             <Plus size={14} /> Registrar progreso
           </button>
+          {item.trailerVideoId && (
+            <button
+              type="button"
+              className="button outline"
+              onClick={() => setTrailer({ id: item.trailerVideoId!, title: item.title })}
+            >
+              <Play size={14} /> Ver Tráiler
+            </button>
+          )}
           {adaptation && (
             <Link className="button outline" href={`/games/${adaptation.gameSlug}`}>
               <Gamepad2 size={14} /> {adaptation.gameTitle}
@@ -94,6 +105,13 @@ export function ScreenHeroRadar({
           <ChevronRight size={16} />
         </button>
       </div>
+      {trailer && (
+        <ScreenTrailerModal
+          videoId={trailer.id}
+          title={trailer.title}
+          onClose={() => setTrailer(null)}
+        />
+      )}
     </section>
   );
 }

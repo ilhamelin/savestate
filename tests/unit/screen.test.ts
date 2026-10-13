@@ -10,6 +10,7 @@ import {
   validateScreenProgress,
   screenPercent,
   tmdbImage,
+  extractTmdbTrailerId,
   type ScreenDetail,
 } from '../../src/domain/screen.ts';
 import { gameAdaptations, screenAdaptation } from '../../src/domain/game-adaptations.ts';
@@ -34,7 +35,48 @@ const detail: ScreenDetail = {
   totalEpisodes: 4,
   credits: [],
   providerLink: null,
+  trailerVideoId: null,
 };
+test('Screen trailers prefer valid YouTube trailers, official Spanish/English versions and safe teaser fallbacks', () => {
+  const video = (key: string, type = 'Trailer', extra: Record<string, unknown> = {}) => ({
+    key,
+    type,
+    site: 'YouTube',
+    official: true,
+    iso_639_1: 'en',
+    ...extra,
+  });
+  assert.equal(
+    extractTmdbTrailerId({ results: [video('aaaaaaaaaaa', 'Teaser'), video('bbbbbbbbbbb')] }),
+    'bbbbbbbbbbb',
+  );
+  assert.equal(
+    extractTmdbTrailerId({
+      results: [video('aaaaaaaaaaa'), video('bbbbbbbbbbb', 'Trailer', { iso_639_1: 'es' })],
+    }),
+    'bbbbbbbbbbb',
+  );
+  assert.equal(
+    extractTmdbTrailerId({
+      results: [
+        video('aaaaaaaaaaa', 'Trailer', { official: false, iso_639_1: 'es' }),
+        video('bbbbbbbbbbb'),
+      ],
+    }),
+    'bbbbbbbbbbb',
+  );
+  assert.equal(extractTmdbTrailerId({ results: [video('0kAAqslOS64', 'Teaser')] }), '0kAAqslOS64');
+  for (const key of ['https://evil.test/a', 'too-short', '../badvideo!', 'aaaaaaaaaaa?autoplay=1'])
+    assert.equal(extractTmdbTrailerId({ results: [video(key)] }), null);
+  assert.equal(
+    extractTmdbTrailerId({
+      results: [video('aaaaaaaaaaa', 'Clip'), video('bbbbbbbbbbb', 'Trailer', { site: 'Vimeo' })],
+    }),
+    null,
+  );
+  for (const input of [null, [], { results: null }, { results: [null, 7, {}] }])
+    assert.equal(extractTmdbTrailerId(input), null);
+});
 test('Screen distinguishes movie and TV IDs and rejects person/adult/unsafe image data', () => {
   const row = {
     id: 10,

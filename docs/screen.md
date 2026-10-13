@@ -16,4 +16,6 @@ Aplica `supabase/migrations/202610130029_screen_journal.sql` antes de guardar pr
 
 El botón `+1 Ep` registra el primer episodio pendiente. Marcar una serie como completada marca sus episodios conocidos; el checklist permite retirar episodios vistos. En escritorio la ficha es lateral y en móvil es un diálogo con cierre mediante Escape.
 
+La grilla adapta sus columnas al ancho disponible y ocupa todo el catálogo al cerrar la ficha. El radar y la ficha permiten abrir los tráileres disponibles en un reproductor de YouTube con dominio `youtube-nocookie.com`; el visor se cierra con Escape, el botón Cerrar o un clic fuera. Los proveedores se agrupan en suscripción y alquiler/compra, manteniendo sus logos y enlaces regionales.
+
 Endpoints: `GET /api/screen/popular`, `GET /api/screen/search`, `GET /api/screen/media/[id]` y `POST /api/screen/progress`. Las búsquedas y fichas son públicas; el guardado requiere sesión y origen válido. El servidor obtiene título y número de episodios desde TMDB o el catálogo demo, sin confiar en metadatos enviados por el cliente.

@@ -298,7 +298,7 @@ export function ScreenHub({
           {notice}
         </p>
       )}
-      <div className="screen-layout">
+      <div className={`screen-layout${!detail && !detailLoading ? ' screen-layout-wide' : ''}`}>
         <section aria-label="Catálogo de Screen" aria-busy={loading}>
           <div className="screen-grid-heading">
             <h2>Tu próxima señal</h2>
@@ -316,33 +316,35 @@ export function ScreenHub({
             <p className="panel">No se encontraron títulos. Prueba otra búsqueda.</p>
           )}
         </section>
-        <div className="screen-drawer-column">
-          {detailLoading ? (
-            <div className="screen-hud-card skeleton" role="status">
-              Cargando telemetría…
-            </div>
-          ) : detail ? (
-            <ScreenTelemetryDrawer
-              detail={detail}
-              openMobile={drawerRequested}
-              progress={{ ...progress, totalEpisodes: detail.totalEpisodes }}
-              busy={saving}
-              canEdit={canEdit && available}
-              onSave={(patch) => void save(patch)}
-              onSeason={(season) => void select(detail, season)}
-              onToggle={toggleEpisode}
-              onNotes={(notes) => setProgress((value) => ({ ...value, notes }))}
-              onClose={() => {
-                setDetail(null);
-                setDrawerRequested(false);
-              }}
-            />
-          ) : (
-            <div className="screen-hud-card muted">
-              Selecciona un título para abrir su ficha y bitácora.
-            </div>
-          )}
-        </div>
+        {(detail || detailLoading) && (
+          <div className="screen-drawer-column">
+            {detailLoading ? (
+              <div className="screen-hud-card skeleton" role="status">
+                Cargando telemetría…
+              </div>
+            ) : detail ? (
+              <ScreenTelemetryDrawer
+                detail={detail}
+                openMobile={drawerRequested}
+                progress={{ ...progress, totalEpisodes: detail.totalEpisodes }}
+                busy={saving}
+                canEdit={canEdit && available}
+                onSave={(patch) => void save(patch)}
+                onSeason={(season) => void select(detail, season)}
+                onToggle={toggleEpisode}
+                onNotes={(notes) => setProgress((value) => ({ ...value, notes }))}
+                onClose={() => {
+                  setDetail(null);
+                  setDrawerRequested(false);
+                }}
+              />
+            ) : (
+              <div className="screen-hud-card muted">
+                Selecciona un título para abrir su ficha y bitácora.
+              </div>
+            )}
+          </div>
+        )}
       </div>
       <p className="screen-attribution">
         <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer">

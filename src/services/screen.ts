@@ -7,6 +7,7 @@ import { object, ValidationError } from '@/domain/validation';
 import { GAME_ADAPTATIONS_MATRIX, screenAdaptation } from '@/domain/game-adaptations';
 import {
   normalizeScreenMedia,
+  extractTmdbTrailerId,
   normalizeScreenProviders,
   screenType,
   screenId,
@@ -51,6 +52,7 @@ function demoMedia(id: number, type: ScreenMediaType): ScreenDetail {
     voteCount: 0,
     providers: [],
     source: 'demo',
+    trailerVideoId: id === 106379 && type === 'tv' ? '0kAAqslOS64' : null,
     seasons:
       type === 'tv' ? [{ number: 1, name: 'Temporada de demostración', episodeCount: 10 }] : [],
     episodes,
@@ -77,7 +79,9 @@ export async function getScreenMediaDetail(
   if (!Number.isInteger(season) || season < 1 || season > 999)
     throw new ValidationError('Temporada inválida.');
   if (!tmdbConfigured()) return demoMedia(id, type);
-  const raw = await tmdbRequest(`${type}/${id}`, { append_to_response: 'credits,watch/providers' });
+  const raw = await tmdbRequest(`${type}/${id}`, {
+    append_to_response: 'credits,watch/providers,videos',
+  });
   const media = normalizeScreenMedia(raw, type);
   if (!media) throw new AppError('Este título no está disponible.', 404);
   const availability = normalizeScreenProviders(raw['watch/providers'], country);
@@ -141,6 +145,7 @@ export async function getScreenMediaDetail(
     totalEpisodes:
       type === 'movie' ? 1 : seasons.reduce((total, item) => total + item.episodeCount, 0),
     credits,
+    trailerVideoId: extractTmdbTrailerId(raw.videos),
   };
 }
 export async function getRadarFeaturedMedia(region = 'CL') {

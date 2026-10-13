@@ -23,6 +23,7 @@ export interface ScreenMediaItem {
   voteCount: number;
   providers: WatchProvider[];
   source: 'tmdb' | 'demo';
+  trailerVideoId?: string | null;
 }
 export interface ScreenEpisode {
   episodeNumber: number;
@@ -42,11 +43,47 @@ export interface ScreenUserProgress {
   notes: string;
 }
 export interface ScreenDetail extends ScreenMediaItem {
+  trailerVideoId: string | null;
   seasons: { number: number; name: string; episodeCount: number }[];
   episodes: ScreenEpisode[];
   totalEpisodes: number;
   credits: { name: string; character: string }[];
   providerLink: string | null;
+}
+export function extractTmdbTrailerId(videosRaw: unknown): string | null {
+  const value =
+    videosRaw && typeof videosRaw === 'object' ? (videosRaw as Record<string, unknown>) : {};
+  if (!Array.isArray(value.results)) return null;
+  const videos = value.results.flatMap((input, index) => {
+    if (!input || typeof input !== 'object') return [];
+    const video = input as Record<string, unknown>;
+    if (
+      video.site !== 'YouTube' ||
+      !['Trailer', 'Teaser'].includes(String(video.type)) ||
+      typeof video.key !== 'string' ||
+      !/^[a-zA-Z0-9_-]{11}$/.test(video.key)
+    )
+      return [];
+    return [
+      {
+        key: video.key,
+        type: video.type,
+        official: video.official === true,
+        language: video.iso_639_1,
+        index,
+      },
+    ];
+  });
+  const languagePriority = (language: unknown) =>
+    language === 'es' ? 0 : language === 'en' ? 1 : 2;
+  videos.sort(
+    (a, b) =>
+      Number(a.type !== 'Trailer') - Number(b.type !== 'Trailer') ||
+      Number(!a.official) - Number(!b.official) ||
+      languagePriority(a.language) - languagePriority(b.language) ||
+      a.index - b.index,
+  );
+  return videos[0]?.key ?? null;
 }
 export interface ScreenEntryRow {
   id: string;

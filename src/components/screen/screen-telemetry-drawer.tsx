@@ -1,7 +1,9 @@
 'use client';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Check, Star, ExternalLink, Gamepad2, X } from 'lucide-react';
+import { useState } from 'react';
+import { Check, Star, ExternalLink, Gamepad2, X, Play } from 'lucide-react';
+import { ScreenTrailerModal } from './screen-trailer-modal';
 import { screenAdaptation } from '@/domain/game-adaptations';
 import { ScreenDrawerShell } from './screen-drawer-shell';
 import {
@@ -35,6 +37,7 @@ export function ScreenTelemetryDrawer({
   openMobile: boolean;
 }) {
   const adaptation = screenAdaptation(detail.tmdbId, detail.mediaType);
+  const [trailerOpen, setTrailerOpen] = useState(false);
   return (
     <ScreenDrawerShell title={detail.title} openMobile={openMobile} onClose={onClose}>
       <div className="screen-drawer-heading">
@@ -54,6 +57,11 @@ export function ScreenTelemetryDrawer({
         </div>
       )}
       <h2>{detail.title}</h2>
+      {detail.trailerVideoId && (
+        <button type="button" className="button outline small" onClick={() => setTrailerOpen(true)}>
+          <Play size={14} /> Ver Tráiler
+        </button>
+      )}
       <p className="screen-synopsis">{detail.overview || 'Sin sinopsis disponible.'}</p>
       <p className="muted">
         {detail.source === 'demo'
@@ -202,28 +210,49 @@ export function ScreenTelemetryDrawer({
           Disponibilidad de JustWatch vía TMDB · comprueba precios y catálogo antes de contratar.
         </p>
         {detail.providers.length ? (
-          detail.providers.map((provider) => (
-            <a
-              key={`${provider.id}-${provider.offer}`}
-              className="screen-provider-link"
-              href={provider.url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {provider.logoUrl && (
-                <Image src={provider.logoUrl} alt="" width={24} height={24} unoptimized />
-              )}
-              {provider.name}
-              <small>
-                {provider.offer === 'subscription'
-                  ? 'Suscripción'
-                  : provider.offer === 'rent'
-                    ? 'Alquiler'
-                    : 'Compra'}
-              </small>
-              <ExternalLink size={12} />
-            </a>
-          ))
+          (['subscription', 'transaction'] as const).map((group) => {
+            const providers = detail.providers.filter((provider) =>
+              group === 'subscription'
+                ? provider.offer === 'subscription'
+                : provider.offer === 'rent' || provider.offer === 'buy',
+            );
+            if (!providers.length) return null;
+            return (
+              <div className="screen-providers-group" key={group}>
+                <h4>{group === 'subscription' ? 'Suscripción' : 'Alquiler / Compra'}</h4>
+                <div className="screen-providers-chips">
+                  {providers.map((provider) => (
+                    <a
+                      key={`${provider.id}-${provider.offer}`}
+                      className="screen-provider-chip"
+                      href={provider.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {provider.logoUrl && (
+                        <Image
+                          src={provider.logoUrl}
+                          alt={provider.name}
+                          width={22}
+                          height={22}
+                          unoptimized
+                        />
+                      )}
+                      {provider.name}
+                      <small>
+                        {provider.offer === 'subscription'
+                          ? 'Suscripción'
+                          : provider.offer === 'rent'
+                            ? 'Alquiler'
+                            : 'Compra'}
+                      </small>
+                      <ExternalLink size={12} />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            );
+          })
         ) : (
           <p className="muted">
             {detail.source === 'demo'
@@ -232,6 +261,13 @@ export function ScreenTelemetryDrawer({
           </p>
         )}
       </section>
+      {trailerOpen && detail.trailerVideoId && (
+        <ScreenTrailerModal
+          videoId={detail.trailerVideoId}
+          title={detail.title}
+          onClose={() => setTrailerOpen(false)}
+        />
+      )}
       {!!detail.credits.length && (
         <details>
           <summary>Reparto</summary>

@@ -51,6 +51,8 @@ test('Screen uses bounded server-only TMDB requests, regional providers and owne
     assert.equal(new Headers(init?.headers).get('Authorization'), 'Bearer tmdb-test-token');
     assert.equal(url.searchParams.get('api_key'), null);
     assert.equal(url.searchParams.get('language'), 'es-ES');
+    if (/(?:tv|movie)\/\d+$/.test(url.pathname))
+      assert.equal(url.searchParams.get('append_to_response'), 'credits,watch/providers,videos');
     if (url.pathname.includes('/season/'))
       return Response.json({
         episodes: [{ episode_number: 1, name: 'Episode One', air_date: '2026-01-01' }],
@@ -63,6 +65,11 @@ test('Screen uses bounded server-only TMDB requests, regional providers and owne
         { season_number: 2, name: 'Season 2', episode_count: 2 },
       ],
       credits: { cast: [{ name: 'Actor', character: 'Hero' }] },
+      videos: {
+        results: [
+          { site: 'YouTube', type: 'Trailer', key: '0kAAqslOS64', official: true, iso_639_1: 'es' },
+        ],
+      },
       'watch/providers': {
         results: {
           CL: {
@@ -78,11 +85,13 @@ test('Screen uses bounded server-only TMDB requests, regional providers and owne
     const service = await import('../../src/services/screen.ts');
     const demo = await service.getScreenMediaDetail(94605, 'tv');
     assert.equal(demo.source, 'demo');
+    assert.equal((await service.getScreenMediaDetail(106379, 'tv')).trailerVideoId, '0kAAqslOS64');
     assert.deepEqual(demo.providers, []);
     assert.equal(requests, 0);
     assert.ok((await service.searchScreenMedia('Arcane')).some((item) => item.tmdbId === 94605));
     process.env.TMDB_READ_TOKEN = 'tmdb-test-token';
     const detail = await service.getScreenMediaDetail(94605, 'tv', 'CL');
+    assert.equal(detail.trailerVideoId, '0kAAqslOS64');
     assert.equal(detail.providers[0]?.name, 'Netflix');
     assert.equal(detail.totalEpisodes, 4);
     assert.equal(detail.credits[0]?.name, 'Actor');
