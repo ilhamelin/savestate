@@ -10,6 +10,7 @@ import {
   discordCoverUrl,
   discordImageAttachment,
   discordInlineMedia,
+  discordComposerPayload,
 } from '../../src/domain/discord.ts';
 test('Discord inline media preserves text, signed URLs and restricts external origins', () => {
   const gif = 'https://media.tenor.com/example/retro.gif';
@@ -20,7 +21,7 @@ test('Discord inline media preserves text, signed URLs and restricts external or
     'https://media.giphy.com/media/example/giphy.gif',
     'https://i.giphy.com/example.webp',
     'https://c.tenor.com/example',
-    'https://klipy.com/gifs/example',
+    'https://klipy.com/gifs/example.gif',
     'https://media.klipy.com/example.gif',
   ])
     assert.equal(discordInlineMedia(url).urls.length, 1);
@@ -31,6 +32,7 @@ test('Discord inline media preserves text, signed URLs and restricts external or
     'https://media.tenor.com:8080/example.gif',
     'https://evil.test/example.png',
     'https://cdn.discordapp.com/attachments/example.svg',
+    'https://klipy.com/gifs/example',
   ])
     assert.deepEqual(discordInlineMedia(url), { text: url, urls: [] });
   assert.equal(
@@ -40,6 +42,40 @@ test('Discord inline media preserves text, signed URLs and restricts external or
     5,
   );
   assert.deepEqual(discordInlineMedia(`Mira (${gif}).`), { text: 'Mira ().', urls: [gif] });
+});
+test('Discord composer allows media-only posts and preserves 500 characters independently of the URL', () => {
+  const url = 'https://i.imgur.com/example.gif';
+  assert.deepEqual(discordComposerPayload('', url), { content: '', mediaUrl: url });
+  assert.equal(discordComposerPayload('x'.repeat(500), url).content.length, 500);
+  assert.throws(() => discordComposerPayload('x'.repeat(501), url));
+  assert.throws(() => discordComposerPayload('', null));
+  assert.throws(() => discordComposerPayload('hello', 'https://i.imgur.com.evil.test/a.gif'));
+  const id = '11111111-1111-4111-8111-111111111111';
+  const origin = 'https://example.supabase.co';
+  const storage = `${origin}/storage/v1/object/public/chat-media/${id}/a.gif`;
+  assert.equal(discordComposerPayload('hello', storage, origin, id).mediaUrl, storage);
+  assert.throws(() => discordComposerPayload('hello', storage, origin, 'different-owner'));
+  assert.deepEqual(discordInlineMedia(`Hola ${storage}`, origin), {
+    text: 'Hola',
+    urls: [storage],
+  });
+});
+test('Discord resolves GIF page embeds to direct safe media without accepting arbitrary image hosts', () => {
+  const message = {
+    id: '222222222222222222',
+    author: { username: 'player' },
+    timestamp: '2026-10-13T12:00:00Z',
+    content: 'https://tenor.com/view/example',
+    embeds: [
+      { image: { url: 'https://media.tenor.com/example/retro.gif' } },
+      { image: { url: 'https://evil.test/a.gif' } },
+    ],
+  };
+  const normalized = normalizedDiscordMessages([message])[0]!;
+  assert.deepEqual(normalized.attachments, [
+    { name: 'Imagen / GIF', url: 'https://media.tenor.com/example/retro.gif' },
+  ]);
+  assert.ok(normalized.content.includes('https://tenor.com/view/example'));
 });
 test('Discord presentation cleans web prefixes and validates image origins', () => {
   assert.deepEqual(discordMessageOrigin('**[@player en Savestate]:** Hola'), {

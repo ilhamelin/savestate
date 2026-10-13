@@ -4,7 +4,7 @@ import { after } from 'next/server';
 import { AppError } from '@/lib/http';
 import { appUrl } from '@/lib/env';
 import {
-  discordContent,
+  discordComposerPayload,
   discordWebhook,
   normalizedDiscordMessages,
   normalizedDiscordPresence,
@@ -373,9 +373,11 @@ export async function sendDiscordMessage(
   username: string,
   content: string,
   options: DiscordSendOptions = {},
+  mediaUrl: string | null = null,
 ) {
   const { token, channel } = configuration();
-  const text = discordContent(content);
+  const prepared = discordComposerPayload(content, mediaUrl, process.env.NEXT_PUBLIC_SUPABASE_URL);
+  const text = prepared.content || '📎';
   const safeName = username.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 30);
   const checked = discordSendOptions(options);
   const recent =
@@ -398,6 +400,12 @@ export async function sendDiscordMessage(
       throw new AppError('La respuesta no pertenece a web-chat.', 400);
   }
   const outgoing = discordOutgoingMessage(text, checked, recent);
+  const outgoingContent = `**[@${safeName} en Savestate]:** ${outgoing.content}${prepared.mediaUrl ? '\n' + prepared.mediaUrl : ''}`;
+  if (outgoingContent.length > 2000)
+    throw new AppError(
+      'El mensaje y el enlace superan el límite de Discord. Acorta el texto o usa una URL más corta.',
+      400,
+    );
   const response = await discordRequest(
     `https://discord.com/api/v10/channels/${channel}/messages`,
     {
@@ -409,7 +417,7 @@ export async function sendDiscordMessage(
       },
       body: JSON.stringify({
         ...outgoing,
-        content: `**[@${safeName} en Savestate]:** ${outgoing.content}`,
+        content: outgoingContent,
       }),
     },
   );

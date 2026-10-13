@@ -1,4 +1,24 @@
 import { ValidationError } from './validation.ts';
+import { safeChatMediaUrl } from './global-chat.ts';
+export function discordComposerPayload(
+  content: unknown,
+  media: unknown,
+  storageOrigin?: string,
+  ownerId?: string,
+) {
+  const mediaUrl =
+    media == null || media === '' ? null : safeChatMediaUrl(media, storageOrigin, ownerId);
+  if (media && !mediaUrl)
+    throw new ValidationError(
+      'URL de imagen/GIF inválida. Usa un enlace HTTPS directo autorizado.',
+    );
+  const text =
+    content == null || (typeof content === 'string' && !content.trim())
+      ? ''
+      : discordContent(content);
+  if (!text && !mediaUrl) throw new ValidationError('Escribe un mensaje o adjunta una imagen/GIF.');
+  return { content: text, mediaUrl };
+}
 export interface DiscordMessage {
   id: string;
   author: string;
@@ -307,16 +327,21 @@ export function discordImageAttachment(url: string): boolean {
   }
 }
 // Keep inline image origins aligned with the proxy's img-src policy.
-export function discordInlineMedia(content: string): { text: string; urls: string[] } {
+export function discordInlineMedia(
+  content: string,
+  storageOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL,
+): { text: string; urls: string[] } {
   const urls: string[] = [];
   const text = content.replace(/https?:\/\/[^\s<>]+/gi, (raw) => {
     const candidate = raw.replace(/[.,!?;:)\]]+$/, '');
     try {
       const url = new URL(candidate);
-      const gifProvider =
-        ['media.tenor.com', 'c.tenor.com', 'klipy.com'].includes(url.hostname) ||
-        url.hostname.endsWith('.giphy.com') ||
-        url.hostname.endsWith('.klipy.com');
+      const gifProvider = [
+        'media.tenor.com',
+        'c.tenor.com',
+        'media.giphy.com',
+        'i.giphy.com',
+      ].includes(url.hostname);
       const directImage = /\.(png|jpe?g|webp|gif)$/i.test(url.pathname);
       const imageHost = [
         'cdn.discordapp.com',
@@ -329,7 +354,7 @@ export function discordInlineMedia(content: string): { text: string; urls: strin
         url.username ||
         url.password ||
         url.port ||
-        !(gifProvider || (imageHost && directImage))
+        !(gifProvider || (imageHost && directImage) || safeChatMediaUrl(candidate, storageOrigin))
       )
         return raw;
       const normalized = url.toString();
@@ -474,6 +499,19 @@ export function normalizedDiscordMessages(input: unknown): DiscordMessage[] {
         .filter(Boolean)
         .join('\n\n')
         .slice(0, 4000);
+      const embedMedia = (Array.isArray(message.embeds) ? message.embeds : [])
+        .slice(0, 5)
+        .flatMap((item) => {
+          const embed = record(item);
+          const candidates = [record(embed.image), record(embed.thumbnail)];
+          for (const candidate of candidates) {
+            for (const value of [candidate.url, candidate.proxy_url]) {
+              if (typeof value === 'string' && discordInlineMedia(value).urls.length)
+                return [{ name: 'Imagen / GIF', url: value }];
+            }
+          }
+          return [];
+        });
       const referenceId = record(message.message_reference).message_id;
       const referenced = record(
         message.referenced_message ?? input.find((raw) => record(raw).id === referenceId),
@@ -510,7 +548,9 @@ export function normalizedDiscordMessages(input: unknown): DiscordMessage[] {
           avatar,
           content: [content, embedText].filter(Boolean).join('\n\n').slice(0, 6000),
           createdAt: new Date(message.timestamp).toISOString(),
-          attachments,
+          attachments: [
+            ...new Map([...attachments, ...embedMedia].map((file) => [file.url, file])).values(),
+          ].slice(0, 5),
           bot: author.bot === true || typeof message.webhook_id === 'string',
           pinned: message.pinned === true,
           authorId:

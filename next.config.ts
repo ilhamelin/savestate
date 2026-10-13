@@ -4,7 +4,10 @@ const config: NextConfig = {
   poweredByHeader: false,
   images: { remotePatterns: [{ protocol: 'https', hostname: 'images.igdb.com' }] },
   async redirects() {
-    return [{ source: '/parties', destination: '/chat', permanent: true }];
+    return [
+      { source: '/parties', destination: '/chat', permanent: true },
+      { source: '/community/discord', destination: '/chat', permanent: true },
+    ];
   },
   async headers() {
     return [

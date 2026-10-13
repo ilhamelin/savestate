@@ -7561,3 +7561,60 @@ body:has(.worlds-hub) {
     margin-left: 0;
   }
 }
+.discord-chat-form.discord-advanced-composer {
+  flex-direction: column;
+  align-items: stretch;
+}
+.discord-advanced-composer > label {
+  width: 100%;
+  min-width: 0;
+}
+.discord-advanced-composer textarea {
+  width: 100%;
+  min-height: 100px;
+  resize: vertical;
+  padding: 0.7rem;
+  background: #0b1118;
+  color: var(--text, #f2f4f8);
+  border: 1px solid var(--line);
+  font: inherit;
+  line-height: 1.5;
+}
+.discord-composer-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+.discord-composer-toolbar > .button:last-child {
+  margin-left: auto;
+}
+.discord-advanced-composer .discord-character-count {
+  position: static;
+  display: block;
+  padding: 0.25rem 0;
+  text-align: right;
+}
+.discord-attachment-preview {
+  margin: 0.5rem 0;
+}
+.discord-inline-media,
+.discord-attachment-thumb {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+.discord-message-bubble p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 640px) {
+  .discord-composer-toolbar > .button:last-child {
+    margin-left: 0;
+  }
+  .discord-composer-toolbar {
+    gap: 0.4rem;
+  }
+}

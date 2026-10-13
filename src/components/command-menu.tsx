@@ -119,10 +119,9 @@ export function CommandMenu({
     ['Explorar catálogo', '/explore'],
     ['Listas de la comunidad', '/lists'],
     ['Transmisión', '/feed'],
-    ['Chat Global Arcade Lounge', '/chat'],
+    ['Chat Global · Centro de Mando Comunitario', '/chat'],
     ['Momentos Gamer', '/highlights'],
     ['Foro · SaveState Boards', '/forum'],
-    ['Discord · Terminal comunitaria', '/community/discord'],
     ['Rift Tracker (League of Legends)', '/rift'],
     [
       authenticated ? 'Mi perfil' : 'Iniciar sesión',

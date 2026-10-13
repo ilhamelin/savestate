@@ -1,7 +1,7 @@
 import { authenticated } from '@/lib/session';
 import { AppError, dbCheck, errorResponse, mutation } from '@/lib/http';
 import { object } from '@/domain/validation';
-import { discordContent, discordSendOptions } from '@/domain/discord';
+import { discordComposerPayload, discordSendOptions } from '@/domain/discord';
 import { discordFrequency } from '@/domain/discord-channels';
 import {
   discordConfigured,
@@ -40,7 +40,12 @@ export async function POST(request: Request) {
       const channel = discordFrequency(body.channel ?? 'web-chat');
       if (channel !== 'web-chat')
         throw new AppError('Solo puedes enviar mensajes a web-chat.', 403);
-      const content = discordContent(body.content);
+      const { content, mediaUrl } = discordComposerPayload(
+        body.content,
+        body.mediaUrl,
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        user.id,
+      );
       const options = discordSendOptions(body);
       if (!discordConfigured())
         throw new AppError('El chat de Discord aún no está configurado.', 503);
@@ -53,8 +58,10 @@ export async function POST(request: Request) {
       dbCheck(slot.error);
       if ((slot.data ?? 3) > 0)
         throw new AppError(`Espera ${slot.data ?? 3} segundos antes de enviar otro mensaje.`, 429);
-      return { message: await sendDiscordMessage(profile.data.username, content, options) };
+      return {
+        message: await sendDiscordMessage(profile.data.username, content, options, mediaUrl),
+      };
     },
-    4096,
+    8192,
   );
 }

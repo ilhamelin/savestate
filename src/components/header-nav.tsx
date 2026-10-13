@@ -10,7 +10,6 @@ import {
   MessageCircle,
   Layers,
   UserCheck,
-  Headphones,
   Swords,
   Trophy,
 } from 'lucide-react';
@@ -24,7 +23,6 @@ const links = [
   { href: '/chat', label: 'Chat Global', icon: MessageCircle },
   { href: '/lists', label: 'Listas', icon: Layers },
   { href: '/players', label: 'Jugadores', icon: UserCheck },
-  { href: '/community/discord', label: 'Discord', icon: Headphones },
   { href: '/rift', label: 'Rift', icon: Swords },
   { href: '/worlds', label: 'Worlds', icon: Trophy },
 ];

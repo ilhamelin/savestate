@@ -24,6 +24,9 @@ import { api } from '@/lib/client-api';
 import { readJsonResponse } from '@/lib/api-response';
 import { DiscordLinkedRoleCard } from '@/components/discord-linked-role-card';
 import { DiscordGamePicker } from '@/components/discord-game-picker';
+import { browserClient } from '@/integrations/supabase/browser';
+import { publicEnv } from '@/lib/env';
+import { chatFileSignature, safeChatMediaUrl, validateChatFile } from '@/domain/global-chat';
 function messageAuthor(message: DiscordMessage) {
   return discordMessageOrigin(message.content).author ?? message.author;
 }
@@ -220,32 +223,19 @@ const DiscordMessageCard = memo(function DiscordMessageCard({
         {media.urls.map((url) => (
           <InlineMedia key={url} url={url} onOpen={onOpen} />
         ))}
-        {message.attachments.map((file) => (
-          <p key={file.url}>
-            {discordImageAttachment(file.url) ? (
-              <button
-                type="button"
-                className="discord-media-button"
-                aria-label={`Ampliar ${file.name}`}
-                aria-haspopup="dialog"
-                onClick={() => onOpen({ url: file.url, alt: file.name })}
-              >
-                <Image
-                  className="discord-attachment-thumb"
-                  src={file.url}
-                  width={240}
-                  height={160}
-                  alt={file.name}
-                  unoptimized
-                />
-              </button>
-            ) : (
-              <a href={file.url} target="_blank" rel="noopener noreferrer">
-                ↗ {file.name}
-              </a>
-            )}
-          </p>
-        ))}
+        {message.attachments
+          .filter((file) => !media.urls.includes(file.url))
+          .map((file) => (
+            <div key={file.url}>
+              {discordImageAttachment(file.url) || discordInlineMedia(file.url).urls.length ? (
+                <InlineMedia url={file.url} onOpen={onOpen} />
+              ) : (
+                <a href={file.url} target="_blank" rel="noopener noreferrer">
+                  ↗ {file.name}
+                </a>
+              )}
+            </div>
+          ))}
         {canInteract && (
           <div className="discord-message-actions">
             <button type="button" className="button outline small" onClick={() => onReply(message)}>
@@ -271,7 +261,15 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
     online: false,
     latency: null,
   });
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [attachment, setAttachment] = useState<{
+    url: string;
+    file?: File;
+    uploadedUrl?: string;
+  } | null>(null);
+  const [urlOpen, setUrlOpen] = useState(false);
+  const [urlDraft, setUrlDraft] = useState('');
   const busy = useRef(false);
   const [activeMedia, setActiveMedia] = useState<ActiveMedia | null>(null);
   const [messages, setMessages] = useState<DiscordMessage[]>([]);
@@ -287,6 +285,36 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
   );
   const [content, setContent] = useState(''),
     [error, setError] = useState('');
+  useEffect(() => {
+    const url = attachment?.file ? attachment.url : null;
+    return () => {
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [attachment?.url, attachment?.file]);
+  async function attachFile(file?: File) {
+    if (!file || busy.current) return;
+    try {
+      validateChatFile(file.size, file.type);
+      if (!chatFileSignature(new Uint8Array(await file.slice(0, 12).arrayBuffer()), file.type))
+        throw new Error('El archivo no contiene una imagen válida.');
+      setAttachment({ file, url: URL.createObjectURL(file) });
+      setError('');
+    } catch (failure) {
+      setError((failure as Error).message);
+    }
+    if (fileRef.current) fileRef.current.value = '';
+  }
+  function attachUrl() {
+    const url = safeChatMediaUrl(urlDraft.trim(), publicEnv().url);
+    if (!url) {
+      setError('Usa una URL HTTPS directa de Tenor, Giphy, Imgur o Discord.');
+      return;
+    }
+    setAttachment({ url });
+    setUrlDraft('');
+    setUrlOpen(false);
+    setError('');
+  }
   const targets = useMemo(
     () => discordMentionTargets(messages, presence.members),
     [messages, presence.members],
@@ -476,7 +504,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
       frequency !== 'web-chat' ||
       busy.current ||
       Date.now() < cooldownUntil.current ||
-      !content.trim()
+      (!content.trim() && !attachment)
     )
       return;
     busy.current = true;
@@ -485,8 +513,29 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
     cooldownUntil.current = Date.now() + 3000;
     setCooldown(3);
     try {
+      let mediaUrl = attachment?.uploadedUrl ?? attachment?.url ?? null;
+      if (attachment?.file && !attachment.uploadedUrl) {
+        const preparedResponse = await fetch('/api/chat/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ size: attachment.file.size, contentType: attachment.file.type }),
+        });
+        const prepared = await readJsonResponse<{ path: string; token: string; url: string }>(
+          preparedResponse,
+        );
+        const { error: uploadError } = await browserClient()
+          .storage.from('chat-media')
+          .uploadToSignedUrl(prepared.path, prepared.token, attachment.file, {
+            contentType: attachment.file.type,
+          });
+        if (uploadError)
+          throw new Error('No se pudo subir el adjunto. Puedes volver a intentarlo.');
+        mediaUrl = prepared.url;
+        setAttachment({ ...attachment, uploadedUrl: prepared.url });
+      }
       const result = await api<{ message: DiscordMessage | null }>('discord/messages', {
         content,
+        mediaUrl,
         channel: 'web-chat',
         replyToMessageId: replyTo?.id,
         mentions: selectedMentions.filter((mention) =>
@@ -504,6 +553,8 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
         setMessages(next);
       }
       setContent('');
+      setAttachment(null);
+      setUrlOpen(false);
       setReplyTo(null);
       setSelectedMentions([]);
       setMentionsOpen(false);
@@ -528,7 +579,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
           <span>TERMINAL://RELAY_DISCORD_V1.0</span>
         </div>
         <div className="discord-chat-heading">
-          <h2>Discord Bridge · Terminal comunitaria</h2>
+          <h2>Chat Global · Terminal comunitaria</h2>
           <span className="discord-live" role="status">
             <span className={node.online ? 'live-pulse' : ''} aria-hidden="true">
               {node.online ? '🟢' : '◌'}
@@ -644,8 +695,59 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                 }}
               />
             )}
+            {attachment && (
+              <div className="chat-media-preview discord-attachment-preview">
+                <Image
+                  src={attachment.url}
+                  alt="Vista previa de imagen o GIF adjunto"
+                  width={200}
+                  height={150}
+                  unoptimized
+                  referrerPolicy="no-referrer"
+                />
+                <span>{attachment.file?.name ?? 'Imagen / GIF enlazado'}</span>
+                <button
+                  type="button"
+                  className="button outline small"
+                  disabled={sending}
+                  onClick={() => setAttachment(null)}
+                >
+                  ✕ Quitar
+                </button>
+              </div>
+            )}
+            {urlOpen && (
+              <div className="chat-url-editor">
+                <label htmlFor="discord-media-url">URL directa de imagen / GIF</label>
+                <input
+                  id="discord-media-url"
+                  type="url"
+                  value={urlDraft}
+                  maxLength={2000}
+                  disabled={sending}
+                  placeholder="https://i.imgur.com/imagen.gif"
+                  onChange={(event) => setUrlDraft(event.target.value)}
+                />
+                <button
+                  type="button"
+                  className="button small"
+                  disabled={sending}
+                  onClick={attachUrl}
+                >
+                  Adjuntar URL
+                </button>
+                <button
+                  type="button"
+                  className="button outline small"
+                  disabled={sending}
+                  onClick={() => setUrlOpen(false)}
+                >
+                  Cancelar
+                </button>
+              </div>
+            )}
             <form
-              className="discord-chat-form"
+              className="discord-chat-form discord-advanced-composer"
               onSubmit={(event) => {
                 event.preventDefault();
                 void send();
@@ -653,8 +755,9 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
             >
               <label>
                 <span className="discord-input-label">Mensaje para Discord</span>
-                <input
+                <textarea
                   ref={inputRef}
+                  rows={3}
                   value={content}
                   maxLength={500}
                   disabled={sending}
@@ -684,11 +787,11 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                       : undefined
                   }
                   onKeyDown={(event) => {
-                    if (!mentionsOpen) return;
-                    if (event.key === 'Escape') {
+                    if (mentionsOpen && event.key === 'Escape') {
                       event.preventDefault();
                       setMentionsOpen(false);
                     } else if (
+                      mentionsOpen &&
                       (event.key === 'ArrowDown' || event.key === 'ArrowUp') &&
                       suggestions.length
                     ) {
@@ -698,12 +801,21 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                           (index + (event.key === 'ArrowDown' ? 1 : -1) + suggestions.length) %
                           suggestions.length,
                       );
-                    } else if (event.key === 'Enter' && suggestions.length) {
+                    } else if (
+                      event.key === 'Enter' &&
+                      !event.shiftKey &&
+                      !event.ctrlKey &&
+                      !event.metaKey &&
+                      !event.altKey &&
+                      !event.nativeEvent.isComposing
+                    ) {
                       event.preventDefault();
-                      insertMention(suggestions[Math.min(mentionIndex, suggestions.length - 1)]!);
+                      if (mentionsOpen && suggestions.length)
+                        insertMention(suggestions[Math.min(mentionIndex, suggestions.length - 1)]!);
+                      else void send();
                     }
                   }}
-                  placeholder="Escribe y pulsa Enter…"
+                  placeholder="Enter para enviar · Shift+Enter para salto de línea…"
                   aria-describedby="discord-message-count"
                 />
                 <span id="discord-message-count" className="muted discord-character-count">
@@ -743,51 +855,86 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                   </ul>
                 )}
               </label>
-              <div className="discord-emoji-buttons" role="group" aria-label="Insertar emoji gamer">
-                {(['👾', '💾', '🏆', '🔥'] as const).map((emoji) => (
-                  <button
-                    type="button"
-                    className="button outline small"
-                    key={emoji}
-                    aria-label={`Insertar ${emoji}`}
-                    disabled={sending || content.length + emoji.length > 500}
-                    onClick={() => {
-                      setContent((current) =>
-                        current.length + emoji.length <= 500 ? current + emoji : current,
-                      );
-                      inputRef.current?.focus();
-                    }}
-                  >
-                    {emoji}
-                  </button>
-                ))}
+              <div className="discord-composer-toolbar">
+                <input
+                  type="file"
+                  className="chat-file-input"
+                  ref={fileRef}
+                  aria-label="Adjuntar imagen o GIF"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  disabled={sending}
+                  onChange={(event) => void attachFile(event.target.files?.[0])}
+                />
+                <button
+                  type="button"
+                  className="button outline small"
+                  disabled={sending}
+                  onClick={() => fileRef.current?.click()}
+                >
+                  📎 Adjuntar archivo
+                </button>
+                <button
+                  type="button"
+                  className="button outline small"
+                  disabled={sending}
+                  aria-expanded={urlOpen}
+                  onClick={() => setUrlOpen((open) => !open)}
+                >
+                  🔗 Pegar URL/GIF
+                </button>
+                <div
+                  className="discord-emoji-buttons"
+                  role="group"
+                  aria-label="Insertar emoji gamer"
+                >
+                  {(['👾', '💾', '🏆', '🔥'] as const).map((emoji) => (
+                    <button
+                      type="button"
+                      className="button outline small"
+                      key={emoji}
+                      aria-label={`Insertar ${emoji}`}
+                      disabled={sending || content.length + emoji.length > 500}
+                      onClick={() => {
+                        setContent((current) =>
+                          current.length + emoji.length <= 500 ? current + emoji : current,
+                        );
+                        inputRef.current?.focus();
+                      }}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className="button outline small discord-compose-tool"
+                  disabled={sending}
+                  aria-label="Mencionar usuario"
+                  onClick={() => {
+                    setMentionsOpen((open) => !open);
+                    setMentionIndex(0);
+                    setCaret(inputRef.current?.selectionStart ?? content.length);
+                    inputRef.current?.focus();
+                  }}
+                >
+                  @ Mencionar
+                </button>
+                <button
+                  type="button"
+                  className="button outline small discord-compose-tool"
+                  disabled={sending}
+                  aria-expanded={gamePicker}
+                  onClick={() => setGamePicker((open) => !open)}
+                >
+                  🎮 Juego
+                </button>
+                <button
+                  className="button"
+                  disabled={sending || cooldown > 0 || (!content.trim() && !attachment)}
+                >
+                  {sending ? 'Enviando…' : cooldown > 0 ? `Espera ${cooldown}s…` : 'Enviar →'}
+                </button>
               </div>
-              <button
-                type="button"
-                className="button outline small discord-compose-tool"
-                disabled={sending}
-                aria-label="Mencionar usuario"
-                onClick={() => {
-                  setMentionsOpen((open) => !open);
-                  setMentionIndex(0);
-                  setCaret(inputRef.current?.selectionStart ?? content.length);
-                  inputRef.current?.focus();
-                }}
-              >
-                @
-              </button>
-              <button
-                type="button"
-                className="button outline small discord-compose-tool"
-                disabled={sending}
-                aria-expanded={gamePicker}
-                onClick={() => setGamePicker((open) => !open)}
-              >
-                🎮 Juego
-              </button>
-              <button className="button" disabled={sending || cooldown > 0 || !content.trim()}>
-                {sending ? 'Enviando…' : cooldown > 0 ? `Espera ${cooldown}s…` : 'Enviar →'}
-              </button>
             </form>
             <p className="muted">
               Lo que envíes se publicará en el canal de Discord con tu nombre de usuario de

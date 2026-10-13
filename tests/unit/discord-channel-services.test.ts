@@ -155,6 +155,39 @@ test('Discord Bridge reads real allowlisted channels, isolates cache entries and
     });
     assert.equal((await route.POST(invalidOptions)).status, 400);
     assert.equal(state.claims, 1);
+    const multimediaPost = (content: string, mediaUrl: string) =>
+      new Request('https://example.com/api/discord/messages', {
+        method: 'POST',
+        headers: { origin: 'https://example.com', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel: 'web-chat', content, mediaUrl }),
+      });
+    assert.equal(
+      (await route.POST(multimediaPost('x'.repeat(500), 'https://i.imgur.com/game.gif'))).status,
+      200,
+    );
+    assert.equal(
+      requests.at(-1)?.body?.content,
+      '**[@player en Savestate]:** ' + 'x'.repeat(500) + '\nhttps://i.imgur.com/game.gif',
+    );
+    assert.deepEqual(requests.at(-1)?.body?.allowed_mentions, {
+      parse: [],
+      users: [],
+      replied_user: false,
+    });
+    assert.equal(
+      (await route.POST(multimediaPost('', 'https://media.tenor.com/example/game.gif'))).status,
+      200,
+    );
+    assert.match(
+      String(requests.at(-1)?.body?.content),
+      /\nhttps:\/\/media.tenor.com\/example\/game.gif$/,
+    );
+    const claimsBeforeInvalid = state.claims;
+    assert.equal(
+      (await route.POST(multimediaPost('Hello', 'https://i.imgur.com.evil.test/a.gif'))).status,
+      400,
+    );
+    assert.equal(state.claims, claimsBeforeInvalid);
     const games = await gamesRoute.GET(
       new Request('https://example.com/api/discord/games?q=Ha%25_lo'),
     );
