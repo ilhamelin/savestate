@@ -1,15 +1,29 @@
 'use client';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState, type ReactNode, type FormEvent } from 'react';
 import { api } from '@/lib/client-api';
-import { ValorantProfileView } from '@/components/valorant-profile-view';
-import { GenshinProfileView } from '@/components/genshin-profile-view';
-import { HsrProfileView } from '@/components/hsr-profile-view';
-import { RustProfileView } from '@/components/rust-profile-view';
 import { VALORANT_REGIONS, type CompetitiveProfile } from '@/domain/competitive-tracker';
 import { recentTrackerUids, type TrackerTab } from '@/domain/tracker-accounts';
 import { ProfileWallpaper } from '@/components/profile-wallpaper';
+const trackerLoading = () => <p role="status">Cargando visor del tracker…</p>;
+const ValorantProfileView = dynamic(
+  () => import('@/components/valorant-profile-view').then((module) => module.ValorantProfileView),
+  { loading: trackerLoading },
+);
+const GenshinProfileView = dynamic(
+  () => import('@/components/genshin-profile-view').then((module) => module.GenshinProfileView),
+  { loading: trackerLoading },
+);
+const HsrProfileView = dynamic(
+  () => import('@/components/hsr-profile-view').then((module) => module.HsrProfileView),
+  { loading: trackerLoading },
+);
+const RustProfileView = dynamic(
+  () => import('@/components/rust-profile-view').then((module) => module.RustProfileView),
+  { loading: trackerLoading },
+);
 const RIFT_WALLPAPERS: Record<TrackerTab, string> = {
   lol: '/wallpapers/rift_arcane.jpg',
   valorant: '/wallpapers/rift_valorant.jpg',

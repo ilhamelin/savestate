@@ -17,6 +17,7 @@ export async function catalogue(filters: CatalogueFilters) {
   let source: 'igdb' | 'local' = 'local';
   let igdbIds: number[] | undefined;
   const releaseDates = new Map<number, number | null>();
+  const igdbRatings = new Map<number, number | null>();
   // The 24h cache in fetchCatalogue is keyed by the complete query. Fresh local
   // rows alone cannot establish that a broader or different search is complete.
   if (
@@ -25,9 +26,10 @@ export async function catalogue(filters: CatalogueFilters) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   ) {
     try {
-      const games = await fetchCatalogue({ ...filters, minRating: null });
-      const rows = games.map(({ first_release_date, ...row }) => {
+      const games = await fetchCatalogue(filters);
+      const rows = games.map(({ first_release_date, igdb_rating, ...row }) => {
         releaseDates.set(row.igdb_id, first_release_date);
+        igdbRatings.set(row.igdb_id, igdb_rating ?? null);
         return row;
       });
       if (games.length) {
@@ -43,11 +45,16 @@ export async function catalogue(filters: CatalogueFilters) {
     }
   }
   const page = await localCatalogue({ ...filters, minRating: null }, igdbIds);
+  const enriched = page.map((game) => ({
+    ...game,
+    community_rating:
+      game.community_rating ?? (source === 'igdb' ? (igdbRatings.get(game.igdb_id) ?? null) : null),
+  }));
   const games = filters.minRating
-    ? page.filter(
+    ? enriched.filter(
         (game) => game.community_rating !== null && game.community_rating >= filters.minRating!,
       )
-    : page;
+    : enriched;
   const pageSize = igdbIds?.length ?? page.length;
   return {
     games: games.map((game) => {
@@ -59,7 +66,8 @@ export async function catalogue(filters: CatalogueFilters) {
         days_until_release: daysUntilRelease(timestamp),
       };
     }),
-    nextOffset: pageSize === 24 && filters.offset < 960 ? filters.offset + 24 : null,
+    nextOffset:
+      games.length > 0 && pageSize === 24 && filters.offset < 960 ? filters.offset + 24 : null,
     source,
     message:
       source === 'local'

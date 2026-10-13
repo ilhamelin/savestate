@@ -19,41 +19,32 @@ export default async function Notifications() {
     .order('created_at', { ascending: false })
     .limit(100);
   dbCheck(error);
-  const { data: players, error: profileError } = rows?.length
-    ? await db
-        .from('profiles')
-        .select('*')
-        .in(
-          'id',
-          rows.map((n) => n.actor_id),
-        )
-    : { data: [], error: null };
-  dbCheck(profileError);
+  const actorIds = [...new Set((rows ?? []).map((row) => row.actor_id))];
   const badgeIds = [
     ...new Set((rows ?? []).flatMap((row) => (row.badge_id ? [row.badge_id] : []))),
   ];
-  const badges = badgeIds.length
-    ? await db.from('badges').select('id,name').in('id', badgeIds)
-    : { data: [], error: null };
-  dbCheck(badges.error);
   const threadIds = [
     ...new Set((rows ?? []).flatMap((row) => (row.forum_thread_id ? [row.forum_thread_id] : []))),
   ];
-  const threads = threadIds.length
-    ? await db.from('forum_threads').select('id,category_id').in('id', threadIds)
-    : { data: [], error: null };
-  dbCheck(threads.error);
-  const trackerIds = (rows ?? []).flatMap((row) =>
-    row.itch_tracker_id ? [row.itch_tracker_id] : [],
-  );
-  const trackers = trackerIds.length
-    ? await db
-        .from('itch_trackers')
-        .select('id,metadata')
-        .in('id', trackerIds)
-        .eq('user_id', user.id)
-    : { data: [], error: null };
-  dbCheck(trackers.error);
+  const trackerIds = [
+    ...new Set((rows ?? []).flatMap((row) => (row.itch_tracker_id ? [row.itch_tracker_id] : []))),
+  ];
+  const [playersResult, badges, threads, trackers] = await Promise.all([
+    actorIds.length
+      ? db.from('profiles').select('id,username').in('id', actorIds)
+      : Promise.resolve({ data: [], error: null }),
+    badgeIds.length
+      ? db.from('badges').select('id,name').in('id', badgeIds)
+      : Promise.resolve({ data: [], error: null }),
+    threadIds.length
+      ? db.from('forum_threads').select('id,category_id').in('id', threadIds)
+      : Promise.resolve({ data: [], error: null }),
+    trackerIds.length
+      ? db.from('itch_trackers').select('id,metadata').in('id', trackerIds).eq('user_id', user.id)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  [playersResult, badges, threads, trackers].forEach((result) => dbCheck(result.error));
+  const players = playersResult.data;
   return (
     <>
       <div className="page-heading">

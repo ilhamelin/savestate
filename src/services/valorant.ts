@@ -13,6 +13,11 @@ import {
   valorantImage,
 } from '@/domain/valorant-profile';
 import { AppError } from '@/lib/http';
+class NoRecentValorantMatches extends AppError {
+  constructor() {
+    super('Esta cuenta no registra partidas recientes en Valorant.', 404);
+  }
+}
 async function json(url: string, headers: Record<string, string> = {}) {
   let response: Response;
   try {
@@ -25,6 +30,13 @@ async function json(url: string, headers: Record<string, string> = {}) {
   } catch {
     throw new AppError('El proveedor no respondió a tiempo.', 503);
   }
+  const payload: unknown = await response.json().catch(() => null);
+  if (
+    url.startsWith('https://api.henrikdev.xyz/') &&
+    Array.isArray(record(payload).errors) &&
+    (record(payload).errors as unknown[]).some((error) => record(error).code === 24)
+  )
+    throw new NoRecentValorantMatches();
   if (!response.ok)
     throw new AppError(
       response.status === 401 || response.status === 403
@@ -34,11 +46,8 @@ async function json(url: string, headers: Record<string, string> = {}) {
           : 'No se pudo consultar Valorant. Verifica el Riot ID y las credenciales del servidor.',
       response.status === 404 ? 404 : response.status === 429 ? 429 : 503,
     );
-  try {
-    return (await response.json()) as unknown;
-  } catch {
-    throw new AppError('Respuesta del proveedor inválida.', 503);
-  }
+  if (payload === null) throw new AppError('Respuesta del proveedor inválida.', 503);
+  return payload;
 }
 const decorativeCard = unstable_cache(
   async () => {
@@ -98,30 +107,57 @@ export async function inspectValorant(input: {
         )
       : Promise.resolve(null),
   ]);
+  const accountResult = results[1];
+  const accountData = record(
+    record(accountResult?.status === 'fulfilled' ? accountResult.value : null).data,
+  );
+  const accountRegion = accountData.region as ValorantRegion;
+  const trustedAccount = validIdentity(accountData, input);
+  let henrikRegion = input.region;
+  if (
+    henrikKey &&
+    trustedAccount &&
+    VALORANT_REGIONS.includes(accountRegion) &&
+    accountRegion !== input.region &&
+    (results[2]?.status === 'rejected' || results[3]?.status === 'rejected')
+  ) {
+    henrikRegion = accountRegion;
+    const retried = await Promise.allSettled([
+      json(`https://api.henrikdev.xyz/valorant/v2/mmr/${accountRegion}/${idPath}`, henrikHeaders),
+      json(
+        `https://api.henrikdev.xyz/valorant/v3/matches/${accountRegion}/${idPath}?size=5`,
+        henrikHeaders,
+      ),
+    ]);
+    retried.forEach((result, index) => {
+      if (result.status === 'fulfilled' || results[index + 2]?.status === 'rejected')
+        results[index + 2] = result;
+    });
+  }
   const values = results.map((result) => (result.status === 'fulfilled' ? result.value : null));
   const riotIdentity = validIdentity(record(values[0]), input);
-  const henrikAccountIdentity = validIdentity(record(record(values[1]).data), input);
-  const henrikMmrIdentity = validIdentity(record(record(values[2]).data), input);
-  const henrikIdentity = riotIdentity
-    ? ([henrikAccountIdentity, henrikMmrIdentity].find(
-        (value) => value?.puuid === riotIdentity.puuid,
-      ) ?? null)
-    : (henrikAccountIdentity ?? henrikMmrIdentity);
+  const accountCandidate = validIdentity(record(record(values[1]).data), input);
+  const mmrCandidate = validIdentity(record(record(values[2]).data), input);
+  // Riot and Henrik use different PUUID formats. Only compare IDs within Henrik.
+  const henrikConsistent =
+    !accountCandidate?.puuid ||
+    !mmrCandidate?.puuid ||
+    accountCandidate.puuid === mmrCandidate.puuid;
+  const henrikAccountIdentity = henrikConsistent ? accountCandidate : null;
+  const henrikMmrIdentity = henrikConsistent ? mmrCandidate : null;
+  const henrikIdentity = henrikAccountIdentity ?? henrikMmrIdentity;
   const identity = riotIdentity ?? henrikIdentity;
   if (!identity) {
     const failed = results.find((result) => result.status === 'rejected');
     if (failed?.status === 'rejected') throw failed.reason;
     throw new AppError('El proveedor no encontró esta cuenta.', 404);
   }
-  const henrikValid = Boolean(henrikIdentity && henrikIdentity.puuid === identity.puuid);
-  const accountIdentity = validIdentity(record(record(values[1]).data), input);
-  const mmrData = record(record(values[2]).data);
-  const mmrMatchesIdentity = !mmrData.puuid || mmrData.puuid === identity.puuid;
+  const henrikValid = Boolean(henrikIdentity);
   const henrik = normalizedHenrik(
-    henrikValid && accountIdentity?.puuid === identity.puuid ? values[1] : null,
-    henrikValid && mmrMatchesIdentity ? values[2] : null,
+    henrikAccountIdentity ? values[1] : null,
+    henrikMmrIdentity ? values[2] : null,
     henrikValid ? values[3] : null,
-    identity,
+    henrikIdentity ?? identity,
   );
   const shard = riotKey
     ? record(
@@ -134,7 +170,7 @@ export async function inspectValorant(input: {
   const activeShard = VALORANT_REGIONS.includes(shard.activeShard as ValorantRegion)
     ? (shard.activeShard as ValorantRegion)
     : null;
-  const region = activeShard ?? input.region;
+  const region = activeShard ?? henrikRegion;
   const encodedPuuid = encodeURIComponent(identity.puuid);
   const cross = async () => {
     if (!riotKey) return null;
@@ -213,7 +249,7 @@ export async function inspectValorant(input: {
   return {
     game: 'valorant',
     ...identity,
-    region: input.region,
+    region: henrikRegion,
     activeShard,
     verifiedAt: new Date().toISOString(),
     ...henrik,
@@ -227,5 +263,13 @@ export async function inspectValorant(input: {
     regionalLeaderboard: regional.regionalLeaderboard,
     riotCrossProfile,
     dataSource: henrikValid ? 'henrik_full' : 'riot_official',
+    valorantStatus: henrikValid
+      ? 'available'
+      : results.some(
+            (result) =>
+              result.status === 'rejected' && result.reason instanceof NoRecentValorantMatches,
+          )
+        ? 'no_recent_matches'
+        : 'unavailable',
   };
 }

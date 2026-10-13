@@ -54,7 +54,7 @@ export default async function ThreadPage({
         </div>
       </div>
       <ForumPagination page={page} total={data.total} base={`/forum/${category}/${thread_id}`} />
-      <ForumConversation {...data} />
+      <ForumConversation key={data.thread.id} {...data} page={page} />
       <ForumPagination page={page} total={data.total} base={`/forum/${category}/${thread_id}`} />
     </>
   );

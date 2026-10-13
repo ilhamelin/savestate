@@ -15,7 +15,7 @@ async function storeJson(file: string) {
   if (!response.ok) throw new Error('HSR metadata unavailable');
   return record(await response.json());
 }
-export const getHsrEnkaStore = unstable_cache(
+const cachedHsrEnkaStore = unstable_cache(
   async (): Promise<HsrEnkaStore> => {
     const results = await Promise.allSettled([
       storeJson('avatars'),
@@ -30,3 +30,19 @@ export const getHsrEnkaStore = unstable_cache(
   ['hsr-enka-store-v1'],
   { revalidate: 86400 },
 );
+let memoryStore: { value: HsrEnkaStore; expires: number } | null = null;
+let pendingStore: Promise<HsrEnkaStore> | null = null;
+export async function getHsrEnkaStore(): Promise<HsrEnkaStore> {
+  if (memoryStore && memoryStore.expires > Date.now()) return memoryStore.value;
+  if (!pendingStore) {
+    pendingStore = cachedHsrEnkaStore()
+      .then((value) => {
+        memoryStore = { value, expires: Date.now() + 30 * 60 * 1000 };
+        return value;
+      })
+      .finally(() => {
+        pendingStore = null;
+      });
+  }
+  return pendingStore;
+}

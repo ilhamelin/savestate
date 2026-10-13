@@ -15,16 +15,15 @@ export default async function ListDetail({ params }: { params: Promise<{ id: str
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const db = await serverClient(),
     user = await currentUser();
-  const { data: list, error } = await db.from('user_lists').select('*').eq('id', id).maybeSingle();
-  dbCheck(error);
+  const [listResult, itemsResult] = await Promise.all([
+    db.from('user_lists').select('*').eq('id', id).maybeSingle(),
+    db.from('list_items').select('*').eq('list_id', id).order('position_index').order('game_id'),
+  ]);
+  dbCheck(listResult.error);
+  dbCheck(itemsResult.error);
+  const list = listResult.data;
   if (!list) notFound();
-  const { data: items, error: itemError } = await db
-    .from('list_items')
-    .select('*')
-    .eq('list_id', id)
-    .order('position_index')
-    .order('game_id');
-  dbCheck(itemError);
+  const items = itemsResult.data;
   const { data: games, error: gameError } = items?.length
     ? await db
         .from('games')

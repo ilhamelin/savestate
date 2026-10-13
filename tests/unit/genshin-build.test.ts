@@ -57,6 +57,7 @@ test('Enka builds map Spanish names, actual equipment, talents, stats and accoun
               reliquary: { level: 21 },
               flat: {
                 icon: 'UI_RelicIcon_Test',
+                equipType: 'EQUIP_DRESS',
                 rankLevel: 5,
                 reliquaryMainstat: { mainPropId: 'FIGHT_PROP_CRITICAL_HURT', statValue: 62.2 },
               },

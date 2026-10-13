@@ -78,6 +78,29 @@ test('Valorant matches select exact PUUID or name and tag, preserving unknown re
   assert.equal(result.won, true);
   assert.equal(result.roundsWon, 13);
   assert.equal(result.startedAt, '2023-11-14T22:13:20.000Z');
+  const renamedId = {
+    ...match,
+    players: {
+      all_players: [{ ...player, puuid: 'different-provider-id', name: 'pLaYeR', tag: 'tag' }],
+    },
+  };
+  assert.equal(
+    henrikMatches({ data: [renamedId] }, 'target', 'Player', 'TAG')[0]?.agentName,
+    'Jett',
+  );
+  assert.equal(
+    henrikMatches(
+      {
+        data: [
+          { ...renamedId, players: { all_players: [{ ...player, puuid: 'other', tag: 'OTHER' }] } },
+        ],
+      },
+      'target',
+      'Player',
+      'TAG',
+    ).length,
+    0,
+  );
   assert.equal(
     henrikMatches(
       {

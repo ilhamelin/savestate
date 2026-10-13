@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Bell } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { browserClient } from '@/integrations/supabase/browser';
 import { useOnlineUsers } from '@/lib/presence';
 import { api } from '@/lib/client-api';
@@ -26,8 +26,7 @@ export function NotificationBell({ userId }: { userId: string }) {
     id = useId();
   const responding = useRef(false);
   const [responseId, setResponseId] = useState<string | null>(null);
-  const pathname = usePathname(),
-    router = useRouter();
+  const router = useRouter();
   useEffect(() => {
     let controller: AbortController | undefined;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -83,7 +82,7 @@ export function NotificationBell({ userId }: { userId: string }) {
       document.removeEventListener('visibilitychange', visible);
       void db.removeChannel(channel);
     };
-  }, [userId, id, pathname, revision]);
+  }, [userId, id, revision]);
   useEffect(() => {
     if (!open) return;
     panel.current?.querySelector<HTMLElement>('a,button')?.focus();

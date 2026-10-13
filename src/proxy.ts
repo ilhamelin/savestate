@@ -24,6 +24,7 @@ export async function proxy(request: NextRequest) {
   if (
     isConfigured() &&
     !request.nextUrl.pathname.startsWith('/api/catalogue') &&
+    request.nextUrl.pathname !== '/api/discord/interactions' &&
     request.nextUrl.pathname !== '/api/cron/check-itch'
   ) {
     const { url, key } = publicEnv();
@@ -55,5 +56,7 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|txt)$).*)',
+  ],
 };

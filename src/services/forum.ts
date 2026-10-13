@@ -9,6 +9,8 @@ import { AppError, dbCheck } from '@/lib/http';
 import { object, uuid } from '@/domain/validation';
 import {
   FORUM_REACTIONS,
+  FORUM_CATEGORIES,
+  validateForumReplyEdit,
   forumText,
   forumReaction,
   forumSearch,
@@ -65,7 +67,7 @@ async function enrich(
       db,
     ),
     ids.length
-      ? db.from('games').select('id,title,slug').in('id', ids)
+      ? db.from('games').select('id,title,slug,cover_url').in('id', ids)
       : Promise.resolve({ data: [], error: null }),
   ]);
   dbCheck(games.error);
@@ -78,7 +80,7 @@ async function enrich(
 }
 // Anonymous, public data only. No cookies or viewer-dependent values enter this cache.
 const cachedDirectory = unstable_cache(
-  async (projectUrl: string, search: string, sort: ForumSort) => {
+  async (projectUrl: string, search: string, sort: ForumSort, category: string) => {
     const db = createClient<Database>(projectUrl, publicEnv().key, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
@@ -88,6 +90,8 @@ const cachedDirectory = unstable_cache(
       .order('created_at', { referencedTable: 'forum_replies', ascending: false })
       .order('id', { referencedTable: 'forum_replies', ascending: false })
       .limit(1, { referencedTable: 'forum_replies' });
+    if (FORUM_CATEGORIES.includes(category as (typeof FORUM_CATEGORIES)[number]))
+      threads = threads.eq('category_id', category);
     if (search) threads = threads.ilike('title', forumSearchPattern(search));
     if (sort === 'unanswered') threads = threads.eq('replies_count', 0);
     if (sort === 'active') threads = threads.order('replies_count', { ascending: false });
@@ -97,7 +101,7 @@ const cachedDirectory = unstable_cache(
       threads
         .order('last_reply_at', { ascending: false })
         .order('id', { ascending: false })
-        .limit(search ? 20 : 5),
+        .limit(search ? 24 : 15),
     ]);
     [categories, stats, hot].forEach((r) => dbCheck(r.error));
     return {
@@ -106,11 +110,11 @@ const cachedDirectory = unstable_cache(
       hot: await enrich(hot.data ?? [], db),
     };
   },
-  ['forum-directory-v2'],
+  ['forum-directory-v3'],
   { revalidate: 30, tags: ['forum-directory'] },
 );
-export async function forumDirectory(search = '', sort: ForumSort = 'recent') {
-  return cachedDirectory(publicEnv().url, forumSearch(search), sort);
+export async function forumDirectory(search = '', sort: ForumSort = 'recent', category = '') {
+  return cachedDirectory(publicEnv().url, forumSearch(search), sort, category);
 }
 export async function forumCategories() {
   const result = await (
@@ -122,7 +126,13 @@ export async function forumCategories() {
   dbCheck(result.error);
   return result.data ?? [];
 }
-export async function forumThreads(category: string, page: number, game?: string) {
+export async function forumThreads(
+  category: string,
+  page: number,
+  game?: string,
+  sort: ForumSort = 'recent',
+  search = '',
+) {
   const db = await serverClient();
   let query = db
     .from('forum_threads')
@@ -131,9 +141,11 @@ export async function forumThreads(category: string, page: number, game?: string
     .order('id', { referencedTable: 'forum_replies', ascending: false })
     .limit(1, { referencedTable: 'forum_replies' })
     .eq('category_id', category)
-    .order('is_pinned', { ascending: false })
-    .order('last_reply_at', { ascending: false })
-    .order('id', { ascending: false });
+    .order('is_pinned', { ascending: false });
+  if (forumSearch(search)) query = query.ilike('title', forumSearchPattern(forumSearch(search)));
+  if (sort === 'unanswered') query = query.eq('replies_count', 0);
+  if (sort === 'active') query = query.order('replies_count', { ascending: false });
+  query = query.order('last_reply_at', { ascending: false }).order('id', { ascending: false });
   if (game) query = query.eq('game_id', uuid(game));
   const result = await query.range((page - 1) * 20, page * 20 - 1);
   dbCheck(result.error);
@@ -281,6 +293,53 @@ export async function forumMutation(input: unknown) {
       .single();
     dbCheck(result.error);
     revalidatePath('/forum');
+    revalidateTag('forum-directory', { expire: 0 });
+    return result.data;
+  }
+  if (data.action === 'edit_reply' || data.action === 'delete_reply') {
+    const validated =
+      data.action === 'edit_reply'
+        ? validateForumReplyEdit(data)
+        : { reply_id: uuid(data.reply_id), content: '' };
+    const reply = await db
+      .from('forum_replies')
+      .select('thread_id')
+      .eq('id', validated.reply_id)
+      .eq('user_id', user.id)
+      .maybeSingle();
+    dbCheck(reply.error);
+    if (!reply.data) throw new AppError('No existe una respuesta propia con ese ID.', 404);
+    const parent = await db
+      .from('forum_threads')
+      .select('is_locked,category_id')
+      .eq('id', reply.data.thread_id)
+      .maybeSingle();
+    dbCheck(parent.error);
+    if (!parent.data || parent.data.is_locked) throw new AppError('Este hilo está cerrado.', 409);
+    let result;
+    if (data.action === 'edit_reply') {
+      const content = cleanMarkdown(validated.content);
+      validateForumReplyEdit({ ...validated, content });
+      // SQL forum_reply_touch sets updated_at; authenticated may update only content.
+      result = await db
+        .from('forum_replies')
+        .update({ content })
+        .eq('id', validated.reply_id)
+        .eq('user_id', user.id)
+        .select('id')
+        .single();
+    } else
+      result = await db
+        .from('forum_replies')
+        .delete()
+        .eq('id', validated.reply_id)
+        .eq('user_id', user.id)
+        .select('id')
+        .single();
+    dbCheck(result.error);
+    revalidatePath('/forum');
+    revalidatePath('/forum/' + parent.data.category_id);
+    revalidatePath('/forum/' + parent.data.category_id + '/' + reply.data.thread_id);
     revalidateTag('forum-directory', { expire: 0 });
     return result.data;
   }

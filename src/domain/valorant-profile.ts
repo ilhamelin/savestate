@@ -32,14 +32,15 @@ export function henrikMatches(
       metadata = record(match.metadata);
     const players = record(match.players).all_players;
     if (!Array.isArray(players) || typeof metadata.matchid !== 'string') return [];
-    const player = players
-      .map(record)
-      .find(
+    const candidates = players.map(record);
+    const player =
+      candidates.find((item) => item.puuid === puuid) ??
+      candidates.find(
         (item) =>
-          item.puuid === puuid ||
-          (!item.puuid &&
-            String(item.name).toLowerCase() === name.toLowerCase() &&
-            String(item.tag).toLowerCase() === tag.toLowerCase()),
+          typeof item.name === 'string' &&
+          typeof item.tag === 'string' &&
+          String(item.name).toLowerCase() === name.toLowerCase() &&
+          String(item.tag).toLowerCase() === tag.toLowerCase(),
       );
     if (!player) return [];
     const stats = record(player.stats),

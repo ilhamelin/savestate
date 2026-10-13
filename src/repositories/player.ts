@@ -83,24 +83,24 @@ export async function libraryHoursFor(userId: string) {
 }
 export async function libraryFor(userId: string) {
   const db = await serverClient();
-  const {
-    data: rows,
-    error,
-    count,
-  } = await db
-    .from('user_games')
-    .select('*', { count: 'exact' })
-    .eq('user_id', userId)
-    .order('updated_at', { ascending: false })
-    .limit(500);
-  dbCheck(error);
-  const { data: favorites, error: favoriteError } = await db
-    .from('user_games')
-    .select('*')
-    .eq('user_id', userId)
-    .not('favorite_position', 'is', null)
-    .order('favorite_position');
-  dbCheck(favoriteError);
+  const [rowsResult, favoritesResult] = await Promise.all([
+    db
+      .from('user_games')
+      .select('*', { count: 'exact' })
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false })
+      .limit(500),
+    db
+      .from('user_games')
+      .select('*')
+      .eq('user_id', userId)
+      .not('favorite_position', 'is', null)
+      .order('favorite_position'),
+  ]);
+  dbCheck(rowsResult.error);
+  dbCheck(favoritesResult.error);
+  const { data: rows, count } = rowsResult;
+  const { data: favorites } = favoritesResult;
   const entries = [
     ...new Map([...(rows ?? []), ...(favorites ?? [])].map((entry) => [entry.id, entry])).values(),
   ];

@@ -56,8 +56,11 @@ export default async function FeedPage({
   const { data: events, error } = await query.limit(50);
   dbCheck(error);
   const gameIds = [...new Set((events ?? []).map((event) => event.target_game_id).filter(Boolean))];
+  const eventUserIds = [...new Set((events ?? []).map((event) => event.user_id))];
   const [players, games] = await Promise.all([
-    db.from('profiles').select('*').in('id', ids),
+    eventUserIds.length
+      ? db.from('profiles').select('*').in('id', eventUserIds)
+      : Promise.resolve({ data: [], error: null }),
     gameIds.length
       ? db.from('games').select('*').in('id', gameIds)
       : Promise.resolve({ data: [], error: null }),

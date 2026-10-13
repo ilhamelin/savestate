@@ -114,7 +114,10 @@ test('social bridge routes enforce session, origin, quota and sanitized embeds; 
         body: JSON.stringify({ content }),
       });
     state.authenticated = false;
-    assert.equal((await discord.GET()).status, 401);
+    assert.equal(
+      (await discord.GET(new Request('https://savestate.test/api/discord/messages'))).status,
+      401,
+    );
     assert.equal((await discord.POST(request())).status, 401);
     state.authenticated = true;
     assert.equal((await discord.POST(request('https://evil.test'))).status, 403);
@@ -129,9 +132,15 @@ test('social bridge routes enforce session, origin, quota and sanitized embeds; 
     state.retry = 0;
     assert.equal((await discord.POST(request())).status, 200);
     assert.equal(state.sends, 1);
-    assert.equal((await discord.GET()).status, 200);
+    assert.equal(
+      (await discord.GET(new Request('https://savestate.test/api/discord/messages'))).status,
+      200,
+    );
     state.status = 429;
-    assert.equal((await discord.GET()).status, 429);
+    assert.equal(
+      (await discord.GET(new Request('https://savestate.test/api/discord/messages'))).status,
+      429,
+    );
     state.status = 200;
     const embed = await embeds.GET(
       new Request(

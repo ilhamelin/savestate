@@ -15,7 +15,7 @@ export function ProfileWallpaper({
       {/* A decorative image avoids injecting an untrusted URL into CSS. */}
       {url ? (
         <div className="wallpaper-backdrop" aria-hidden="true">
-          <img className="wallpaper-image" src={url} alt="" />
+          <img className="wallpaper-image" src={url} alt="" decoding="async" />
         </div>
       ) : null}
       <div className="wallpaper-content">{children}</div>

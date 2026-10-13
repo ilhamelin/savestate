@@ -22,47 +22,41 @@ export async function notificationSummary(): Promise<NotificationSummary> {
   dbCheck(recent.error);
   dbCheck(unread.error);
   const rows = recent.data ?? [];
-  const profiles = rows.length
-    ? await db
-        .from('profiles')
-        .select('id,username')
-        .in('id', [...new Set(rows.map((n) => n.actor_id))])
-    : { data: [], error: null };
-  dbCheck(profiles.error);
+  const actorIds = [...new Set([...rows.map((n) => n.actor_id), user.id])];
   const badgeIds = [...new Set(rows.flatMap((row) => (row.badge_id ? [row.badge_id] : [])))];
-  const badges = badgeIds.length
-    ? await db.from('badges').select('id,name').in('id', badgeIds)
-    : { data: [], error: null };
-  dbCheck(badges.error);
   const threadIds = [
     ...new Set(rows.flatMap((row) => (row.forum_thread_id ? [row.forum_thread_id] : []))),
   ];
-  const threads = threadIds.length
-    ? await db.from('forum_threads').select('id,category_id').in('id', threadIds)
-    : { data: [], error: null };
-  dbCheck(threads.error);
   const requestActors = [
     ...new Set(rows.filter((row) => row.kind === 'friend_request').map((row) => row.actor_id)),
   ];
-  const friendships = requestActors.length
-    ? await db
-        .from('friendships')
-        .select('id,sender_id,created_at')
-        .eq('receiver_id', user.id)
-        .eq('status', 'pending')
-        .in('sender_id', requestActors)
-    : { data: [], error: null };
-  dbCheck(friendships.error);
+  const trackerIds = [
+    ...new Set(rows.flatMap((row) => (row.itch_tracker_id ? [row.itch_tracker_id] : []))),
+  ];
+  const [profiles, badges, threads, friendships, trackers] = await Promise.all([
+    rows.length
+      ? db.from('profiles').select('id,username').in('id', actorIds)
+      : Promise.resolve({ data: [], error: null }),
+    badgeIds.length
+      ? db.from('badges').select('id,name').in('id', badgeIds)
+      : Promise.resolve({ data: [], error: null }),
+    threadIds.length
+      ? db.from('forum_threads').select('id,category_id').in('id', threadIds)
+      : Promise.resolve({ data: [], error: null }),
+    requestActors.length
+      ? db
+          .from('friendships')
+          .select('id,sender_id,created_at')
+          .eq('receiver_id', user.id)
+          .eq('status', 'pending')
+          .in('sender_id', requestActors)
+      : Promise.resolve({ data: [], error: null }),
+    trackerIds.length
+      ? db.from('itch_trackers').select('id,metadata').in('id', trackerIds).eq('user_id', user.id)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  [profiles, badges, threads, friendships, trackers].forEach((result) => dbCheck(result.error));
   const seenRequests = new Set<string>();
-  const trackerIds = rows.flatMap((row) => (row.itch_tracker_id ? [row.itch_tracker_id] : []));
-  const trackers = trackerIds.length
-    ? await db
-        .from('itch_trackers')
-        .select('id,metadata')
-        .in('id', trackerIds)
-        .eq('user_id', user.id)
-    : { data: [], error: null };
-  dbCheck(trackers.error);
   return {
     unreadCount: unread.count ?? 0,
     generatedAt: new Date().toISOString(),

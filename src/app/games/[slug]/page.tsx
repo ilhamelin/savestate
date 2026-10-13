@@ -73,7 +73,7 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
     entries.length
       ? db
           .from('profiles')
-          .select('*')
+          .select('id,username')
           .in(
             'id',
             entries.map((entry) => entry.user_id),
@@ -89,7 +89,7 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
   const { data: commentAuthors, error: authorsError } = commentRows.data?.length
     ? await db
         .from('profiles')
-        .select('*')
+        .select('id,username')
         .in(
           'id',
           commentRows.data.map((comment) => comment.user_id),
@@ -182,7 +182,15 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
         </div>
         <p className="muted">Las bibliotecas privadas se excluyen de estos cálculos.</p>
       </section>
-      <GameForum gameId={game.id} />
+      <Suspense
+        fallback={
+          <section className="panel muted" aria-busy="true">
+            Cargando debates y momentos de la comunidad…
+          </section>
+        }
+      >
+        <GameForum gameId={game.id} />
+      </Suspense>
       <section id="write-review" className="panel">
         <h2>Tu reseña, tu perspectiva.</h2>
         {user ? (

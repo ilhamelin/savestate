@@ -102,7 +102,7 @@ const inspectCached = unstable_cache(
     }
     return inspectValorant(input);
   },
-  ['competitive-tracker-v5'],
+  ['competitive-tracker-v6'],
   { revalidate: 60 },
 );
 export async function inspectCompetitive(input: unknown) {

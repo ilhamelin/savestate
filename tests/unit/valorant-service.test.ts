@@ -38,6 +38,8 @@ test('Valorant dual integration isolates credentials, handles partial failure an
     oldHenrik = process.env.HENRIK_API_KEY;
   const calls: { url: string; headers: Record<string, string> }[] = [];
   let mode = 'henrik';
+  const riotPuuid = 'R'.repeat(78);
+  const henrikPuuid = '488cd301-a060-4f75-bc55-6327e918a590';
   try {
     globalThis.fetch = async (input, init) => {
       const url = String(input);
@@ -49,13 +51,17 @@ test('Valorant dual integration isolates credentials, handles partial failure an
       if (url.includes('api.henrikdev.xyz')) {
         assert.equal((init?.headers as Record<string, string>).Authorization, 'henrik-test');
         if (mode === 'riot') return new Response('', { status: 503 });
+        if (mode === 'no-recent') return Response.json({ errors: [{ code: 24 }] }, { status: 400 });
+        if (mode === 'region' && (url.includes('/mmr/latam/') || url.includes('/matches/latam/')))
+          return new Response('', { status: 404 });
         if (url.includes('/account/'))
           return Response.json({
             data: {
-              name: 'Player',
-              tag: 'TAG',
-              puuid: mode === 'mismatch' ? 'other' : 'target',
+              name: mode === 'dual' ? 'pLaYeR' : 'Player',
+              tag: mode === 'dual' ? 'tag' : 'TAG',
+              puuid: mode === 'mismatch' ? 'other' : mode === 'dual' ? henrikPuuid : 'target',
               account_level: 50,
+              region: mode === 'region' ? 'eu' : mode === 'malicious' ? 'evil.example' : 'latam',
             },
           });
         if (url.includes('/mmr/'))
@@ -63,14 +69,40 @@ test('Valorant dual integration isolates credentials, handles partial failure an
             data: {
               name: 'Player',
               tag: 'TAG',
-              puuid: 'target',
+              puuid: mode === 'dual' ? henrikPuuid : 'target',
               current_data: { currenttierpatched: 'Gold 3', mmr_change_to_last_game: 18 },
             },
           });
-        return Response.json({ data: [] });
+        return Response.json({
+          data:
+            mode === 'dual' || mode === 'region'
+              ? [
+                  {
+                    metadata: { matchid: 'dual-match', map: 'Ascent', mode: 'Competitive' },
+                    players: {
+                      all_players: [
+                        {
+                          puuid: henrikPuuid,
+                          name: 'PLAYER',
+                          tag: 'tag',
+                          team: 'Red',
+                          character: 'Jett',
+                          stats: { kills: 20 },
+                        },
+                      ],
+                    },
+                    teams: { red: { has_won: true } },
+                  },
+                ]
+              : [],
+        });
       }
       if (url.includes('accounts/by-riot-id'))
-        return Response.json({ gameName: 'Player', tagLine: 'TAG', puuid: 'target' });
+        return Response.json({
+          gameName: 'Player',
+          tagLine: 'TAG',
+          puuid: mode === 'dual' ? riotPuuid : 'target',
+        });
       if (url.includes('active-shards'))
         return Response.json({ activeShard: 'evil.example/steal' });
       if (url.includes('summoner'))
@@ -118,11 +150,36 @@ test('Valorant dual integration isolates credentials, handles partial failure an
     assert.equal(data.accountLevel, 50);
     assert.equal(data.currentRank, 'Gold 3');
     assert.equal(data.lastMmrChange, 18);
+    mode = 'region';
+    data = await inspectValorant(input);
+    assert.equal(data.dataSource, 'henrik_full');
+    assert.equal(data.region, 'eu');
+    assert.equal(data.currentRank, 'Gold 3');
+    assert.equal(data.matches[0]?.matchId, 'dual-match');
+    assert.ok(calls.some((call) => call.url.includes('/mmr/eu/')));
+    assert.ok(calls.some((call) => call.url.includes('/matches/eu/')));
+    mode = 'dual';
+    process.env.RIOT_API_KEY = 'riot-test';
+    data = await inspectValorant(input);
+    assert.equal(data.puuid, riotPuuid);
+    assert.equal(data.dataSource, 'henrik_full');
+    assert.equal(data.accountLevel, 50);
+    assert.equal(data.currentRank, 'Gold 3');
+    assert.equal(data.matches[0]?.matchId, 'dual-match');
+    assert.equal(data.matches[0]?.kills, 20);
+    assert.ok(
+      calls.some((call) => call.url.includes(`active-shards/by-game/val/by-puuid/${riotPuuid}`)),
+    );
     mode = 'mismatch';
     process.env.RIOT_API_KEY = 'riot-test';
     data = await inspectValorant(input);
     assert.equal(data.accountLevel, null);
-    assert.equal(data.currentRank, 'Gold 3');
+    assert.equal(data.dataSource, 'riot_official');
+    mode = 'no-recent';
+    data = await inspectValorant(input);
+    assert.equal(data.valorantStatus, 'no_recent_matches');
+    assert.equal(data.riotCrossProfile?.summonerLevel, 200);
+    assert.equal(data.currentRank, 'Clasificación regional #8');
     process.env.RIOT_API_KEY = 'riot-test';
     mode = 'riot';
     delete process.env.HENRIK_API_KEY;

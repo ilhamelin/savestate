@@ -28,7 +28,7 @@ export default async function SettingsPage() {
   const friends = friendsResult.data ?? [];
   const ids = friends.map((f) => (f.sender_id === user.id ? f.receiver_id : f.sender_id));
   const { data: players, error } = ids.length
-    ? await db.from('profiles').select('*').in('id', ids)
+    ? await db.from('profiles').select('id,username').in('id', ids)
     : { data: [], error: null };
   dbCheck(error);
   const { data: claims } = await db.auth.getClaims();

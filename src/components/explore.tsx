@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { Search } from 'lucide-react';
+import { resolveCanonicalPlatform } from '@/integrations/igdb/query';
 import { GameCard } from '@/components/game-card';
 import type { Game } from '@/domain/model';
 import { readJsonResponse } from '@/lib/api-response';
@@ -25,7 +26,7 @@ export function Explore({
 }) {
   const [filters, setFilters] = useState(() => ({
     q: initial.q ?? '',
-    platform: initial.platform ?? '',
+    platform: resolveCanonicalPlatform(initial.platform ?? '').raw,
     genre: initial.genre ?? '',
     year: initial.year ?? '',
     rating: initial.rating ?? '',
@@ -36,6 +37,7 @@ export function Explore({
     offset: 0,
   }));
   const { q, platform, genre, year, rating, sort, offset } = filters;
+  const effectiveYear = /^(19[5-9]\d|20\d\d|2100)$/.test(year.trim()) ? year.trim() : '';
   const [attempt, setAttempt] = useState(0);
   const cacheRef = useRef<Map<string, Result>>(new Map());
   const delayRef = useRef(0);
@@ -45,14 +47,38 @@ export function Explore({
     if (filters[key] === value && offset === 0) return;
     requestRevision.current++;
     const next = { ...filters, [key]: value, offset: 0 };
+    const validYear = /^(19[5-9]\d|20\d\d|2100)$/.test(next.year.trim()) ? next.year.trim() : '';
+    if (
+      key === 'year' &&
+      validYear &&
+      ((next.sort === 'classics' && Number(validYear) >= 2010) ||
+        (next.sort === 'upcoming' && Number(validYear) < new Date().getUTCFullYear()))
+    )
+      next.sort = 'relevance';
     const { offset: nextOffset, ...query } = next;
     const cached =
-      nextOffset === 0 ? cacheRef.current.get(new URLSearchParams(query).toString()) : undefined;
-    delayRef.current = ['q', 'platform', 'year'].includes(key) ? 300 : 0;
+      nextOffset === 0 && (!next.year.trim() || validYear)
+        ? cacheRef.current.get(new URLSearchParams({ ...query, year: validYear }).toString())
+        : undefined;
+    delayRef.current = ['q', 'year'].includes(key) ? 300 : 0;
     setError('');
     if (cached) setResult(cached);
-    setLoading(!cached);
+    setLoading(next.year.trim() && !validYear ? false : !cached);
     setFilters(next);
+  }
+  function clearFilters() {
+    requestRevision.current++;
+    delayRef.current = 0;
+    setError('');
+    setFilters({
+      q: '',
+      platform: '',
+      genre: '',
+      year: '',
+      rating: '',
+      sort: 'relevance',
+      offset: 0,
+    });
   }
   const [result, setResult] = useState<Result>({
       games: [],
@@ -70,13 +96,25 @@ export function Explore({
   useEffect(() => {
     const controller = new AbortController();
     const version = requestRevision.current;
-    const params = new URLSearchParams({ q, platform, genre, year, rating, sort });
+    if (year.trim() && !effectiveYear) {
+      const timer = window.setTimeout(() => setLoading(false), 0);
+      return () => {
+        window.clearTimeout(timer);
+        controller.abort();
+      };
+    }
+    const params = new URLSearchParams({ q, platform, genre, year: effectiveYear, rating, sort });
     const key = params.toString();
     window.history.replaceState(null, '', `/explore?${params}`);
     const retry = lastAttempt.current !== attempt;
     lastAttempt.current = attempt;
-    // Cache hits are already restored in the input event, avoiding a loading frame.
-    if (!offset && !retry && cacheRef.current.has(key)) return () => controller.abort();
+    if (!offset && !retry && cacheRef.current.has(key)) {
+      // Synchronize an external cache hit after cancelled requests or clearing filters.
+      setResult(cacheRef.current.get(key)!);
+      setError('');
+      setLoading(false);
+      return () => controller.abort();
+    }
     params.set('offset', String(offset));
     const timer = setTimeout(async () => {
       setLoading(true);
@@ -114,7 +152,7 @@ export function Explore({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [q, platform, genre, year, rating, sort, offset, attempt]);
+  }, [q, platform, genre, year, effectiveYear, rating, sort, offset, attempt]);
   return (
     <>
       <div className="panel">
@@ -137,6 +175,15 @@ export function Explore({
               {label}
             </button>
           ))}
+          {q || platform || genre || year || rating || sort !== 'relevance' ? (
+            <button
+              type="button"
+              className="button small outline explore-clear-filters"
+              onClick={clearFilters}
+            >
+              ✕ Limpiar filtros
+            </button>
+          ) : null}
         </div>
         <form className="search-grid" onSubmit={(event) => event.preventDefault()} role="search">
           <label>
@@ -152,12 +199,35 @@ export function Explore({
           </label>
           <label>
             Plataforma
-            <input
-              value={platform}
-              onChange={(event) => change('platform', event.target.value)}
-              maxLength={100}
-              placeholder="Nombre exacto"
-            />
+            <select value={platform} onChange={(event) => change('platform', event.target.value)}>
+              {[
+                ['', 'Todas'],
+                ['PC (Microsoft Windows)', 'PC (Windows)'],
+                ['PlayStation 5', 'PlayStation 5'],
+                ['PlayStation 4', 'PlayStation 4'],
+                ['PlayStation 3', 'PlayStation 3'],
+                ['PlayStation 2', 'PlayStation 2'],
+                ['PlayStation', 'PlayStation (PS1)'],
+                ['Nintendo Switch', 'Nintendo Switch'],
+                ['Xbox Series X|S', 'Xbox Series X|S'],
+                ['Xbox One', 'Xbox One'],
+                ['Xbox 360', 'Xbox 360'],
+                ['Super Nintendo Entertainment System', 'Super Nintendo (SNES)'],
+                ['Nintendo 64', 'Nintendo 64'],
+                ['Game Boy Advance', 'Game Boy Advance'],
+                ['Mac', 'Mac'],
+                ['Linux', 'Linux'],
+                ['Android', 'Android'],
+                ['iOS', 'iOS'],
+              ].map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+              {platform && !resolveCanonicalPlatform(platform).canonical ? (
+                <option value={platform}>{platform}</option>
+              ) : null}
+            </select>
           </label>
           <label>
             Género
@@ -182,16 +252,17 @@ export function Explore({
           <label>
             Año
             <input
-              type="number"
-              min="1950"
-              max="2100"
+              type="text"
+              inputMode="numeric"
+              maxLength={4}
+              aria-describedby="explore-year-hint"
               placeholder="Todos"
               value={year}
               onChange={(event) => change('year', event.target.value)}
             />
           </label>
           <label>
-            Nota comunitaria
+            Valoración mínima
             <select value={rating} onChange={(event) => change('rating', event.target.value)}>
               <option value="">Cualquiera</option>
               {[5, 6, 7, 8, 9].map((value) => (
@@ -201,16 +272,16 @@ export function Explore({
               ))}
             </select>
           </label>
-          <label>
-            Ordenar por
-            <select value={sort} onChange={(event) => change('sort', event.target.value)}>
-              <option value="relevance">Relevancia / más opiniones en IGDB</option>
-              <option value="recent">Lanzamientos recientes</option>
-              <option value="upcoming">Próximos lanzamientos (Cuenta regresiva)</option>
-              <option value="classics">Clásicos (antes de 2010)</option>
-            </select>
-          </label>
         </form>
+        {year.trim() && !effectiveYear ? (
+          <p id="explore-year-hint" className="muted explore-year-hint">
+            Completa un año de cuatro cifras entre 1950 y 2100 para buscar.
+          </p>
+        ) : (
+          <span id="explore-year-hint" className="sr-only">
+            Año entre 1950 y 2100.
+          </span>
+        )}
       </div>
       <div role="status" className="muted">
         {loading ? 'Buscando checkpoint…' : `${result.games.length} juegos encontrados`}

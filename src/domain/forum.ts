@@ -78,7 +78,7 @@ export type ForumAuthor = Pick<
 > & { badges: string[] };
 export type ForumThreadSummary = ForumThread & {
   author: ForumAuthor | null;
-  game: { title: string; slug: string } | null;
+  game: { title: string; slug: string; cover_url?: string | null } | null;
   lastAuthor: ForumAuthor | null;
 };
 export type ForumReplyView = ForumReply & {
@@ -127,4 +127,45 @@ export function forumReaction(input: unknown): ForumReactionType {
   if (!FORUM_REACTIONS.includes(input as ForumReactionType))
     throw new ValidationError('Reacción inválida.');
   return input as ForumReactionType;
+}
+
+export function extractForumExcerpt(markdown: string, maxLength = 150) {
+  const hasSpoilers = /\|\|[^\n]+?\|\|/.test(markdown);
+  const hasCode = /```[\s\S]*?```/.test(markdown);
+  const cleaned = markdown
+    .replace(/```[\s\S]*?```/g, ' [Código] ')
+    .replace(/\|\|[\s\S]*?\|\|/g, ' [Spoiler] ')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/[#>*_`~-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const limit = Number.isFinite(maxLength) ? Math.max(0, Math.floor(maxLength)) : 150;
+  const chars = Array.from(cleaned);
+  let excerpt = cleaned;
+  if (chars.length > limit) {
+    let prefix = chars
+      .slice(0, Math.max(0, limit - 1))
+      .join('')
+      .trimEnd();
+    const boundary = prefix.lastIndexOf(' ');
+    if (boundary > prefix.length * 0.65) prefix = prefix.slice(0, boundary);
+    excerpt = limit ? prefix + '…' : '';
+  }
+  return { excerpt, hasSpoilers, hasCode };
+}
+export function validateForumReplyEdit(input: unknown) {
+  const data = object(input);
+  return { reply_id: uuid(data.reply_id), content: forumText(data.content, 'Respuesta', 8000) };
+}
+export function optimisticForumReaction(
+  reply: ForumReplyView,
+  type: ForumReactionType,
+): ForumReplyView {
+  const counts = { ...reply.counts };
+  if (reply.ownReaction) counts[reply.ownReaction] = Math.max(0, counts[reply.ownReaction] - 1);
+  const ownReaction = reply.ownReaction === type ? null : type;
+  if (ownReaction) counts[ownReaction]++;
+  return { ...reply, counts, ownReaction };
 }

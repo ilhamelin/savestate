@@ -64,8 +64,12 @@ export const fetchCatalogue = unstable_cache(
     return (data as IgdbGame[]).map((game) => ({
       ...mapIgdbGame(game),
       first_release_date: game.first_release_date ?? null,
+      igdb_rating:
+        typeof game.total_rating === 'number' && Number.isFinite(game.total_rating)
+          ? Math.round(game.total_rating) / 10
+          : null,
     }));
   },
-  ['igdb-catalogue-v2'],
+  ['igdb-catalogue-v3'],
   { revalidate: 86400 },
 );

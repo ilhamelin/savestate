@@ -1,6 +1,13 @@
 import { object, text, ValidationError } from './validation.ts';
 import { record, nonnegative } from './game-live-telemetry.ts';
-import { genshinBuild, type EnkaStore, type GenshinShowcaseCharacter } from './genshin-build.ts';
+import {
+  genshinBuild,
+  resolveGenshinProfileIconUrl,
+  resolveGenshinNameCardUrl,
+  resolveGenshinRegionLabel,
+  type EnkaStore,
+  type GenshinShowcaseCharacter,
+} from './genshin-build.ts';
 import { steamProfile } from './steam.ts';
 import type { HsrProfile } from './hsr-profile.ts';
 import type { RustProfile } from './rust-profile.ts';
@@ -26,6 +33,12 @@ export type GenshinProfile = {
   fetterCount: number;
   stygian: string | null;
   theater: string | null;
+  profileIconUrl: string | null;
+  nameCardUrl: string | null;
+  regionLabel: string | null;
+  stygianIndex: number | null;
+  stygianSeconds: number | null;
+  theaterStars: number | null;
   showcase: GenshinShowcaseCharacter[];
 };
 export type ValorantProfile = {
@@ -191,6 +204,15 @@ export function normalizedGenshin(
       ? `Nivel ${player.stygianIndex} · ${nonnegative(player.stygianSeconds) ?? 0}s`
       : null,
     theater: nonnegative(player.theaterActIndex) ? `Acto ${player.theaterActIndex}` : null,
+    profileIconUrl:
+      resolveGenshinProfileIconUrl(record(player.profilePicture), store) ??
+      showcase[0]?.iconUrl ??
+      null,
+    nameCardUrl: resolveGenshinNameCardUrl(nonnegative(player.nameCardId) ?? undefined, store),
+    regionLabel: resolveGenshinRegionLabel(uid),
+    stygianIndex: nonnegative(player.stygianIndex),
+    stygianSeconds: nonnegative(player.stygianSeconds),
+    theaterStars: nonnegative(player.theaterStarIndex),
     showcase,
   };
 }

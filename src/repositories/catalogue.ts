@@ -2,6 +2,7 @@ import 'server-only';
 import { createClient } from '@supabase/supabase-js';
 import { publicEnv } from '@/lib/env';
 import type { Database } from '@/lib/database.types';
+import { resolveCanonicalPlatform } from '@/integrations/igdb/query';
 import type { CatalogueFilters } from '@/integrations/igdb/query';
 import { dbCheck } from '@/lib/http';
 export function publicCatalogueClient() {
@@ -22,9 +23,11 @@ export async function localCatalogue(filters: CatalogueFilters, igdbIds?: number
     query = query.in('igdb_id', igdbIds);
   } else {
     query = query.range(filters.offset, filters.offset + 23);
-    if (filters.sort === 'classics') query = query.lt('release_year', 2010);
-    if (filters.sort === 'recent') query = query.lte('release_year', new Date().getUTCFullYear());
-    if (filters.sort === 'upcoming') query = query.gte('release_year', new Date().getUTCFullYear());
+    if (!filters.year && filters.sort === 'classics') query = query.lt('release_year', 2010);
+    if (!filters.year && filters.sort === 'recent')
+      query = query.lte('release_year', new Date().getUTCFullYear());
+    if (!filters.year && filters.sort === 'upcoming')
+      query = query.gte('release_year', new Date().getUTCFullYear());
   }
   // Remove PostgREST structural characters. External IGDB uses independently escaped strings.
   if (!igdbIds && filters.q) {
@@ -36,7 +39,10 @@ export async function localCatalogue(filters: CatalogueFilters, igdbIds?: number
           .join(','),
       );
   }
-  if (!igdbIds && filters.platform) query = query.contains('platforms', [filters.platform]);
+  if (!igdbIds && filters.platform) {
+    const { raw } = resolveCanonicalPlatform(filters.platform);
+    query = query.contains('platforms', [raw]);
+  }
   if (!igdbIds && filters.genre) query = query.contains('genres', [filters.genre]);
   if (!igdbIds && filters.year) query = query.eq('release_year', filters.year);
   const { data, error } = await query;
