@@ -206,33 +206,35 @@ Dentro del **Bloque 3 (Dossier de la Serie / Descripción de la Partida)** en `/
     - `background-size: cover; background-position: center top; background-repeat: no-repeat;`
   - De este modo, el retrato de **Faker ("Shhh")** a la izquierda y el horizonte urbano iluminado a la derecha se aprecian con nitidez detrás de la interfaz.
 
-### 7.2. Paneles de Cristal Translúcido (Glassmorphism Hextech + Oro/Carmesí T1)
-- Todos los paneles dentro de `.worlds-hub` (`.worlds-hub .panel`, `.worlds-stage-node`, `.worlds-match-node`, `.worlds-roster-row`, `.worlds-telemetry-card`) usan acabado de cristal translúcido para dejar ver el fondo de Faker sin sacrificar legibilidad:
-  - `background: rgba(8, 12, 20, 0.66);`
-  - `backdrop-filter: blur(14px) saturate(135%);`
-  - `-webkit-backdrop-filter: blur(14px) saturate(135%);`
-  - `border: 1px solid rgba(212, 175, 55, 0.36);`
-  - `box-shadow: 0 18px 46px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 215, 128, 0.15);`
-- Acentos de color temáticos de Worlds + T1 Faker:
-  - Oro Summoner's Cup: `#d4af37` / `#f5d061`
-  - Carmesí T1 / Lado Rojo: `#ff2a55` / `#ef4444`
-  - Azul Hextech / Lado Azul: `#00f0ff` / `#38bdf8`
+### 7.2. Paneles de Cristal Translúcido (Glassmorphism Hextech + Oro/Carmesí T1) Compatibles con `<WorldsRosters />` y `<WorldsPerformance />`
+- Conservar intactos los componentes `<WorldsRosters />` y `<WorldsPerformance />` (`src/components/worlds-performance.tsx`) y el polling de 30s implementados en el commit `a4cdb53`.
+- Actualizar en `src/app/globals.css` tanto `.worlds-hub .panel` como `.worlds-description` (que actualmente tiene un `linear-gradient` opaco en la línea 6851), `.worlds-stage-node`, `.worlds-match-node`, `.worlds-faceoff > div`, `.worlds-roster-row`, `.worlds-objectives` y `.worlds-preview-metrics > div` para que usen acabado de cristal translúcido y dejen ver el fondo de Faker en los 3 bloques sin sacrificar legibilidad:
+  - `.worlds-hub .panel`, `.worlds-description`:
+    - `background: linear-gradient(135deg, rgba(8, 12, 20, 0.68), rgba(12, 17, 28, 0.62));`
+    - `backdrop-filter: blur(14px) saturate(135%);`
+    - `-webkit-backdrop-filter: blur(14px) saturate(135%);`
+    - `border: 1px solid rgba(212, 175, 55, 0.38);`
+    - `box-shadow: 0 18px 46px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 215, 128, 0.15);`
+  - Sub-tarjetas (`.worlds-stage-node`, `.worlds-match-node`, `.worlds-faceoff > div`, `.worlds-roster-row`, `.worlds-objectives`, `.worlds-preview-metrics > div`):
+    - `background: rgba(9, 14, 24, 0.58);`
+    - `backdrop-filter: blur(10px);`
 
 ### 7.3. Cintillo "Hall of Legends" y Trofeo Summoner's Cup en la Línea de Tiempo
 1. **Cintillo `HALL OF LEGENDS // REYES DEL MUNDIAL` en la cabecera de `/worlds`**:
-   - Bajo el encabezado de `.worlds-hub`, mostrar una barra decorativa de cristal dorado/carmesí que rinda homenaje al legado competitivo de Worlds en sintonía con el fondo de Faker:
+   - Bajo el encabezado `.page-heading` de `src/components/worlds-hub.tsx`, mostrar una barra decorativa `.worlds-hall-banner` de cristal dorado/carmesí que rinda homenaje al legado competitivo de Worlds en sintonía con el fondo de Faker:
      - Badge principal: `👑 FAKER · UNKILLABLE DEMON KING (5× CAMPEÓN MUNDIAL · T1)`
      - Historial reciente de la Copa del Invocador: `🏆 2024 T1 · 🏆 2023 T1 · 🏆 2022 DRX · 🏆 2021 EDG · 🏆 2020 DWG`
      - Sede y trofeo en disputa: `⚔️ SUMMONER'S CUP 2026 · 5 FASES OFICIALES`
-2. **Conector Luminoso Dorado y Nodo de la Gran Final en la Línea de Tiempo**:
-   - En `.worlds-stage-track`, añadir un riel/conector luminoso dorado que una visualmente los 5 hitos (`Play-In` → `Fase Suiza` → `Cuartos de Final` → `Semifinales` → `Gran Final`).
-   - El nodo 5 (`item.slug === 'final'`) lleva una clase especial `.is-grand-final` con borde dorado brillante, resplandor sutil y la insignia **`🏆 SUMMONER'S CUP · GRAN FINAL`**.
+2. **Conector Luminoso Dorado (`.worlds-stage-track::before`) y Nodo de la Gran Final**:
+   - Reutilizar el pseudo-elemento existente `.worlds-stage-track::before` en `src/app/globals.css` (línea 6737) actualizando su `background` a un riel luminoso dorado/carmesí (`linear-gradient(90deg, rgba(212, 175, 55, 0.35), #f5d061 50%, #ff2a55 100%)`) con `box-shadow: 0 0 12px rgba(245, 208, 97, 0.45);`.
+   - En el nodo 5 (`item.slug === 'final'`), añadir la clase `.is-grand-final` con borde dorado brillante (`#f5d061`), resplandor sutil y la insignia **`🏆 SUMMONER'S CUP`**.
 
 ### 7.4. Cabina Broadcast HUD en el Reproductor y Botón "Modo Teatro / Cine"
 1. **Acabado Broadcast HUD en `.worlds-player` y `.worlds-video`**:
-   - Marco del reproductor con esquinas biseladas/decoradas estilo transmisión oficial de **LoL Esports**, borde superior dorado y luces laterales duales **Azul Hextech (izquierda)** y **Rojo Carmesí (derecha)** (`box-shadow` dual alrededor de `.worlds-video`).
+   - Marco del reproductor con esquinas biseladas/decoradas estilo transmisión oficial de **LoL Esports**, borde superior dorado y luces laterales duales **Azul Hextech (izquierda)** y **Rojo Carmesí (derecha)** (`box-shadow: -14px 0 32px -12px rgba(0, 240, 255, 0.28), 14px 0 32px -12px rgba(255, 42, 85, 0.28)` alrededor de `.worlds-video`).
 2. **Botón `🎬 Modo Teatro` / `✕ Salir de Modo Teatro`**:
-   - En la barra de controles de `.worlds-player`, agregar un botón interactivo `theaterMode` (`const [theaterMode, setTheaterMode] = useState(false)`):
-     - Al activarse (`.worlds-player.is-theater`), expande el contenedor del reproductor con protagonismo cinematográfico (`border-color: #f5d061; box-shadow: 0 0 0 100vmax rgba(3, 5, 10, 0.78), 0 0 60px rgba(212, 175, 55, 0.32); position: relative; z-index: 30;`) permitiendo ver el directo o VOD como en una cabina de cine sin perder los controles de señal.
+   - En la barra de controles `.filter-buttons` de `.worlds-player`, agregar un botón interactivo `theaterMode` (`const [theaterMode, setTheaterMode] = useState(false)`):
+     - Al activarse (`.worlds-player.is-theater`), expande el contenedor del reproductor con protagonismo cinematográfico (`border-color: #f5d061; box-shadow: 0 0 0 100vmax rgba(3, 5, 10, 0.82), 0 0 60px rgba(212, 175, 55, 0.32); position: relative; z-index: 30;`) y permite salir con el botón o presionando `Escape`.
+
 
 
