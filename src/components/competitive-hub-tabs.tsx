@@ -156,6 +156,9 @@ export function CompetitiveHubTabs({
   return (
     <ProfileWallpaper url={RIFT_WALLPAPERS[tab]} fullScreen>
       <div className="competitive-hub-tabs">
+        <Link className="button outline small worlds-rift-link" href="/worlds">
+          🏆 Seguir Worlds 2026 en vivo y calendario
+        </Link>
         <div className="filter-buttons" aria-label="Seleccionar tracker">
           {TRACKER_TABS.map(([id, label, icon]) => (
             <button key={id} type="button" aria-pressed={tab === id} onClick={() => select(id)}>

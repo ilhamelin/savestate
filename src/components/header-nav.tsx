@@ -12,6 +12,7 @@ import {
   UserCheck,
   Headphones,
   Swords,
+  Trophy,
 } from 'lucide-react';
 
 const links = [
@@ -25,6 +26,7 @@ const links = [
   { href: '/players', label: 'Jugadores', icon: UserCheck },
   { href: '/community/discord', label: 'Discord', icon: Headphones },
   { href: '/rift', label: 'Rift', icon: Swords },
+  { href: '/worlds', label: 'Worlds', icon: Trophy },
 ];
 export function HeaderNav() {
   const pathname = usePathname();

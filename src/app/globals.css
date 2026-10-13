@@ -5999,3 +5999,225 @@ button.discord-channel-pill:focus-visible {
     gap: 0.35rem;
   }
 }
+
+/* Worlds 2026: timeline, official video and series dossier. */
+.worlds-hub {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.worlds-hub .panel {
+  margin: 1.5rem 0;
+  padding: clamp(1rem, 2.5vw, 2rem);
+}
+.worlds-source-notice {
+  color: #fcd34d;
+  border: 1px solid #f59e0b55;
+  background: #251b0b;
+  padding: 0.8rem 1rem;
+}
+.worlds-stage-track {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.75rem;
+  position: relative;
+  margin: 1.5rem 0;
+}
+.worlds-stage-track::before {
+  content: '';
+  position: absolute;
+  top: 26px;
+  left: 8%;
+  right: 8%;
+  height: 2px;
+  background: var(--line);
+  pointer-events: none;
+}
+.worlds-stage-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  background: #0b111ddd;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  padding: 0.75rem;
+  position: relative;
+  min-width: 0;
+}
+.worlds-stage-node strong {
+  font-size: 0.86rem;
+}
+.worlds-stage-node > span:last-child {
+  font-size: 0.75rem;
+}
+.worlds-stage-number {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #0d1520;
+  border: 1px solid var(--line);
+}
+.worlds-stage-node[aria-pressed='true'],
+.worlds-match-node[aria-pressed='true'] {
+  color: #f2f4f8;
+  border-color: var(--accent);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.worlds-stage-node[aria-pressed='true'] .worlds-stage-number {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.worlds-match-track {
+  display: flex;
+  gap: 0.8rem;
+  overflow-x: auto;
+  padding: 0.3rem 0.2rem 1rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) #0d1520;
+  scroll-snap-type: x proximity;
+}
+.worlds-match-node {
+  display: flex;
+  flex: 0 0 225px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 1rem;
+  background: #101824;
+  color: #f2f4f8;
+  border: 1px solid var(--line);
+  scroll-snap-align: start;
+  font-size: 0.8rem;
+  min-height: 150px;
+}
+.worlds-match-teams {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+}
+.worlds-match-teams img {
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.worlds-live {
+  color: #fb7185;
+  font-weight: bold;
+}
+.worlds-player-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem 1.5rem;
+  padding: 1rem 0;
+}
+.worlds-player-status strong {
+  flex: 1 1 250px;
+}
+.worlds-video {
+  aspect-ratio: 16 / 9;
+  background: #030508;
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  margin-top: 1rem;
+}
+.worlds-video iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.worlds-player .button[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.worlds-description {
+  border-top: 2px solid #4ade80;
+  background: linear-gradient(135deg, #0d1c16ee, #0d1520f5);
+}
+.worlds-description h3 {
+  margin: 1rem 0;
+  font-size: 1.25rem;
+}
+.worlds-description p {
+  margin-top: 1rem;
+}
+.worlds-faceoff {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+.worlds-faceoff > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+  text-align: center;
+  border: 1px solid var(--line);
+  padding: 1rem;
+  background: #08111aaa;
+}
+.worlds-faceoff img {
+  object-fit: contain;
+}
+.worlds-maps-wrap {
+  overflow-x: auto;
+}
+.worlds-maps {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.worlds-maps caption {
+  text-align: left;
+  color: var(--muted);
+  padding: 0.75rem 0;
+}
+.worlds-maps td,
+.worlds-maps th {
+  text-align: left;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--line);
+}
+.worlds-blue {
+  color: #7dd3fc;
+}
+.worlds-red {
+  color: #fda4af;
+}
+.worlds-rift-link {
+  margin-bottom: 1rem;
+}
+@media (max-width: 700px) {
+  .worlds-stage-track {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 0.7rem;
+  }
+  .worlds-stage-node {
+    flex: 0 0 145px;
+  }
+  .worlds-stage-track::before {
+    display: none;
+  }
+  .worlds-faceoff {
+    gap: 0.6rem;
+  }
+  .worlds-faceoff > div {
+    padding: 0.7rem;
+  }
+  .worlds-faceoff strong {
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
+  }
+  .worlds-maps {
+    min-width: 500px;
+  }
+  .worlds-video {
+    min-width: 0;
+  }
+}
