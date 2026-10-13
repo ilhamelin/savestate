@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { readJsonResponse } from '@/lib/api-response';
+import { WorldsRosters, WorldsPerformance } from '@/components/worlds-performance';
 import {
   describeWorldsMatch,
   pickDefaultWorldsMatch,
@@ -131,7 +132,6 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
         setLoadingDetail(false);
         return;
       }
-      setDetail(null);
       setLoadingDetail(true);
       void fetch(`/api/worlds/${encodeURIComponent(matchId)}`, {
         signal: controller.signal,
@@ -140,7 +140,7 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
         .then((response) => readJsonResponse<WorldsMatchDetail>(response))
         .then((value) => {
           if (!controller.signal.aborted) {
-            cache.current.set(matchId, { value, expires: Date.now() + 120000 });
+            cache.current.set(matchId, { value, expires: Date.now() + 15000 });
             setDetail(value);
           }
         })
@@ -155,7 +155,7 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
         });
     };
     const timer = setTimeout(loadDetail, 0);
-    const poll = setInterval(loadDetail, 120000);
+    const poll = setInterval(loadDetail, 30000);
     return () => {
       clearTimeout(timer);
       clearInterval(poll);
@@ -436,6 +436,12 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
                   </tbody>
                 </table>
               </div>
+            )}
+            {description.teams && (
+              <>
+                <WorldsRosters teams={description.teams} detail={selectedDetail} />
+                <WorldsPerformance key={match.id} detail={selectedDetail} bestOf={match.bestOf} />
+              </>
             )}
           </section>
         </>

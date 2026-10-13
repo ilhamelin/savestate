@@ -42,7 +42,9 @@ test('Worlds service combines paginated schedule/live, deduplicates requests, ex
     calls = 0,
     active = 0,
     maxActive = 0,
-    failed = false;
+    failed = false,
+    gameState = 'unstarted',
+    feedCalls = 0;
   Date.now = () => now;
   function event(id: string, blockName = 'Play-ins', state = 'unstarted') {
     return {
@@ -67,6 +69,26 @@ test('Worlds service combines paginated schedule/live, deduplicates requests, ex
     assert.equal(init?.cache, 'no-store');
     assert.equal(init?.redirect, 'error');
     const url = new URL(String(input));
+    if (url.hostname === 'feed.lolesports.com') {
+      active--;
+      feedCalls++;
+      const later = url.searchParams.has('startingTime');
+      return Response.json({
+        gameMetadata: {
+          patchVersion: '16.17',
+          blueTeamMetadata: { participantMetadata: [] },
+          redTeamMetadata: { participantMetadata: [] },
+        },
+        frames: [
+          {
+            rfc460Timestamp: later ? '2026-10-15T12:40:00Z' : '2026-10-15T12:00:00Z',
+            gameState: later ? 'finished' : 'in_game',
+            blueTeam: { totalGold: 75000, totalKills: 22 },
+            redTeam: { totalGold: 55000, totalKills: 8 },
+          },
+        ],
+      });
+    }
     assert.equal(url.hostname, 'esports-api.lolesports.com');
     assert.equal(url.searchParams.get('hl'), 'es-ES');
     await new Promise((done) => setTimeout(done, 2));
@@ -91,12 +113,19 @@ test('Worlds service combines paginated schedule/live, deduplicates requests, ex
             : { events: [event('1')], pages: { newer: 'next-token' } },
         },
       });
+    if (url.pathname.endsWith('getTeams')) return new Response('', { status: 503 });
     return Response.json({
       data: {
         event: {
           id: url.searchParams.get('id'),
           league: { slug: 'worlds' },
-          match: { teams: [], games: [] },
+          match: {
+            teams: [
+              { id: '98767991877340524', name: 'Cloud9 Kia', code: 'C9' },
+              { id: '111692118851466302', name: 'Karmine Corp', code: 'KC' },
+            ],
+            games: [{ id: '55', number: 1, state: gameState, teams: [], vods: [] }],
+          },
         },
       },
     });
@@ -119,13 +148,25 @@ test('Worlds service combines paginated schedule/live, deduplicates requests, ex
       fetchWorldsMatchDetail('1'),
     ]);
     assert.equal(detail, detailAgain);
-    assert.equal(calls, 4);
+    assert.equal(calls, 6);
+    assert.equal(feedCalls, 0);
+    assert.equal(detail.rosters.C9?.players.length, 7);
+    assert.deepEqual(detail.gameTelemetry, {});
     await assert.rejects(fetchWorldsMatchDetail('../bad'));
-    assert.equal(calls, 4);
+    assert.equal(calls, 6);
     now += 120000;
     await fetchWorldsMatchDetail('1');
-    assert.equal(calls, 5);
-    now += 180000;
+    assert.equal(calls, 7);
+    now += 60000;
+    gameState = 'inProgress';
+    const liveDetail = await fetchWorldsMatchDetail('1');
+    assert.equal(feedCalls, 2);
+    assert.equal(liveDetail.gameTelemetry[1]?.durationSeconds, 2400);
+    assert.equal(liveDetail.gameTelemetry[1]?.gameState, 'finished');
+    now += 15000;
+    await fetchWorldsMatchDetail('1');
+    assert.equal(feedCalls, 2);
+    now += 105000;
     failed = true;
     assert.equal((await fetchWorldsSchedule()).source, 'stale');
     const freshModule = '../../src/services/worlds-esports.ts?fallback';

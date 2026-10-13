@@ -6933,3 +6933,220 @@ button.discord-channel-pill:focus-visible {
     min-width: 0;
   }
 }
+/* Registered Worlds rosters and live map performance. */
+.worlds-rosters,
+.worlds-performance {
+  margin-top: 2rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+.worlds-roster-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1.25rem 0 0.75rem;
+}
+.worlds-roster-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 130px minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  background: #0a121bcc;
+  margin-bottom: 0.5rem;
+}
+.worlds-roster-player {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-width: 0;
+}
+.worlds-roster-player > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.worlds-roster-player img {
+  object-fit: contain;
+  flex-shrink: 0;
+  background: #121c2a;
+  border-radius: 4px;
+}
+.worlds-roster-player span,
+.worlds-roster-player small {
+  font-size: 0.73rem;
+  color: var(--muted);
+}
+.worlds-player-silhouette {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 68px;
+  background: #152030;
+  flex-shrink: 0;
+}
+.worlds-role-tag {
+  text-align: center;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 0.3rem;
+  font-weight: bold;
+}
+.worlds-role-tag small {
+  display: block;
+  font-size: 0.65rem;
+  color: var(--muted);
+  font-weight: normal;
+}
+.worlds-roster-rotations {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.worlds-roster-rotations .tag {
+  margin: 0.4rem 0.4rem 0 0;
+}
+.worlds-comparison {
+  margin: 1.2rem 0;
+}
+.worlds-comparison > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.worlds-dual-bar {
+  display: flex;
+  height: 14px;
+  overflow: hidden;
+  background: #112134;
+  margin-top: 0.45rem;
+}
+.worlds-dual-bar span:first-child {
+  background: #38bdf8;
+}
+.worlds-dual-bar span:last-child {
+  background: #fb7185;
+}
+.worlds-objectives-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.worlds-objectives {
+  border: 1px solid var(--line);
+  background: #09131dcc;
+  padding: 1rem;
+}
+.worlds-objectives p {
+  font-size: 0.8rem;
+}
+.worlds-scoreboard {
+  width: 100%;
+  min-width: 710px;
+  border-collapse: collapse;
+  font-size: 0.83rem;
+  margin-top: 1.5rem;
+}
+.worlds-scoreboard caption {
+  text-align: left;
+  color: var(--accent);
+  font-weight: bold;
+  padding: 0.5rem 0;
+}
+.worlds-scoreboard td,
+.worlds-scoreboard th {
+  text-align: left;
+  padding: 0.6rem;
+  border-bottom: 1px solid var(--line);
+}
+.worlds-champion-player {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.worlds-champion-player img {
+  border-radius: 4px;
+}
+.worlds-champion-player small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+.worlds-kda {
+  padding: 0.2rem 0.4rem;
+  border: 1px solid var(--line);
+}
+.worlds-kda.good {
+  color: #4ade80;
+  border-color: #4ade8066;
+}
+.worlds-kda.great,
+.worlds-mvp-badge {
+  color: #fbbf24;
+}
+.worlds-kda.low {
+  color: #fb7185;
+  border-color: #fb718566;
+}
+.worlds-mvp-row {
+  background: #fbbf240c;
+}
+.worlds-mvp-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+}
+.worlds-preview-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin: 1rem 0;
+}
+.worlds-preview-metrics > div {
+  display: flex;
+  flex-direction: column;
+  border: 1px dashed var(--line);
+  padding: 0.8rem;
+  background: #0a121b;
+}
+.worlds-preview-metrics span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.worlds-performance .button[aria-pressed='true'] {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+@media (max-width: 700px) {
+  .worlds-roster-row {
+    grid-template-columns: minmax(0, 1fr) 55px minmax(0, 1fr);
+    gap: 0.4rem;
+    padding: 0.5rem;
+  }
+  .worlds-roster-player {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.4rem;
+  }
+  .worlds-roster-player img {
+    width: 48px;
+    height: 56px;
+  }
+  .worlds-role-tag {
+    font-size: 0.7rem;
+    padding: 0.2rem;
+  }
+  .worlds-role-tag small {
+    display: none;
+  }
+  .worlds-roster-rotations,
+  .worlds-objectives-grid {
+    grid-template-columns: 1fr;
+  }
+  .worlds-preview-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

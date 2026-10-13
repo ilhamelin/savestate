@@ -9,6 +9,11 @@ import {
   worldsRecord,
   type WorldsSchedule,
   type WorldsMatchDetail,
+  parseWorldsTeamRoster,
+  parseWorldsGameTelemetry,
+  FALLBACK_WORLDS_2026_ROSTERS,
+  type WorldsTeam,
+  type WorldsTeamRoster,
 } from '@/domain/worlds-schedule';
 const BASE = 'https://esports-api.lolesports.com/persisted/gw';
 const LEAGUE = '98767975604431411';
@@ -92,6 +97,85 @@ export async function fetchWorldsSchedule(): Promise<WorldsSchedule> {
 }
 const detailsCache = new Map<string, { value: WorldsMatchDetail; expires: number }>();
 const pendingDetails = new Map<string, Promise<WorldsMatchDetail>>();
+const rosterCache = new Map<string, { value: WorldsTeamRoster | null; expires: number }>();
+const pendingRosters = new Map<string, Promise<WorldsTeamRoster | null>>();
+async function teamRoster(team: WorldsTeam): Promise<WorldsTeamRoster | null> {
+  const fallback = FALLBACK_WORLDS_2026_ROSTERS[team.code.toUpperCase()] ?? null;
+  if (!team.id || !/^\d{1,24}$/.test(team.id)) return fallback;
+  const id = team.id,
+    cached = rosterCache.get(id);
+  if (cached && cached.expires > Date.now()) return cached.value;
+  const pending = pendingRosters.get(id);
+  if (pending) return pending;
+  const request = (async () => {
+    let value = fallback;
+    try {
+      const data = await esportsRequest('getTeams', { id });
+      const rows = Array.isArray(data.teams) ? data.teams : [];
+      const roster = parseWorldsTeamRoster(rows.find((raw) => worldsRecord(raw).id === id));
+      if (roster?.players.length && roster.code === team.code.toUpperCase()) value = roster;
+    } catch {
+      /* Roster outage must not hide series or telemetry. */
+    }
+    if (rosterCache.size >= 100) rosterCache.delete(rosterCache.keys().next().value!);
+    rosterCache.set(id, { value, expires: Date.now() + 1800000 });
+    return value;
+  })().finally(() => pendingRosters.delete(id));
+  pendingRosters.set(id, request);
+  return request;
+}
+async function feedWindow(gameId: string, startingTime?: string) {
+  const url = `https://feed.lolesports.com/livestats/v1/window/${gameId}${startingTime ? `?${new URLSearchParams({ startingTime })}` : ''}`;
+  const response = await fetch(url, {
+    cache: 'no-store',
+    redirect: 'error',
+    signal: AbortSignal.timeout(6000),
+  });
+  if (!response.ok) throw new Error('Telemetry unavailable');
+  const raw = await response.text();
+  if (raw.length > 2000000) throw new Error('Telemetry too large');
+  return worldsRecord(JSON.parse(raw));
+}
+const telemetryCache = new Map<
+  string,
+  { value: ReturnType<typeof parseWorldsGameTelemetry>; expires: number }
+>();
+async function gameTelemetry(game: WorldsMatchDetail['games'][number]) {
+  if (game.state === 'unstarted' || !/^\d{1,24}$/.test(game.id)) return null;
+  const cached = telemetryCache.get(game.id);
+  if (cached && cached.expires > Date.now()) return cached.value;
+  try {
+    const first = await feedWindow(game.id),
+      frames = Array.isArray(first.frames) ? first.frames : [];
+    const ts = worldsRecord(frames[0]).rfc460Timestamp;
+    const firstTs = typeof ts === 'string' && Number.isFinite(Date.parse(ts)) ? ts : null;
+    let last = first;
+    if (firstTs) {
+      const iso = (ms: number) =>
+        new Date(Math.floor(ms / 10000) * 10000).toISOString().replace(/\.\d{3}Z$/, 'Z');
+      try {
+        last = await feedWindow(game.id, iso(Date.parse(firstTs) + 7200000));
+      } catch {
+        if (game.state === 'inProgress')
+          last = await feedWindow(game.id, iso(Date.now() - 30000)).catch(() => first);
+      }
+    }
+    const value = parseWorldsGameTelemetry(
+      game.id,
+      game.number,
+      { ...last, gameMetadata: last.gameMetadata ?? first.gameMetadata },
+      firstTs,
+    );
+    if (telemetryCache.size >= 500) telemetryCache.delete(telemetryCache.keys().next().value!);
+    telemetryCache.set(game.id, {
+      value,
+      expires: Date.now() + (value?.gameState === 'finished' ? 86400000 : 15000),
+    });
+    return value;
+  } catch {
+    return null;
+  }
+}
 export async function fetchWorldsMatchDetail(matchId: string): Promise<WorldsMatchDetail> {
   if (!/^\d{1,24}$/.test(matchId)) throw new AppError('Identificador de partida inválido.', 400);
   const cached = detailsCache.get(matchId);
@@ -103,8 +187,18 @@ export async function fetchWorldsMatchDetail(matchId: string): Promise<WorldsMat
     const detail = parseWorldsMatchDetail(data.event);
     if (!detail || detail.id !== matchId)
       throw new AppError('No se encontró esta partida de Worlds.', 404);
+    const [rosters, telemetry] = await Promise.all([
+      Promise.all((detail.teams ?? []).map(teamRoster)),
+      Promise.all(detail.games.map(gameTelemetry)),
+    ]);
+    for (const roster of rosters) if (roster) detail.rosters[roster.code] = roster;
+    for (const game of telemetry) if (game) detail.gameTelemetry[game.gameNumber] = game;
     if (detailsCache.size >= 100) detailsCache.delete(detailsCache.keys().next().value!);
-    detailsCache.set(matchId, { value: detail, expires: Date.now() + 120_000 });
+    detailsCache.set(matchId, {
+      value: detail,
+      expires:
+        Date.now() + (detail.games.some((game) => game.state === 'inProgress') ? 15000 : 60000),
+    });
     return detail;
   })().finally(() => {
     pendingDetails.delete(matchId);
