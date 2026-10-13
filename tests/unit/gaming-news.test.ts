@@ -144,3 +144,35 @@ test('Anime RSS accepts official article and image hosts and merges chronologica
     [],
   );
 });
+
+test('3DJuegos RSS accepts canonical hosts and editorial CDNs while rejecting lookalikes', () => {
+  for (const [host, cdn] of [
+    ['www.3djuegos.com', 'i.blogs.es'],
+    ['3djuegos.com', 'i.3djuegos.com'],
+  ]) {
+    const image = 'https://' + cdn + '/cover/1024_2000.jpeg';
+    const xml = item('Noticia &amp; juegos', 'https://' + host + '/news/1').replace(
+      '</item>',
+      '<description><![CDATA[<p><img src="' + image + '"></p>]]></description></item>',
+    );
+    const rows = parseGamingRss(xml, '3djuegos', now);
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0]?.source, '3djuegos');
+    assert.equal(rows[0]?.title, 'Noticia & juegos');
+    assert.equal(rows[0]?.imageUrl, image);
+    assert.equal(rows[0]?.relativeTime, 'HACE 15M');
+    assert.equal(extractNewsImage('<img src="https://' + cdn + '.evil.example/cover.jpg">'), null);
+  }
+  assert.deepEqual(
+    parseGamingRss(
+      item('Host falso', 'https://www.3djuegos.com.evil.example/news'),
+      '3djuegos',
+      now,
+    ),
+    [],
+  );
+  assert.deepEqual(
+    parseGamingRss(item('Otra fuente', 'https://es.ign.com/news/1'), '3djuegos', now),
+    [],
+  );
+});

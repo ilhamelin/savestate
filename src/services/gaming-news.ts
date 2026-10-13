@@ -4,6 +4,7 @@ export type { GamingNewsItem } from '@/domain/gaming-news';
 
 const feeds: { source: GamingNewsSource; url: string }[] = [
   { source: 'vandal', url: 'https://vandal.elespanol.com/xml.cgi' },
+  { source: '3djuegos', url: 'https://www.3djuegos.com/feedburner.xml' },
   { source: 'ign', url: 'https://es.ign.com/feed.xml' },
   { source: 'anime', url: 'https://areajugones.sport.es/anime/feed/' },
 ];

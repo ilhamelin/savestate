@@ -3726,7 +3726,7 @@ a.feed-card-cover:hover {
 }
 .news-row {
   display: grid;
-  grid-template-columns: 80px 70px 88px minmax(0, 1fr) 20px;
+  grid-template-columns: 80px 88px 88px minmax(0, 1fr) 20px;
   align-items: center;
   gap: 1rem;
   padding: 0.85rem 0;
@@ -3771,6 +3771,9 @@ a.feed-card-cover:hover {
 }
 .badge-ign {
   color: #ffb000;
+}
+.badge-3djuegos {
+  color: #ff6b35;
 }
 .badge-anime {
   color: #ff0055;
@@ -5547,4 +5550,239 @@ button.discord-channel-pill:focus-visible {
   border-color: #22c55e80;
   color: #bbf7d0;
   background: #22c55e12;
+}
+
+/* League of Legends patch notes hub. */
+.lol-patch-hub {
+  margin-top: 1.25rem;
+  min-width: 0;
+}
+.patch-version,
+.patch-new {
+  display: inline-block;
+  font-size: 0.72rem;
+  color: #d4af37;
+  border: 1px solid #d4af3755;
+  padding: 0.15rem 0.4rem;
+  margin: 0.2rem 0.5rem 0.2rem 0;
+}
+.news-filters .patch-version {
+  margin: 0 0 0 0.5rem;
+}
+.patch-new {
+  color: #86efac;
+  border-color: #22c55e55;
+}
+.patch-index-row {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  padding: 1rem 0;
+}
+.patch-index-row > img {
+  width: 160px;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  border: 1px solid var(--line);
+}
+.patch-index-row h3 {
+  font-size: 1rem;
+  margin: 0.3rem 0;
+}
+.patch-index-row p {
+  font-size: 0.8rem;
+  margin: 0.3rem 0;
+}
+.patch-index-row time {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.patch-dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 1rem;
+}
+.patch-panel {
+  background: #080c12d9;
+  border: 1px solid var(--line);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  min-width: 0;
+}
+.patch-panel h3 {
+  font-size: 1.05rem;
+  color: #d4af37;
+  margin-top: 0;
+}
+.patch-panel ul {
+  padding-left: 1.2rem;
+}
+.patch-panel li {
+  margin-bottom: 0.6rem;
+  overflow-wrap: anywhere;
+}
+.patch-panel blockquote {
+  margin: 0.7rem 0;
+  padding-left: 0.8rem;
+  border-left: 2px solid #d4af3755;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.patch-champion {
+  border-top: 1px solid var(--line);
+  padding: 1rem 0;
+}
+.patch-champion header,
+.patch-ability h5,
+.patch-nav,
+.patch-dialog-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.patch-champion h4 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.patch-champion-icon {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border: 1px solid #d4af3755;
+}
+.patch-ability-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+}
+.patch-ability h5 {
+  margin: 1rem 0 0.4rem;
+  font-size: 0.9rem;
+}
+.patch-ability li {
+  font-size: 0.85rem;
+}
+.patch-nav {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.patch-tabs {
+  margin: 1rem 0;
+}
+.patch-bug-scroll {
+  max-height: 440px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #d4af37 #080c12;
+  font-size: 0.85rem;
+}
+.patch-skins-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+.patch-skin-card {
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  background: #111a24;
+  border: 1px solid var(--line);
+  padding: 0 0 0.65rem;
+  cursor: pointer;
+  min-width: 0;
+}
+.patch-skin-card:hover,
+.patch-skin-card:focus-visible {
+  border-color: #d4af37;
+}
+.patch-skin-card img {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+}
+.patch-skin-card strong,
+.patch-skin-card > span {
+  display: block;
+  margin: 0.4rem 0.6rem;
+  font-size: 0.75rem;
+}
+.patch-skin-card > span {
+  color: #d4af37;
+}
+.patch-highlights {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.patch-image-button {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+}
+.patch-image-placeholder {
+  display: grid;
+  place-items: center;
+  min-height: 40px;
+  background: #111a24;
+  color: var(--muted);
+}
+.patch-media-dialog {
+  width: min(1000px, 92vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  color: #f2f4f8;
+  background: #080c12;
+  border: 1px solid #d4af37;
+  box-shadow: 0 0 35px #d4af3724;
+  padding: 1rem;
+}
+.patch-media-dialog::backdrop {
+  background: #000c;
+  backdrop-filter: blur(5px);
+}
+.patch-dialog-heading {
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.patch-dialog-heading h3 {
+  font-size: 1rem;
+}
+.patch-media-dialog iframe {
+  width: 100%;
+  aspect-ratio: 16/9;
+  border: 0;
+}
+.patch-modal-art {
+  display: block;
+  width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+}
+@media (max-width: 900px) {
+  .patch-dashboard {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .patch-index-row {
+    grid-template-columns: 88px minmax(0, 1fr);
+  }
+  .patch-index-row > img {
+    width: 88px;
+  }
+  .patch-index-row > .button {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .patch-dialog-heading {
+    align-items: flex-start;
+  }
+  .patch-dialog-heading h3 {
+    overflow-wrap: anywhere;
+  }
 }
