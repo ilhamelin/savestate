@@ -193,3 +193,46 @@ Dentro del **Bloque 3 (Dossier de la Serie / Descripción de la Partida)** en `/
    - **Si la serie aún está `unstarted` (antes del partido)**:
      - Muestra el panel en modo **"Radar Pre-Partido · Telemetría en Espera"** indicando qué métricas de equipo (Oro, Asesinatos, Torretas, Dragones, Barones) y de jugadores (Campeón, KDA, KP%, CS, % de Oro y MVP) se activarán y actualizarán automáticamente apenas inicie el `Juego 1`.
 
+---
+
+## 7. Ambientación Visual de Worlds 2026: Fondo de Faker (`/worlds/faker-bg.jpg`), Cristal Hextech, Hall of Legends y Cabina Broadcast HUD
+
+### 7.1. Fondo Exclusivo de `/worlds` (`public/worlds/faker-bg.jpg`)
+- El recurso `public/worlds/faker-bg.jpg` (`1920×1080`) ya está disponible en el proyecto.
+- Cuando el usuario se encuentra en la vista `/worlds`:
+  - Renderizar un contenedor fijo de fondo `<div className="worlds-backdrop" aria-hidden="true" />` dentro de `WorldsHub` (y aplicar también `body:has(.worlds-hub)`) que reemplace visualmente el wallpaper retro general por `/worlds/faker-bg.jpg`:
+    - `position: fixed; inset: 0; z-index: -1; pointer-events: none;`
+    - `background-image: linear-gradient(115deg, rgba(6, 9, 15, 0.44) 0%, rgba(8, 11, 18, 0.68) 48%, rgba(8, 10, 16, 0.82) 100%), radial-gradient(circle at 22% 28%, rgba(212, 175, 55, 0.16), transparent 52%), url('/worlds/faker-bg.jpg');`
+    - `background-size: cover; background-position: center top; background-repeat: no-repeat;`
+  - De este modo, el retrato de **Faker ("Shhh")** a la izquierda y el horizonte urbano iluminado a la derecha se aprecian con nitidez detrás de la interfaz.
+
+### 7.2. Paneles de Cristal Translúcido (Glassmorphism Hextech + Oro/Carmesí T1)
+- Todos los paneles dentro de `.worlds-hub` (`.worlds-hub .panel`, `.worlds-stage-node`, `.worlds-match-node`, `.worlds-roster-row`, `.worlds-telemetry-card`) usan acabado de cristal translúcido para dejar ver el fondo de Faker sin sacrificar legibilidad:
+  - `background: rgba(8, 12, 20, 0.66);`
+  - `backdrop-filter: blur(14px) saturate(135%);`
+  - `-webkit-backdrop-filter: blur(14px) saturate(135%);`
+  - `border: 1px solid rgba(212, 175, 55, 0.36);`
+  - `box-shadow: 0 18px 46px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 215, 128, 0.15);`
+- Acentos de color temáticos de Worlds + T1 Faker:
+  - Oro Summoner's Cup: `#d4af37` / `#f5d061`
+  - Carmesí T1 / Lado Rojo: `#ff2a55` / `#ef4444`
+  - Azul Hextech / Lado Azul: `#00f0ff` / `#38bdf8`
+
+### 7.3. Cintillo "Hall of Legends" y Trofeo Summoner's Cup en la Línea de Tiempo
+1. **Cintillo `HALL OF LEGENDS // REYES DEL MUNDIAL` en la cabecera de `/worlds`**:
+   - Bajo el encabezado de `.worlds-hub`, mostrar una barra decorativa de cristal dorado/carmesí que rinda homenaje al legado competitivo de Worlds en sintonía con el fondo de Faker:
+     - Badge principal: `👑 FAKER · UNKILLABLE DEMON KING (5× CAMPEÓN MUNDIAL · T1)`
+     - Historial reciente de la Copa del Invocador: `🏆 2024 T1 · 🏆 2023 T1 · 🏆 2022 DRX · 🏆 2021 EDG · 🏆 2020 DWG`
+     - Sede y trofeo en disputa: `⚔️ SUMMONER'S CUP 2026 · 5 FASES OFICIALES`
+2. **Conector Luminoso Dorado y Nodo de la Gran Final en la Línea de Tiempo**:
+   - En `.worlds-stage-track`, añadir un riel/conector luminoso dorado que una visualmente los 5 hitos (`Play-In` → `Fase Suiza` → `Cuartos de Final` → `Semifinales` → `Gran Final`).
+   - El nodo 5 (`item.slug === 'final'`) lleva una clase especial `.is-grand-final` con borde dorado brillante, resplandor sutil y la insignia **`🏆 SUMMONER'S CUP · GRAN FINAL`**.
+
+### 7.4. Cabina Broadcast HUD en el Reproductor y Botón "Modo Teatro / Cine"
+1. **Acabado Broadcast HUD en `.worlds-player` y `.worlds-video`**:
+   - Marco del reproductor con esquinas biseladas/decoradas estilo transmisión oficial de **LoL Esports**, borde superior dorado y luces laterales duales **Azul Hextech (izquierda)** y **Rojo Carmesí (derecha)** (`box-shadow` dual alrededor de `.worlds-video`).
+2. **Botón `🎬 Modo Teatro` / `✕ Salir de Modo Teatro`**:
+   - En la barra de controles de `.worlds-player`, agregar un botón interactivo `theaterMode` (`const [theaterMode, setTheaterMode] = useState(false)`):
+     - Al activarse (`.worlds-player.is-theater`), expande el contenedor del reproductor con protagonismo cinematográfico (`border-color: #f5d061; box-shadow: 0 0 0 100vmax rgba(3, 5, 10, 0.78), 0 0 60px rgba(212, 175, 55, 0.32); position: relative; z-index: 30;`) permitiendo ver el directo o VOD como en una cabina de cine sin perder los controles de señal.
+
+
