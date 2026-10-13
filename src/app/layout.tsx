@@ -59,7 +59,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <h2>Comunidad</h2>
               <Link href="/feed">Transmisión</Link>
               <Link href="/forum">Foro</Link>
-              <Link href="/parties">Compañeros</Link>
+              <Link href="/chat">Chat Global</Link>
               <Link href="/players">Jugadores</Link>
             </nav>
           </div>

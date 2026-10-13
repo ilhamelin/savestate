@@ -20,6 +20,7 @@ import type { XpEvent, XpAward } from '@/domain/progression';
 import type { PlayerFriend } from '@/domain/player-friends';
 import type { ItchTrackerRow, ItchMetadata } from '@/domain/itch-tracker';
 import type { FriendMessage } from '@/domain/friend-chat';
+import type { GlobalChatRow } from '@/domain/global-chat';
 
 type Row<T> = { [K in keyof T]: T[K] };
 type Table<T, Relations = []> = {
@@ -38,6 +39,10 @@ type ForeignKey<Name extends string, Column extends string, Target extends strin
 export type Database = {
   public: {
     Tables: {
+      global_chat_messages: Table<
+        GlobalChatRow,
+        [ForeignKey<'global_chat_messages_user_id_fkey', 'user_id', 'profiles'>]
+      >;
       friend_messages: Table<FriendMessage>;
       itch_trackers: Table<ItchTrackerRow>;
       itch_monitor_state: Table<{

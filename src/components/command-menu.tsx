@@ -119,7 +119,7 @@ export function CommandMenu({
     ['Explorar catálogo', '/explore'],
     ['Listas de la comunidad', '/lists'],
     ['Transmisión', '/feed'],
-    ['Buscar compañeros de partida', '/parties'],
+    ['Chat Global Arcade Lounge', '/chat'],
     ['Momentos Gamer', '/highlights'],
     ['Foro · SaveState Boards', '/forum'],
     ['Discord · Terminal comunitaria', '/community/discord'],
