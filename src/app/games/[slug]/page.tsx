@@ -13,6 +13,7 @@ import { LibraryForm, DeleteReview } from '@/components/library-forms';
 import { ReviewForm } from '@/components/review-form';
 import { ReviewCard } from '@/components/review-card';
 import { SetupNotice } from '@/components/setup-notice';
+import { gameAdaptations } from '@/domain/game-adaptations';
 const gameBySlug = cache(async (slug: string) => {
   if (!isConfigured() || !/^[a-z0-9-]+$/.test(slug)) return null;
   const db = await serverClient();
@@ -156,6 +157,26 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
           )}
         </div>
       </section>
+      {gameAdaptations(game.slug).length > 0 && (
+        <section className="panel" aria-label="Adaptaciones de cine y series">
+          <h2>Game to Screen</h2>
+          <p className="muted">
+            Esta historia también tiene una adaptación de pantalla. Guarda tu progreso y consulta
+            dónde verla.
+          </p>
+          <div className="filter-buttons">
+            {gameAdaptations(game.slug).map((adaptation) => (
+              <Link
+                key={`${adaptation.mediaType}-${adaptation.tmdbId}`}
+                className="button outline small"
+                href={`/screen?select=${adaptation.tmdbId}&type=${adaptation.mediaType}`}
+              >
+                {adaptation.title} ↗
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
       <Suspense
         fallback={
           <section className="panel muted" aria-busy="true">

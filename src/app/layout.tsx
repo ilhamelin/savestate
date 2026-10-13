@@ -51,6 +51,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <nav aria-label="Explorar desde el pie de página">
               <h2>Explorar</h2>
               <Link href="/explore">Catálogo</Link>
+              <Link href="/screen">Screen (Cine y Series)</Link>
               <Link href="/library">Biblioteca</Link>
               <Link href="/lists">Listas</Link>
               <Link href="/highlights">Momentos</Link>

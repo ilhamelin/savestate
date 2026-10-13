@@ -120,6 +120,7 @@ export function CommandMenu({
     ['Listas de la comunidad', '/lists'],
     ['Transmisión', '/feed'],
     ['Chat Global · Centro de Mando Comunitario', '/chat'],
+    ['Screen · Cine, series y adaptaciones gamer', '/screen'],
     ['Momentos Gamer', '/highlights'],
     ['Foro · SaveState Boards', '/forum'],
     ['Rift Tracker (League of Legends)', '/rift'],

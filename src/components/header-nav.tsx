@@ -12,10 +12,12 @@ import {
   UserCheck,
   Swords,
   Trophy,
+  Film,
 } from 'lucide-react';
 
 const links = [
   { href: '/explore', label: 'Explorar', icon: Compass },
+  { href: '/screen', label: 'Screen', icon: Film },
   { href: '/library', label: 'Biblioteca', icon: Library },
   { href: '/feed', label: 'Transmisión', icon: Radio },
   { href: '/highlights', label: 'Momentos', icon: Sparkles },
