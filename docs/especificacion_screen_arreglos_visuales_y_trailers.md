@@ -1,189 +1,106 @@
-# Especificación Técnica: Arreglos Visuales del Grid, Tráiler Oficial en 1 Clic y Plataformas "¿Dónde Ver?" en Screen (`/screen`)
+# Especificación Técnica: Tráilers en Español Latino, Integración de Telemetría con Chat Global y Arreglos Visuales en Screen (`/screen`)
 
 ## 1. Resumen y Objetivos
-Optimizar la interfaz y las capacidades multimedia de la vista **Screen** (`/screen` — bitácora de cine, series y adaptaciones gamer):
-1. **Corrección del Descuadre Visual del Grid y del Drawer Lateral**:
-   - Ajustar `.screen-layout` y `.screen-media-grid` de forma fluida (`repeat(auto-fill, minmax(180px, 1fr))`) para que los pósteres no se aprieten contra el drawer lateral (`TELEMETRÍA // MOVIE`) ni corten tarjetas en 4 columnas forzadas.
-   - Corregir el contenedor `.screen-drawer` (altura `calc(100vh - 140px)`, scroll suave `scrollbar-gutter: stable` y padding inferior) para que el banner, título, sinopsis y checklists de episodios no se corten.
-   - Alinear verticalmente la barra de búsqueda y el selector de región JustWatch (`align-items: end`), igualando alturas (42px) y estilos.
-   - Corregir cualquier desborde o solapamiento en el navbar entre `Screen` y `Biblioteca`.
-2. **Tráiler Oficial en 1 Clic (YouTube Modal)**:
-   - Extraer el tráiler oficial (`trailerVideoId: string | null`) desde TMDB (`append_to_response: 'credits,watch/providers,videos'`).
-   - Botón interactivo **`▶ Ver Tráiler`** en el Hero Radar y en la ficha de Telemetría.
-   - Reproductor modal centrado con `<iframe>` de YouTube (`https://www.youtube-nocookie.com/embed/{trailerVideoId}?autoplay=1`).
-3. **Logos Interactivos de Plataformas "¿Dónde Ver?" (JustWatch)**:
-   - Rediseñar la sección `Dónde ver hoy` en `ScreenTelemetryDrawer`:
-     - Mostrar los **logos oficiales a color** (`https://image.tmdb.org/t/p/original/...`) de cada plataforma (Netflix, Prime Video, Max, Disney+, Apple TV+, Crunchyroll, etc.) agrupados por tipo:
-       - `Suscripción` (Flatrate)
-       - `Alquiler / Compra`
-     - Chips interactivos con efecto hover y enlace directo a la plataforma en JustWatch.
+
+Esta especificación expande el módulo **Screen** (`/screen`) con dos funcionalidades solicitadas por el usuario:
+1. **Priorización de Tráilers en Español Latino (`es-MX` / Latam)**:
+   - Modificar la consulta a TMDB para solicitar videos en español latino (`include_video_language: 'es-MX,es,en'`).
+   - Refinar la función `extractTmdbTrailerId(videosRaw)` para priorizar rigurosamente los tráilers doblados al español de Hispanoamérica/Latinoamérica sobre las versiones de España (`es-ES`) o inglés, usando etiquetas de país (`iso_3166_1: MX/AR/CL/CO/PE`), descriptores de idioma y keywords en el título del video.
+2. **Botón "Compartir en Chat Global" en la Ficha de Telemetría ("TELEMETRÍA // TV" y "TELEMETRÍA // MOVIE")**:
+   - Incorporar un botón interactivo dentro de `ScreenTelemetryDrawer` que compile la ficha de avance del usuario:
+     - **Título** de la serie/película.
+     - **Estado del checkpoint**: `Viendo`, `Por ver`, `Completada`, `Abandonada`.
+     - **Tu calificación**: `X/10` o `— (Sin calificación)`.
+     - **Temporada y episodios vistos**: Temporada activa, conteo de capítulos vistos sobre el total y porcentaje completado (`S01 · 8/10 episodios vistos (80%)`).
+     - **Enlace rápido** a la ficha en la app (`/screen?select={tmdbId}&type={mediaType}`).
+     - **Arte multimedia adjunto**: Imagen oficial de TMDB (backdrop o póster) habilitando `image.tmdb.org` en los orígenes permitidos de `safeChatMediaUrl` para que se previsualice en el feed de `/chat`.
+   - Notificación visual inmediata en el drawer de que el checkpoint fue compartido en el chat global, con enlace directo para saltar a la conversación.
 
 ---
 
-## 2. Dominio y Servicios Backend (`src/domain/screen.ts` y `src/services/screen.ts`)
+## 2. Análisis y Mecánica de Tráilers en TMDB
 
-### 2.1. Ampliación del Modelo de Dominio (`src/domain/screen.ts`)
-1. Añadir `trailerVideoId: string | null` a:
-   - `ScreenMediaItem`: `trailerVideoId?: string | null`
-   - `ScreenDetail`: `trailerVideoId: string | null`
-2. Helper puro `extractTmdbTrailerId(videosRaw: unknown): string | null`:
-   - Busca en `results` el primer video con:
-     - `site === 'YouTube'` y `type === 'Trailer'` (priorizando idioma español o inglés).
-     - Si no hay 'Trailer', acepta 'Teaser'.
-     - Devuelve la clave `key` (11 caracteres alfanuméricos) o `null`.
+### 2.1. Comportamiento de TMDB respecto a Idiomas
+- Por defecto, la API de TMDB filtra los resultados de videos según el parámetro `language` de la petición principal. Si se llama a `language=es-ES`, TMDB devuelve principalmente videos de España o con subtítulos de España.
+- Si se utiliza el parámetro adicional `include_video_language=es-MX,es,en,null` (o `es-MX,es,en`), TMDB incluye en el objeto `videos.results` los videos dirigidos a Hispanoamérica (`iso_639_1: "es"`, `iso_3166_1: "MX"` o países LATAM como `AR`, `CL`, `CO`), los genéricos en español (`iso_639_1: "es"` sin país específico) y los originales en inglés (`en`).
 
-### 2.2. Obtención de Tráilers desde TMDB (`src/services/screen.ts`)
-1. En `getScreenMediaDetail(tmdbId, mediaType, region, season)`:
-   - Cambiar:
-     `append_to_response: 'credits,watch/providers'`
-     a:
-     `append_to_response: 'credits,watch/providers,videos'`
-   - Extraer `trailerVideoId = extractTmdbTrailerId(raw.videos)`.
-2. En `getRadarFeaturedMedia(region)`:
-   - Asegurarse de que los títulos destacados del radar incluyan su `trailerVideoId` correspondiente (por ejemplo en el fallback de *Fallout*, incluir el tráiler oficial `0kAAqslOS64` o resolverlo mediante TMDB).
-
----
-
-## 3. Estilos y Correcciones Visuales (`src/app/screen.css`)
-
-### 3.1. Reorganización Fluida del Grid y Drawer (`.screen-layout` y `.screen-media-grid`)
-```css
-/* Layout adaptativo: catálogo a la izquierda, drawer de telemetría a la derecha */
-.screen-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 380px;
-  gap: 1.5rem;
-  align-items: start;
-}
-
-/* Grid fluido de pósteres: se ajusta a 3 columnas cuando el drawer está abierto, o 4-5 sin drawer */
-.screen-media-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 1rem;
-}
-
-/* Drawer lateral con scroll suave sin cortes */
-.screen-drawer-column {
-  position: sticky;
-  top: 130px;
-  min-width: 0;
-}
-
-.screen-drawer {
-  max-height: calc(100vh - 150px);
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--screen-cyan) #0b1018;
-  scrollbar-gutter: stable;
-  padding: 1rem 1rem 2rem;
-  border: 1px solid rgba(0, 240, 255, 0.35);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
-  border-radius: 6px;
-}
-
-.screen-drawer-art {
-  margin: 0.5rem -1rem 0.8rem;
-  overflow: hidden;
-  border-radius: 4px;
-}
-
-.screen-drawer-art img {
-  width: 100%;
-  height: auto;
-  aspect-ratio: 16 / 9;
-  max-height: 190px;
-  object-fit: cover;
-  display: block;
-}
-```
-
-### 3.2. Alineación de la Barra de Búsqueda y Selector de Región (`.screen-search-row`)
-```css
-.screen-search-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 220px;
-  gap: 1rem;
-  align-items: end;
-}
-
-.screen-search-row input,
-.screen-search-row select {
-  height: 42px;
-  padding: 0 13px;
-  background: #090e15;
-  border: 1px solid #2e3e4f;
-  color: #f2f4f8;
-  border-radius: 4px;
-  font-family: inherit;
-  font-size: 0.85rem;
-}
-
-.screen-search-row input:focus,
-.screen-search-row select:focus {
-  border-color: var(--screen-cyan);
-  outline: 0;
-  box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
-}
-```
-
-### 3.3. Plataformas "¿Dónde Ver?" con Chips y Logos Interactivos
-```css
-.screen-providers-group {
-  margin: 0.8rem 0;
-}
-
-.screen-providers-group h4 {
-  font-size: 0.75rem;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0.4rem 0;
-}
-
-.screen-providers-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.screen-provider-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.35rem 0.65rem;
-  background: #0f1722;
-  border: 1px solid #2d3b4b;
-  border-radius: 4px;
-  font-size: 0.78rem;
-  color: #e2e8f0;
-  transition: border-color 0.15s, transform 0.15s;
-}
-
-.screen-provider-chip:hover {
-  border-color: var(--screen-cyan);
-  transform: translateY(-1px);
-  color: #fff;
-}
-
-.screen-provider-chip img {
-  width: 22px;
-  height: 22px;
-  border-radius: 3px;
-  object-fit: cover;
-}
-```
+### 2.2. Algoritmo de Priorización de Tráilers (`extractTmdbTrailerId`)
+Para asegurar que se seleccione el tráiler latino oficial siempre que esté disponible:
+1. **Filtro base**: Solo videos de `site === 'YouTube'`, de tipo `'Trailer'` (o `'Teaser'` como fallback) con claves de 11 caracteres válidas.
+2. **Puntuación de Prioridad (menor valor = mayor preferencia)**:
+   - **Prioridad 0 (Español Latino Explícito)**:
+     - Idioma `iso_639_1 === 'es'` Y (`iso_3166_1 === 'MX'` o `iso_3166_1` en `['MX', 'AR', 'CL', 'CO', 'PE', 'LA']` o el nombre del video incluye palabras clave como `/latino|hispanoam[eé]rica|doblado/i`).
+   - **Prioridad 1 (Español Neutro / Sin Región ES)**:
+     - Idioma `iso_639_1 === 'es'` donde `iso_3166_1 !== 'ES'` y el nombre no mencione modismos españoles peninsulares.
+   - **Prioridad 2 (Español de España / Peninsular)**:
+     - Idioma `iso_639_1 === 'es'` con `iso_3166_1 === 'ES'` o nombre con menciones peninsulares.
+   - **Prioridad 3 (Audio Original en Inglés)**:
+     - Idioma `iso_639_1 === 'en'`.
+   - **Prioridad 4 (Otros idiomas)**:
+     - Cualquier otro idioma presente.
+3. **Criterios secundarios de desempate**:
+   - `type === 'Trailer'` antes de `type === 'Teaser'`.
+   - `official === true` antes de trailers no oficiales.
+   - Orden original de TMDB (`index`).
 
 ---
 
-## 4. Componentes Frontend (`src/components/screen/`)
+## 3. Integración con Chat Global (`/chat`)
 
-1. **Modal de Tráiler Embebido (`src/components/screen/screen-trailer-modal.tsx`)**:
-   - Componente dialog centrado (`position: fixed; inset: 0; margin: auto;`) que recibe `videoId: string` y `onClose: () => void`.
-   - Renderiza el reproductor `16:9` de YouTube (`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`) con botón de cerrar `✕` y cierre al presionar `Escape` o hacer clic en el backdrop.
-2. **Integración en `ScreenHeroRadar` (`src/components/screen/screen-hero-radar.tsx`)**:
-   - En la botonera de acciones del título activo (junto a `+ Registrar progreso` y el botón del juego base), añadir el botón:
-     `{current.trailerVideoId && <button type="button" className="button outline" onClick={() => setTrailerId(current.trailerVideoId)}>▶ Ver Tráiler</button>}`
-3. **Integración en `ScreenTelemetryDrawer` (`src/components/screen/screen-telemetry-drawer.tsx`)**:
-   - En el encabezado sobre el backdrop o junto al título, añadir el botón `▶ Tráiler` si `detail.trailerVideoId` existe.
-   - Rediseñar la sección `Dónde ver hoy` usando `<div className="screen-providers-chips">` con los logos oficiales a color y enlaces directos de JustWatch.
+### 3.1. Habilitación de Miniaturas TMDB en Chat
+En `src/domain/global-chat.ts`, la función `safeChatMediaUrl(value, storageOrigin, ownerId)` valida los hostnames autorizados para adjuntar imágenes. Se agrega `'image.tmdb.org'` a la lista:
+```ts
+const hosts = [
+  'i.imgur.com',
+  'media.tenor.com',
+  'c.tenor.com',
+  'media.giphy.com',
+  'i.giphy.com',
+  'cdn.discordapp.com',
+  'media.discordapp.net',
+  'klipy.com',
+  'image.tmdb.org',
+];
+```
+Esto permite adjuntar de forma segura `https://image.tmdb.org/t/p/w780/...` o similar en el campo `mediaUrl` del mensaje de chat.
+
+### 3.2. Formato del Checkpoint Compartido
+El payload publicado en `POST /api/chat/messages` genera un mensaje estructurado y visual:
+```text
+📺 CHECKPOINT // Screen
+🍿 Arcane
+🏷️ Estado: Viendo
+⭐ Tu calificación: 10/10
+📊 Avance: Temporada 2 · 6 / 9 episodios vistos (67%)
+🔗 /screen?select=94605&type=tv
+```
+Para películas:
+```text
+🎬 CHECKPOINT // Screen
+🍿 The Super Mario Bros. Movie
+🏷️ Estado: Completada
+⭐ Tu calificación: 8/10
+📊 Avance: Película vista (100%)
+🔗 /screen?select=502356&type=movie
+```
+
+### 3.3. Experiencia de Usuario en `ScreenTelemetryDrawer`
+1. Botón visible **`💬 Compartir en Chat Global`** bajo la sección de calificación y progreso (disponible cuando el usuario está autenticado).
+2. Estado de carga durante el POST (`Compartiendo…`).
+3. Feedback inline:
+   - Al completar con éxito: un pill o aviso de confirmación: `✓ ¡Compartido en el Chat Global! [Ir al chat →]` que enlaza a `/chat`.
+   - En caso de error o rate limit: mensaje explicativo respetando el límite de 1.5s entre mensajes.
+
+---
+
+## 4. Archivos Involucrados
+
+| Archivo | Responsabilidad |
+|---|---|
+| `src/domain/screen.ts` | Refinar `extractTmdbTrailerId` con jerarquía de prioridades `es-MX` / Latam / General / ES / EN. |
+| `src/services/screen.ts` | Añadir `include_video_language: 'es-MX,es,en'` al consultar `append_to_response: 'credits,watch/providers,videos'` en TMDB. |
+| `src/domain/global-chat.ts` | Permitir `image.tmdb.org` en `safeChatMediaUrl` para que las carátulas/backdrops se rendericen como media adjunto. |
+| `src/components/screen/screen-telemetry-drawer.tsx` | Añadir el botón `💬 Compartir en Chat Global` con formateo del checkpoint, spinner de progreso y feedback de éxito con enlace a `/chat`. |
+| `src/app/screen.css` | Estilos para el botón de compartir, mensaje de confirmación y badges de telemetría compartida. |
+| `tests/unit/screen.test.ts` | Tests para verificar la selección del tráiler latino sobre el de España o inglés. |
+| `tests/unit/global-chat.test.ts` | Test de validación que confirme que `image.tmdb.org` es un host permitido en `safeChatMediaUrl`. |
