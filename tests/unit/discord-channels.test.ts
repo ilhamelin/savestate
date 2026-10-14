@@ -13,8 +13,9 @@ test('Discord channel mapping permits only known frequencies and same-guild text
     'web-chat': primary,
     checkpoints: '333333333333333333',
     announcements: '444444444444444444',
+    'chat-privado': null,
   });
-  for (const value of ['web-chat', 'checkpoints', 'announcements'])
+  for (const value of ['web-chat', 'checkpoints', 'announcements', 'chat-privado'])
     assert.equal(discordFrequency(value), value);
   for (const value of [primary, 'admin', 'https://evil.test', null, {}, ''])
     assert.equal(discordFrequency(value), null);
@@ -33,7 +34,7 @@ test('Discord channel mapping permits only known frequencies and same-guild text
       guild,
       primary,
     ),
-    { 'web-chat': primary, checkpoints: null, announcements: null },
+    { 'web-chat': primary, checkpoints: null, announcements: null, 'chat-privado': null },
   );
 });
 test('Discord channel overrides are validated and ambiguous discoveries remain unavailable', () => {
@@ -61,5 +62,46 @@ test('Discord channel overrides are validated and ambiguous discoveries remain u
     'web-chat': null,
     checkpoints: null,
     announcements: null,
+    'chat-privado': null,
   });
+});
+test('Private chat resolves the configured same-guild text channel and rejects foreign or unknown overrides', () => {
+  const privateChannel = {
+    id: '747219024324198532',
+    name: '〘🕵〙chat-privado',
+    type: 0,
+    guild_id: guild,
+  };
+  assert.equal(
+    authorizedDiscordChannels([...channels, privateChannel], guild, primary)['chat-privado'],
+    privateChannel.id,
+  );
+  assert.equal(
+    authorizedDiscordChannels(
+      [...channels, { ...privateChannel, id: '666666666666666666' }],
+      guild,
+      primary,
+    )['chat-privado'],
+    '666666666666666666',
+  );
+  assert.equal(
+    authorizedDiscordChannels([...channels, privateChannel], guild, primary, {
+      privateChat: '999999999999999999',
+    })['chat-privado'],
+    null,
+  );
+  assert.equal(
+    authorizedDiscordChannels(
+      [...channels, { ...privateChannel, guild_id: '999999999999999999' }],
+      guild,
+      primary,
+    )['chat-privado'],
+    null,
+  );
+  assert.equal(
+    authorizedDiscordChannels([...channels, { ...privateChannel, type: 2 }], guild, primary)[
+      'chat-privado'
+    ],
+    null,
+  );
 });

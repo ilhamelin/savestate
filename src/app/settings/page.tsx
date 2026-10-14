@@ -3,6 +3,7 @@ import { serverClient } from '@/integrations/supabase/server';
 import { isConfigured } from '@/lib/env';
 import { SetupNotice } from '@/components/setup-notice';
 import { Settings } from '@/components/settings';
+import { DiscordAccountLink } from '@/components/discord-account-link';
 import { SocialControls } from '@/components/social-controls';
 import { dbCheck } from '@/lib/http';
 import { redirect } from 'next/navigation';
@@ -45,6 +46,7 @@ export default async function SettingsPage() {
         key={profileResult.data.username}
         profile={restoreProfileAppearance(profileResult.data)}
       />
+      <DiscordAccountLink />
       <section className="panel">
         <h2>Importación multiplataforma</h2>
         <p>Revisa títulos y horas antes de añadirlos a SaveState.</p>

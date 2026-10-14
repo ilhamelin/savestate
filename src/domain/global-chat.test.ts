@@ -51,6 +51,19 @@ test('chat text preserves multiline plain text and strips controls', () => {
   assert.equal(detectMediaType('https://i.imgur.com/a.GIF?x=1'), 'gif');
   assert.equal(detectMediaType('image/webp'), 'image');
 });
+
+test('chat accepts official TMDB image URLs while rejecting spoofed or unsafe origins', () => {
+  const url = 'https://image.tmdb.org/t/p/w780/poster.jpg';
+  assert.equal(safeChatMediaUrl(url), url);
+  for (const value of [
+    'http://image.tmdb.org/t/p/w780/poster.jpg',
+    'https://image.tmdb.org.evil.example/poster.jpg',
+    'https://user@image.tmdb.org/poster.jpg',
+    'https://image.tmdb.org/poster.svg',
+    'https://image.tmdb.org/poster.html',
+  ])
+    assert.equal(safeChatMediaUrl(value), null);
+});
 test('chat files enforce exact 5 MB and format signature', () => {
   assert.doesNotThrow(() => validateChatFile(5242880, 'image/gif'));
   for (const size of [0, -1, 5242881, NaN])

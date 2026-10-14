@@ -267,6 +267,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
     url: string;
     file?: File;
     uploadedUrl?: string;
+    privatePath?: string;
   } | null>(null);
   const [urlOpen, setUrlOpen] = useState(false);
   const [urlDraft, setUrlDraft] = useState('');
@@ -388,6 +389,14 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
   const [revision, setRevision] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
   const [frequency, setFrequency] = useState<DiscordFrequency>('web-chat');
+  const [privateChatAccess, setPrivateChatAccess] = useState({
+    canRead: false,
+    canSend: false,
+    canAttach: false,
+  });
+  const writableFrequency =
+    frequency === 'web-chat' || (frequency === 'chat-privado' && privateChatAccess.canSend);
+  const canAttach = frequency !== 'chat-privado' || privateChatAccess.canAttach;
   const frequencyRef = useRef<DiscordFrequency>('web-chat');
   const [newMessages, setNewMessages] = useState(false);
   const pendingScroll = useRef(true);
@@ -405,6 +414,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
   }
   function selectFrequency(next: DiscordFrequency) {
     if (next === frequency || busy.current) return;
+    if (next === 'chat-privado' && !privateChatAccess.canRead) return;
     frequencyRef.current = next;
     pendingScroll.current = true;
     setNewMessages(false);
@@ -418,6 +428,11 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
     setSelectedMentions([]);
     setMentionsOpen(false);
     setGamePicker(false);
+    setContent('');
+    setAttachment(null);
+    setUrlDraft('');
+    setUrlOpen(false);
+    setActiveMedia(null);
   }
   const cooldownUntil = useRef(0);
   const [cooldown, setCooldown] = useState(0);
@@ -447,12 +462,38 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
           signal: request.signal,
           cache: 'no-store',
         });
+        if (
+          response.status === 403 &&
+          frequency === 'chat-privado' &&
+          !disposed &&
+          !request.signal.aborted
+        ) {
+          setPrivateChatAccess({ canRead: false, canSend: false, canAttach: false });
+          messagesRef.current = [];
+          setMessages([]);
+          setContent('');
+          setAttachment(null);
+          setReplyTo(null);
+          setActiveMedia(null);
+          setUrlOpen(false);
+          setUrlDraft('');
+          setSelectedMentions([]);
+          setMentionsOpen(false);
+          setGamePicker(false);
+          frequencyRef.current = 'web-chat';
+          setFrequency('web-chat');
+          return;
+        }
         const data = await readJsonResponse<{
           messages: DiscordMessage[];
           presence: typeof presence;
           viewerUsername: string | null;
+          privateChatAccess?: typeof privateChatAccess;
         }>(response);
         if (!disposed && !request.signal.aborted && frequencyRef.current === frequency) {
+          setPrivateChatAccess(
+            data.privateChatAccess ?? { canRead: false, canSend: false, canAttach: false },
+          );
           if (!busy.current && !sameDiscordMessages(messagesRef.current, data.messages)) {
             const previous = messagesRef.current;
             const hasNew = data.messages.some(
@@ -501,7 +542,8 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
   }, [revision, frequency]);
   async function send() {
     if (
-      frequency !== 'web-chat' ||
+      !writableFrequency ||
+      (attachment && !canAttach) ||
       busy.current ||
       Date.now() < cooldownUntil.current ||
       (!content.trim() && !attachment)
@@ -513,30 +555,44 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
     cooldownUntil.current = Date.now() + 3000;
     setCooldown(3);
     try {
-      let mediaUrl = attachment?.uploadedUrl ?? attachment?.url ?? null;
-      if (attachment?.file && !attachment.uploadedUrl) {
-        const preparedResponse = await fetch('/api/chat/upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ size: attachment.file.size, contentType: attachment.file.type }),
-        });
-        const prepared = await readJsonResponse<{ path: string; token: string; url: string }>(
-          preparedResponse,
-        );
+      let mediaUrl = attachment?.file
+        ? (attachment.uploadedUrl ?? null)
+        : (attachment?.url ?? null);
+      let privateAttachmentPath = attachment?.privatePath;
+      if (attachment?.file && !attachment.uploadedUrl && !privateAttachmentPath) {
+        const uploadInput = { size: attachment.file.size, contentType: attachment.file.type };
+        type Prepared = { path: string; token: string; url?: string; bucket?: string };
+        const prepared =
+          frequency === 'chat-privado'
+            ? await api<Prepared>('discord/private-upload', uploadInput)
+            : await readJsonResponse<Prepared>(
+                await fetch('/api/chat/upload', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(uploadInput),
+                }),
+              );
         const { error: uploadError } = await browserClient()
-          .storage.from('chat-media')
+          .storage.from(prepared.bucket ?? 'chat-media')
           .uploadToSignedUrl(prepared.path, prepared.token, attachment.file, {
             contentType: attachment.file.type,
           });
         if (uploadError)
           throw new Error('No se pudo subir el adjunto. Puedes volver a intentarlo.');
-        mediaUrl = prepared.url;
-        setAttachment({ ...attachment, uploadedUrl: prepared.url });
+        if (frequency === 'chat-privado') {
+          privateAttachmentPath = prepared.path;
+          mediaUrl = null;
+          setAttachment({ ...attachment, privatePath: prepared.path });
+        } else {
+          mediaUrl = prepared.url ?? null;
+          setAttachment({ ...attachment, uploadedUrl: prepared.url });
+        }
       }
       const result = await api<{ message: DiscordMessage | null }>('discord/messages', {
         content,
         mediaUrl,
-        channel: 'web-chat',
+        channel: frequency,
+        privateAttachmentPath,
         replyToMessageId: replyTo?.id,
         mentions: selectedMentions.filter((mention) =>
           discordHasMention(content, mention.username),
@@ -585,7 +641,11 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
               {node.online ? '🟢' : '◌'}
             </span>{' '}
             {loading ? 'CONECTANDO' : node.online ? 'LIVE SYNC' : 'SYNC EN PAUSA'} // #
-            {frequency === 'announcements' ? 'anuncios-savestate' : frequency}
+            {frequency === 'announcements'
+              ? 'anuncios-savestate'
+              : frequency === 'chat-privado'
+                ? '〘🕵〙chat-privado'
+                : frequency}
           </span>
           <button
             type="button"
@@ -633,7 +693,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                 key={message.id}
                 message={message}
                 onOpen={setActiveMedia}
-                canInteract={frequency === 'web-chat'}
+                canInteract={writableFrequency}
                 viewerUsername={viewerUsername}
                 mentionNames={mentionNames}
                 onReply={replyMessage}
@@ -659,7 +719,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
             {error}
           </p>
         ) : null}
-        {frequency === 'web-chat' ? (
+        {writableFrequency ? (
           <>
             {replyTo && (
               <div className="discord-reply-bar">
@@ -862,13 +922,13 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                   ref={fileRef}
                   aria-label="Adjuntar imagen o GIF"
                   accept="image/png,image/jpeg,image/webp,image/gif"
-                  disabled={sending}
+                  disabled={sending || !canAttach}
                   onChange={(event) => void attachFile(event.target.files?.[0])}
                 />
                 <button
                   type="button"
                   className="button outline small"
-                  disabled={sending}
+                  disabled={sending || !canAttach}
                   onClick={() => fileRef.current?.click()}
                 >
                   📎 Adjuntar archivo
@@ -876,7 +936,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                 <button
                   type="button"
                   className="button outline small"
-                  disabled={sending}
+                  disabled={sending || !canAttach}
                   aria-expanded={urlOpen}
                   onClick={() => setUrlOpen((open) => !open)}
                 >
@@ -930,7 +990,12 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                 </button>
                 <button
                   className="button"
-                  disabled={sending || cooldown > 0 || (!content.trim() && !attachment)}
+                  disabled={
+                    sending ||
+                    cooldown > 0 ||
+                    (!content.trim() && !attachment) ||
+                    Boolean(attachment && !canAttach)
+                  }
                 >
                   {sending ? 'Enviando…' : cooldown > 0 ? `Espera ${cooldown}s…` : 'Enviar →'}
                 </button>
@@ -944,7 +1009,12 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
         ) : (
           <p className="notice discord-readonly">
             [ MODO LECTURA //{' '}
-            {frequency === 'checkpoints' ? 'REGISTRO DE CHECKPOINTS' : 'ANUNCIOS DESTACADOS'} ]
+            {frequency === 'chat-privado'
+              ? 'FRECUENCIA PRIVADA'
+              : frequency === 'checkpoints'
+                ? 'REGISTRO DE CHECKPOINTS'
+                : 'ANUNCIOS DESTACADOS'}{' '}
+            ]
           </p>
         )}
         {activeMedia ? (
@@ -964,22 +1034,25 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
               [
                 ['checkpoints', '#💾-checkpoints', 'Registro real · modo lectura'],
                 ['web-chat', '#💬-web-chat', 'Todos los mensajes · envío habilitado'],
+                ['chat-privado', '#〘🕵〙chat-privado', 'Frecuencia privada · envío habilitado'],
                 ['announcements', '#📢-anuncios-savestate', 'Anuncios del servidor · modo lectura'],
               ] as const
-            ).map(([value, label, description]) => (
-              <li key={value}>
-                <button
-                  type="button"
-                  className={`discord-channel-pill${frequency === value ? ' active' : ''}`}
-                  aria-pressed={frequency === value}
-                  disabled={sending}
-                  onClick={() => selectFrequency(value)}
-                >
-                  <strong>{label}</strong>
-                  <span>{description}</span>
-                </button>
-              </li>
-            ))}
+            )
+              .filter(([value]) => value !== 'chat-privado' || privateChatAccess.canRead)
+              .map(([value, label, description]) => (
+                <li key={value}>
+                  <button
+                    type="button"
+                    className={`discord-channel-pill${frequency === value ? ' active' : ''}`}
+                    aria-pressed={frequency === value}
+                    disabled={sending}
+                    onClick={() => selectFrequency(value)}
+                  >
+                    <strong>{label}</strong>
+                    <span>{description}</span>
+                  </button>
+                </li>
+              ))}
           </ul>
         </section>
         <DiscordLinkedRoleCard />

@@ -1,6 +1,9 @@
 import type { DiscordFrequency } from './discord-client.ts';
 export function discordFrequency(value: unknown): DiscordFrequency | null {
-  return value === 'web-chat' || value === 'checkpoints' || value === 'announcements'
+  return value === 'web-chat' ||
+    value === 'checkpoints' ||
+    value === 'announcements' ||
+    value === 'chat-privado'
     ? value
     : null;
 }
@@ -8,7 +11,7 @@ export function authorizedDiscordChannels(
   payload: unknown,
   guildId: string,
   primary: string,
-  overrides: { checkpoints?: string; announcements?: string } = {},
+  overrides: { checkpoints?: string; announcements?: string; privateChat?: string } = {},
 ): Record<DiscordFrequency, string | null> {
   const channels = (Array.isArray(payload) ? payload : []).filter(
     (channel): channel is { id: string; name: string; type: number; guild_id?: string } =>
@@ -32,5 +35,8 @@ export function authorizedDiscordChannels(
     'web-chat': channels.some((channel) => channel.id === primary) ? primary : null,
     checkpoints: select('checkpoints', overrides.checkpoints),
     announcements: select('anuncios-savestate', overrides.announcements),
+    'chat-privado': overrides.privateChat
+      ? select('chat-privado', overrides.privateChat)
+      : (select('chat-privado', '747219024324198532') ?? select('chat-privado')),
   };
 }

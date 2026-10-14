@@ -1,4 +1,6 @@
 import 'server-only';
+import { createHash } from 'node:crypto';
+import { screenAnnouncementMessage, type ScreenAnnouncement } from '@/domain/screen-announcement';
 import { unstable_cache, revalidateTag } from 'next/cache';
 import { after } from 'next/server';
 import { AppError } from '@/lib/http';
@@ -15,6 +17,12 @@ import {
 } from '@/domain/discord';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/database.types';
+import {
+  linkedDiscordIdentity,
+  privateChatAllowedUser,
+  discordPrivatePermissions,
+  NO_PRIVATE_ACCESS,
+} from '@/domain/discord-private-access';
 import { registerDiscordApplication } from '@/integrations/discord/application';
 import { authorizedDiscordChannels, discordFrequency } from '@/domain/discord-channels';
 import type { DiscordFrequency, DiscordSendOptions } from '@/domain/discord-client';
@@ -138,7 +146,7 @@ const cachedPresence = unstable_cache(
   { revalidate: 15 },
 );
 const cachedAuthorizedChannels = unstable_cache(
-  async (primary: string, checkpoints: string, announcements: string) => {
+  async (primary: string, checkpoints: string, announcements: string, privateChat: string) => {
     const { token } = configuration();
     const guildId = await cachedGuildId(primary);
     const response = await discordRequest(
@@ -150,6 +158,7 @@ const cachedAuthorizedChannels = unstable_cache(
     return authorizedDiscordChannels(await response.json(), guildId, primary, {
       checkpoints,
       announcements,
+      privateChat,
     });
   },
   ['discord-authorized-channels-v1'],
@@ -161,7 +170,94 @@ export async function fetchAuthorizedChannels() {
     channel,
     process.env.DISCORD_CHECKPOINTS_CHANNEL_ID?.trim() ?? '',
     process.env.DISCORD_ANNOUNCEMENTS_CHANNEL_ID?.trim() ?? '',
+    process.env.DISCORD_PRIVATE_CHAT_CHANNEL_ID?.trim() || '747219024324198532',
   );
+}
+export async function discordPrivateChatAccess(db: SupabaseClient<Database>, userId: string) {
+  try {
+    const auth = await db.auth.getUser();
+    if (auth.error || auth.data.user?.id !== userId) return NO_PRIVATE_ACCESS;
+    if (privateChatAllowedUser(userId, process.env.DISCORD_PRIVATE_CHAT_ALLOWED_USERS))
+      return { canRead: true, canSend: true, canAttach: true };
+    const discordId = linkedDiscordIdentity(auth.data.user.identities);
+    if (!discordId) return NO_PRIVATE_ACCESS;
+    const { token, channel: primary } = configuration();
+    const [guildId, target] = await Promise.all([
+      cachedGuildId(primary),
+      fetchAuthorizedChannels().then((channels) => channels['chat-privado']),
+    ]);
+    if (!target) return NO_PRIVATE_ACCESS;
+    const headers = { Authorization: `Bot ${token}` };
+    const get = async (path: string) =>
+      (await discordRequest(`https://discord.com/api/v10/${path}`, { headers })).json();
+    const [guild, roles, member, channel] = await Promise.all([
+      get(`guilds/${guildId}`),
+      get(`guilds/${guildId}/roles`),
+      get(`guilds/${guildId}/members/${discordId}`),
+      get(`channels/${target}`),
+    ]);
+    return discordPrivatePermissions({
+      userId: discordId,
+      guildId,
+      channelId: target,
+      guild,
+      roles,
+      member,
+      channel,
+    });
+  } catch {
+    return NO_PRIVATE_ACCESS;
+  }
+}
+const screenAnnouncementRuns = new Map<string, Promise<{ published: boolean }>>();
+export async function announceScreenUpcomingToDiscord(item: ScreenAnnouncement) {
+  const { marker, payload } = screenAnnouncementMessage(item, appUrl());
+  const pending = screenAnnouncementRuns.get(marker);
+  if (pending) return pending;
+  const run = (async () => {
+    const { token } = configuration();
+    const target = (await fetchAuthorizedChannels()).announcements;
+    if (!target)
+      throw new AppError(
+        'El canal anuncios-savestate no está disponible. Revisa la autorización y los permisos del bot.',
+        503,
+      );
+    const headers = { Authorization: `Bot ${token}`, 'Content-Type': 'application/json' };
+    const history: unknown = await (
+      await discordRequest(`https://discord.com/api/v10/channels/${target}/messages?limit=100`, {
+        headers,
+      })
+    ).json();
+    if (
+      Array.isArray(history) &&
+      history.some((message) => {
+        const data = record(message);
+        return (
+          record(data.author).bot === true &&
+          Array.isArray(data.embeds) &&
+          data.embeds.some((embed) => record(record(embed).footer).text === marker)
+        );
+      })
+    )
+      return { published: false };
+    await discordRequest(`https://discord.com/api/v10/channels/${target}/messages`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        ...payload,
+        nonce: createHash('sha256').update(marker).digest('hex').slice(0, 24),
+        enforce_nonce: true,
+      }),
+    });
+    revalidateTag('discord-messages', 'max');
+    return { published: true };
+  })();
+  screenAnnouncementRuns.set(marker, run);
+  try {
+    return await run;
+  } finally {
+    screenAnnouncementRuns.delete(marker);
+  }
 }
 const freebieRuns = new Map<
   string,
@@ -374,9 +470,23 @@ export async function sendDiscordMessage(
   content: string,
   options: DiscordSendOptions = {},
   mediaUrl: string | null = null,
+  channelFrequency: DiscordFrequency = 'web-chat',
+  attachment?: { data: Blob; name: string },
 ) {
-  const { token, channel } = configuration();
-  const prepared = discordComposerPayload(content, mediaUrl, process.env.NEXT_PUBLIC_SUPABASE_URL);
+  const { token, channel: primary } = configuration();
+  if (channelFrequency !== 'web-chat' && channelFrequency !== 'chat-privado')
+    throw new AppError('Esta frecuencia es de solo lectura.', 403);
+  const channel =
+    channelFrequency === 'web-chat' ? primary : (await fetchAuthorizedChannels())[channelFrequency];
+  if (!channel)
+    throw new AppError('La frecuencia solicitada no tiene un canal autorizado disponible.', 503);
+  if (attachment && channelFrequency !== 'chat-privado')
+    throw new AppError('Adjunto privado no autorizado en este canal.', 403);
+  const prepared = discordComposerPayload(
+    content || (attachment ? '📎' : ''),
+    mediaUrl,
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+  );
   const text = prepared.content || '📎';
   const safeName = username.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 30);
   const checked = discordSendOptions(options);
@@ -397,7 +507,7 @@ export async function sendDiscordMessage(
       record(raw).id !== checked.replyToMessageId ||
       (record(raw).channel_id && record(raw).channel_id !== channel)
     )
-      throw new AppError('La respuesta no pertenece a web-chat.', 400);
+      throw new AppError('La respuesta no pertenece al canal seleccionado.', 400);
   }
   const outgoing = discordOutgoingMessage(text, checked, recent);
   const outgoingContent = `**[@${safeName} en Savestate]:** ${outgoing.content}${prepared.mediaUrl ? '\n' + prepared.mediaUrl : ''}`;
@@ -406,19 +516,29 @@ export async function sendDiscordMessage(
       'El mensaje y el enlace superan el límite de Discord. Acorta el texto o usa una URL más corta.',
       400,
     );
+  const payload = { ...outgoing, content: outgoingContent };
+  let requestBody: BodyInit = JSON.stringify(payload);
+  const headers = new Headers({
+    Authorization: `Bot ${token}`,
+    'Content-Type': 'application/json',
+    'User-Agent': 'SaveState (https://savestate-eight.vercel.app, 1.0)',
+  });
+  if (attachment) {
+    const form = new FormData();
+    form.append(
+      'payload_json',
+      JSON.stringify({ ...payload, attachments: [{ id: 0, filename: attachment.name }] }),
+    );
+    form.append('files[0]', attachment.data, attachment.name);
+    requestBody = form;
+    headers.delete('Content-Type');
+  }
   const response = await discordRequest(
     `https://discord.com/api/v10/channels/${channel}/messages`,
     {
       method: 'POST',
-      headers: {
-        Authorization: `Bot ${token}`,
-        'Content-Type': 'application/json',
-        'User-Agent': 'SaveState (https://savestate-eight.vercel.app, 1.0)',
-      },
-      body: JSON.stringify({
-        ...outgoing,
-        content: outgoingContent,
-      }),
+      headers,
+      body: requestBody,
     },
   );
   const message = normalizedDiscordMessages([await response.json()])[0] ?? null;

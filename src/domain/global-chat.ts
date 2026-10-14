@@ -69,6 +69,7 @@ export function safeChatMediaUrl(
       'cdn.discordapp.com',
       'media.discordapp.net',
       'klipy.com',
+      'image.tmdb.org',
     ];
     if (!hosts.includes(url.hostname) && !url.hostname.endsWith('.klipy.com')) return null;
     if (!/\.(png|jpe?g|webp|gif)(?:$|\/)/i.test(url.pathname)) return null;

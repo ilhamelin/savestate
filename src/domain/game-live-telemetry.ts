@@ -17,6 +17,7 @@ export type TwitchStreamItem = {
   streamUrl: string;
 };
 export type GameLiveTelemetry = {
+  usdToClpRate?: number | null;
   steamAppId: number | null;
   steamCurrentPlayers: number | null;
   historicalLow: { price: string; dateIso: string | null } | null;
@@ -24,6 +25,13 @@ export type GameLiveTelemetry = {
   twitchStreams: TwitchStreamItem[];
   twitchTotalTopViewers: number;
 };
+export function formatClpPrice(usdPrice: string | number, rate?: number | null): string {
+  const amount = typeof usdPrice === 'string' ? parseFloat(usdPrice) : usdPrice;
+  if (!Number.isFinite(amount) || amount <= 0 || !rate || !Number.isFinite(rate) || rate <= 0)
+    return '';
+  const clp = Math.round(amount * rate);
+  return Number.isFinite(clp) ? `(~$${clp.toLocaleString('es-CL')} CLP)` : '';
+}
 const stores: Record<string, string> = {
   '1': 'Steam',
   '2': 'GamersGate',

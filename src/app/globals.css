@@ -4560,6 +4560,22 @@ button.discord-channel-pill:focus-visible {
 .live-deals del {
   color: var(--muted);
 }
+.live-deals .clp-price {
+  display: block;
+  font-family: var(--font-mono), monospace;
+}
+.instant-gaming-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-right: auto;
+}
+.live-deals .instant-gaming-deal {
+  border-color: #ff6b354d;
+}
+.instant-gaming-deal .tag {
+  color: #ff9a62;
+}
 .live-stream-grid,
 .competitive-showcase {
   display: grid;
@@ -7617,4 +7633,28 @@ body:has(.worlds-hub) {
   .discord-composer-toolbar {
     gap: 0.4rem;
   }
+}
+
+.discord-account-link {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+}
+.discord-linked-role-card .discord-account-link {
+  margin: 1rem 0;
+  padding: 0.85rem;
+}
+.discord-linked-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+  overflow-wrap: anywhere;
+}
+.discord-linked-identity img {
+  flex-shrink: 0;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  object-fit: cover;
+}
+.discord-account-link .button {
+  white-space: normal;
 }

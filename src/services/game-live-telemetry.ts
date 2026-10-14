@@ -23,8 +23,27 @@ async function json(url: string, headers: Record<string, string> = {}) {
   if (!response.ok) throw new Error('Telemetry unavailable');
   return (await response.json()) as unknown;
 }
+const fetchUsdToClpRate = unstable_cache(
+  async (): Promise<number> => {
+    try {
+      const response = await fetch('https://open.er-api.com/v6/latest/USD', {
+        next: { revalidate: 3600 },
+        signal: AbortSignal.timeout(4000),
+      });
+      if (!response.ok) return 975;
+      const data = record(await response.json());
+      const rate = record(data.rates).CLP;
+      return typeof rate === 'number' && Number.isFinite(rate) && rate > 0 ? rate : 975;
+    } catch {
+      return 975;
+    }
+  },
+  ['usd-to-clp-rate-v1'],
+  { revalidate: 3600 },
+);
 export const fetchGameLiveTelemetry = unstable_cache(
   async (title: string): Promise<GameLiveTelemetry> => {
+    const ratePromise = fetchUsdToClpRate();
     const result: GameLiveTelemetry = {
       steamAppId: null,
       steamCurrentPlayers: null,
@@ -125,8 +144,9 @@ export const fetchGameLiveTelemetry = unstable_cache(
         );
       })(),
     ]);
+    result.usdToClpRate = await ratePromise;
     return result;
   },
-  ['game-live-telemetry-v2'],
+  ['game-live-telemetry-v3'],
   { revalidate: 300 },
 );

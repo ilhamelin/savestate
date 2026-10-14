@@ -8,8 +8,8 @@ test('Screen uses bounded server-only TMDB requests, regional providers and owne
   const fixture =
     'data:text/javascript,' +
     encodeURIComponent(`
-    export const state={auth:true,existing:false,inserted:null,updated:null,filters:[]};
-    const db={from(table){if(table!=='user_screen_entries')throw Error('Unexpected table');let fields=null;let inserting=false;const q={select(){return q},order(){return q},limit(){return q},eq(key,value){state.filters.push([key,value]);return q},update(data){fields=data;state.updated=data;return q},insert(data){fields=data;inserting=true;state.inserted=data;return q},async maybeSingle(){return {data:state.existing?{id:'entry',user_id:'owner',tmdb_id:94605,media_type:'tv',...fields}:null,error:null}},async single(){state.existing=true;return {data:{id:'entry',...fields},error:null}},then(done,fail){return Promise.resolve({data:[],error:null}).then(done,fail)}};return q}};
+    export const state={auth:true,existing:false,inserted:null,updated:null,filters:[],missingFollow:false,rows:[]};
+    const db={from(table){if(table!=='user_screen_entries')throw Error('Unexpected table');let fields=null;const q={select(){return q},order(){return q},limit(){return q},eq(key,value){state.filters.push([key,value]);return q},update(data){fields=data;state.updated=data;return q},insert(data){fields=data;state.inserted=data;return q},async maybeSingle(){if(state.missingFollow&&fields&&'followed' in fields)return {data:null,error:{code:'PGRST204',message:'Missing followed column'}};return {data:state.existing?{id:'entry',user_id:'owner',tmdb_id:94605,media_type:'tv',...fields}:null,error:null}},async single(){state.existing=true;return {data:{id:'entry',...fields},error:null}},then(done,fail){return Promise.resolve({data:state.rows,error:null}).then(done,fail)}};return q}};
     export const currentUser=async()=>state.auth?{id:'owner'}:null;
     export const authenticated=async()=>{if(!state.auth)throw Object.assign(Error('No session'),{status:401});return {db,user:{id:'owner'}}};
     export const serverClient=async()=>db;
@@ -51,8 +51,10 @@ test('Screen uses bounded server-only TMDB requests, regional providers and owne
     assert.equal(new Headers(init?.headers).get('Authorization'), 'Bearer tmdb-test-token');
     assert.equal(url.searchParams.get('api_key'), null);
     assert.equal(url.searchParams.get('language'), 'es-ES');
-    if (/(?:tv|movie)\/\d+$/.test(url.pathname))
+    if (/(?:tv|movie)\/\d+$/.test(url.pathname)) {
       assert.equal(url.searchParams.get('append_to_response'), 'credits,watch/providers,videos');
+      assert.equal(url.searchParams.get('include_video_language'), 'es-MX,es,en');
+    }
     if (url.pathname.includes('/season/'))
       return Response.json({
         episodes: [{ episode_number: 1, name: 'Episode One', air_date: '2026-01-01' }],
@@ -60,6 +62,14 @@ test('Screen uses bounded server-only TMDB requests, regional providers and owne
     return Response.json({
       id: 94605,
       name: 'Canonical Title',
+      status: 'Returning Series',
+      episode_run_time: [24, 26],
+      next_episode_to_air: {
+        season_number: 3,
+        episode_number: 1,
+        name: 'Next Season',
+        air_date: '2026-12-10',
+      },
       seasons: [
         { season_number: 1, name: 'Season 1', episode_count: 2 },
         { season_number: 2, name: 'Season 2', episode_count: 2 },
@@ -85,6 +95,10 @@ test('Screen uses bounded server-only TMDB requests, regional providers and owne
     const service = await import('../../src/services/screen.ts');
     const demo = await service.getScreenMediaDetail(94605, 'tv');
     assert.equal(demo.source, 'demo');
+    assert.deepEqual(
+      (await service.getRadarFeaturedMedia()).map((item) => item.tmdbId),
+      [94605, 100088, 106379, 123548, 502356],
+    );
     assert.equal((await service.getScreenMediaDetail(106379, 'tv')).trailerVideoId, '0kAAqslOS64');
     assert.deepEqual(demo.providers, []);
     assert.equal(requests, 0);
@@ -92,9 +106,12 @@ test('Screen uses bounded server-only TMDB requests, regional providers and owne
     process.env.TMDB_READ_TOKEN = 'tmdb-test-token';
     const detail = await service.getScreenMediaDetail(94605, 'tv', 'CL');
     assert.equal(detail.trailerVideoId, '0kAAqslOS64');
+    assert.equal(detail.runtimeMinutes, 25);
     assert.equal(detail.providers[0]?.name, 'Netflix');
     assert.equal(detail.totalEpisodes, 4);
     assert.equal(detail.credits[0]?.name, 'Actor');
+    assert.equal(detail.nextEpisodeToAir?.season, 3);
+    assert.equal(detail.nextEpisodeToAir?.airDate, '2026-12-10');
     assert.deepEqual((await service.getScreenMediaDetail(94605, 'tv', 'MX')).providers, []);
     const { state } = await import(fixture);
     const payload = {
@@ -109,11 +126,21 @@ test('Screen uses bounded server-only TMDB requests, regional providers and owne
       totalEpisodes: 999,
       watchedEpisodes: [10001, 20001],
       notes: 'Checkpoint',
+      followed: true,
     };
     await service.saveScreenProgress(payload);
     assert.equal(state.inserted.user_id, 'owner');
     assert.equal(state.inserted.title, 'Canonical Title');
     assert.equal(state.inserted.total_episodes, 4);
+    assert.equal(state.inserted.followed, true);
+    state.rows = [
+      { ...state.inserted, media_type: 'tv', tmdb_id: 94605 },
+      { ...state.inserted, followed: false },
+    ];
+    const radar = await service.getFollowedScreenRadar('CL');
+    assert.equal(radar.length, 1);
+    assert.equal(radar[0]?.nextSeasonNumber, 3);
+    assert.equal(radar[0]?.providers[0]?.name, 'Netflix');
     assert.ok(
       state.filters.some(
         ([key, value]: [string, string]) => key === 'user_id' && value === 'owner',
@@ -122,6 +149,10 @@ test('Screen uses bounded server-only TMDB requests, regional providers and owne
     await service.saveScreenProgress({ ...payload, status: 'completed' });
     assert.equal(state.updated.status, 'completed');
     assert.equal('user_id' in state.updated, false);
+    state.missingFollow = true;
+    await assert.rejects(service.saveScreenProgress(payload), /migración 030/);
+    await service.saveScreenProgress({ ...payload, followed: false });
+    assert.equal('followed' in state.updated, false);
     state.auth = false;
     await assert.rejects(
       service.saveScreenProgress(payload),

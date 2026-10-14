@@ -6,6 +6,12 @@ export interface GameAdaptationLink {
   gameTitle: string;
   developerOrPublisher: string;
   featuredOrder?: number;
+  subtitle?: string;
+  rankBadge?: string;
+  statusBadge?: string;
+  certification?: string;
+  shortTitle?: string;
+  streamingBadges?: string[];
 }
 export const GAME_ADAPTATIONS_MATRIX: GameAdaptationLink[] = [
   {
@@ -16,6 +22,12 @@ export const GAME_ADAPTATIONS_MATRIX: GameAdaptationLink[] = [
     gameTitle: 'League of Legends',
     developerOrPublisher: 'Riot Games / Fortiche',
     featuredOrder: 1,
+    shortTitle: '01 Arcane T2',
+    subtitle: 'Temporada 2 · El Clímax de Piltover y Zaun',
+    rankBadge: '[ADAPTACIÓN GAMER // VALORADA #1]',
+    statusBadge: 'TEMPORADA FINAL AL AIRE',
+    certification: 'TV-16',
+    streamingBadges: ['NETFLIX 4K', 'MAX'],
   },
   {
     tmdbId: 100088,
@@ -25,6 +37,12 @@ export const GAME_ADAPTATIONS_MATRIX: GameAdaptationLink[] = [
     gameTitle: 'The Last of Us',
     developerOrPublisher: 'Naughty Dog / HBO',
     featuredOrder: 2,
+    shortTitle: '02 The Last of Us T2',
+    subtitle: 'Temporada 2 · El Precio de la Venganza',
+    rankBadge: '[ADAPTACIÓN GAMER // DESTACADA #2]',
+    statusBadge: 'PRÓXIMAMENTE EN STREAMING',
+    certification: 'TV-MA',
+    streamingBadges: ['MAX 4K'],
   },
   {
     tmdbId: 105248,
@@ -33,7 +51,6 @@ export const GAME_ADAPTATIONS_MATRIX: GameAdaptationLink[] = [
     gameSlug: 'cyberpunk-2077',
     gameTitle: 'Cyberpunk 2077',
     developerOrPublisher: 'CD Projekt Red / Studio Trigger',
-    featuredOrder: 3,
   },
   {
     tmdbId: 106379,
@@ -42,7 +59,13 @@ export const GAME_ADAPTATIONS_MATRIX: GameAdaptationLink[] = [
     gameSlug: 'fallout-4',
     gameTitle: 'Fallout',
     developerOrPublisher: 'Bethesda / Kilter Films',
-    featuredOrder: 4,
+    featuredOrder: 3,
+    shortTitle: '03 Fallout',
+    subtitle: 'Temporada 1 · Bienvenidos al Yermo',
+    rankBadge: '[ADAPTACIÓN GAMER // DESTACADA #3]',
+    statusBadge: 'TEMPORADA 2 EN PRODUCCIÓN',
+    certification: 'TV-MA',
+    streamingBadges: ['PRIME VIDEO'],
   },
   {
     tmdbId: 502356,
@@ -52,6 +75,12 @@ export const GAME_ADAPTATIONS_MATRIX: GameAdaptationLink[] = [
     gameTitle: 'Super Mario',
     developerOrPublisher: 'Nintendo / Illumination',
     featuredOrder: 5,
+    shortTitle: '05 Super Mario',
+    subtitle: 'Película Oficial · Reino Champiñón',
+    rankBadge: '[ADAPTACIÓN GAMER // TAQUILLA #1]',
+    statusBadge: 'DISPONIBLE EN STREAMING',
+    certification: 'PG',
+    streamingBadges: ['MAX', 'PRIME VIDEO'],
   },
   {
     tmdbId: 939243,
@@ -62,12 +91,19 @@ export const GAME_ADAPTATIONS_MATRIX: GameAdaptationLink[] = [
     developerOrPublisher: 'SEGA / Paramount',
   },
   {
-    tmdbId: 100883,
+    tmdbId: 123548,
     mediaType: 'tv',
     title: 'Castlevania: Nocturne',
     gameSlug: 'castlevania-symphony-of-the-night',
     gameTitle: 'Castlevania',
     developerOrPublisher: 'Konami / Project 51',
+    featuredOrder: 4,
+    shortTitle: '04 Castlevania: Nocturne',
+    subtitle: 'Temporada 2 · La Revolución de Richter',
+    rankBadge: '[ADAPTACIÓN GAMER // DESTACADA #4]',
+    statusBadge: 'EN EMISIÓN',
+    certification: 'TV-MA',
+    streamingBadges: ['NETFLIX'],
   },
   {
     tmdbId: 87108,

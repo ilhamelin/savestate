@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/client-api';
 import { readJsonResponse } from '@/lib/api-response';
 import type { DiscordRoleStats } from '@/domain/discord-linked-roles';
+import { DiscordAccountLink } from '@/components/discord-account-link';
 type Status = {
   username: string;
   stats: DiscordRoleStats;
@@ -73,6 +74,7 @@ export function DiscordLinkedRoleCard() {
   return (
     <section className="panel discord-linked-role-card">
       <h2>ROL VERIFICADO EN DISCORD</h2>
+      <DiscordAccountLink next="/chat" />
       <p className="muted">
         Vincula tus estadísticas verificadas de SaveState para cumplir los requisitos de roles del
         servidor.

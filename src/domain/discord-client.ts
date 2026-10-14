@@ -196,9 +196,9 @@ export function discordOutgoingMessage(
       : {}),
   };
 }
-export type DiscordFrequency = 'web-chat' | 'checkpoints' | 'announcements';
+export type DiscordFrequency = 'web-chat' | 'checkpoints' | 'announcements' | 'chat-privado';
 export function discordFrequencyMessages(messages: DiscordMessage[], frequency: DiscordFrequency) {
-  if (frequency === 'web-chat') return messages;
+  if (frequency === 'web-chat' || frequency === 'chat-privado') return messages;
   return messages.filter((message) =>
     frequency === 'announcements'
       ? message.pinned === true

@@ -5,7 +5,18 @@ import {
   mapStreams,
   mapHistoricalLow,
   nonnegative,
+  formatClpPrice,
 } from '../../src/domain/game-live-telemetry.ts';
+test('CLP conversions round pesos, use Chilean separators and omit invalid amounts or rates', () => {
+  assert.equal(formatClpPrice('19.79', 976.093305), '(~$19.317 CLP)');
+  assert.equal(formatClpPrice(12.9, 975), '(~$12.578 CLP)');
+  assert.equal(formatClpPrice('1.25', 1000), '(~$1.250 CLP)');
+  for (const amount of [0, -1, NaN, Infinity, '', 'invalid'])
+    assert.equal(formatClpPrice(amount, 975), '');
+  for (const rate of [null, undefined, 0, -1, NaN, Infinity])
+    assert.equal(formatClpPrice('19.79', rate), '');
+  assert.equal(formatClpPrice(Number.MAX_VALUE, Number.MAX_VALUE), '');
+});
 test('Live deals encode redirect IDs and validate amounts and discount bounds', () => {
   const deals = mapDeals([
     { dealID: 'a&b', storeID: '1', salePrice: '0.00', normalPrice: '29.99', savings: '100.1' },

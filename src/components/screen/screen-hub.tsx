@@ -4,11 +4,14 @@ import { ScreenHeroRadar } from './screen-hero-radar';
 import { ScreenFilterBar } from './screen-filter-bar';
 import { ScreenMediaGrid } from './screen-media-grid';
 import { ScreenTelemetryDrawer } from './screen-telemetry-drawer';
+import { ScreenWatchlistRadar } from './screen-watchlist-radar';
 import { api } from '@/lib/client-api';
 import { readJsonResponse } from '@/lib/api-response';
 import {
   screenProgress,
   screenEpisodeKey,
+  screenFollowedMedia,
+  type ScreenFollowedMedia,
   type ScreenDetail,
   type ScreenMediaItem,
   type ScreenEntryRow,
@@ -46,6 +49,30 @@ export function ScreenHub({
     ),
   );
   const [detail, setDetail] = useState(initialDetail);
+  const [followedItems, setFollowedItems] = useState<ScreenFollowedMedia[]>([]);
+  const [radarRevision, setRadarRevision] = useState(0);
+  const [radarLoading, setRadarLoading] = useState(false);
+  const [radarError, setRadarError] = useState('');
+  useEffect(() => {
+    if (!canEdit) return;
+    const controller = new AbortController();
+    async function load() {
+      setRadarLoading(true);
+      setRadarError('');
+      try {
+        const result = await readJsonResponse<{ items: ScreenFollowedMedia[] }>(
+          await fetch(`/api/screen/watchlist?region=${region}`, { signal: controller.signal }),
+        );
+        if (!controller.signal.aborted) setFollowedItems(result.items);
+      } catch (error) {
+        if (!controller.signal.aborted) setRadarError((error as Error).message);
+      } finally {
+        if (!controller.signal.aborted) setRadarLoading(false);
+      }
+    }
+    void load();
+    return () => controller.abort();
+  }, [canEdit, region, radarRevision]);
   const [drawerRequested, setDrawerRequested] = useState(initialOpenMobile);
   const [progress, setProgress] = useState<ScreenUserProgress>(() =>
     screenProgress(
@@ -160,6 +187,13 @@ export function ScreenHub({
     });
     const saved = screenProgress(row);
     setProgressMap((map) => ({ ...map, [item.id]: saved }));
+    setFollowedItems((items) => {
+      const remaining = items.filter(
+        (entry) => entry.tmdbId !== item.tmdbId || entry.mediaType !== item.mediaType,
+      );
+      return saved.followed ? [...remaining, screenFollowedMedia(item, saved)] : remaining;
+    });
+    setRadarRevision((revision) => revision + 1);
     return saved;
   }
   async function save(patch: Partial<ScreenUserProgress>) {
@@ -204,6 +238,26 @@ export function ScreenHub({
           )
         : key % 10000,
     });
+  }
+  async function unfollow(item: ScreenFollowedMedia) {
+    if (busy.current || !canEdit || !available) return;
+    busy.current = true;
+    setSaving(true);
+    setError('');
+    try {
+      const response = await readJsonResponse<DetailResult>(
+        await fetch(
+          `/api/screen/media/${item.tmdbId}?type=${item.mediaType}&region=${region}&season=${item.currentSeason}`,
+        ),
+      );
+      const saved = await persist(response.detail, { ...response.progress, followed: false });
+      if (detail?.id === response.detail.id) setProgress(saved);
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      busy.current = false;
+      setSaving(false);
+    }
   }
   async function advance(item: ScreenMediaItem) {
     if (busy.current || !canEdit || !available) return;
@@ -260,6 +314,7 @@ export function ScreenHub({
   return (
     <div className="screen-module">
       <ScreenHeroRadar
+        region={region}
         items={featured}
         progress={progressMap}
         onSelect={(item) => void select(item)}
@@ -324,6 +379,7 @@ export function ScreenHub({
               </div>
             ) : detail ? (
               <ScreenTelemetryDrawer
+                key={detail.id}
                 detail={detail}
                 openMobile={drawerRequested}
                 progress={{ ...progress, totalEpisodes: detail.totalEpisodes }}
@@ -346,6 +402,27 @@ export function ScreenHub({
           </div>
         )}
       </div>
+      <ScreenWatchlistRadar
+        items={followedItems}
+        region={region}
+        busy={saving || detailLoading || !canEdit || !available}
+        loading={radarLoading}
+        error={radarError}
+        onSelect={(item) =>
+          void select(
+            {
+              ...item,
+              id: `${item.mediaType}:${item.tmdbId}`,
+              overview: '',
+              releaseYear: null,
+              rating: null,
+              voteCount: 0,
+            },
+            item.currentSeason,
+          )
+        }
+        onUnfollow={(item) => void unfollow(item)}
+      />
       <p className="screen-attribution">
         <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer">
           TMDB

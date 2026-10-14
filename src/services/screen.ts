@@ -16,6 +16,9 @@ import {
   screenProgress,
   validateScreenProgress,
   screenEpisodeKey,
+  screenAirDate,
+  screenFollowedMedia,
+  screenRuntimeMinutes,
   type ScreenMediaItem,
   type ScreenDetail,
   type ScreenMediaType,
@@ -81,6 +84,7 @@ export async function getScreenMediaDetail(
   if (!tmdbConfigured()) return demoMedia(id, type);
   const raw = await tmdbRequest(`${type}/${id}`, {
     append_to_response: 'credits,watch/providers,videos',
+    include_video_language: 'es-MX,es,en',
   });
   const media = normalizeScreenMedia(raw, type);
   if (!media) throw new AppError('Este título no está disponible.', 404);
@@ -104,8 +108,17 @@ export async function getScreenMediaDetail(
       : [];
   });
   let episodes: ScreenDetail['episodes'] = [];
+  let runtimeMinutes = screenRuntimeMinutes(raw, type);
   if (type === 'tv' && seasons.some((item) => item.number === season)) {
     const data = await tmdbRequest(`tv/${id}/season/${season}`);
+    runtimeMinutes ??= screenRuntimeMinutes(
+      {
+        episode_run_time: Array.isArray(data.episodes)
+          ? data.episodes.map((item) => record(item).runtime)
+          : [],
+      },
+      'tv',
+    );
     episodes = (Array.isArray(data.episodes) ? data.episodes : []).flatMap((item) => {
       const entry = record(item);
       return typeof entry.episode_number === 'number' &&
@@ -146,11 +159,33 @@ export async function getScreenMediaDetail(
       type === 'movie' ? 1 : seasons.reduce((total, item) => total + item.episodeCount, 0),
     credits,
     trailerVideoId: extractTmdbTrailerId(raw.videos),
+    runtimeMinutes,
+    releaseDate: screenAirDate(raw.release_date),
+    releaseStatus: typeof raw.status === 'string' ? raw.status : null,
+    nextEpisodeToAir: (() => {
+      const next = record(raw.next_episode_to_air);
+      return type === 'tv' &&
+        Number.isInteger(next.season_number) &&
+        Number.isInteger(next.episode_number) &&
+        Number(next.season_number) > 0 &&
+        Number(next.season_number) <= 999 &&
+        Number(next.episode_number) > 0 &&
+        Number(next.episode_number) < 10000
+        ? {
+            season: Number(next.season_number),
+            episode: Number(next.episode_number),
+            title: typeof next.name === 'string' ? next.name : '',
+            airDate: screenAirDate(next.air_date),
+          }
+        : null;
+    })(),
   };
 }
 export async function getRadarFeaturedMedia(region = 'CL') {
   return await mapBatches(
-    GAME_ADAPTATIONS_MATRIX.filter((item) => item.featuredOrder),
+    GAME_ADAPTATIONS_MATRIX.filter((item) => item.featuredOrder).sort(
+      (a, b) => a.featuredOrder! - b.featuredOrder!,
+    ),
     async (item) => {
       try {
         return await getScreenMediaDetail(item.tmdbId, item.mediaType, region);
@@ -279,6 +314,46 @@ export async function screenDetailWithProgress(
     available,
   };
 }
+export async function getFollowedScreenRadar(region = 'CL') {
+  const country = screenRegion(region);
+  const { entries } = await screenEntries();
+  return await mapBatches(
+    entries.filter((row) => row.followed === true),
+    async (row) => {
+      try {
+        return screenFollowedMedia(
+          await getScreenMediaDetail(row.tmdb_id, row.media_type, country, row.current_season),
+          screenProgress(row),
+        );
+      } catch {
+        // Keep followed titles visible during an upstream outage without inventing dates.
+        return screenFollowedMedia(
+          {
+            id: `${row.media_type}:${row.tmdb_id}`,
+            tmdbId: row.tmdb_id,
+            mediaType: row.media_type,
+            title: row.title,
+            posterUrl: row.poster_path,
+            backdropUrl: row.backdrop_path,
+            overview: '',
+            releaseYear: null,
+            rating: null,
+            voteCount: 0,
+            providers: [],
+            source: 'tmdb',
+            trailerVideoId: null,
+            seasons: [],
+            episodes: [],
+            totalEpisodes: row.total_episodes,
+            credits: [],
+            providerLink: null,
+          },
+          screenProgress(row),
+        );
+      }
+    },
+  );
+}
 export async function saveScreenProgress(input: unknown) {
   const { db, user } = await authenticated();
   const value = object(input);
@@ -294,6 +369,7 @@ export async function saveScreenProgress(input: unknown) {
     throw new AppError('Esta serie supera el límite de 5000 episodios.', 400);
   const progress = validateScreenProgress(value, detail);
   const fields = {
+    ...(progress.followed !== undefined ? { followed: progress.followed } : {}),
     title: detail.title,
     poster_path: detail.posterUrl,
     backdrop_path: detail.backdropUrl,
@@ -314,16 +390,24 @@ export async function saveScreenProgress(input: unknown) {
       .eq('media_type', mediaType)
       .select('*')
       .maybeSingle();
-  let { data, error } = await update();
-  if (!error && !data) {
-    const inserted = await db
-      .from('user_screen_entries')
-      .insert({ user_id: user.id, tmdb_id: tmdbId, media_type: mediaType, ...fields })
-      .select('*')
-      .single();
-    data = inserted.data;
-    error = inserted.error;
-    if (error?.code === '23505') ({ data, error } = await update());
+  async function write() {
+    let result = await update();
+    if (!result.error && !result.data) {
+      result = await db
+        .from('user_screen_entries')
+        .insert({ user_id: user.id, tmdb_id: tmdbId, media_type: mediaType, ...fields })
+        .select('*')
+        .single();
+      if (result.error?.code === '23505') result = await update();
+    }
+    return result;
+  }
+  let { data, error } = await write();
+  if (['PGRST204', '42703'].includes(error?.code ?? '') && /followed/i.test(error?.message ?? '')) {
+    if (progress.followed === true)
+      throw new AppError('Aplica la migración 030 para seguir títulos en el radar.', 503);
+    delete fields.followed;
+    ({ data, error } = await write());
   }
   if (['PGRST205', '42P01'].includes(error?.code ?? ''))
     throw new AppError('Aplica la migración 029 para guardar tu bitácora.', 503);

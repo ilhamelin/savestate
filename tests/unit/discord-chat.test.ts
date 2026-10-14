@@ -31,6 +31,7 @@ test('Discord frequencies use real bot/webhook and pinned metadata, preserving r
     },
   ]);
   assert.equal(discordFrequencyMessages(messages, 'web-chat'), messages);
+  assert.equal(discordFrequencyMessages(messages, 'chat-privado'), messages);
   assert.deepEqual(
     discordFrequencyMessages(messages, 'checkpoints').map((message) => message.id),
     ['222222222222222222'],

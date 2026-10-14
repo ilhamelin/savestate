@@ -34,6 +34,7 @@ export interface ScreenEpisode {
   watched: boolean;
 }
 export interface ScreenUserProgress {
+  followed?: boolean;
   status: ScreenUserStatus;
   rating: number | null;
   currentSeason: number;
@@ -43,6 +44,15 @@ export interface ScreenUserProgress {
   notes: string;
 }
 export interface ScreenDetail extends ScreenMediaItem {
+  runtimeMinutes?: number | null;
+  nextEpisodeToAir?: {
+    season: number;
+    episode: number;
+    title: string;
+    airDate: string | null;
+  } | null;
+  releaseDate?: string | null;
+  releaseStatus?: string | null;
   trailerVideoId: string | null;
   seasons: { number: number; name: string; episodeCount: number }[];
   episodes: ScreenEpisode[];
@@ -70,22 +80,34 @@ export function extractTmdbTrailerId(videosRaw: unknown): string | null {
         type: video.type,
         official: video.official === true,
         language: video.iso_639_1,
+        country: video.iso_3166_1,
+        name: typeof video.name === 'string' ? video.name : '',
         index,
       },
     ];
   });
-  const languagePriority = (language: unknown) =>
-    language === 'es' ? 0 : language === 'en' ? 1 : 2;
+  const languagePriority = (video: { language: unknown; country: unknown; name: string }) => {
+    if (video.language === 'es') {
+      if (
+        ['MX', 'AR', 'CL', 'CO', 'PE', 'LA'].includes(String(video.country)) ||
+        /latino|hispanoam[eé]rica|doblado/i.test(video.name)
+      )
+        return 0;
+      return video.country === 'ES' ? 2 : 1;
+    }
+    return video.language === 'en' ? 3 : 4;
+  };
   videos.sort(
     (a, b) =>
       Number(a.type !== 'Trailer') - Number(b.type !== 'Trailer') ||
       Number(!a.official) - Number(!b.official) ||
-      languagePriority(a.language) - languagePriority(b.language) ||
+      languagePriority(a) - languagePriority(b) ||
       a.index - b.index,
   );
   return videos[0]?.key ?? null;
 }
 export interface ScreenEntryRow {
+  followed?: boolean;
   id: string;
   user_id: string;
   tmdb_id: number;
@@ -130,6 +152,7 @@ export function screenEpisodeKey(season: number, episode: number) {
 export function screenProgress(row?: ScreenEntryRow | null): ScreenUserProgress {
   return row
     ? {
+        followed: row.followed === true,
         status: row.status,
         rating: row.rating,
         currentSeason: row.current_season,
@@ -139,6 +162,7 @@ export function screenProgress(row?: ScreenEntryRow | null): ScreenUserProgress 
         notes: row.notes ?? '',
       }
     : {
+        followed: false,
         status: 'plan_to_watch',
         rating: null,
         currentSeason: 1,
@@ -150,6 +174,8 @@ export function screenProgress(row?: ScreenEntryRow | null): ScreenUserProgress 
 }
 export function validateScreenProgress(input: unknown, detail: ScreenDetail): ScreenUserProgress {
   const value = object(input);
+  if (value.followed !== undefined && typeof value.followed !== 'boolean')
+    throw new ValidationError('Seguimiento inválido.');
   if (!['watching', 'plan_to_watch', 'completed', 'dropped'].includes(String(value.status)))
     throw new ValidationError('Estado inválido.');
   const rating = value.rating == null ? null : value.rating;
@@ -200,6 +226,7 @@ export function validateScreenProgress(input: unknown, detail: ScreenDetail): Sc
   if (detail.mediaType === 'movie' && episodes.length)
     throw new ValidationError('Las películas no tienen episodios.');
   return {
+    followed: value.followed as boolean | undefined,
     status: value.status as ScreenUserStatus,
     rating: rating as number | null,
     currentSeason,
@@ -209,12 +236,137 @@ export function validateScreenProgress(input: unknown, detail: ScreenDetail): Sc
     notes: value.notes.trim(),
   };
 }
+export interface ScreenFollowedMedia {
+  tmdbId: number;
+  mediaType: ScreenMediaType;
+  title: string;
+  posterUrl: string | null;
+  backdropUrl: string | null;
+  currentSeason: number;
+  currentEpisodeWatched: number;
+  nextSeasonNumber: number | null;
+  nextEpisodeNumber: number | null;
+  nextEpisodeTitle: string | null;
+  nextAirDate: string | null;
+  providers: WatchProvider[];
+  followed: boolean;
+  statusText: string;
+  source: ScreenMediaItem['source'];
+}
+export function screenAirDate(input: unknown): string | null {
+  if (typeof input !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(input)) return null;
+  const date = new Date(input + 'T00:00:00.000Z');
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === input
+    ? input
+    : null;
+}
+export function screenFollowedMedia(
+  detail: ScreenDetail,
+  progress: ScreenUserProgress,
+): ScreenFollowedMedia {
+  const upcoming = detail.nextEpisodeToAir;
+  const pending = detail.episodes.find(
+    (episode) =>
+      !progress.watchedEpisodes.includes(
+        screenEpisodeKey(episode.seasonNumber, episode.episodeNumber),
+      ),
+  );
+  const next =
+    upcoming ??
+    (pending
+      ? {
+          season: pending.seasonNumber,
+          episode: pending.episodeNumber,
+          title: pending.title,
+          airDate: pending.airDate,
+        }
+      : null);
+  const statuses: Record<string, string> = {
+    'Returning Series': 'En emisión',
+    Ended: 'Serie finalizada',
+    Canceled: 'Serie cancelada',
+    'In Production': 'En producción',
+    'Post Production': 'En posproducción',
+    Released: 'Estrenada',
+    Planned: 'En preparación',
+  };
+  return {
+    tmdbId: detail.tmdbId,
+    mediaType: detail.mediaType,
+    title: detail.title,
+    posterUrl: detail.posterUrl,
+    backdropUrl: detail.backdropUrl,
+    currentSeason: progress.currentSeason,
+    currentEpisodeWatched: Math.max(
+      0,
+      progress.currentEpisode,
+      ...progress.watchedEpisodes
+        .filter((key) => Math.floor(key / 10000) === progress.currentSeason)
+        .map((key) => key % 10000),
+    ),
+    nextSeasonNumber: detail.mediaType === 'tv' ? (next?.season ?? null) : null,
+    nextEpisodeNumber: detail.mediaType === 'tv' ? (next?.episode ?? null) : null,
+    nextEpisodeTitle: detail.mediaType === 'tv' ? (next?.title ?? null) : null,
+    nextAirDate: screenAirDate(detail.mediaType === 'tv' ? next?.airDate : detail.releaseDate),
+    providers: detail.providers,
+    followed: progress.followed === true,
+    statusText:
+      detail.source === 'demo'
+        ? 'DEMO · Fecha por confirmar'
+        : (statuses[detail.releaseStatus ?? ''] ?? 'Fecha por confirmar'),
+    source: detail.source,
+  };
+}
+export function screenCountdown(date: string | null, nowMs: number): string {
+  const valid = screenAirDate(date);
+  if (!valid || !Number.isFinite(nowMs)) return 'POR ANUNCIAR';
+  if (new Date(nowMs).toISOString().slice(0, 10) === valid) return '¡ESTRENO HOY!';
+  const seconds = Math.floor((Date.parse(valid + 'T00:00:00.000Z') - nowMs) / 1000);
+  if (seconds <= 0) return 'DISPONIBLE';
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${pad(Math.floor(seconds / 86400))}d : ${pad(Math.floor(seconds / 3600) % 24)}h : ${pad(Math.floor(seconds / 60) % 60)}m : ${pad(seconds % 60)}s`;
+}
 export function screenPercent(progress?: ScreenUserProgress) {
   if (!progress) return 0;
   if (progress.status === 'completed') return 100;
   return progress.totalEpisodes
     ? Math.min(100, Math.round((progress.watchedEpisodes.length / progress.totalEpisodes) * 100))
     : 0;
+}
+export function screenRuntimeMinutes(raw: unknown, type: ScreenMediaType): number | null {
+  const data = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+  const values =
+    type === 'movie'
+      ? [data.runtime]
+      : Array.isArray(data.episode_run_time)
+        ? data.episode_run_time
+        : [];
+  const minutes = values.filter(
+    (value): value is number =>
+      typeof value === 'number' && Number.isFinite(value) && value > 0 && value <= 1440,
+  );
+  return minutes.length
+    ? Math.round(minutes.reduce((sum, value) => sum + value, 0) / minutes.length)
+    : null;
+}
+export function screenSeasonProgress(detail: ScreenDetail, progress: ScreenUserProgress) {
+  const season = detail.seasons.find((item) => item.number === progress.currentSeason);
+  const total =
+    season?.episodeCount ??
+    detail.episodes.filter((item) => item.seasonNumber === progress.currentSeason).length;
+  const watched = new Set(
+    progress.watchedEpisodes.filter(
+      (key) =>
+        Math.floor(key / 10000) === progress.currentSeason &&
+        key % 10000 > 0 &&
+        key % 10000 <= total,
+    ),
+  ).size;
+  return {
+    watched,
+    total,
+    percent: total ? Math.min(100, Math.round((watched / total) * 100)) : 0,
+  };
 }
 export function tmdbImage(path: unknown, size = 'w500'): string | null {
   return typeof path === 'string' && /^\/[\w-]+\.(jpg|png|webp)$/i.test(path)
