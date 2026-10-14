@@ -102,18 +102,10 @@ body {
 @keyframes pumpkin-flicker {
   0%,
   100% {
-    opacity: 0.95;
+    filter: drop-shadow(0 0 6px #ff6b00) brightness(1);
   }
-  24%,
-  69% {
-    opacity: 0.72;
-  }
-  28%,
-  76% {
-    opacity: 1;
-  }
-  54% {
-    opacity: 0.85;
+  50% {
+    filter: drop-shadow(0 0 12px #ff8800) brightness(1.25);
   }
 }
 .halloween-footer-motto {
@@ -127,6 +119,7 @@ body {
 .halloween-hero-chip {
   display: inline-flex;
   align-items: center;
+  gap: 0.5rem;
   max-width: 100%;
   margin-top: 1rem;
   padding: 0.3rem 0.65rem;
@@ -137,13 +130,66 @@ body {
   font-size: 10px;
   letter-spacing: 0.05em;
 }
+.text-halloween-orange {
+  color: #ff6b00 !important;
+  text-shadow: 0 0 10px rgba(255, 107, 0, 0.7);
+}
+.brand-halloween-copy {
+  position: relative;
+  text-shadow: 0 0 12px rgba(121, 40, 202, 0.6);
+}
+.site-header .brand-halloween > svg {
+  color: #ff6b00;
+  filter: drop-shadow(0 0 8px #ff6b00);
+}
+.brand-halloween-hat {
+  position: absolute;
+  top: -13px;
+  left: -5px;
+  transform: rotate(-18deg);
+  pointer-events: none;
+}
+.brand-halloween-pumpkin {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+  pointer-events: none;
+  animation: pumpkin-flicker 2.5s infinite ease-in-out;
+  filter: drop-shadow(0 0 6px rgba(255, 107, 0, 0.6));
+}
+.footer-halloween-pumpkin {
+  width: 32px;
+  height: 32px;
+}
+.hero-terminal {
+  position: relative;
+}
+.corner-web {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 56px;
+  height: 56px;
+  pointer-events: none;
+  opacity: 0.45;
+  filter: brightness(0) invert(1);
+}
+.hero .halloween-glow-text {
+  font-size: clamp(24px, 3.3vw, 46px);
+  letter-spacing: -1px;
+}
+.halloween-hero-chip img {
+  flex-shrink: 0;
+}
 @media (prefers-reduced-motion: reduce) {
   .halloween-bats-layer {
     display: none;
   }
   .bat,
   .bat-wing,
-  .pumpkin-glow {
+  .pumpkin-glow,
+  .brand-halloween-pumpkin {
     animation: none;
   }
 }

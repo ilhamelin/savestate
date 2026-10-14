@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Suspense } from 'react';
 import { ArrowUpRight, Gamepad2 } from 'lucide-react';
 import { SetupNotice } from '@/components/setup-notice';
@@ -18,16 +19,16 @@ export default function Home() {
     <>
       <section className="hero">
         <div className="hero-copy">
-          <p className="eyebrow">
-            <span className="status-dot" /> PLAYER JOURNAL / V.01
-          </p>
-          <span className="halloween-hero-chip">🎃 HALLOWEEN // NIGHT CHECKPOINT</span>
-          <h1>
-            Cada juego.
+          <div className="halloween-hero-chip">
+            <Image src="/icons/halloween/calabaza.png" alt="" width={16} height={16} unoptimized />
+            <span>SPOOKY CHECKPOINT // EDICIÓN NOCHE DE BRUJAS</span>
+          </div>
+          <h1 className="halloween-glow-text">
+            CADA JUEGO.
             <br />
-            Cada partida.
+            CADA PARTIDA.
             <br />
-            <span className="accent">Tu historia.</span>
+            <span className="accent text-halloween-orange">TU HISTORIA EMBRUJADA.</span>
           </h1>
           <p className="hero-description">
             Tu diario de a bordo para una odisea gamer. Organiza lo que juegas, registra lo que
@@ -44,6 +45,14 @@ export default function Home() {
           <div className="hero-caption">DESDE LOS 8 BITS HASTA TU PRÓXIMA AVENTURA.</div>
         </div>
         <div className="hero-terminal" aria-label="Los seis estados de tu biblioteca">
+          <Image
+            src="/icons/halloween/telarana-de-halloween.png"
+            alt=""
+            width={56}
+            height={56}
+            className="corner-web pointer-events-none"
+            unoptimized
+          />
           <div className="terminal-bar">
             <span>savestate://player/logbook</span>
             <span className="accent">● ONLINE JOURNAL</span>

@@ -1,21 +1,36 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Gamepad2, ArrowUpRight } from 'lucide-react';
 import { CommandMenu } from '@/components/command-menu';
 import { NotificationBell } from '@/components/notification-bell';
 import { HeaderNav } from '@/components/header-nav';
-import { JackOLantern } from '@/components/halloween/jack-o-lantern';
 import { currentUser, currentViewerProfile } from '@/lib/session';
 export async function Header() {
   const [user, profile] = await Promise.all([currentUser(), currentViewerProfile()]);
   return (
     <header className="site-header">
-      <Link href="/" className="brand" aria-label="Savestate, inicio">
+      <Link href="/" className="brand brand-halloween" aria-label="Savestate, inicio">
         <Gamepad2 size={27} />
-        <span>
-          SAVE<span className="accent">STATE</span>
-          <small>YOUR NEXT CHECKPOINT</small>
+        <span className="brand-halloween-copy">
+          <Image
+            src="/icons/halloween/sombrero-de-bruja.png"
+            alt=""
+            width={18}
+            height={18}
+            className="brand-halloween-hat"
+            unoptimized
+          />
+          SAVE<span className="accent text-halloween-orange">STATE</span>
+          <small>SPOOKY CHECKPOINT</small>
         </span>
-        <JackOLantern size="sm" />
+        <Image
+          src="/icons/halloween/calabaza.png"
+          alt=""
+          width={22}
+          height={22}
+          className="brand-halloween-pumpkin"
+          unoptimized
+        />
       </Link>
       <HeaderNav />
       <div className="header-actions">

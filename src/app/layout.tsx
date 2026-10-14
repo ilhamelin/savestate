@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Silkscreen, JetBrains_Mono } from 'next/font/google';
 import { Header } from '@/components/header';
 import { HalloweenBats } from '@/components/halloween/halloween-bats';
-import { JackOLantern } from '@/components/halloween/jack-o-lantern';
+import Image from 'next/image';
 import Link from 'next/link';
 import './globals.css';
 const pixel = Silkscreen({
@@ -45,7 +45,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <footer className="site-footer">
           <div className="footer-brand">
             <Link href="/" className="footer-logo">
-              SAVE<span className="accent">STATE</span>
+              SAVE<span className="accent text-halloween-orange">STATE</span>
             </Link>
             <p className="muted">Tu diario de a bordo para cada partida, logro y colección.</p>
             <span className="footer-status">● SYSTEM ONLINE // V.2.6</span>
@@ -74,9 +74,23 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           </div>
           <div className="footer-controls">
             <div className="halloween-footer-motto">
-              <JackOLantern size="md" />
+              <Image
+                src="/icons/halloween/calabaza.png"
+                alt=""
+                width={32}
+                height={32}
+                className="brand-halloween-pumpkin footer-halloween-pumpkin"
+                unoptimized
+              />
               <p>INSERT COIN · KEEP PLAYING</p>
-              <JackOLantern size="md" />
+              <Image
+                src="/icons/halloween/calabaza.png"
+                alt=""
+                width={32}
+                height={32}
+                className="brand-halloween-pumpkin footer-halloween-pumpkin"
+                unoptimized
+              />
             </div>
             <a href="#main" className="button outline small">
               ↑ Volver arriba
