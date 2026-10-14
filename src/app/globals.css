@@ -4,6 +4,7 @@
 @import './qol.css';
 @import './dossier.css';
 @import './profile-enhancements.css';
+@import './halloween.css';
 @theme inline {
   --color-void-950: #08090c;
   --color-surface-900: #111319;
@@ -27,10 +28,10 @@
 }
 body {
   margin: 0;
-  background-color: var(--bg, #08090c);
+  background-color: #08070b;
   background-image:
-    radial-gradient(ellipse at 50% 15%, rgba(8, 9, 12, 0.55) 0%, rgba(8, 9, 12, 0.92) 80%),
-    url('/wallpapers/savestate_retro_grid.jpg');
+    radial-gradient(ellipse at 50% 15%, rgba(18, 10, 26, 0.55) 0%, rgba(8, 7, 11, 0.94) 80%),
+    url('/wallpapers/savestate_halloween_grid.jpg');
   background-repeat: no-repeat;
   background-position: top center;
   background-attachment: fixed;
@@ -3220,6 +3221,8 @@ a.feed-card-cover:hover {
   }
 }
 .discord-message-list {
+  display: flex;
+  flex-direction: column;
   position: relative;
   background: repeating-linear-gradient(0deg, transparent 0 3px, #00000018 3px 4px);
   padding: 1rem;
@@ -3231,6 +3234,12 @@ a.feed-card-cover:hover {
   scrollbar-width: thin;
   scrollbar-color: var(--accent) #08080c;
   scrollbar-gutter: stable;
+}
+.discord-message-list > * {
+  flex-shrink: 0;
+}
+.discord-message-list > :first-child {
+  margin-top: auto;
 }
 @media (min-width: 901px) {
   .discord-chat .discord-history-wrap {
@@ -4245,7 +4254,7 @@ a.feed-card-cover:hover {
 }
 .footer-links {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr));
   gap: 1rem;
 }
 .footer-links nav {
@@ -4266,6 +4275,79 @@ a.feed-card-cover:hover {
 .footer-controls p {
   font-family: var(--font-pixel), monospace;
   font-size: 11px;
+}
+.footer-legal-bar {
+  grid-column: 1 / -1;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #ffffff14;
+  font-size: 10px;
+  color: #94a3b8;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.footer-disclaimer {
+  margin-bottom: 0.5rem;
+}
+.footer-legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.5rem;
+  font-weight: 600;
+}
+.footer-legal-links a {
+  color: #94a3b8;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.footer-legal-links a:hover,
+.footer-legal-links a:focus-visible {
+  color: var(--accent);
+}
+.legal-container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2.5rem 1rem;
+  color: #e2e8f0;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.legal-page h1,
+.legal-page h2 {
+  color: var(--accent, #00f0ff);
+  font-family: var(--font-mono), monospace;
+}
+.legal-page h1 {
+  font-size: clamp(1.6rem, 4vw, 2.5rem);
+  line-height: 1.3;
+  margin-bottom: 1.25rem;
+}
+.legal-page h2 {
+  font-size: 1.2rem;
+  margin-bottom: 0.75rem;
+}
+.legal-section {
+  margin-top: 2rem;
+}
+.legal-page p + p {
+  margin-top: 0.85rem;
+}
+.legal-highlight-box {
+  background: #090e15;
+  border: 1px solid #1e293b;
+  border-left: 3px solid var(--accent, #00f0ff);
+  padding: 1rem;
+  margin: 1rem 0;
+}
+.legal-page a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.legal-page a:hover,
+.legal-page a:focus-visible {
+  color: var(--accent);
 }
 @media (min-width: 1700px) {
   .site-header nav {
@@ -7580,6 +7662,7 @@ body:has(.worlds-hub) {
 .discord-chat-form.discord-advanced-composer {
   flex-direction: column;
   align-items: stretch;
+  margin-top: 0;
 }
 .discord-advanced-composer > label {
   width: 100%;
@@ -7657,4 +7740,580 @@ body:has(.worlds-hub) {
 }
 .discord-account-link .button {
   white-space: normal;
+}
+
+/* Worlds cinema retains page navigation and avoids scrollbar-width overflow. */
+.worlds-player.is-cinema {
+  width: var(--worlds-viewport-width, 100vw);
+  max-width: var(--worlds-viewport-width, 100vw);
+  margin-left: calc((100% - var(--worlds-viewport-width, 100vw)) / 2);
+  margin-right: calc((100% - var(--worlds-viewport-width, 100vw)) / 2);
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: 2px solid #f5d061;
+  background: #030508;
+  padding: 1.5rem max(1.5rem, calc((var(--worlds-viewport-width, 100vw) - 1440px) / 2));
+  box-shadow: 0 16px 48px #000000e6;
+  position: relative;
+  z-index: 25;
+}
+.worlds-player.is-cinema .worlds-video {
+  max-height: calc(100svh - 170px);
+  aspect-ratio: 16 / 9;
+  border: 1px solid #f5d0614d;
+  box-shadow:
+    0 0 40px #000c,
+    0 0 30px #f5d06133;
+}
+.worlds-player.is-cinema::before {
+  left: 0;
+}
+.worlds-player.is-cinema::after {
+  right: 0;
+}
+.worlds-music-hud {
+  position: fixed;
+  bottom: max(1.5rem, env(safe-area-inset-bottom));
+  right: 1.5rem;
+  z-index: 50;
+  width: min(360px, calc(var(--worlds-viewport-width, 100vw) - 2rem));
+  max-height: calc(100svh - 2rem);
+  overflow-y: auto;
+  background: #090e18eb;
+  border: 1px solid #d4af3766;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  backdrop-filter: blur(12px);
+  box-shadow:
+    0 12px 36px #000b,
+    0 0 20px #d4af3733;
+}
+.worlds-music-heading,
+.worlds-music-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.worlds-music-heading strong {
+  font-size: 0.7rem;
+  color: #f5d061;
+}
+.worlds-music-controls {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+.worlds-music-controls label {
+  font-size: 0.8rem;
+  min-width: 0;
+}
+.worlds-music-controls select {
+  width: 100%;
+  min-width: 0;
+}
+.worlds-music-controls small {
+  font-size: 0.7rem;
+}
+.worlds-music-frame {
+  width: 100%;
+  height: 200px;
+  border: 0;
+  background: #000;
+}
+.worlds-equalizer {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 24px;
+}
+.worlds-eq-bar {
+  display: block;
+  width: 4px;
+  height: 5px;
+  background: #f5d061;
+  transform-origin: bottom;
+}
+.worlds-equalizer.is-playing .worlds-eq-bar {
+  height: 22px;
+  animation: worlds-equalize 0.8s ease-in-out infinite alternate;
+}
+.worlds-eq-bar:nth-child(2) {
+  animation-delay: -0.2s;
+}
+.worlds-eq-bar:nth-child(3) {
+  animation-delay: -0.6s;
+}
+.worlds-eq-bar:nth-child(4) {
+  animation-delay: -0.4s;
+}
+@keyframes worlds-equalize {
+  from {
+    transform: scaleY(0.2);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+@media (max-width: 600px) {
+  .worlds-music-hud {
+    right: 1rem;
+    bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .worlds-equalizer.is-playing .worlds-eq-bar {
+    animation: none;
+    transform: scaleY(0.6);
+  }
+}
+
+.worlds-music-hud {
+  transition:
+    padding 160ms ease,
+    box-shadow 160ms ease;
+}
+.worlds-music-hud.is-minimized {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: auto;
+  max-width: min(360px, calc(var(--worlds-viewport-width, 100vw) - 2rem));
+  padding: 0.5rem 0.85rem;
+  overflow: visible;
+}
+.worlds-music-hud.is-minimized .worlds-music-heading {
+  min-width: 0;
+  width: 100%;
+}
+.worlds-music-hud.is-minimized .worlds-music-heading strong {
+  min-width: 0;
+  max-width: min(190px, 30vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.worlds-music-hud.is-minimized .worlds-music-heading .button,
+.worlds-music-hud.is-minimized .worlds-equalizer {
+  flex-shrink: 0;
+}
+.worlds-music-hud.is-minimized .button {
+  padding: 0.35rem 0.45rem;
+}
+.worlds-music-help {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+  font-size: 0.7rem;
+}
+.worlds-music-stream {
+  margin-top: 0.75rem;
+}
+.worlds-music-stream:empty {
+  margin: 0;
+}
+.worlds-music-stream-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+@media (max-width: 400px) {
+  .worlds-music-hud.is-minimized .worlds-equalizer {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .worlds-music-hud {
+    transition: none;
+  }
+}
+
+.worlds-music-hud.theme-worlds {
+  border-color: #f5d06188;
+  box-shadow:
+    0 16px 48px #000c,
+    0 0 24px #f5d06126;
+}
+.worlds-music-hud.theme-kda {
+  border-color: #ff2a85aa;
+  box-shadow:
+    0 16px 48px #000c,
+    0 0 28px #ff2a8533,
+    0 0 44px #9b51e022;
+}
+.worlds-music-branding {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.worlds-track-badge {
+  font-size: 0.65rem;
+  color: #a0aec0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.theme-worlds .worlds-track-badge {
+  color: #f5d061;
+}
+.theme-kda .worlds-track-badge {
+  color: #ff529f;
+}
+.worlds-music-tabs {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+.worlds-tab-pill {
+  padding: 3px 8px;
+  font-size: 0.7rem;
+  border-radius: 999px;
+  border: 1px solid #384457;
+  background: transparent;
+  color: #8fa0b5;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.worlds-tab-pill:hover {
+  border-color: #f5d06188;
+  color: #fff;
+}
+.worlds-tab-pill.is-active {
+  background: #f5d06122;
+  border-color: #f5d061;
+  color: #f5d061;
+  font-weight: 600;
+}
+.theme-kda .worlds-tab-pill.is-active {
+  background: #ff2a8522;
+  border-color: #ff2a85;
+  color: #ff529f;
+}
+.worlds-music-visual-wrap {
+  position: relative;
+  width: 100%;
+}
+.worlds-music-art-card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid #ffffff1a;
+}
+.worlds-music-art-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.8);
+}
+.worlds-music-art-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle, transparent 30%, #00000099 100%);
+  pointer-events: none;
+}
+.worlds-vinyl-disc {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 3px solid #f5d061cc;
+  background: radial-gradient(circle, #222 25%, #050505 75%);
+  box-shadow:
+    0 0 16px #000,
+    0 0 12px #f5d06144;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.theme-kda .worlds-vinyl-disc {
+  border-color: #ff2a85cc;
+  box-shadow:
+    0 0 16px #000,
+    0 0 14px #ff2a8566;
+}
+.worlds-vinyl-center {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #f5d061;
+  border: 4px solid #000;
+}
+.theme-kda .worlds-vinyl-center {
+  background: #ff2a85;
+}
+.worlds-vinyl-disc.is-spinning {
+  animation: worlds-vinyl-spin 8s linear infinite;
+}
+@keyframes worlds-vinyl-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.worlds-mode-toggle {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 5;
+  font-size: 0.68rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: #000c;
+  backdrop-filter: blur(8px);
+  border: 1px solid #ffffff33;
+  color: #fff;
+  cursor: pointer;
+}
+.worlds-mode-toggle:hover {
+  background: #f5d06133;
+  border-color: #f5d061;
+}
+.worlds-music-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+}
+.worlds-music-title-wrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.worlds-song-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.worlds-song-artist {
+  font-size: 0.7rem;
+  color: #8fa0b5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.worlds-music-transport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.worlds-play-btn {
+  flex: 1;
+}
+.worlds-music-stream-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.worlds-music-stream-visible {
+  position: relative;
+  width: 100%;
+  margin-top: 8px;
+}
+.worlds-music-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #ffffff15;
+}
+.worlds-yt-link {
+  font-size: 0.7rem;
+}
+.worlds-info-btn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.75rem;
+}
+.worlds-music-infobox {
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  background: #ffffff0a;
+  border: 1px solid #ffffff1a;
+  border-radius: 4px;
+  margin-top: 8px;
+  font-size: 0.68rem;
+  color: #a0aec0;
+}
+.worlds-music-hud.is-minimized {
+  width: auto;
+  max-width: min(380px, calc(var(--worlds-viewport-width, 100vw) - 2rem));
+  padding: 0.5rem 0.85rem;
+}
+.worlds-minibar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.worlds-mini-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #f5d061;
+}
+.theme-kda .worlds-mini-thumb {
+  border-color: #ff2a85;
+}
+.worlds-mini-thumb.is-spinning {
+  animation: worlds-vinyl-spin 6s linear infinite;
+}
+.worlds-minibar-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 120px;
+}
+.worlds-minibar-title {
+  font-size: 0.75rem;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.worlds-minibar-artist {
+  font-size: 0.65rem;
+  color: #8fa0b5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.worlds-minibar-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.worlds-music-hud {
+  --music-accent: #f5d061;
+}
+.worlds-music-hud.theme-kda {
+  --music-accent: #ff2a85;
+}
+.worlds-music-hud.theme-kda .worlds-music-heading strong {
+  color: #ff529f;
+}
+.worlds-music-hud .worlds-eq-bar {
+  background: var(--music-accent);
+}
+.worlds-music-tabs {
+  flex-wrap: wrap;
+}
+.worlds-tab-pill:focus-visible,
+.worlds-mode-toggle:focus-visible {
+  outline: 2px solid var(--music-accent);
+  outline-offset: 3px;
+}
+.worlds-video-preview-wrap {
+  position: relative;
+  min-height: 32px;
+}
+.worlds-vinyl-disc {
+  background: repeating-radial-gradient(circle, #111 0 3px, #292929 4px, #080808 5px 8px);
+}
+.worlds-vinyl-center {
+  background: linear-gradient(45deg, var(--music-accent) 50%, #111 50%);
+}
+.worlds-minibar {
+  min-width: 0;
+  width: 100%;
+  gap: 8px;
+}
+.worlds-mini-thumb {
+  flex-shrink: 0;
+}
+.worlds-minibar-meta {
+  flex: 1;
+}
+.worlds-minibar-controls {
+  flex-shrink: 0;
+}
+.worlds-music-hud.is-minimized .worlds-minibar-controls .button {
+  width: 28px;
+  min-width: 28px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+}
+.worlds-music-stream-visible .worlds-music-frame {
+  display: block;
+  height: auto;
+  aspect-ratio: 16 / 9;
+}
+@media (max-width: 400px) {
+  .worlds-minibar {
+    gap: 6px;
+  }
+  .worlds-minibar-controls {
+    gap: 2px;
+  }
+  .worlds-music-hud.is-minimized {
+    padding: 0.5rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .worlds-vinyl-disc.is-spinning,
+  .worlds-mini-thumb.is-spinning {
+    animation: none;
+  }
+  .worlds-tab-pill {
+    transition: none;
+  }
+}
+
+.worlds-music-controls {
+  grid-template-columns: minmax(0, 1fr);
+}
+.worlds-music-controls > * {
+  min-width: 0;
+}
+.worlds-music-heading {
+  flex-wrap: wrap;
+}
+.worlds-music-branding {
+  min-width: 0;
+}
+.worlds-music-transport .button {
+  min-width: 0;
+}
+
+@media (max-width: 600px) {
+  .worlds-music-hud {
+    max-height: max(220px, calc(100svh - 210px));
+  }
 }

@@ -26,7 +26,12 @@ import { DiscordLinkedRoleCard } from '@/components/discord-linked-role-card';
 import { DiscordGamePicker } from '@/components/discord-game-picker';
 import { browserClient } from '@/integrations/supabase/browser';
 import { publicEnv } from '@/lib/env';
-import { chatFileSignature, safeChatMediaUrl, validateChatFile } from '@/domain/global-chat';
+import {
+  chatFileSignature,
+  chatMediaPageUrl,
+  safeChatMediaUrl,
+  validateChatFile,
+} from '@/domain/global-chat';
 function messageAuthor(message: DiscordMessage) {
   return discordMessageOrigin(message.content).author ?? message.author;
 }
@@ -131,6 +136,15 @@ function MediaLightbox({ media, onClose }: { media: ActiveMedia; onClose: () => 
 }
 function InlineMedia({ url, onOpen }: { url: string; onOpen: (media: ActiveMedia) => void }) {
   const [failed, setFailed] = useState(false);
+  const pageUrl = chatMediaPageUrl(url);
+  if (pageUrl)
+    return (
+      <p className="muted">
+        <a href={pageUrl} target="_blank" rel="noopener noreferrer">
+          🔗 Ver GIF / publicación en {new URL(pageUrl).hostname} ↗
+        </a>
+      </p>
+    );
   return (
     <div>
       {!failed ? (
@@ -308,7 +322,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
   function attachUrl() {
     const url = safeChatMediaUrl(urlDraft.trim(), publicEnv().url);
     if (!url) {
-      setError('Usa una URL HTTPS directa de Tenor, Giphy, Imgur o Discord.');
+      setError('Usa una URL HTTPS de imagen/GIF autorizada o una página de Tenor, Giphy o Imgur.');
       return;
     }
     setAttachment({ url });
@@ -757,14 +771,20 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
             )}
             {attachment && (
               <div className="chat-media-preview discord-attachment-preview">
-                <Image
-                  src={attachment.url}
-                  alt="Vista previa de imagen o GIF adjunto"
-                  width={200}
-                  height={150}
-                  unoptimized
-                  referrerPolicy="no-referrer"
-                />
+                {chatMediaPageUrl(attachment.url) ? (
+                  <a href={attachment.url} target="_blank" rel="noopener noreferrer">
+                    🔗 Enlace de GIF listo para enviar ↗
+                  </a>
+                ) : (
+                  <Image
+                    src={attachment.url}
+                    alt="Vista previa de imagen o GIF adjunto"
+                    width={200}
+                    height={150}
+                    unoptimized
+                    referrerPolicy="no-referrer"
+                  />
+                )}
                 <span>{attachment.file?.name ?? 'Imagen / GIF enlazado'}</span>
                 <button
                   type="button"
@@ -778,7 +798,9 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
             )}
             {urlOpen && (
               <div className="chat-url-editor">
-                <label htmlFor="discord-media-url">URL directa de imagen / GIF</label>
+                <label htmlFor="discord-media-url">
+                  URL de imagen/GIF o página de Tenor, Giphy o Imgur
+                </label>
                 <input
                   id="discord-media-url"
                   type="url"

@@ -21,6 +21,7 @@ export default function Home() {
           <p className="eyebrow">
             <span className="status-dot" /> PLAYER JOURNAL / V.01
           </p>
+          <span className="halloween-hero-chip">🎃 HALLOWEEN // NIGHT CHECKPOINT</span>
           <h1>
             Cada juego.
             <br />

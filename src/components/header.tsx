@@ -3,6 +3,7 @@ import { Gamepad2, ArrowUpRight } from 'lucide-react';
 import { CommandMenu } from '@/components/command-menu';
 import { NotificationBell } from '@/components/notification-bell';
 import { HeaderNav } from '@/components/header-nav';
+import { JackOLantern } from '@/components/halloween/jack-o-lantern';
 import { currentUser, currentViewerProfile } from '@/lib/session';
 export async function Header() {
   const [user, profile] = await Promise.all([currentUser(), currentViewerProfile()]);
@@ -14,6 +15,7 @@ export async function Header() {
           SAVE<span className="accent">STATE</span>
           <small>YOUR NEXT CHECKPOINT</small>
         </span>
+        <JackOLantern size="sm" />
       </Link>
       <HeaderNav />
       <div className="header-actions">

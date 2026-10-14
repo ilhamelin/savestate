@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { readJsonResponse } from '@/lib/api-response';
 import { WorldsRosters, WorldsPerformance } from '@/components/worlds-performance';
+import { WorldsMusicPlayer } from '@/components/worlds-music-player';
+import { worldsViewModeForKey, type WorldsViewMode } from '@/domain/worlds-features';
 import {
   describeWorldsMatch,
   pickDefaultWorldsMatch,
@@ -69,24 +71,47 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
   const [hostname, setHostname] = useState('');
   const [now, setNow] = useState(Date.parse(initial.fetchedAt));
   const [refreshError, setRefreshError] = useState('');
-  const [theaterMode, setTheaterMode] = useState(false);
+  const [viewMode, setViewMode] = useState<WorldsViewMode>('normal');
   const theaterToggle = useRef<HTMLButtonElement>(null);
+  const hubRef = useRef<HTMLDivElement>(null);
   const cache = useRef(new Map<string, { value: WorldsMatchDetail; expires: number }>());
   const matches = schedule.stages.flatMap((stage) => stage.matches);
   const match = matches.find((event) => event.id === selectedId) ?? null;
   const stage = schedule.stages.find((item) => item.slug === stageSlug)!;
   useEffect(() => {
-    if (!theaterMode) return;
     function escape(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        setTheaterMode(false);
-        theaterToggle.current?.focus();
-      }
+      if (
+        event.defaultPrevented ||
+        event.repeat ||
+        event.isComposing ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.altKey
+      )
+        return;
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          target.closest('input, textarea, select, [role="textbox"], dialog[open]'))
+      )
+        return;
+      if (!['c', 't', 'escape'].includes(event.key.toLowerCase())) return;
+      event.preventDefault();
+      setViewMode((mode) => worldsViewModeForKey(mode, event.key));
+      if (event.key === 'Escape') theaterToggle.current?.focus();
     }
     document.addEventListener('keydown', escape);
     return () => document.removeEventListener('keydown', escape);
-  }, [theaterMode]);
+  }, []);
   useEffect(() => {
+    const resize = () =>
+      hubRef.current?.style.setProperty(
+        '--worlds-viewport-width',
+        `${document.documentElement.clientWidth}px`,
+      );
+    resize();
+    window.addEventListener('resize', resize);
     const timer = setTimeout(() => {
       setHostname(window.location.hostname);
       setNow(Date.now());
@@ -97,6 +122,7 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
     return () => {
       clearTimeout(timer);
       clearInterval(tick);
+      window.removeEventListener('resize', resize);
     };
   }, []);
   useEffect(() => {
@@ -195,7 +221,7 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
     setVodId(null);
   }
   return (
-    <div className="worlds-hub">
+    <div className="worlds-hub" ref={hubRef}>
       <div className="worlds-backdrop" aria-hidden="true" />
       <header className="page-heading">
         <div>
@@ -301,7 +327,7 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
       {match && description ? (
         <>
           <section
-            className={`panel worlds-player${theaterMode ? ' is-theater' : ''}`}
+            className={`panel worlds-player${viewMode === 'cinema' ? ' is-cinema' : viewMode === 'theater' ? ' is-theater' : ''}`}
             aria-labelledby="worlds-player-title"
           >
             <p className="eyebrow">02 // SEÑAL OFICIAL</p>
@@ -317,12 +343,31 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
               <button
                 ref={theaterToggle}
                 type="button"
-                className="button outline small worlds-theater-toggle"
-                aria-pressed={theaterMode}
-                onClick={() => setTheaterMode((value) => !value)}
+                className="button outline small"
+                aria-pressed={viewMode === 'cinema'}
+                aria-keyshortcuts="c"
+                onClick={() => setViewMode((value) => worldsViewModeForKey(value, 'c'))}
               >
-                {theaterMode ? '✕ Salir de Modo Teatro' : '🎬 Modo Teatro'}
+                🎦 Modo Cine
               </button>
+              <button
+                type="button"
+                className="button outline small"
+                aria-pressed={viewMode === 'theater'}
+                aria-keyshortcuts="t"
+                onClick={() => setViewMode((value) => worldsViewModeForKey(value, 't'))}
+              >
+                🌙 Modo Teatro
+              </button>
+              {viewMode !== 'normal' && (
+                <button
+                  type="button"
+                  className="button outline small"
+                  onClick={() => setViewMode('normal')}
+                >
+                  ✕ Normal
+                </button>
+              )}
               {SIGNALS.map((item) => (
                 <button
                   type="button"
@@ -487,6 +532,7 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
       ) : (
         <section className="panel muted">Selecciona una fase con partidas publicadas.</section>
       )}
+      <WorldsMusicPlayer />
     </div>
   );
 }

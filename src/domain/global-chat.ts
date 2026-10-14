@@ -37,6 +37,20 @@ export function sanitizeChatText(content: string): string {
 export function detectMediaType(value: string): ChatMediaType {
   return value === 'image/gif' || /\.gif(?:[?#]|$)/i.test(value) ? 'gif' : 'image';
 }
+const gifPageHost = (host: string) =>
+  host === 'tenor.com' ||
+  host.endsWith('.tenor.com') ||
+  host === 'giphy.com' ||
+  host.endsWith('.giphy.com') ||
+  ['imgur.com', 'www.imgur.com', 'i.imgur.com'].includes(host);
+export function chatMediaPageUrl(value: string): string | null {
+  const safe = safeChatMediaUrl(value);
+  if (!safe) return null;
+  const url = new URL(safe);
+  return gifPageHost(url.hostname) && !/\.(png|jpe?g|webp|gif)(?:$|\/)/i.test(url.pathname)
+    ? safe
+    : null;
+}
 export function safeChatMediaUrl(
   value: unknown,
   storageOrigin?: string,
@@ -71,6 +85,10 @@ export function safeChatMediaUrl(
       'klipy.com',
       'image.tmdb.org',
     ];
+    if (gifPageHost(url.hostname)) {
+      if (/\.(svg|html?|js|exe)(?:$|\/)/i.test(url.pathname)) return null;
+      return url.href;
+    }
     if (!hosts.includes(url.hostname) && !url.hostname.endsWith('.klipy.com')) return null;
     if (!/\.(png|jpe?g|webp|gif)(?:$|\/)/i.test(url.pathname)) return null;
     return url.href;
@@ -91,7 +109,7 @@ export function validateChatMessagePayload(input: unknown, userId: string, stora
     rawMedia == null || rawMedia === '' ? null : safeChatMediaUrl(rawMedia, storageOrigin, owner);
   if (rawMedia && !mediaUrl)
     throw new ValidationError(
-      'Usa un enlace HTTPS directo de Tenor, Giphy, Imgur, Discord o tu archivo subido.',
+      'Usa un enlace HTTPS de imagen/GIF autorizado, una página de Tenor, Giphy o Imgur, o tu archivo subido.',
     );
   if (!content && !mediaUrl)
     throw new ValidationError('Escribe un mensaje o adjunta una imagen/GIF.');

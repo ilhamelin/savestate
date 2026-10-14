@@ -36,7 +36,7 @@ test('chat media URLs reject spoofed domains and another owner storage path', ()
     'http://i.imgur.com/a.gif',
     'https://user@i.imgur.com/a.gif',
     'https://i.imgur.com:444/a.gif',
-    'https://tenor.com/view/a',
+    'https://tenor.com.evil.example/view/a',
     'https://i.imgur.com/a.svg',
   ])
     assert.equal(safeChatMediaUrl(url), null);

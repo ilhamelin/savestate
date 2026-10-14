@@ -10,7 +10,7 @@ export function discordComposerPayload(
     media == null || media === '' ? null : safeChatMediaUrl(media, storageOrigin, ownerId);
   if (media && !mediaUrl)
     throw new ValidationError(
-      'URL de imagen/GIF inválida. Usa un enlace HTTPS directo autorizado.',
+      'URL de imagen/GIF inválida. Usa un enlace HTTPS autorizado o una página de Tenor, Giphy o Imgur.',
     );
   const text =
     content == null || (typeof content === 'string' && !content.trim())
@@ -336,12 +336,6 @@ export function discordInlineMedia(
     const candidate = raw.replace(/[.,!?;:)\]]+$/, '');
     try {
       const url = new URL(candidate);
-      const gifProvider = [
-        'media.tenor.com',
-        'c.tenor.com',
-        'media.giphy.com',
-        'i.giphy.com',
-      ].includes(url.hostname);
       const directImage = /\.(png|jpe?g|webp|gif)$/i.test(url.pathname);
       const imageHost = [
         'cdn.discordapp.com',
@@ -354,7 +348,7 @@ export function discordInlineMedia(
         url.username ||
         url.password ||
         url.port ||
-        !(gifProvider || (imageHost && directImage) || safeChatMediaUrl(candidate, storageOrigin))
+        !((imageHost && directImage) || safeChatMediaUrl(candidate, storageOrigin))
       )
         return raw;
       const normalized = url.toString();

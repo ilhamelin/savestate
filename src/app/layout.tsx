@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Silkscreen, JetBrains_Mono } from 'next/font/google';
 import { Header } from '@/components/header';
+import { HalloweenBats } from '@/components/halloween/halloween-bats';
+import { JackOLantern } from '@/components/halloween/jack-o-lantern';
 import Link from 'next/link';
 import './globals.css';
 const pixel = Silkscreen({
@@ -32,6 +34,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="es" className={`${pixel.variable} ${mono.variable}`}>
       <body>
+        <HalloweenBats />
         <a href="#main" className="skip-link">
           Saltar al contenido
         </a>
@@ -63,12 +66,43 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <Link href="/chat">Chat Global</Link>
               <Link href="/players">Jugadores</Link>
             </nav>
+            <nav aria-label="Legal y Privacidad">
+              <h2>Legal</h2>
+              <Link href="/terms">Términos de Servicio</Link>
+              <Link href="/privacy">Política de Privacidad</Link>
+            </nav>
           </div>
           <div className="footer-controls">
-            <p>INSERT COIN · KEEP PLAYING</p>
+            <div className="halloween-footer-motto">
+              <JackOLantern size="md" />
+              <p>INSERT COIN · KEEP PLAYING</p>
+              <JackOLantern size="md" />
+            </div>
             <a href="#main" className="button outline small">
               ↑ Volver arriba
             </a>
+          </div>
+          <div className="footer-legal-bar">
+            <p className="footer-disclaimer">
+              SaveState isn&apos;t endorsed by Riot Games and doesn&apos;t reflect the views or
+              opinions of Riot Games or anyone officially involved in producing or managing Riot
+              Games properties. Riot Games and all associated properties are trademarks or
+              registered trademarks of Riot Games, Inc.
+            </p>
+            <p className="footer-disclaimer">
+              Steam y el logotipo de Steam son marcas comerciales y/o registradas de Valve
+              Corporation en EE. UU. y otros países. SaveState no está afiliado, respaldado ni
+              patrocinado por Valve Corporation. Todas las marcas registradas, logos, carátulas y
+              nombres de franquicias (incluyendo Nintendo, PlayStation, Xbox, Take-Two/Rockstar
+              Games y Disney/Marvel) pertenecen a sus respectivos dueños. Se muestran con fines
+              informativos de identificación nominativa, sujetos a sus licencias y a los límites del
+              uso legítimo (Fair Use) que resulten aplicables.
+            </p>
+            <div className="footer-legal-links">
+              <Link href="/terms">Términos y Safe Harbor (DMCA / Ley 20.435)</Link>
+              <span aria-hidden="true">·</span>
+              <Link href="/privacy">Política de Privacidad (Ley 19.628 / 21.719)</Link>
+            </div>
           </div>
         </footer>
       </body>
