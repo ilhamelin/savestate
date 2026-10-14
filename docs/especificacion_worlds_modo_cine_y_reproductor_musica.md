@@ -1,111 +1,126 @@
-# Especificación Técnica: Modo Cine (Estilo YouTube), Reproducción en Segundo Plano y Catálogo Musical Worlds + K/DA (`/worlds`)
+# Especificación Técnica y de Diseño UX/UI: Reproductor Musical Premium de Worlds & K/DA (`/worlds`)
 
-## 1. Resumen de Mejoras y Novedades
+## 1. Resumen Ejecutivo y Objetivos
 
-Esta actualización implementa tres mejoras clave en el hub de Worlds (`/worlds`):
+Esta especificación consolida la evolución técnica y de experiencia de usuario (UX/UI) del reproductor musical de Worlds (`/worlds`), transformándolo de un widget básico de video en miniatura a un **centro musical gamer de alto impacto** inspirado en la estética de League of Legends (Hextech Gold y K/DA Cyberpunk Neón).
 
-1. **Incorporación de la Discografía de K/DA (Riot Games Music)**:
-   - Se añade la discografía oficial del grupo virtual K/DA con sus videos y audios verificados en YouTube.
-   - En el selector de temas, la música se organiza visualmente en grupos (`<optgroup>`):
-     * 🏆 **Himnos Oficiales de Worlds** (11 pistas: 2014 a 2026).
-     * 👑 **K/DA Universe (Riot Games)** (6 pistas: *POP/STARS*, *MORE*, *THE BADDEST*, *VILLAIN*, *DRUM GO DUM*, *I'LL SHOW YOU*).
+### Objetivos Principales:
+1. **Modo Dual Inmersivo ("Carátula Hi-Fi / Vinilo" vs "Videoclip 🎬")**:
+   - Por defecto, el reproductor opera en modo audio mostrando la carátula oficial en alta definición con un **disco de vinilo giratorio con resplandor adaptativo**.
+   - Evita la saturación visual de los controles nativos de YouTube (logos, barra roja, avatars, botones de compartir) en espacios reducidos (200px).
+   - Permite alternar en 1 clic al video musical completo de YouTube cuando el usuario lo desee mediante el botón `[ 🎬 Ver Video ]`.
 
-2. **Reproducción Continua en Segundo Plano al Minimizar (Background Mini-Dock)**:
-   - Al hacer clic en **Minimizar**, el audio no se interrumpe: el iframe se mantiene montado en el DOM en un contenedor oculto visualmente (`.worlds-music-stream-hidden`), permitiendo que el streaming de audio continúe sonando mientras el usuario navega y consulta información de los Worlds.
-   - El widget se comprime a una elegante **barra flotante (mini-player dock)** en la esquina inferior con:
-     * Icono y nombre de la pista actual: `🎵 [Año] · [Título]`.
-     * Ecualizador visual animado `||||`.
-     * Botón rápido `[⏸ / ▶]` para pausar o reanudar.
-     * Botón `[▴ Expandir]` para restaurar el video completo sin reiniciar la reproducción.
+2. **Barra de Transporte Multimedia Completa (`⏮` | `⏯` | `⏭`)**:
+   - Elimina la fricción de tener que desplegar la lista para cambiar de pista.
+   - Navegación secuencial circular (`nextTrackIndex`, `prevTrackIndex`) que permite recorrer los 17 temas fluidamente.
 
-3. **Mitigación de Restricciones Regionales (LatinAutor - UMPG / YouTube)**:
-   - Se utiliza el dominio estándar `https://www.youtube.com/embed/` con `referrerPolicy="strict-origin-when-cross-origin"`.
-   - Se incluye un enlace de escape destacado `[ ↗ Abrir en YouTube ]` junto con un mensaje claro si el sello discográfico bloquea el iframe en ciertos países de Latinoamérica.
+3. **Segmentación Rápida por Píldoras Temáticas (Tabs)**:
+   - Filtro instantáneo mediante botones píldora:
+     * `[ Todos (17) ]`
+     * `[ 🏆 Worlds (11) ]` (Himnos oficiales 2014–2026)
+     * `[ 👑 K/DA (6) ]` (Discografía oficial K/DA de Riot Games)
+
+4. **Estética Reactiva Dinámica (Hextech Gold ↔ K/DA Neón)**:
+   - **Himno de Worlds**: El widget adquiere bordes y sombras en **Oro Hextech** (`#f5d061`), insignias de campeonato y partículas cálidas.
+   - **K/DA**: El widget conmuta a **Cyberpunk Neón Magenta** (`#ff2a85`), sombras holográficas violetas (`#9b51e0`) y acentos cian.
+
+5. **Audio Continuo en Segundo Plano y Mini-Dock Flotante**:
+   - Al minimizar, la música **no se detiene**. El `<iframe>` permanece vivo en el DOM bajo la clase `.worlds-music-stream-hidden` (`opacity: 0; pointer-events: none; width: 1px; height: 1px; position: absolute;`).
+   - El widget se colapsa en una **barra cápsula ultra-delgada** con mini-carátula giratoria, título, ecualizador animado, controles directos `[⏮ ⏯ ⏭]` y botón de expandir.
+
+6. **Mitigación y Escape de Restricciones Regionales (LatinAutor - UMPG)**:
+   - Migración al host estándar `https://www.youtube.com/embed/` con `referrerPolicy="strict-origin-when-cross-origin"`.
+   - Botón directo de escape `[ ↗ Abrir en YouTube ]` e icono `[ ℹ ]` con popover amigable para explicar restricciones de derechos de autor en países de Latinoamérica.
 
 ---
 
-## 2. Catálogo Oficial de Pistas Musicales
+## 2. Catálogo Oficial de Pistas Verificadas (17 Pistas)
 
 ### A. Himnos Oficiales de Worlds (`WORLDS_ANTHEMS`)
-```ts
-export const WORLDS_ANTHEMS = [
-  { category: 'anthem', year: 2026, title: 'Know My Name', artist: 'True Damage', id: 'mlFxxNsExJc' },
-  { category: 'anthem', year: 2025, title: 'Sacrifice', artist: 'G.E.M.', id: 'pzt6SmvGpXk' },
-  { category: 'anthem', year: 2024, title: 'Heavy Is The Crown', artist: 'Linkin Park', id: '5FrhtahQiRc' },
-  { category: 'anthem', year: 2023, title: 'GODS', artist: 'NewJeans', id: 'C3GouGa0noM' },
-  { category: 'anthem', year: 2022, title: "STAR WALKIN'", artist: 'Lil Nas X', id: 'HYsz1hP0BFo' },
-  { category: 'anthem', year: 2021, title: 'Burn It All Down', artist: 'PVRIS', id: '1Z6CHioIn3s' },
-  { category: 'anthem', year: 2020, title: 'Take Over', artist: 'Jeremy McKinnon, MAX, Henry', id: 'KbNL9ZyB49c' },
-  { category: 'anthem', year: 2019, title: 'Phoenix', artist: 'Cailin Russo & Chrissy Costanza', id: 'i1IKnWDecwA' },
-  { category: 'anthem', year: 2018, title: 'RISE', artist: 'The Glitch Mob, Mako, The Word Alive', id: 'fB8TyLTD7EE' },
-  { category: 'anthem', year: 2017, title: 'Legends Never Die', artist: 'Against The Current', id: '4Q46xYqUwZQ' },
-  { category: 'anthem', year: 2014, title: 'Warriors', artist: 'Imagine Dragons', id: 'fmI_Ndrxy14' },
-] as const;
-```
+| Año | Título | Artista / Intérprete | YouTube ID |
+| :---: | :--- | :--- | :---: |
+| **2026** | *Know My Name* | True Damage | `mlFxxNsExJc` |
+| **2025** | *Sacrifice* | G.E.M. (鄧紫棋) | `pzt6SmvGpXk` |
+| **2024** | *Heavy Is The Crown* | Linkin Park | `5FrhtahQiRc` |
+| **2023** | *GODS* | NewJeans | `C3GouGa0noM` |
+| **2022** | *STAR WALKIN'* | Lil Nas X | `HYsz1hP0BFo` |
+| **2021** | *Burn It All Down* | PVRIS | `1Z6CHioIn3s` |
+| **2020** | *Take Over* | Jeremy McKinnon, MAX, Henry | `KbNL9ZyB49c` |
+| **2019** | *Phoenix* | Cailin Russo & Chrissy Costanza | `i1IKnWDecwA` |
+| **2018** | *RISE* | The Glitch Mob, Mako, The Word Alive | `fB8TyLTD7EE` |
+| **2017** | *Legends Never Die* | Against The Current | `4Q46xYqUwZQ` |
+| **2014** | *Warriors* | Imagine Dragons | `fmI_Ndrxy14` |
 
 ### B. Universo K/DA (`KDA_TRACKS`)
-```ts
-export const KDA_TRACKS = [
-  { category: 'kda', year: 2018, title: 'POP/STARS', artist: 'K/DA ft. Madison Beer, (G)I-DLE, Jaira Burns', id: 'UOxkGD8qRB4' },
-  { category: 'kda', year: 2020, title: 'MORE', artist: 'K/DA ft. Madison Beer, (G)I-DLE, Lexie Liu, Jaira Burns, Seraphine', id: '3VTkBuxU4yk' },
-  { category: 'kda', year: 2020, title: 'THE BADDEST', artist: 'K/DA ft. (G)I-DLE, Bea Miller, Wolftyla', id: 'RkID8_gnTxw' },
-  { category: 'kda', year: 2020, title: 'VILLAIN', artist: 'K/DA ft. Madison Beer, Kim Petras', id: 'xoWxv2yZXLQ' },
-  { category: 'kda', year: 2020, title: 'DRUM GO DUM', artist: 'K/DA ft. Aluna, Wolftyla, Bekuh BOOM', id: 'E_PbH5y70Tc' },
-  { category: 'kda', year: 2020, title: "I'LL SHOW YOU", artist: 'K/DA ft. TWICE, Bekuh BOOM, Annika Wells', id: 'WW1BpABbzHs' },
-] as const;
+| Año | Título | Álbum / Colaboradores | YouTube ID |
+| :---: | :--- | :--- | :---: |
+| **2018** | *POP/STARS* | Single Debut (ft. Madison Beer, (G)I-DLE, Jaira Burns) | `UOxkGD8qRB4` |
+| **2020** | *MORE* | EP ALL OUT (ft. Madison Beer, (G)I-DLE, Lexie Liu, Jaira Burns, Seraphine) | `3VTkBuxU4yk` |
+| **2020** | *THE BADDEST* | EP ALL OUT (ft. (G)I-DLE, Bea Miller, Wolftyla) | `RkID8_gnTxw` |
+| **2020** | *VILLAIN* | EP ALL OUT (ft. Madison Beer, Kim Petras) | `xoWxv2yZXLQ` |
+| **2020** | *DRUM GO DUM* | EP ALL OUT (ft. Aluna, Wolftyla, Bekuh BOOM) | `E_PbH5y70Tc` |
+| **2020** | *I'LL SHOW YOU* | EP ALL OUT (ft. TWICE, Bekuh BOOM, Annika Wells) | `WW1BpABbzHs` |
 
-export const ALL_WORLDS_TRACKS = [...WORLDS_ANTHEMS, ...KDA_TRACKS] as const;
+---
+
+## 3. Arquitectura del Componente `WorldsMusicPlayer`
+
+```mermaid
+graph TD
+    User([Usuario]) --> Player[WorldsMusicPlayer]
+    Player --> StateMin{¿Minimizado?}
+    StateMin -->|Sí| MiniDock[Mini-Dock Flotante: Mini-Artwork + Título + Eq + ⏮ ⏯ ⏭ + ▴]
+    StateMin -->|No| FullHUD[HUD Expandido]
+
+    FullHUD --> Tabs[Tabs de Categoría: Todos | Worlds | K/DA]
+    FullHUD --> Selector[Select Agrupado con optgroup]
+    FullHUD --> ViewMode{¿Modo de Vista?}
+    ViewMode -->|Carátula Hi-Fi| ArtCard[Cover HQ + Vinilo Giratorio + Botón '🎬 Ver Video']
+    ViewMode -->|Video Clip| VideoFrame[Iframe YouTube Visible + Botón '🎵 Modo Carátula']
+    FullHUD --> Transport[Transporte Multimedia: ⏮ Anterior | ⏯ Play-Pause | ⏭ Siguiente]
+    FullHUD --> Footer[Escape '↗ YouTube' + Info Tooltip 'ℹ']
+
+    MiniDock -.->|Preserva Audio| AudioIframe[(Iframe Oculto: .worlds-music-stream-hidden)]
+    ArtCard -.->|Preserva Audio| AudioIframe
 ```
 
 ---
 
-## 3. Comportamiento del Reproductor y Mini-Dock en Segundo Plano
+## 4. Funciones Auxiliares de Dominio (`src/domain/worlds-features.ts`)
 
-### Componente `WorldsMusicPlayer`
-- **Estado de minimización**: `const [minimized, setMinimized] = useState(false);`
-  * Al conmutar `minimized`, **no** se altera `isPlaying`.
-  * Si `isPlaying === true`, el nodo `<iframe>` se preserva vivo en el árbol DOM.
-- **Clase condicional para streaming oculto**:
-  ```tsx
-  {isPlaying && (
-    <div className={minimized ? 'worlds-music-stream-hidden' : 'worlds-music-video-wrap'}>
-      <iframe
-        key={track.id}
-        className="worlds-music-frame"
-        src={worldsMusicUrl(track.id, origin)}
-        title={`${track.year} · ${track.title} — ${track.artist}`}
-        allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-        referrerPolicy="strict-origin-when-cross-origin"
-        allowFullScreen
-      />
-    </div>
-  )}
-  ```
-- **Estilos CSS**:
-  ```css
-  .worlds-music-stream-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    padding: 0;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    border: 0;
-    opacity: 0;
-    pointer-events: none;
-  }
-  .worlds-music-hud.is-minimized {
-    width: auto;
-    max-width: min(340px, calc(var(--worlds-viewport-width, 100vw) - 2rem));
-    padding: 0.5rem 0.85rem;
-  }
-  ```
+```ts
+export function trackThumbnailUrl(id: string): string {
+  return `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+}
+
+export function nextTrackIndex(current: number, total: number): number {
+  return (current + 1) % total;
+}
+
+export function prevTrackIndex(current: number, total: number): number {
+  return (current - 1 + total) % total;
+}
+```
 
 ---
 
-## 4. Pruebas Unitarias
-- En `tests/unit/worlds-features.test.ts`:
-  * Verificar los 11 himnos oficiales de Worlds y las 6 pistas de K/DA (total 17 canciones con IDs válidos de 11 caracteres).
-  * Validar que `worldsMusicUrl` genera la URL con `https://www.youtube.com/embed/` y valida tracks válidos.
-  * Mantener la prueba de modos de cine (`Escape`, `C`, `T`).
+## 5. Diseño Visual y Clases CSS (`src/app/globals.css`)
+
+- `.worlds-music-hud.theme-worlds`: Acentos y resplandor Hextech dorado (`#f5d061`).
+- `.worlds-music-hud.theme-kda`: Acentos y resplandor neón magenta/violeta (`#ff2a85` / `#9b51e0`).
+- `.worlds-tab-pill`: Píldoras con micro-interacciones hover y estado `.is-active`.
+- `.worlds-vinyl-disc.is-spinning`: Animación `@keyframes worlds-vinyl-spin 8s linear infinite`.
+- `.worlds-music-stream-hidden`: Ocultamiento accesible sin desmontar del DOM.
+- `.worlds-music-hud.is-minimized`: Contenedor compacto en dock inferior con ancho adaptable a móviles y escritorio.
+
+---
+
+## 6. Pruebas y Validación de Calidad
+
+- Archivo de pruebas: `tests/unit/worlds-features.test.ts`.
+- Cobertura de pruebas:
+  1. Catálogo íntegro de 11 himnos y 6 pistas de K/DA (17 pistas con IDs válidos de 11 caracteres).
+  2. Generación de URLs de inserción con el host oficial `https://www.youtube.com`.
+  3. Cálculo de carátulas `trackThumbnailUrl`.
+  4. Navegación secuencial circular con `nextTrackIndex` y `prevTrackIndex`.
+  5. Conmutación limpia de modos de pantalla completa (`normal`, `cinema`, `theater`).
