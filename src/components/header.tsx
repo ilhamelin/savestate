@@ -9,6 +9,14 @@ export async function Header() {
   const [user, profile] = await Promise.all([currentUser(), currentViewerProfile()]);
   return (
     <header className="site-header">
+      <Image
+        src="/icons/halloween/telarana-de-halloween.png"
+        alt=""
+        width={40}
+        height={40}
+        className="corner-web header-halloween-web"
+        unoptimized
+      />
       <Link href="/" className="brand brand-halloween" aria-label="Savestate, inicio">
         <Gamepad2 size={27} />
         <span className="brand-halloween-copy">
@@ -50,6 +58,14 @@ export async function Header() {
               : '/login'
           }
         >
+          <Image
+            src="/icons/halloween/calabaza.png"
+            alt=""
+            width={16}
+            height={16}
+            className="profile-halloween-pumpkin"
+            unoptimized
+          />
           {user ? 'Mi perfil' : 'Conectar'}
           <ArrowUpRight size={15} />
         </Link>

@@ -3,12 +3,85 @@ body {
 }
 .halloween-bats-layer {
   position: fixed;
-  inset: 70px 0 auto;
-  height: min(38vh, 320px);
+  inset: 0;
   overflow: hidden;
   pointer-events: none;
   user-select: none;
-  z-index: -1;
+  z-index: 0;
+}
+#main,
+.site-footer {
+  position: relative;
+}
+.site-header {
+  border-bottom: 1px solid #3c1e5a !important;
+  box-shadow:
+    0 4px 20px rgba(121, 40, 202, 0.2),
+    0 1px 0 rgba(255, 107, 0, 0.25) !important;
+}
+.site-header nav[aria-label] a {
+  border-bottom: 2px solid transparent;
+  padding-bottom: 6px;
+}
+.site-header nav a:hover,
+.site-header nav a:focus-visible {
+  color: #ff6b00 !important;
+  text-shadow: 0 0 8px rgba(255, 107, 0, 0.6);
+}
+.site-header nav a.nav-item-active {
+  color: #ff6b00 !important;
+  border-bottom-color: #ff6b00 !important;
+  text-shadow: 0 0 10px rgba(255, 107, 0, 0.75);
+  background: #ff6b0014 !important;
+  box-shadow: none !important;
+}
+.site-header .crt-toggle {
+  border: 1px solid #3a1c52;
+  border-radius: 4px;
+  padding: 0 0.4rem;
+  color: #ffb16c;
+}
+.site-header .crt-toggle span {
+  border-color: #3a1c52;
+}
+.site-header .crt-toggle:hover,
+.site-header .crt-toggle:focus-visible {
+  border-color: #ff6b00 !important;
+  box-shadow: 0 0 10px rgba(255, 107, 0, 0.35) !important;
+}
+.site-header .notification-trigger:hover svg,
+.site-header .notification-trigger:focus-visible svg {
+  color: #ff6b00 !important;
+  filter: drop-shadow(0 0 6px #ff6b00);
+}
+.site-header .notification-badge {
+  background: #ff6b00 !important;
+  color: #08070b !important;
+  box-shadow: 0 0 8px rgba(255, 107, 0, 0.8) !important;
+}
+.header-actions > .button.small {
+  background: #ff6b00 !important;
+  border-color: #ff6b00 !important;
+  color: #08070b !important;
+  box-shadow:
+    3px 3px 0 #7928ca,
+    0 0 16px rgba(255, 107, 0, 0.45) !important;
+}
+.header-actions > .button.small:hover,
+.header-actions > .button.small:focus-visible {
+  filter: brightness(1.15) !important;
+  box-shadow:
+    3px 3px 0 #9d4edd,
+    0 0 22px rgba(255, 107, 0, 0.7) !important;
+}
+.profile-halloween-pumpkin {
+  flex-shrink: 0;
+  object-fit: contain;
+}
+.site-header .header-halloween-web {
+  width: 40px;
+  height: 40px;
+  opacity: 0.35;
 }
 .bat {
   position: absolute;
