@@ -255,6 +255,219 @@ body {
 .halloween-hero-chip img {
   flex-shrink: 0;
 }
+.hero-terminal.checkpoint-terminal {
+  --checkpoint-color: #ff8a3d;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #ff6b0040;
+  border-radius: 16px;
+  background: #090a10d9;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 0 35px #ff6b001f;
+  transition: border-color 180ms ease;
+}
+.hero-terminal.checkpoint-terminal:hover {
+  border-color: #ff6b0080;
+}
+.checkpoint-terminal [data-color='orange'] {
+  --checkpoint-color: #ff8a3d;
+}
+.checkpoint-terminal[data-color='amber'],
+.checkpoint-terminal [data-color='amber'] {
+  --checkpoint-color: #fbbf24;
+}
+.checkpoint-terminal[data-color='emerald'],
+.checkpoint-terminal [data-color='emerald'] {
+  --checkpoint-color: #34d399;
+}
+.checkpoint-terminal[data-color='purple'],
+.checkpoint-terminal [data-color='purple'] {
+  --checkpoint-color: #c084fc;
+}
+.checkpoint-terminal[data-color='red'],
+.checkpoint-terminal [data-color='red'] {
+  --checkpoint-color: #fb7185;
+}
+.checkpoint-terminal[data-color='cyan'],
+.checkpoint-terminal [data-color='cyan'] {
+  --checkpoint-color: #22d3ee;
+}
+.checkpoint-terminal-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 16px 22px;
+  padding-right: 45px;
+  border-bottom: 1px solid #ff6b0026;
+  font-size: 9px;
+}
+.checkpoint-terminal-logbook {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.checkpoint-terminal-pumpkin {
+  flex-shrink: 0;
+  animation: checkpoint-pulse 3s ease-in-out infinite;
+}
+.checkpoint-terminal-signal {
+  color: #ffa366;
+  font-size: 8px;
+  white-space: nowrap;
+}
+.checkpoint-terminal .checkpoint-terminal-web {
+  opacity: 0.3;
+  user-select: none;
+}
+.checkpoint-terminal-art {
+  position: relative;
+  display: flex;
+  min-height: 220px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--checkpoint-color);
+  background:
+    radial-gradient(ellipse at center, #ff6b000b, transparent 70%),
+    repeating-linear-gradient(0deg, #ffffff03 0 1px, transparent 1px 24px);
+}
+.checkpoint-terminal-art > svg {
+  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--checkpoint-color) 40%, transparent));
+}
+.checkpoint-terminal-art strong {
+  font-family: var(--font-pixel), monospace;
+  font-size: clamp(16px, 1.7vw, 21px);
+}
+.checkpoint-terminal-kicker {
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  color: #b6a3c5;
+}
+.checkpoint-terminal-orbit {
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  top: 12px;
+  border: 1px solid color-mix(in srgb, var(--checkpoint-color) 15%, transparent);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.checkpoint-terminal-body {
+  padding: 18px 22px 22px;
+  border-top: 1px solid #ff6b0026;
+}
+.checkpoint-terminal-prompt {
+  color: #a998b7;
+  font-size: 10px;
+  margin-bottom: 12px;
+}
+.checkpoint-state-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.checkpoint-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 6px;
+  min-height: 44px;
+  min-width: 0;
+  font-size: 10px;
+  border: 1px solid #54405e;
+  border-radius: 6px;
+  background: #110e19;
+  color: #c2b6cd;
+}
+.checkpoint-state svg {
+  flex-shrink: 0;
+  color: var(--checkpoint-color);
+}
+.checkpoint-state:hover,
+.checkpoint-state[aria-pressed='true'] {
+  color: var(--checkpoint-color);
+  border-color: var(--checkpoint-color);
+  background: color-mix(in srgb, var(--checkpoint-color) 10%, #090a10);
+}
+.checkpoint-state:focus-visible {
+  outline-color: var(--checkpoint-color);
+  outline-offset: 2px;
+}
+.checkpoint-telemetry {
+  margin-top: 16px;
+  padding: 12px;
+  min-height: 104px;
+  background: #07080db3;
+  border-left: 2px solid var(--checkpoint-color);
+}
+.checkpoint-telemetry-label {
+  font-size: 8px;
+  letter-spacing: 0.04em;
+  color: #a998b7;
+}
+.checkpoint-telemetry-label strong {
+  color: var(--checkpoint-color);
+}
+.checkpoint-telemetry p {
+  color: #d1c6dc;
+  font-size: 11px;
+  margin-top: 6px;
+}
+.checkpoint-terminal-preview {
+  font-size: 9px;
+  color: #a998b7;
+  margin: 10px 0 14px;
+}
+.checkpoint-terminal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.checkpoint-terminal-actions .button {
+  justify-content: center;
+  font-size: 10px;
+  min-width: 0;
+}
+.checkpoint-terminal-actions .checkpoint-register {
+  background: #ff6b00;
+  border-color: #ff6b00;
+  color: #08070b;
+  box-shadow: 3px 3px 0 #65278e;
+}
+@keyframes checkpoint-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.65;
+  }
+}
+@media (max-width: 600px) {
+  .checkpoint-state-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .checkpoint-terminal-top,
+  .checkpoint-terminal-body {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .checkpoint-terminal-top {
+    padding-right: 40px;
+  }
+  .checkpoint-terminal-actions .button {
+    flex: 1 1 160px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .halloween-bats-layer {
     display: none;
@@ -262,7 +475,11 @@ body {
   .bat,
   .bat-wing,
   .pumpkin-glow,
-  .brand-halloween-pumpkin {
+  .brand-halloween-pumpkin,
+  .checkpoint-terminal-pumpkin {
     animation: none;
+  }
+  .hero-terminal.checkpoint-terminal {
+    transition: none;
   }
 }
