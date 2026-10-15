@@ -5,6 +5,73 @@ export function worldsViewModeForKey(mode: WorldsViewMode, key: string): WorldsV
     key.toLowerCase() === 'c' ? 'cinema' : key.toLowerCase() === 't' ? 'theater' : null;
   return target ? (mode === target ? 'normal' : target) : mode;
 }
+export interface WorldsBroadcastSignal {
+  id: string;
+  label: string;
+  kind: 'twitch' | 'youtube' | 'external';
+  channel?: string;
+  videoId?: string;
+  href: string;
+}
+
+export const WORLDS_BROADCAST_SIGNALS: readonly WorldsBroadcastSignal[] = [
+  {
+    id: 'lvpes',
+    label: '🇪🇸 Español · LVPes',
+    kind: 'twitch',
+    channel: 'lvpes',
+    href: 'https://www.twitch.tv/lvpes',
+  },
+  {
+    id: 'latam-yt',
+    label: '🇲🇽 Español Latam · YouTube',
+    kind: 'youtube',
+    videoId: 'iFmz2yFuQbw',
+    href: 'https://www.youtube.com/watch?v=iFmz2yFuQbw',
+  },
+  {
+    id: 'riotgames',
+    label: '🇺🇸 Inglés oficial · Riot Games',
+    kind: 'twitch',
+    channel: 'riotgames',
+    href: 'https://www.twitch.tv/riotgames',
+  },
+  {
+    id: 'demacia-cup',
+    label: '🏆 Demacia Cup · LoL Esports',
+    kind: 'external',
+    href: 'https://lolesports.com/es-MX/live/demacia_cup/104481098073348078',
+  },
+] as const;
+
+export const DEFAULT_WORLDS_BROADCAST_SIGNAL: WorldsBroadcastSignal = WORLDS_BROADCAST_SIGNALS[0]!;
+
+export function findWorldsBroadcastSignal(id: string): WorldsBroadcastSignal {
+  return WORLDS_BROADCAST_SIGNALS.find((item) => item.id === id) ?? DEFAULT_WORLDS_BROADCAST_SIGNAL;
+}
+
+export function buildWorldsFrameUrl(
+  signal: WorldsBroadcastSignal,
+  hostname: string,
+  activeVodId?: string | null,
+): string | null {
+  if (activeVodId) {
+    return `https://www.youtube-nocookie.com/embed/${activeVodId}`;
+  }
+  if (signal.kind === 'youtube' && signal.videoId) {
+    return `https://www.youtube-nocookie.com/embed/${signal.videoId}?autoplay=0&rel=0`;
+  }
+  if (signal.kind === 'twitch' && signal.channel) {
+    return hostname
+      ? `https://player.twitch.tv/?${new URLSearchParams({ channel: signal.channel, parent: hostname, autoplay: 'false' })}`
+      : null;
+  }
+  if (signal.kind === 'external') {
+    return signal.href;
+  }
+  return null;
+}
+
 // Official League of Legends uploads verified through YouTube oEmbed, 2026-10-14.
 export const WORLDS_ANTHEMS = [
   { year: 2026, title: 'Know My Name', artist: 'True Damage', id: 'mlFxxNsExJc' },

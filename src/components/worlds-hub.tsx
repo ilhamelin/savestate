@@ -3,7 +3,13 @@ import { useEffect, useRef, useState } from 'react';
 import { readJsonResponse } from '@/lib/api-response';
 import { WorldsRosters, WorldsPerformance } from '@/components/worlds-performance';
 import { WorldsMusicPlayer } from '@/components/worlds-music-player';
-import { worldsViewModeForKey, type WorldsViewMode } from '@/domain/worlds-features';
+import {
+  worldsViewModeForKey,
+  WORLDS_BROADCAST_SIGNALS,
+  findWorldsBroadcastSignal,
+  buildWorldsFrameUrl,
+  type WorldsViewMode,
+} from '@/domain/worlds-features';
 import {
   describeWorldsMatch,
   pickDefaultWorldsMatch,
@@ -13,11 +19,6 @@ import {
   type WorldsTeam,
   type WorldsStageSlug,
 } from '@/domain/worlds-schedule';
-const SIGNALS = [
-  { channel: 'lvpes', label: '🇪🇸 Español · LVPes' },
-  { channel: 'lla', label: '🇲🇽 Español Latam · LLA' },
-  { channel: 'riotgames', label: '🇺🇸 Inglés oficial · Riot Games' },
-] as const;
 function dateLabel(value: string, full = false) {
   return new Intl.DateTimeFormat('es-CL', {
     timeZone: 'America/Santiago',
@@ -209,11 +210,8 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
       game.vods.map((vod) => ({ ...vod, number: game.number })),
     ) ?? [];
   const activeVod = vods.find((vod) => vod.parameter === vodId);
-  const frameUrl = activeVod
-    ? `https://www.youtube-nocookie.com/embed/${activeVod.parameter}`
-    : hostname
-      ? `https://player.twitch.tv/?${new URLSearchParams({ channel: signal, parent: hostname, autoplay: 'false' })}`
-      : null;
+  const activeSignal = findWorldsBroadcastSignal(signal);
+  const frameUrl = buildWorldsFrameUrl(activeSignal, hostname, activeVod?.parameter);
   function selectStage(slug: WorldsStageSlug) {
     const next = schedule.stages.find((item) => item.slug === slug)!;
     setStageSlug(slug);
@@ -368,20 +366,36 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
                   ✕ Normal
                 </button>
               )}
-              {SIGNALS.map((item) => (
-                <button
-                  type="button"
-                  key={item.channel}
-                  className="button outline small"
-                  aria-pressed={!activeVod && signal === item.channel}
-                  onClick={() => {
-                    setSignal(item.channel);
-                    setVodId(null);
-                  }}
-                >
-                  {item.label}
-                </button>
-              ))}
+              {WORLDS_BROADCAST_SIGNALS.map((item) => {
+                if (item.kind === 'external') {
+                  return (
+                    <a
+                      key={item.id}
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="button outline small"
+                      title="Abrir transmisión de Demacia Cup en LoL Esports en una pestaña nueva"
+                    >
+                      {item.label} ↗
+                    </a>
+                  );
+                }
+                return (
+                  <button
+                    type="button"
+                    key={item.id}
+                    className="button outline small"
+                    aria-pressed={!activeVod && signal === item.id}
+                    onClick={() => {
+                      setSignal(item.id);
+                      setVodId(null);
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
               {vods.map((vod) => (
                 <button
                   type="button"
@@ -408,7 +422,7 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
                   title={
                     activeVod
                       ? `VOD oficial · Juego ${activeVod.number}`
-                      : `Directo de Worlds · ${signal}`
+                      : `Directo de Worlds · ${activeSignal.label}`
                   }
                   allow="fullscreen; autoplay; encrypted-media; picture-in-picture"
                   allowFullScreen
@@ -429,23 +443,37 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
               </a>
               <a
                 className="text-link"
-                href={`https://www.twitch.tv/${signal}`}
+                href="https://lolesports.com/es-MX/live/demacia_cup/104481098073348078"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Abrir Twitch ↗
+                🏆 Demacia Cup Live ↗
               </a>
               <a
                 className="text-link"
                 href={
                   activeVod
                     ? `https://www.youtube.com/watch?v=${activeVod.parameter}`
-                    : 'https://www.youtube.com/@lolesports'
+                    : activeSignal.href
                 }
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                YouTube oficial ↗
+                {activeVod
+                  ? 'YouTube oficial ↗'
+                  : activeSignal.kind === 'twitch'
+                    ? 'Abrir Twitch ↗'
+                    : activeSignal.kind === 'youtube'
+                      ? 'Abrir en YouTube ↗'
+                      : 'Abrir señal ↗'}
+              </a>
+              <a
+                className="text-link"
+                href="https://www.youtube.com/@lolesports"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Canal oficial de YouTube ↗
               </a>
             </div>
           </section>

@@ -11,6 +11,8 @@ import {
   prevTrackIndex,
   worldsViewModeForKey,
   type WorldsViewMode,
+  WORLDS_BROADCAST_SIGNALS,
+  buildWorldsFrameUrl,
 } from '../../src/domain/worlds-features.ts';
 
 test('Worlds soundtrack contains eleven verified official uploads with matching years and titles', () => {
@@ -87,6 +89,7 @@ test('Worlds official embed host is permitted in frame-src without removing exis
   assert.ok(frames.includes('https://www.youtube.com'));
   assert.ok(frames.includes('https://www.youtube-nocookie.com'));
   assert.ok(frames.includes('https://player.twitch.tv'));
+  assert.ok(frames.includes('https://lolesports.com'));
   assert.ok(!frames.includes('*'));
 });
 
@@ -111,4 +114,37 @@ test('Worlds transport wraps in both directions across all tracks and handles an
   assert.equal(prevTrackIndex(0, 0), 0);
   for (let index = 0; index < ALL_WORLDS_TRACKS.length; index++)
     assert.equal(prevTrackIndex(nextTrackIndex(index, 17), 17), index);
+});
+
+test('Worlds broadcast signals replace inactive LLA channel with verified YouTube stream and provide Demacia Cup tab', () => {
+  const ids = WORLDS_BROADCAST_SIGNALS.map((s) => s.id);
+  assert.ok(ids.includes('lvpes'));
+  assert.ok(ids.includes('latam-yt'));
+  assert.ok(ids.includes('riotgames'));
+  assert.ok(ids.includes('demacia-cup'));
+  assert.ok(!ids.includes('lla'), 'El canal de Twitch lla ya no debe estar configurado');
+
+  const latam = WORLDS_BROADCAST_SIGNALS.find((s) => s.id === 'latam-yt');
+  assert.equal(latam?.kind, 'youtube');
+  assert.equal(latam?.videoId, 'iFmz2yFuQbw');
+  assert.equal(latam?.href, 'https://www.youtube.com/watch?v=iFmz2yFuQbw');
+
+  const demacia = WORLDS_BROADCAST_SIGNALS.find((s) => s.id === 'demacia-cup');
+  assert.equal(demacia?.kind, 'external');
+  assert.equal(demacia?.href, 'https://lolesports.com/es-MX/live/demacia_cup/104481098073348078');
+
+  // Verify frame URL builder
+  const ytUrl = buildWorldsFrameUrl(latam!, 'localhost');
+  assert.equal(ytUrl, 'https://www.youtube-nocookie.com/embed/iFmz2yFuQbw?autoplay=0&rel=0');
+
+  const lvpes = WORLDS_BROADCAST_SIGNALS.find((s) => s.id === 'lvpes')!;
+  const twitchUrl = buildWorldsFrameUrl(lvpes, 'savestate.test');
+  assert.match(twitchUrl ?? '', /player\.twitch\.tv/);
+  assert.match(twitchUrl ?? '', /channel=lvpes/);
+
+  const demaciaUrl = buildWorldsFrameUrl(demacia!, 'savestate.test');
+  assert.equal(demaciaUrl, 'https://lolesports.com/es-MX/live/demacia_cup/104481098073348078');
+
+  const vodUrl = buildWorldsFrameUrl(latam!, 'localhost', 'vod12345678');
+  assert.equal(vodUrl, 'https://www.youtube-nocookie.com/embed/vod12345678');
 });
