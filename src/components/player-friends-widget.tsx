@@ -27,12 +27,6 @@ function FriendIdentity({ profile, isOnline }: { profile: FriendProfile; isOnlin
           {isOnline ? 'Activo' : 'Inactivo'}
         </span>
       </span>
-      <span
-        className={`friend-level-circle friend-level-${friendLevelTier(profile.level)}`}
-        aria-label={`Nivel ${profile.level}`}
-      >
-        {profile.level}
-      </span>
     </Link>
   );
 }
@@ -91,9 +85,11 @@ export function PlayerFriendsWidget({
   }
 
   return (
-    <section className="player-friends-widget" aria-labelledby="player-friends-heading">
+    <section className="panel player-friends-widget" aria-labelledby="player-friends-heading">
       <h2 id="player-friends-heading">
-        Amigos <span className="muted">{available ? friends.length : '—'}</span>
+        <Image src="/icons/halloween/fantasma.png" alt="" width={18} height={18} unoptimized />
+        Amigos{' '}
+        <span className="accent text-halloween-orange">{available ? friends.length : '—'}</span>
       </h2>
       {isOwner ? (
         <div className="filter-buttons friend-tabs" aria-label="Amigos y solicitudes">
@@ -120,17 +116,25 @@ export function PlayerFriendsWidget({
         ) : friends.length ? (
           <ul className="friend-list">
             {friends.map((friend) => (
-              <li key={friend.id}>
+              <li key={friend.id} className="friend-row">
                 <FriendIdentity profile={friend} isOnline={onlineUsers.has(friend.id)} />
-                {isOwner && currentUserId && (
-                  <button
-                    type="button"
-                    className="button outline small friend-chat-btn"
-                    onClick={() => setActiveChatFriend(friend)}
+                <div className="friend-row-actions">
+                  {isOwner && currentUserId && (
+                    <button
+                      type="button"
+                      className="button outline small friend-chat-btn"
+                      onClick={() => setActiveChatFriend(friend)}
+                    >
+                      💬 Chat
+                    </button>
+                  )}
+                  <span
+                    className={`friend-level-circle friend-level-${friendLevelTier(friend.level)}`}
+                    aria-label={`Nivel ${friend.level}`}
                   >
-                    💬 Chat
-                  </button>
-                )}
+                    {friend.level}
+                  </span>
+                </div>
               </li>
             ))}
           </ul>
@@ -140,42 +144,50 @@ export function PlayerFriendsWidget({
       ) : requests.length ? (
         <ul className="friend-list">
           {requests.map((request) => (
-            <li key={request.id}>
+            <li key={request.id} className="friend-row friend-row-request">
               <FriendIdentity
                 profile={request.profile}
                 isOnline={onlineUsers.has(request.profile.id)}
               />
-              <div className="friend-request-actions">
-                {tab === 'received' ? (
-                  <>
+              <div className="friend-row-actions">
+                <div className="friend-request-actions">
+                  {tab === 'received' ? (
+                    <>
+                      <button
+                        type="button"
+                        className="button secondary"
+                        disabled={busyId !== null || refreshing}
+                        onClick={() => void mutate(request.id, 'accepted')}
+                      >
+                        Aceptar
+                      </button>
+                      <button
+                        type="button"
+                        className="button danger"
+                        disabled={busyId !== null || refreshing}
+                        onClick={() => void mutate(request.id, 'rejected')}
+                      >
+                        Rechazar
+                      </button>
+                    </>
+                  ) : (
                     <button
                       type="button"
                       className="button secondary"
                       disabled={busyId !== null || refreshing}
-                      onClick={() => void mutate(request.id, 'accepted')}
+                      onClick={() => void mutate(request.id)}
                     >
-                      Aceptar
+                      Cancelar solicitud
                     </button>
-                    <button
-                      type="button"
-                      className="button danger"
-                      disabled={busyId !== null || refreshing}
-                      onClick={() => void mutate(request.id, 'rejected')}
-                    >
-                      Rechazar
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    className="button secondary"
-                    disabled={busyId !== null || refreshing}
-                    onClick={() => void mutate(request.id)}
-                  >
-                    Cancelar solicitud
-                  </button>
-                )}
-                {busyId === request.id ? <span role="status">Procesando…</span> : null}
+                  )}
+                  {busyId === request.id ? <span role="status">Procesando…</span> : null}
+                </div>
+                <span
+                  className={`friend-level-circle friend-level-${friendLevelTier(request.profile.level)}`}
+                  aria-label={`Nivel ${request.profile.level}`}
+                >
+                  {request.profile.level}
+                </span>
               </div>
             </li>
           ))}

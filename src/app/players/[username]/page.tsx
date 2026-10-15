@@ -204,7 +204,7 @@ export default async function Player({ params }: { params: Promise<{ username: s
           <Link href={`/players/${profile.username}/wrapped`}>🎁 SaveState Wrapped →</Link>
         </nav>
         <div className="profile-dual-grid" id="player-friends">
-          <HardwareBadges platforms={hardware} />
+          <HardwareBadges platforms={hardware} isOwner={isOwner} />
           <PlayerFriendsWidget
             currentUserId={user?.id ?? null}
             key={profile.id}

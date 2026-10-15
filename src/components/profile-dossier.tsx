@@ -1,27 +1,50 @@
 import { resolvePlatformIcon } from '@/domain/platform-icons';
 import Image from 'next/image';
+import Link from 'next/link';
 import type { ProfileDossier } from '@/domain/dossier';
 import { STATUS_LABELS } from '@/domain/model';
 import { NumberTicker } from '@/components/ui/number-ticker';
-export function HardwareBadges({ platforms }: { platforms: string[] }) {
+export function HardwareBadges({
+  platforms,
+  isOwner = false,
+}: {
+  platforms: string[];
+  isOwner?: boolean;
+}) {
   return (
     <section className="panel hardware-showcase">
       <p className="eyebrow">HARDWARE INVENTORY</p>
-      <h2>Mis consolas y hardware</h2>
-      <div className="tags">
+      <div className="hardware-heading">
+        <h2>Mis consolas y hardware</h2>
+        <span className="tag">
+          {platforms.length} {platforms.length === 1 ? 'estación' : 'estaciones'}
+        </span>
+      </div>
+      <div className="hardware-cards-grid">
         {platforms.map((platform) => {
           const icon = resolvePlatformIcon(platform);
           return (
-            <span className="hardware-badge" key={platform}>
-              {icon ? (
-                <Image src={icon} alt="" width={16} height={16} unoptimized />
-              ) : (
-                <span aria-hidden="true">▣</span>
-              )}
-              {platform}
-            </span>
+            <div className="hardware-card" key={platform}>
+              <span className="hardware-card-identity">
+                {icon ? (
+                  <Image src={icon} alt="" width={22} height={22} unoptimized />
+                ) : (
+                  <span aria-hidden="true">▣</span>
+                )}
+                <strong>{platform}</strong>
+              </span>
+              <small className="hardware-system-badge" title="Hardware declarado por el jugador">
+                ● Sistema verificado
+              </small>
+            </div>
           );
         })}
+        {isOwner && (
+          <Link className="hardware-card-add" href="/settings">
+            <strong>➕ Vincular otra consola</strong>
+            <small>Configura PlayStation, Xbox o Switch en Ajustes →</small>
+          </Link>
+        )}
       </div>
       {!platforms.length ? <p className="muted">Todavía no hay plataformas declaradas.</p> : null}
     </section>

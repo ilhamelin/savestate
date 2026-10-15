@@ -2538,12 +2538,12 @@ a.feed-card-cover:hover {
 }
 .player-friends-widget {
   margin-block: 2rem;
-  padding: 1rem;
-  border: 1px solid var(--line);
-  background: var(--surface);
   max-width: 680px;
 }
 .player-friends-widget h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-size: 1.2rem;
   margin: 0 0 1rem;
 }
@@ -2553,17 +2553,42 @@ a.feed-card-cover:hover {
 }
 .friend-tabs button {
   white-space: normal;
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  font-size: 11px;
 }
 .friend-list {
   list-style: none;
   padding: 0;
   margin: 1rem 0 0;
 }
-.friend-list li {
+.friend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   padding-block: 0.75rem;
   border-top: 1px solid var(--line);
 }
+.friend-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-shrink: 0;
+}
+.friend-row-request {
+  flex-wrap: wrap;
+}
+.friend-row-request .friend-row-actions {
+  margin-left: auto;
+  max-width: 100%;
+}
+.friend-row-request .friend-request-actions {
+  min-width: 0;
+  flex: 1;
+}
 .friend-identity {
+  flex: 1;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -2632,7 +2657,73 @@ a.feed-card-cover:hover {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
-  margin: 0.75rem 0 0 48px;
+  margin: 0;
+}
+.hardware-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.hardware-cards-grid {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.hardware-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #3c1e5a;
+  border-radius: 8px;
+  background: #0c0a14d9;
+}
+.hardware-card-identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.hardware-card-identity img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.hardware-system-badge {
+  color: #b9c7bb;
+  font-size: 0.65rem;
+  white-space: nowrap;
+}
+.hardware-card-add {
+  border: 1px dashed #ff6b0055;
+  background: #ff6b000d;
+  text-decoration: none;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: #ffb16c;
+  overflow-wrap: anywhere;
+  transition:
+    border-color 180ms ease,
+    background 180ms ease;
+}
+.hardware-card-add:hover,
+.hardware-card-add:focus-visible {
+  border-color: #ff6b00;
+  background: #ff6b001a;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hardware-card-add {
+    transition: none;
+  }
 }
 @media (max-width: 400px) {
   .friend-request-actions {
