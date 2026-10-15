@@ -8,7 +8,7 @@ export function worldsViewModeForKey(mode: WorldsViewMode, key: string): WorldsV
 export interface WorldsBroadcastSignal {
   id: string;
   label: string;
-  kind: 'twitch' | 'youtube' | 'external';
+  kind: 'twitch' | 'youtube';
   channel?: string;
   videoId?: string;
   href: string;
@@ -36,12 +36,6 @@ export const WORLDS_BROADCAST_SIGNALS: readonly WorldsBroadcastSignal[] = [
     channel: 'riotgames',
     href: 'https://www.twitch.tv/riotgames',
   },
-  {
-    id: 'demacia-cup',
-    label: '🏆 Demacia Cup · LoL Esports',
-    kind: 'external',
-    href: 'https://lolesports.com/es-MX/live/demacia_cup/104481098073348078',
-  },
 ] as const;
 
 export const DEFAULT_WORLDS_BROADCAST_SIGNAL: WorldsBroadcastSignal = WORLDS_BROADCAST_SIGNALS[0]!;
@@ -65,9 +59,6 @@ export function buildWorldsFrameUrl(
     return hostname
       ? `https://player.twitch.tv/?${new URLSearchParams({ channel: signal.channel, parent: hostname, autoplay: 'false' })}`
       : null;
-  }
-  if (signal.kind === 'external') {
-    return signal.href;
   }
   return null;
 }

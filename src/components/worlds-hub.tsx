@@ -366,36 +366,20 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
                   ✕ Normal
                 </button>
               )}
-              {WORLDS_BROADCAST_SIGNALS.map((item) => {
-                if (item.kind === 'external') {
-                  return (
-                    <a
-                      key={item.id}
-                      href={item.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="button outline small"
-                      title="Abrir transmisión de Demacia Cup en LoL Esports en una pestaña nueva"
-                    >
-                      {item.label} ↗
-                    </a>
-                  );
-                }
-                return (
-                  <button
-                    type="button"
-                    key={item.id}
-                    className="button outline small"
-                    aria-pressed={!activeVod && signal === item.id}
-                    onClick={() => {
-                      setSignal(item.id);
-                      setVodId(null);
-                    }}
-                  >
-                    {item.label}
-                  </button>
-                );
-              })}
+              {WORLDS_BROADCAST_SIGNALS.map((item) => (
+                <button
+                  type="button"
+                  key={item.id}
+                  className="button outline small"
+                  aria-pressed={!activeVod && signal === item.id}
+                  onClick={() => {
+                    setSignal(item.id);
+                    setVodId(null);
+                  }}
+                >
+                  {item.label}
+                </button>
+              ))}
               {vods.map((vod) => (
                 <button
                   type="button"
@@ -443,14 +427,6 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
               </a>
               <a
                 className="text-link"
-                href="https://lolesports.com/es-MX/live/demacia_cup/104481098073348078"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                🏆 Demacia Cup Live ↗
-              </a>
-              <a
-                className="text-link"
                 href={
                   activeVod
                     ? `https://www.youtube.com/watch?v=${activeVod.parameter}`
@@ -463,9 +439,7 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
                   ? 'YouTube oficial ↗'
                   : activeSignal.kind === 'twitch'
                     ? 'Abrir Twitch ↗'
-                    : activeSignal.kind === 'youtube'
-                      ? 'Abrir en YouTube ↗'
-                      : 'Abrir señal ↗'}
+                    : 'Abrir en YouTube ↗'}
               </a>
               <a
                 className="text-link"

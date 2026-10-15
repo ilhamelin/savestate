@@ -12,6 +12,7 @@ import {
   worldsViewModeForKey,
   type WorldsViewMode,
   WORLDS_BROADCAST_SIGNALS,
+  findWorldsBroadcastSignal,
   buildWorldsFrameUrl,
 } from '../../src/domain/worlds-features.ts';
 
@@ -116,22 +117,26 @@ test('Worlds transport wraps in both directions across all tracks and handles an
     assert.equal(prevTrackIndex(nextTrackIndex(index, 17), 17), index);
 });
 
-test('Worlds broadcast signals replace inactive LLA channel with verified YouTube stream and provide Demacia Cup tab', () => {
+test('Worlds broadcast signals replace inactive LLA channel with verified YouTube stream and exclude Demacia Cup', () => {
   const ids = WORLDS_BROADCAST_SIGNALS.map((s) => s.id);
   assert.ok(ids.includes('lvpes'));
   assert.ok(ids.includes('latam-yt'));
   assert.ok(ids.includes('riotgames'));
-  assert.ok(ids.includes('demacia-cup'));
+  assert.ok(
+    !ids.includes('demacia-cup'),
+    'Demacia Cup ya no debe estar presente en las señales de Worlds',
+  );
   assert.ok(!ids.includes('lla'), 'El canal de Twitch lla ya no debe estar configurado');
+  assert.equal(new Set(ids).size, 3);
+  assert.equal(findWorldsBroadcastSignal('latam-yt').videoId, 'iFmz2yFuQbw');
+  assert.equal(findWorldsBroadcastSignal('demacia-cup').id, 'lvpes');
+  assert.equal(findWorldsBroadcastSignal('lla').id, 'lvpes');
+  assert.equal(findWorldsBroadcastSignal('unknown').id, 'lvpes');
 
   const latam = WORLDS_BROADCAST_SIGNALS.find((s) => s.id === 'latam-yt');
   assert.equal(latam?.kind, 'youtube');
   assert.equal(latam?.videoId, 'iFmz2yFuQbw');
   assert.equal(latam?.href, 'https://www.youtube.com/watch?v=iFmz2yFuQbw');
-
-  const demacia = WORLDS_BROADCAST_SIGNALS.find((s) => s.id === 'demacia-cup');
-  assert.equal(demacia?.kind, 'external');
-  assert.equal(demacia?.href, 'https://lolesports.com/es-MX/live/demacia_cup/104481098073348078');
 
   // Verify frame URL builder
   const ytUrl = buildWorldsFrameUrl(latam!, 'localhost');
@@ -141,9 +146,17 @@ test('Worlds broadcast signals replace inactive LLA channel with verified YouTub
   const twitchUrl = buildWorldsFrameUrl(lvpes, 'savestate.test');
   assert.match(twitchUrl ?? '', /player\.twitch\.tv/);
   assert.match(twitchUrl ?? '', /channel=lvpes/);
-
-  const demaciaUrl = buildWorldsFrameUrl(demacia!, 'savestate.test');
-  assert.equal(demaciaUrl, 'https://lolesports.com/es-MX/live/demacia_cup/104481098073348078');
+  const twitchFrame = new URL(twitchUrl!);
+  assert.equal(twitchFrame.origin, 'https://player.twitch.tv');
+  assert.equal(twitchFrame.searchParams.get('parent'), 'savestate.test');
+  assert.equal(twitchFrame.searchParams.get('autoplay'), 'false');
+  assert.equal(buildWorldsFrameUrl(lvpes, ''), null);
+  assert.equal(
+    new URL(
+      buildWorldsFrameUrl(findWorldsBroadcastSignal('riotgames'), 'localhost')!,
+    ).searchParams.get('channel'),
+    'riotgames',
+  );
 
   const vodUrl = buildWorldsFrameUrl(latam!, 'localhost', 'vod12345678');
   assert.equal(vodUrl, 'https://www.youtube-nocookie.com/embed/vod12345678');
