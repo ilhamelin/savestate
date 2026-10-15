@@ -1,7 +1,7 @@
 import 'server-only';
 import fallbackEvents from '@/domain/worlds-2026-fallback.json';
 import { AppError } from '@/lib/http';
-import { mergeWorldsTelemetry } from '@/domain/worlds-telemetry';
+import { hasWorldsTelemetryMetrics, mergeWorldsTelemetry } from '@/domain/worlds-telemetry';
 import {
   groupWorldsEventsByStage,
   parseWorldsScheduleEvents,
@@ -152,13 +152,40 @@ async function gameTelemetry(game: WorldsMatchDetail['games'][number]) {
     const firstTs = typeof ts === 'string' && Number.isFinite(Date.parse(ts)) ? ts : null;
     let last = first;
     if (firstTs) {
+      const startMs = Date.parse(firstTs);
       const iso = (ms: number) =>
         new Date(Math.floor(ms / 10000) * 10000).toISOString().replace(/\.\d{3}Z$/, 'Z');
-      try {
-        last = await feedWindow(game.id, iso(Date.parse(firstTs) + 7200000));
-      } catch {
-        if (game.state === 'inProgress')
-          last = await feedWindow(game.id, iso(Date.now() - 30000)).catch(() => first);
+      if (game.state === 'inProgress') {
+        try {
+          const liveWindow = await feedWindow(game.id, iso(Date.now() - 30000));
+          if (Array.isArray(liveWindow.frames) && liveWindow.frames.length) last = liveWindow;
+        } catch {
+          last = first;
+        }
+      } else {
+        const offsets = [45, 35, 40, 50, 30, 25, 55, 20, 60].map((minutes) => minutes * 60000);
+        for (const offset of offsets) {
+          try {
+            const candidate = await feedWindow(game.id, iso(startMs + offset));
+            const frames = Array.isArray(candidate.frames) ? candidate.frames : [];
+            const frame = worldsRecord(frames.at(-1));
+            const blue = worldsRecord(frame.blueTeam),
+              red = worldsRecord(frame.redTeam);
+            if (
+              frames.length &&
+              (frame.gameState === 'finished' ||
+                Number(blue.totalGold) > 5000 ||
+                Number(blue.totalKills) > 0 ||
+                Number(red.totalGold) > 5000 ||
+                Number(red.totalKills) > 0)
+            ) {
+              last = candidate;
+              break;
+            }
+          } catch {
+            /* This offset has no available frames; try the next window. */
+          }
+        }
       }
     }
     const value = parseWorldsGameTelemetry(
@@ -167,7 +194,7 @@ async function gameTelemetry(game: WorldsMatchDetail['games'][number]) {
       { ...last, gameMetadata: last.gameMetadata ?? first.gameMetadata },
       firstTs,
     );
-    if (!value) return cached?.value ?? null;
+    if (!value || !hasWorldsTelemetryMetrics(value)) return cached?.value ?? null;
     const retained = mergeWorldsTelemetry(cached?.value ? { [game.number]: cached.value } : {}, {
       [game.number]: value,
     })[game.number]!;

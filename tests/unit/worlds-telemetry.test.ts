@@ -81,9 +81,10 @@ test('Worlds telemetry: merges preserve finished maps through nulls, regressions
   assert.equal(mergeWorldsTelemetry(previous, { 1: { ...first, gameState: 'in_game' } })[1], first);
   const empty = {
     ...first,
+    gameState: 'in_game' as const,
     durationSeconds: 0,
-    blueTeam: { ...first.blueTeam, totalGold: 0 },
-    redTeam: { ...first.redTeam, totalGold: 0 },
+    blueTeam: { ...first.blueTeam, totalGold: 0, totalKills: 0 },
+    redTeam: { ...first.redTeam, totalGold: 0, totalKills: 0 },
   };
   assert.equal(mergeWorldsTelemetry(previous, { 1: empty })[1], first);
   const updated = { ...first, durationSeconds: 2100 };
@@ -97,16 +98,24 @@ test('Worlds telemetry: saves partial metrics or finished maps but excludes empt
   const empty = {
     ...first,
     gameState: 'in_game' as const,
-    durationSeconds: 0,
-    blueTeam: { ...first.blueTeam, totalGold: 0 },
-    redTeam: { ...first.redTeam, totalGold: 0 },
+    durationSeconds: 1,
+    blueTeam: { ...first.blueTeam, totalGold: 2500, totalKills: 0 },
+    redTeam: { ...first.redTeam, totalGold: 2500, totalKills: 0 },
   };
   assert.equal(hasWorldsTelemetryMetrics(empty), false);
   assert.deepEqual(readSavedWorldsTelemetry(JSON.stringify({ 1: empty })), {});
+  assert.deepEqual(mergeWorldsTelemetry({}, { 1: empty }), {});
+  assert.equal(hasWorldsTelemetryMetrics({ ...empty, durationSeconds: 120 }), false);
+  assert.equal(
+    hasWorldsTelemetryMetrics({ ...empty, blueTeam: { ...empty.blueTeam, totalGold: 5000 } }),
+    false,
+  );
   for (const value of [
     first,
-    { ...empty, durationSeconds: 30 },
-    { ...empty, redTeam: { ...empty.redTeam, totalGold: 500 } },
+    { ...empty, durationSeconds: 121 },
+    { ...empty, redTeam: { ...empty.redTeam, totalGold: 5001 } },
+    { ...empty, blueTeam: { ...empty.blueTeam, totalKills: 1 } },
+    { ...empty, redTeam: { ...empty.redTeam, totalKills: 1 } },
   ]) {
     assert.equal(hasWorldsTelemetryMetrics(value), true);
     assert.deepEqual(readSavedWorldsTelemetry(JSON.stringify({ 1: value })), { 1: value });

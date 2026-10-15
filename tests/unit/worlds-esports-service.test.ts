@@ -45,7 +45,8 @@ test('Worlds service combines paginated schedule/live, deduplicates requests, ex
     failed = false,
     gameState = 'unstarted',
     feedCalls = 0,
-    feedMode: 'ok' | 'error' | 'empty' = 'ok';
+    feedMode: 'ok' | 'error' | 'empty' | 'adaptive' | 'initial' = 'ok';
+  const requestedWindows: string[] = [];
   Date.now = () => now;
   function event(id: string, blockName = 'Play-ins', state = 'unstarted') {
     return {
@@ -76,6 +77,41 @@ test('Worlds service combines paginated schedule/live, deduplicates requests, ex
       if (feedMode === 'error') throw new Error('Finished map feed removed');
       if (feedMode === 'empty') return Response.json({ frames: [] });
       const later = url.searchParams.has('startingTime');
+      const startingTime = url.searchParams.get('startingTime');
+      if (startingTime) requestedWindows.push(startingTime);
+      if (feedMode === 'adaptive' || feedMode === 'initial') {
+        const offset = startingTime
+          ? (Date.parse(startingTime) - Date.parse('2026-10-15T12:00:00Z')) / 60000
+          : 0;
+        if (feedMode === 'adaptive' && offset === 45) return new Response('', { status: 404 });
+        if (feedMode === 'adaptive' && offset === 35) return Response.json({ frames: [] });
+        const finished = feedMode === 'adaptive' && offset === 50;
+        return Response.json({
+          gameMetadata: {
+            patchVersion: '16.17',
+            blueTeamMetadata: { participantMetadata: [] },
+            redTeamMetadata: { participantMetadata: [] },
+          },
+          frames: [
+            {
+              rfc460Timestamp: finished ? '2026-10-15T12:50:00Z' : '2026-10-15T12:00:00Z',
+              gameState: finished ? 'finished' : 'in_game',
+              blueTeam: { totalGold: finished ? 75000 : 2500, totalKills: finished ? 22 : 0 },
+              redTeam: { totalGold: finished ? 55000 : 2500, totalKills: finished ? 8 : 0 },
+            },
+            ...(!finished
+              ? [
+                  {
+                    rfc460Timestamp: '2026-10-15T12:00:01Z',
+                    gameState: 'in_game',
+                    blueTeam: { totalGold: 2500, totalKills: 0 },
+                    redTeam: { totalGold: 2500, totalKills: 0 },
+                  },
+                ]
+              : []),
+          ],
+        });
+      }
       return Response.json({
         gameMetadata: {
           patchVersion: '16.17',
@@ -166,6 +202,10 @@ test('Worlds service combines paginated schedule/live, deduplicates requests, ex
     assert.equal(feedCalls, 2);
     assert.equal(liveDetail.gameTelemetry[1]?.durationSeconds, 2400);
     assert.equal(liveDetail.gameTelemetry[1]?.gameState, 'finished');
+    assert.equal(
+      requestedWindows[0],
+      new Date(Math.floor((now - 30000) / 10000) * 10000).toISOString().replace(/\.\d{3}Z$/, 'Z'),
+    );
     now += 15000;
     await fetchWorldsMatchDetail('1');
     assert.equal(feedCalls, 2);
@@ -189,6 +229,30 @@ test('Worlds service combines paginated schedule/live, deduplicates requests, ex
     const resetDetail = await fetchWorldsMatchDetail('1');
     assert.equal(feedCalls, 4);
     assert.deepEqual(resetDetail.gameTelemetry[1], liveDetail.gameTelemetry[1]);
+    gameState = 'completed';
+    feedMode = 'adaptive';
+    requestedWindows.length = 0;
+    const adaptiveModule = '../../src/services/worlds-esports.ts?adaptive';
+    const adaptive = await import(adaptiveModule);
+    const finalDetail = await adaptive.fetchWorldsMatchDetail('1');
+    assert.deepEqual(
+      requestedWindows,
+      [45, 35, 40, 50].map((minutes) =>
+        new Date(Date.parse('2026-10-15T12:00:00Z') + minutes * 60000)
+          .toISOString()
+          .replace(/\.\d{3}Z$/, 'Z'),
+      ),
+    );
+    assert.equal(finalDetail.gameTelemetry[1]?.durationSeconds, 3000);
+    assert.equal(finalDetail.gameTelemetry[1]?.blueTeam.totalKills, 22);
+    assert.equal(finalDetail.gameTelemetry[1]?.gameState, 'finished');
+    // If every candidate is the opening 0:01 frame, do not cache or expose it.
+    feedMode = 'initial';
+    requestedWindows.length = 0;
+    const initialModule = '../../src/services/worlds-esports.ts?initial-only';
+    const initialOnly = await import(initialModule);
+    assert.deepEqual((await initialOnly.fetchWorldsMatchDetail('1')).gameTelemetry, {});
+    assert.equal(requestedWindows.length, 9);
     now += 105000;
     failed = true;
     assert.equal((await fetchWorldsSchedule()).source, 'stale');

@@ -2,7 +2,12 @@ import type { WorldsGameTelemetry } from './worlds-schedule.ts';
 
 export function hasWorldsTelemetryMetrics(value: WorldsGameTelemetry): boolean {
   return (
-    (value.durationSeconds ?? 0) > 0 || value.blueTeam.totalGold > 0 || value.redTeam.totalGold > 0
+    (value.durationSeconds ?? 0) > 120 ||
+    value.blueTeam.totalGold > 5000 ||
+    value.redTeam.totalGold > 5000 ||
+    value.blueTeam.totalKills > 0 ||
+    value.redTeam.totalKills > 0 ||
+    value.gameState === 'finished'
   );
 }
 
@@ -12,7 +17,7 @@ export function mergeWorldsTelemetry(
 ): Record<number, WorldsGameTelemetry> {
   const merged = { ...previous };
   for (const value of Object.values(incoming)) {
-    if (!value) continue;
+    if (!value || !hasWorldsTelemetryMetrics(value)) continue;
     const prior = merged[value.gameNumber];
     if (
       prior?.gameId === value.gameId &&
