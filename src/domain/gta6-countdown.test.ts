@@ -80,7 +80,7 @@ test('Zelda and GTA five-day decisions are independent and block duplicate windo
 test('Countdown catalog and Zelda Discord card keep assets, platform, reference time and safe links', () => {
   assert.deepEqual(
     RELEASE_COUNTDOWNS.map((c) => c.id),
-    ['gta6', 'zelda-oot', 'tga-2026', 'avengers-doomsday'],
+    ['gta6', 'zelda-oot', 'tga-2026', 'avengers-doomsday', 'metro-2039'],
   );
   assert.equal(RELEASE_COUNTDOWNS[0]?.releaseDate, GTA6_RELEASE_DATE);
   assert.equal(RELEASE_COUNTDOWNS[1]?.releaseDate, ZELDA_OOT_RELEASE_DATE);

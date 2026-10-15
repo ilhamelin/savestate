@@ -468,6 +468,60 @@ body {
     flex: 1 1 160px;
   }
 }
+body [cmdk-dialog] {
+  border-color: #ff6b0066;
+  background: #090a12f2;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 0 45px rgba(121, 40, 202, 0.4);
+}
+.command-title-halloween,
+.freebies-halloween-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.command-title-halloween img,
+.freebies-halloween-eyebrow img,
+.halloween-player-badge img {
+  flex-shrink: 0;
+}
+.halloween-not-found {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  max-width: 720px;
+  margin: 3rem auto;
+  text-align: center;
+}
+.halloween-ghost-float {
+  animation: ghost-float 3s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 16px rgba(121, 40, 202, 0.5));
+}
+@keyframes ghost-float {
+  0% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  100% {
+    transform: translateY(-10px) rotate(3deg);
+  }
+}
+.halloween-player-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #ff6b0055;
+  background: #231024cc;
+  color: #ffb16c;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
+}
+.freebies-section .freebie-card:hover,
+.freebies-section .freebie-card:focus-within {
+  border-color: #ff6b0080;
+  box-shadow: 0 0 24px #ff6b0026;
+}
 @media (prefers-reduced-motion: reduce) {
   .halloween-bats-layer {
     display: none;
@@ -476,7 +530,8 @@ body {
   .bat-wing,
   .pumpkin-glow,
   .brand-halloween-pumpkin,
-  .checkpoint-terminal-pumpkin {
+  .checkpoint-terminal-pumpkin,
+  .halloween-ghost-float {
     animation: none;
   }
   .hero-terminal.checkpoint-terminal {

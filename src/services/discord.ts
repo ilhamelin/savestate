@@ -31,12 +31,14 @@ import { discordFreebieMessage, unseenDiscordFreebies } from '@/domain/discord-b
 import { discordRetryDelay } from '@/domain/discord-rate-limit';
 import { record } from '@/domain/game-live-telemetry';
 import {
+  shouldAnnounceMetro2039Countdown,
   shouldAnnounceGta6Countdown,
   shouldAnnounceZeldaOotCountdown,
   shouldAnnounceTga2026Countdown,
   shouldAnnounceAvengersDoomsdayCountdown,
 } from '@/domain/gta6-countdown';
 import {
+  discordMetro2039CountdownMessage,
   discordGta6CountdownMessage,
   discordZeldaOotCountdownMessage,
   discordTga2026CountdownMessage,
@@ -350,6 +352,7 @@ const gta6Runs = new Map<
     zeldaPublished: boolean;
     tgaPublished: boolean;
     avengersPublished: boolean;
+    metroPublished: boolean;
     checkedAt: number;
   }>
 >();
@@ -389,10 +392,16 @@ const announceGta6Cached = unstable_cache(
           decision: shouldAnnounceAvengersDoomsdayCountdown(history, now),
           message: () => discordAvengersDoomsdayCountdownMessage(now, appUrl()),
         },
+        {
+          id: 'metro-2039',
+          decision: shouldAnnounceMetro2039Countdown(history, now),
+          message: () => discordMetro2039CountdownMessage(now, appUrl()),
+        },
       ].filter((item) => item.decision.shouldAnnounce);
       let zeldaPublished = false;
       let tgaPublished = false;
       let avengersPublished = false;
+      let metroPublished = false;
       for (const [index, item] of decisions.entries()) {
         const sent = await discordRequest(
           `https://discord.com/api/v10/channels/${channel}/messages`,
@@ -411,6 +420,7 @@ const announceGta6Cached = unstable_cache(
         if (item.id === 'zelda-oot') zeldaPublished = true;
         if (item.id === 'tga-2026') tgaPublished = true;
         if (item.id === 'avengers-doomsday') avengersPublished = true;
+        if (item.id === 'metro-2039') metroPublished = true;
         if (index < decisions.length - 1 && sent.headers.get('X-RateLimit-Remaining') === '0') {
           const delay = discordRetryDelay(sent.headers.get('X-RateLimit-Reset-After'));
           if (delay === null) throw new AppError('Discord está limitando las solicitudes.', 429);
@@ -422,6 +432,7 @@ const announceGta6Cached = unstable_cache(
         zeldaPublished,
         tgaPublished,
         avengersPublished,
+        metroPublished,
         checkedAt: now,
       };
     })();
@@ -432,7 +443,7 @@ const announceGta6Cached = unstable_cache(
       gta6Runs.delete(channel);
     }
   },
-  ['discord-release-countdowns-v4'],
+  ['discord-release-countdowns-v5'],
   { revalidate: 3600 },
 );
 async function announceCountdownsToDiscord() {
@@ -456,6 +467,9 @@ export async function announceTga2026CountdownToDiscord() {
 }
 export async function announceAvengersDoomsdayCountdownToDiscord() {
   return { published: (await announceCountdownsToDiscord()).avengersPublished };
+}
+export async function announceMetro2039CountdownToDiscord() {
+  return { published: (await announceCountdownsToDiscord()).metroPublished };
 }
 export async function fetchDiscordPresence() {
   try {

@@ -3,6 +3,9 @@ import type { ValorantProfile, GenshinProfile } from './competitive-tracker.ts';
 import type { LolProfileData } from './lol-tracker.ts';
 import { record } from './game-live-telemetry.ts';
 import {
+  getMetro2039Countdown,
+  shouldAnnounceMetro2039Countdown,
+  METRO_2039_RELEASE_TEXT,
   getGta6Countdown,
   shouldAnnounceGta6Countdown,
   getZeldaOotCountdown,
@@ -32,6 +35,42 @@ function claimUrl(item: FreebieItem) {
   )
     throw new Error('Invalid giveaway URL');
   return url.toString();
+}
+export function discordMetro2039CountdownMessage(nowMs: number, baseAppUrl: string) {
+  const countdown = getMetro2039Countdown(nowMs),
+    { bucket } = shouldAnnounceMetro2039Countdown([], nowMs),
+    base = new URL(baseAppUrl).origin;
+  return {
+    allowed_mentions: { parse: [] },
+    embeds: [
+      {
+        title: '☢️⏳ CUENTA REGRESIVA METRO 2039 · Faltan ' + countdown.days + ' días',
+        description:
+          METRO_2039_RELEASE_TEXT +
+          '.\n⏳ ' +
+          countdown.days +
+          'd ' +
+          countdown.hours +
+          'h ' +
+          countdown.minutes +
+          'm · referencia 04/02/2027 00:00 UTC',
+        color: 0xff8c00,
+        thumbnail: { url: base + '/metro/icon-512.png' },
+        image: { url: base + '/metro/hero.jpg' },
+        footer: {
+          text: 'savestate-metro-2039-countdown:' + bucket + ' · Aviso automático cada 5 días',
+        },
+      },
+    ],
+    components: [
+      {
+        type: 1,
+        components: [
+          { type: 2, style: 5, label: '🌐 Ver cuenta regresiva en vivo en SaveState', url: base },
+        ],
+      },
+    ],
+  };
 }
 export function discordAvengersDoomsdayCountdownMessage(nowMs: number, baseAppUrl: string) {
   const countdown = getAvengersDoomsdayCountdown(nowMs),

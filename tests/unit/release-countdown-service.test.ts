@@ -99,25 +99,29 @@ test('Release announcements share one history read, preserve independent cooldow
       service.announceZeldaOotCountdownToDiscord(),
       service.announceTga2026CountdownToDiscord(),
       service.announceAvengersDoomsdayCountdownToDiscord(),
+      service.announceMetro2039CountdownToDiscord(),
     ]);
     assert.equal(reads, 1);
-    assert.equal(posts.length, 3);
+    assert.equal(posts.length, 4);
     assert.match(posts[0]!.nonce, /^zelda-oot:/);
     assert.match(posts[1]!.nonce, /^tga-2026:/);
     assert.match(posts[2]!.nonce, /^avengers-doomsday:/);
+    assert.match(posts[3]!.nonce, /^metro-2039:/);
     assert.equal(posts[0]!.enforce_nonce, true);
     assert.equal(state.invalidations, 1);
     for (const cache of state.caches) cache.clear();
     assert.deepEqual(await service.announceGta6CountdownToDiscord(), { published: false });
-    assert.equal(posts.length, 3);
+    assert.equal(posts.length, 4);
     now += 5 * 86400000;
     for (const cache of state.caches) cache.clear();
     await service.announceGta6CountdownToDiscord();
-    assert.equal(posts.length, 7);
-    assert.match(posts[3]!.nonce, /^gta6:/);
-    assert.match(posts[4]!.nonce, /^zelda-oot:/);
-    assert.match(posts[5]!.nonce, /^tga-2026:/);
-    assert.match(posts[6]!.nonce, /^avengers-doomsday:/);
+    assert.equal(posts.length, 9);
+    assert.match(posts[3]!.nonce, /^metro-2039:/);
+    assert.match(posts[4]!.nonce, /^gta6:/);
+    assert.match(posts[5]!.nonce, /^zelda-oot:/);
+    assert.match(posts[6]!.nonce, /^tga-2026:/);
+    assert.match(posts[7]!.nonce, /^avengers-doomsday:/);
+    assert.match(posts[8]!.nonce, /^metro-2039:/);
     assert.equal(state.invalidations, 2);
   } finally {
     globalThis.fetch = oldFetch;

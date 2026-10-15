@@ -1,5 +1,6 @@
 'use client';
 import { Command } from 'cmdk';
+import Image from 'next/image';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
@@ -170,10 +171,13 @@ export function CommandMenu({
         shouldFilter={false}
         loop
       >
-        <h2 className="command-title">Tu próximo checkpoint</h2>
+        <h2 className="command-title command-title-halloween">
+          <Image src="/icons/halloween/fantasma.png" alt="" width={18} height={18} unoptimized />
+          <span>Grimorio // Tu próximo checkpoint</span>
+        </h2>
         <Command.Input
           aria-label="Buscar juegos, jugadores o secciones"
-          placeholder="Buscar juego, @jugador o sección…"
+          placeholder="Invocar juego, @jugador o comando en las sombras…"
           maxLength={80}
           value={query}
           onValueChange={(value) => {
@@ -196,7 +200,9 @@ export function CommandMenu({
         ) : null}
         <Command.List>
           <Command.Empty>
-            {loading ? 'Consultando catálogo…' : 'Sin resultados. Prueba otro nombre.'}
+            {loading
+              ? 'Consultando el archivo espectral…'
+              : 'Sin señales de vida... Ningún checkpoint en este cementerio 🪦'}
           </Command.Empty>
           <Command.Group heading="Navegación">
             {links

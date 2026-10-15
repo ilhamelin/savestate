@@ -5513,6 +5513,7 @@ button.discord-channel-pill:focus-visible {
 }
 /* GTA VI live Vice City countdown. */
 .gta6-countdown-banner {
+  position: relative;
   margin: 2rem 0;
   padding: clamp(1.25rem, 4vw, 3rem);
   border: 1px solid #ff4fd880;
@@ -6188,6 +6189,7 @@ button.discord-channel-pill:focus-visible {
   min-width: 0;
 }
 .countdown-selector-bar {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -6196,6 +6198,7 @@ button.discord-channel-pill:focus-visible {
   margin-bottom: 0.65rem;
 }
 .countdown-tabs {
+  width: 100%;
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
@@ -6239,11 +6242,12 @@ button.discord-channel-pill:focus-visible {
   font-size: 0.65rem;
   padding: 0 0.25rem;
 }
-.countdown-slider-controls {
+.countdown-slider-footer {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-left: auto;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
 }
 .countdown-slider-status {
   font-variant-numeric: tabular-nums;
@@ -8315,5 +8319,87 @@ body:has(.worlds-hub) {
 @media (max-width: 600px) {
   .worlds-music-hud {
     max-height: max(220px, calc(100svh - 210px));
+  }
+}
+
+.gta6-countdown-banner.countdown-theme-metro {
+  background:
+    linear-gradient(180deg, #181004bf, #110d08eb),
+    var(--countdown-hero, url('/metro/hero.jpg')) center / cover no-repeat;
+  border-color: #ff8c0055;
+  box-shadow:
+    0 16px 48px #000c,
+    0 0 32px #ff8c0022;
+}
+.countdown-theme-metro .gta6-radar {
+  color: #ffaa22;
+}
+.countdown-theme-metro .gta6-clock strong {
+  color: #ffaa22;
+  text-shadow: 0 0 20px #ff8c0066;
+}
+.countdown-theme-metro .gta6-clock > div {
+  border-color: #ff8c0055;
+}
+.countdown-tab.active:nth-child(5) {
+  border-color: #ff8c0080;
+  color: #ffaa22;
+  background: #ff8c0012;
+}
+.countdown-pin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #ffffff08;
+  color: var(--muted);
+  cursor: pointer;
+  min-height: 36px;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease;
+}
+.countdown-pin-btn:hover,
+.countdown-pin-btn:focus-visible {
+  border-color: #f5d061aa;
+  color: #fff;
+  background: #ffffff14;
+}
+.countdown-pin-btn.is-pinned {
+  border-color: #f5d061;
+  background: #f5d06122;
+  color: #f5d061;
+  font-weight: 600;
+  box-shadow: 0 0 12px #f5d06133;
+}
+.countdown-tab-pin-badge {
+  font-size: 0.7rem;
+  margin-left: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .countdown-pin-btn {
+    transition: none;
+  }
+}
+
+.countdown-showcase .gta6-countdown-banner {
+  padding-top: max(4.25rem, 4vw);
+}
+.gta6-countdown-banner .countdown-pin-btn {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 5;
+}
+@media (max-width: 600px) {
+  .gta6-countdown-banner .countdown-pin-btn {
+    top: 0.75rem;
+    right: 0.75rem;
+    font-size: 0.68rem;
+    padding: 3px 8px;
   }
 }

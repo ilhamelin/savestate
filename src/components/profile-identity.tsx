@@ -87,6 +87,19 @@ export function ProfileIdentity({
             <p className="player-rank">
               <LevelBadge level={profile.level ?? 1} />{' '}
               <span>{profile.equipped_title ?? 'Insert Coin'}</span>
+              <span
+                className="halloween-player-badge"
+                title="Visitante durante la temporada de Halloween 2026"
+              >
+                <Image
+                  src="/icons/halloween/calabaza.png"
+                  alt=""
+                  width={14}
+                  height={14}
+                  unoptimized
+                />
+                <span>SURVIVOR &apos;26</span>
+              </span>
             </p>
             <p className="profile-terminal">
               {terminalEditor ?? (animateTerminal ? <DecryptedText text={terminal} /> : terminal)}

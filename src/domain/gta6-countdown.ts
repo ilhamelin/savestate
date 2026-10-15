@@ -1,3 +1,12 @@
+export const METRO_2039_RELEASE_DATE = '2027-02-04T00:00:00.000Z';
+export const METRO_2039_RELEASE_TEXT =
+  'Metro 2039 saldrá oficialmente el 4 de febrero de 2027 para PC, PlayStation 5 y Xbox Series X|S';
+export function getMetro2039Countdown(nowMs = Date.now()) {
+  return getCountdownTo(METRO_2039_RELEASE_DATE, nowMs);
+}
+export function shouldAnnounceMetro2039Countdown(history: unknown[], nowMs = Date.now()) {
+  return shouldAnnounceCountdown(history, getMetro2039Countdown(nowMs), 'metro-2039', nowMs);
+}
 export const GTA6_RELEASE_DATE = '2026-11-19T00:00:00.000Z';
 export const GTA6_RELEASE_TEXT =
   'Grand Theft Auto VI saldrá oficialmente el 19 de noviembre de 2026 para PlayStation 5 y Xbox Series X|S';
@@ -82,7 +91,8 @@ function shouldAnnounceCountdown(
   });
   return { shouldAnnounce: !countdown.released && !blocked, bucket, nonce };
 }
-export type ReleaseCountdownId = 'gta6' | 'zelda-oot' | 'tga-2026' | 'avengers-doomsday';
+export type ReleaseCountdownId =
+  'gta6' | 'zelda-oot' | 'tga-2026' | 'avengers-doomsday' | 'metro-2039';
 export interface ReleaseCountdownConfig {
   id: ReleaseCountdownId;
   tabNumber: number;
@@ -180,4 +190,29 @@ export const RELEASE_COUNTDOWNS: readonly ReleaseCountdownConfig[] = [
       { label: 'IMAX · Gran Pantalla', icon: '/avengers/icon-128.png' },
     ],
   },
+  {
+    id: 'metro-2039',
+    tabNumber: 5,
+    tabLabel: 'Metro 2039',
+    title: 'Metro 2039',
+    radarLabel: '4A GAMES // METRO MOSCOW RUINS',
+    releaseDate: METRO_2039_RELEASE_DATE,
+    releaseText: METRO_2039_RELEASE_TEXT,
+    referenceNote: 'Cuenta regresiva al 04/02/2027 · 00:00 UTC.',
+    timerAriaLabel: 'Tiempo restante hasta el 4 de febrero de 2027, 00:00 UTC',
+    releasedText: '☢️ ¡El invierno nuclear ha comenzado! Metro 2039 ya está disponible.',
+    heroImage: '/metro/hero.jpg',
+    iconImage: '/metro/icon.png',
+    logoImage: '/metro/logo.png',
+    themeClass: 'countdown-theme-metro',
+    platforms: [
+      { label: 'PC · Steam', icon: '/platforms/steam.png' },
+      { label: 'PlayStation 5', icon: '/platforms/playstation.png' },
+      { label: 'Xbox Series X|S', icon: '/platforms/xbox.png' },
+    ],
+  },
 ];
+
+export function pinnedReleaseCountdown(value: unknown): ReleaseCountdownId | null {
+  return RELEASE_COUNTDOWNS.find((item) => item.id === value)?.id ?? null;
+}

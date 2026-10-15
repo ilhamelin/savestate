@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Image from 'next/image';
 import type { FreebieItem } from '@/domain/freebies';
 
 function FreebieImage({ src }: { src: string | null }) {
@@ -25,7 +26,16 @@ function FreebieImage({ src }: { src: string | null }) {
 export function FreebiesTracker({ freebies }: { freebies: FreebieItem[] }) {
   return (
     <section className="freebies-section" aria-labelledby="freebies-title">
-      <p className="eyebrow">LOOT ALERTA // JUEGOS GRATIS ACTIVOS</p>
+      <p className="eyebrow freebies-halloween-eyebrow">
+        <Image
+          src="/icons/halloween/comida-de-halloween.png"
+          alt=""
+          width={16}
+          height={16}
+          unoptimized
+        />
+        <span>TRUCO O TRATO // JUEGOS GRATIS ACTIVOS</span>
+      </p>
       <h2 id="freebies-title">Radar de Juegos Gratis</h2>
       <p className="muted">
         Títulos para reclamar y quedarte para siempre en Steam, Epic Games y GOG.
@@ -39,7 +49,7 @@ export function FreebiesTracker({ freebies }: { freebies: FreebieItem[] }) {
                 <span className="freebie-platform">[{item.platforms}]</span>
               </div>
               <div className="freebie-copy">
-                <span className="freebie-worth-tag">100% OFF · Valor {item.worth}</span>
+                <span className="freebie-worth-tag">🎃 100% OFF · Valor {item.worth}</span>
                 <h3>{item.title}</h3>
                 <a
                   className="button outline small"
@@ -47,7 +57,7 @@ export function FreebiesTracker({ freebies }: { freebies: FreebieItem[] }) {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  🎁 Reclamar gratis ↗<span className="sr-only"> (abre en otra pestaña)</span>
+                  🍬 Reclamar dulce ↗<span className="sr-only"> (abre en otra pestaña)</span>
                 </a>
               </div>
             </article>
