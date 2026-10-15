@@ -22,6 +22,7 @@ import type { ItchTrackerRow, ItchMetadata } from '@/domain/itch-tracker';
 import type { FriendMessage } from '@/domain/friend-chat';
 import type { GlobalChatRow } from '@/domain/global-chat';
 import type { ScreenEntryRow } from '@/domain/screen';
+import type { VaultMedia, VaultStorage } from '@/domain/vault';
 
 type Row<T> = { [K in keyof T]: T[K] };
 type Table<T, Relations = []> = {
@@ -40,6 +41,7 @@ type ForeignKey<Name extends string, Column extends string, Target extends strin
 export type Database = {
   public: {
     Tables: {
+      user_vault_media: Table<VaultMedia>;
       user_screen_entries: Table<ScreenEntryRow>;
       global_chat_messages: Table<
         GlobalChatRow,
@@ -119,6 +121,11 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      get_user_vault_storage: { Args: { p_user_id?: string }; Returns: VaultStorage[] };
+      reserve_vault_upload: {
+        Args: { p_user_id: string; p_key: string; p_name: string; p_size: number; p_mime: string };
+        Returns: VaultMedia;
+      };
       claim_itch_check: { Args: { p_id: string; p_user_id: string }; Returns: boolean };
       apply_itch_check: {
         Args: { p_id: string; p_user_id: string; p_metadata: ItchMetadata };

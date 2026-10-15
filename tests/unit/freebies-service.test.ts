@@ -38,23 +38,27 @@ test('Freebies uses hourly cache and safely handles empty, malformed and failed 
     if (mode === 'failed') throw new Error('Network unavailable');
     if (mode === 'empty') return Response.json({ status: 201 }, { status: 201 });
     if (mode === 'invalid') return new Response('invalid json');
-    return Response.json([
-      {
-        id: 1,
-        title: 'Aventura',
-        type: 'Game',
-        status: 'Active',
-        worth: '$4.99',
-        platforms: 'PC, Steam',
-        thumbnail: 'https://www.gamerpower.com/offers/1/game.jpg',
-        open_giveaway_url: 'https://www.gamerpower.com/open/game',
-        end_date: 'N/A',
-      },
-    ]);
+    const item = {
+      id: 1,
+      title: 'Aventura',
+      type: 'Game',
+      status: 'Active',
+      worth: '$4.99',
+      platforms: 'PC, Steam',
+      thumbnail: 'https://www.gamerpower.com/offers/1/game.jpg',
+      open_giveaway_url: 'https://www.gamerpower.com/open/game',
+      end_date: 'N/A',
+    };
+    return Response.json(
+      mode === 'many' ? Array.from({ length: 30 }, (_, i) => ({ ...item, id: i + 1 })) : [item],
+    );
   };
   try {
     const { getActiveFreebies } = await import('../../src/services/freebies.ts');
     assert.equal((await getActiveFreebies())[0]?.title, 'Aventura');
+    mode = 'many';
+    assert.equal((await getActiveFreebies()).length, 24);
+    assert.equal((await getActiveFreebies(3)).length, 3);
     for (const value of ['failed', 'empty', 'invalid']) {
       mode = value;
       assert.deepEqual(await getActiveFreebies(), []);

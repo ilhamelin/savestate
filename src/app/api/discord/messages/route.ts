@@ -1,4 +1,6 @@
 import { authenticated } from '@/lib/session';
+import { ownedVaultItem, vaultItem } from '@/services/r2';
+import { safeVaultMediaUrl } from '@/domain/vault';
 import { AppError, dbCheck, errorResponse, mutation } from '@/lib/http';
 import { object } from '@/domain/validation';
 import { privateDiscordAttachmentPath } from '@/domain/discord-private-access';
@@ -49,6 +51,12 @@ export async function POST(request: Request) {
     async (input) => {
       const { db, user } = await authenticated();
       const body = object(input);
+      const vault = body.vaultItemId
+        ? vaultItem(await ownedVaultItem(body.vaultItemId, true))
+        : null;
+      if (safeVaultMediaUrl(body.mediaUrl) && !vault)
+        throw new AppError('Selecciona el archivo desde tu bóveda para compartirlo.', 400);
+      if (vault) body.mediaUrl = vault.publicUrl;
       const channel = discordFrequency(body.channel ?? 'web-chat');
       if (channel !== 'web-chat' && channel !== 'chat-privado')
         throw new AppError('Esta frecuencia es de solo lectura.', 403);

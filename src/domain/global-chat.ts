@@ -1,3 +1,4 @@
+import { safeVaultMediaUrl } from './vault.ts';
 import { ValidationError, object, uuid } from './validation.ts';
 
 export type ChatMediaType = 'image' | 'gif';
@@ -66,6 +67,8 @@ export function safeChatMediaUrl(
   try {
     const url = new URL(value, value.startsWith('/storage/') ? storageOrigin : undefined);
     if (url.protocol !== 'https:' || url.username || url.password || url.port) return null;
+    const vault = safeVaultMediaUrl(value);
+    if (vault) return !ownerId || url.pathname.startsWith(`/${ownerId}/`) ? vault : null;
     if (storageOrigin && url.origin === new URL(storageOrigin).origin) {
       const prefix = '/storage/v1/object/public/chat-media/';
       if (!url.pathname.startsWith(prefix)) return null;

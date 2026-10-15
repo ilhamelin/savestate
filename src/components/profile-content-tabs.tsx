@@ -2,34 +2,41 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { PROFILE_TAB_ANCHORS, profileTabForHash, type ProfileTab } from '@/domain/profile-tabs';
 
-const TABS: [ProfileTab, string][] = [
-  ['library', '🎮 Biblioteca'],
-  ['stats', '📊 Dossier y Estadísticas'],
-  ['showcase', '🏆 Logros y Memory Card'],
-];
 export function ProfileContentTabs({
   library,
   statistics,
   showcase,
+  vault,
 }: {
   library: ReactNode;
   statistics: ReactNode;
   showcase: ReactNode;
+  vault?: ReactNode;
 }) {
+  const hasVault = Boolean(vault);
+  const TABS: [ProfileTab, string][] = [
+    ['library', '🎮 Biblioteca'],
+    ['stats', '📊 Dossier y Estadísticas'],
+    ['showcase', '🏆 Logros y Memory Card'],
+    ...(hasVault ? ([['vault', '💾 Bóveda']] as [ProfileTab, string][]) : []),
+  ];
   const [tab, setTab] = useState<ProfileTab>('library');
+  const activeTab = tab === 'vault' && !hasVault ? 'library' : tab;
   const id = useId();
   const frame = useRef<number | null>(null);
-  function reveal(hash: string) {
-    const next = profileTabForHash(hash);
-    if (!next) return;
-    setTab(next);
-    if (frame.current !== null) cancelAnimationFrame(frame.current);
-    frame.current = requestAnimationFrame(() =>
-      document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' }),
-    );
-  }
   useEffect(() => {
-    const sync = () => reveal(window.location.hash);
+    const sync = () => {
+      const hash = window.location.hash;
+      const next = profileTabForHash(hash);
+      if (!next || (next === 'vault' && !hasVault)) return;
+      setTab(next);
+      if (frame.current !== null) cancelAnimationFrame(frame.current);
+      frame.current = requestAnimationFrame(() =>
+        document
+          .getElementById(hash === '#vault' ? 'player-vault' : hash.slice(1))
+          ?.scrollIntoView({ block: 'start' }),
+      );
+    };
     sync();
     window.addEventListener('hashchange', sync);
     window.addEventListener('popstate', sync);
@@ -38,12 +45,12 @@ export function ProfileContentTabs({
       window.removeEventListener('popstate', sync);
       if (frame.current !== null) cancelAnimationFrame(frame.current);
     };
-  }, []);
+  }, [hasVault]);
   function activate(next: ProfileTab) {
     setTab(next);
     window.history.replaceState(null, '', `#${PROFILE_TAB_ANCHORS[next]}`);
   }
-  const content = { library, stats: statistics, showcase };
+  const content = { library, stats: statistics, showcase, vault: vault ?? null };
   return (
     <div className="profile-content-tabs">
       <div role="tablist" className="profile-content-tablist" aria-label="Contenido del perfil">
@@ -53,10 +60,10 @@ export function ProfileContentTabs({
             key={key}
             id={`${id}-${key}-tab`}
             role="tab"
-            aria-selected={tab === key}
+            aria-selected={activeTab === key}
             aria-controls={`${id}-${key}-panel`}
-            tabIndex={tab === key ? 0 : -1}
-            className={`button small${tab === key ? '' : ' outline'}`}
+            tabIndex={activeTab === key ? 0 : -1}
+            className={`button small${activeTab === key ? '' : ' outline'}`}
             onClick={() => activate(key)}
             onKeyDown={(event) => {
               const target =
@@ -87,7 +94,7 @@ export function ProfileContentTabs({
           className="profile-content-panel"
           role="tabpanel"
           aria-labelledby={`${id}-${key}-tab`}
-          hidden={tab !== key}
+          hidden={activeTab !== key}
           tabIndex={0}
         >
           {content[key]}

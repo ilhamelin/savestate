@@ -1,4 +1,5 @@
 'use client';
+import { VaultVideo } from '@/components/vault-video';
 import Image from 'next/image';
 import Link from 'next/link';
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -24,6 +25,7 @@ import { api } from '@/lib/client-api';
 import { readJsonResponse } from '@/lib/api-response';
 import { DiscordLinkedRoleCard } from '@/components/discord-linked-role-card';
 import { DiscordGamePicker } from '@/components/discord-game-picker';
+import { VaultPicker } from '@/components/vault-picker';
 import { browserClient } from '@/integrations/supabase/browser';
 import { publicEnv } from '@/lib/env';
 import {
@@ -118,6 +120,15 @@ function MediaLightbox({ media, onClose }: { media: ActiveMedia; onClose: () => 
         </div>
         {failed ? (
           <p role="status">No se pudo cargar el medio. Puedes abrir el original.</p>
+        ) : /\.(mp4|webm)$/.test(new URL(media.url).pathname) ? (
+          <VaultVideo
+            className="discord-lightbox-image"
+            src={media.url}
+            controls
+            autoPlay
+            playsInline
+            aria-label={media.alt ?? 'Clip compartido'}
+          />
         ) : (
           <Image
             className="discord-lightbox-image"
@@ -144,6 +155,26 @@ function InlineMedia({ url, onOpen }: { url: string; onOpen: (media: ActiveMedia
           🔗 Ver GIF / publicación en {new URL(pageUrl).hostname} ↗
         </a>
       </p>
+    );
+  if (/\.(mp4|webm)$/.test(new URL(url).pathname))
+    return (
+      <div>
+        <VaultVideo
+          className="discord-inline-media"
+          src={url}
+          controls
+          preload="metadata"
+          playsInline
+          aria-label="Clip compartido"
+        />
+        <button
+          type="button"
+          className="button outline small"
+          onClick={() => onOpen({ url, alt: 'Clip compartido' })}
+        >
+          🔍 Ampliar clip
+        </button>
+      </div>
     );
   return (
     <div>
@@ -279,6 +310,8 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [attachment, setAttachment] = useState<{
     url: string;
+    vaultItemId?: string;
+    mimeType?: string;
     file?: File;
     uploadedUrl?: string;
     privatePath?: string;
@@ -295,6 +328,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
   const [mentionIndex, setMentionIndex] = useState(0);
   const [caret, setCaret] = useState(0);
   const [gamePicker, setGamePicker] = useState(false);
+  const [vaultPicker, setVaultPicker] = useState(false);
   const [presence, setPresence] = useState<{ onlineCount: number; members: DiscordOnlineMember[] }>(
     { onlineCount: 0, members: [] },
   );
@@ -605,6 +639,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
       const result = await api<{ message: DiscordMessage | null }>('discord/messages', {
         content,
         mediaUrl,
+        vaultItemId: attachment?.vaultItemId,
         channel: frequency,
         privateAttachmentPath,
         replyToMessageId: replyTo?.id,
@@ -639,6 +674,15 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
   }
   return (
     <div className="discord-layout-grid">
+      {vaultPicker && (
+        <VaultPicker
+          onClose={() => setVaultPicker(false)}
+          onSelect={(item) => {
+            setAttachment({ url: item.publicUrl, vaultItemId: item.id, mimeType: item.mime_type });
+            setVaultPicker(false);
+          }}
+        />
+      )}
       <section className="panel discord-chat">
         <div className="discord-terminal-bar">
           <span className="discord-terminal-leds" aria-hidden="true">
@@ -771,7 +815,15 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
             )}
             {attachment && (
               <div className="chat-media-preview discord-attachment-preview">
-                {chatMediaPageUrl(attachment.url) ? (
+                {attachment.mimeType?.startsWith('video/') ? (
+                  <VaultVideo
+                    src={attachment.url}
+                    controls
+                    preload="metadata"
+                    playsInline
+                    aria-label="Clip adjunto de la bóveda"
+                  />
+                ) : chatMediaPageUrl(attachment.url) ? (
                   <a href={attachment.url} target="_blank" rel="noopener noreferrer">
                     🔗 Enlace de GIF listo para enviar ↗
                   </a>
@@ -954,6 +1006,14 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                   onClick={() => fileRef.current?.click()}
                 >
                   📎 Adjuntar archivo
+                </button>
+                <button
+                  type="button"
+                  className="button outline small"
+                  disabled={sending || !canAttach}
+                  onClick={() => setVaultPicker(true)}
+                >
+                  💾 Bóveda
                 </button>
                 <button
                   type="button"

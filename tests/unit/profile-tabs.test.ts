@@ -8,6 +8,9 @@ test('Profile tabs reveal direct links and keep existing showcase notification l
   }
   assert.equal(profileTabForHash('#player-stats'), 'stats');
   assert.equal(profileTabForHash('#achievements-showcase-heading'), 'showcase');
+  assert.equal(PROFILE_TAB_ANCHORS.vault, 'player-vault');
+  assert.equal(profileTabForHash('#player-vault'), 'vault');
+  assert.equal(profileTabForHash('#vault'), 'vault');
   for (const hash of ['', '#player-friends', '#player-badges', '#unknown'])
     assert.equal(profileTabForHash(hash), null);
 });

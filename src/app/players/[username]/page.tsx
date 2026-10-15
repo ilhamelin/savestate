@@ -33,6 +33,7 @@ import { dossierFor } from '@/repositories/dossier';
 import { profileDossier } from '@/domain/dossier';
 import { ProfilePresenceBadge } from '@/components/profile-presence-badge';
 import { ProfileContentTabs } from '@/components/profile-content-tabs';
+import { VaultRoom } from '@/components/vault-room';
 import { hardwareForDisplay } from '@/domain/hardware';
 import { StatsDossier, HardwareBadges } from '@/components/profile-dossier';
 import { MemoryCardExport } from '@/components/memory-card-export';
@@ -108,10 +109,15 @@ export default async function Player({ params }: { params: Promise<{ username: s
           <Link href="/players" className="text-link">
             ← Jugadores
           </Link>
-          {user?.id === profile.id ? (
-            <Link className="button secondary" href="/settings">
-              Editar perfil
-            </Link>
+          {isOwner ? (
+            <div className="filter-buttons">
+              <Link className="button secondary" href="/settings">
+                Editar perfil
+              </Link>
+              <a className="button secondary" href="#player-vault">
+                💾 Bóveda
+              </a>
+            </div>
           ) : null}
         </div>
         <GamerRoom theme={profile.room_theme}>
@@ -191,6 +197,7 @@ export default async function Player({ params }: { params: Promise<{ username: s
           </>
         ) : null}
         <nav className="tabs profile-shortcuts" aria-label="Accesos del jugador">
+          {isOwner ? <a href="#player-vault">💾 Bóveda</a> : null}
           <Link href={`/highlights?player=${profile.id}`}>Momentos</Link>
           <Link href={`/lists?player=${profile.id}`}>Listas</Link>
           <a href="#player-friends">Amigos ({friendships.friends.length})</a>
@@ -232,6 +239,13 @@ export default async function Player({ params }: { params: Promise<{ username: s
           </div>
         ) : (
           <ProfileContentTabs
+            vault={
+              isOwner ? (
+                <section id="player-vault">
+                  <VaultRoom />
+                </section>
+              ) : undefined
+            }
             library={
               <section
                 id="player-library"

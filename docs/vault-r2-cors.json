@@ -1,0 +1,13 @@
+[
+  {
+    "AllowedOrigins": [
+      "https://savestate-eight.vercel.app",
+      "http://localhost:3000",
+      "http://localhost:3004"
+    ],
+    "AllowedMethods": ["GET", "HEAD", "PUT"],
+    "AllowedHeaders": ["content-type", "if-none-match"],
+    "ExposeHeaders": ["ETag", "Content-Length"],
+    "MaxAgeSeconds": 3600
+  }
+]

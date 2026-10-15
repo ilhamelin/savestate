@@ -2,7 +2,7 @@ import 'server-only';
 import { normalizeFreebies, type FreebieItem } from '@/domain/freebies';
 export type { FreebieItem } from '@/domain/freebies';
 
-export async function getActiveFreebies(): Promise<FreebieItem[]> {
+export async function getActiveFreebies(limit = 24): Promise<FreebieItem[]> {
   try {
     const response = await fetch('https://www.gamerpower.com/api/giveaways?type=game', {
       next: { revalidate: 3600 },
@@ -27,7 +27,7 @@ export async function getActiveFreebies(): Promise<FreebieItem[]> {
         }
         output += decoder.decode(part.value, { stream: true });
       }
-      return normalizeFreebies(JSON.parse(output + decoder.decode()));
+      return normalizeFreebies(JSON.parse(output + decoder.decode()), limit);
     } finally {
       reader.releaseLock();
     }
