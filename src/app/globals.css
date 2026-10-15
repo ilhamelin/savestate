@@ -2432,16 +2432,18 @@ a.feed-card-cover:hover {
 .xp-track {
   display: block;
   height: 12px;
-  border: 1px solid var(--profile-accent, var(--accent));
+  border: 1px solid #ff6b0080;
   padding: 2px;
 }
 .xp-track > span {
   display: block;
   height: 100%;
-  background: var(--profile-accent, var(--accent));
+  background: linear-gradient(90deg, #c2410c, #ff6b00, #ffb16c);
+  box-shadow: 0 0 10px #ff6b0080;
   transition: width 400ms ease;
 }
 .rewards-dialog {
+  overflow-x: hidden;
   width: min(680px, calc(100vw - 32px));
   max-height: 85dvh;
   color: #f2f4f8;
@@ -2453,7 +2455,10 @@ a.feed-card-cover:hover {
 .rewards-road {
   display: grid;
   gap: 10px;
-  padding: 0;
+  padding: 0 6px 0 0;
+  max-height: 55vh;
+  overflow-y: auto;
+  overflow-x: hidden;
   list-style: none;
 }
 .rewards-road li {
@@ -2461,6 +2466,9 @@ a.feed-card-cover:hover {
   gap: 6px;
   padding: 12px;
   border: 1px solid var(--line);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  border-radius: 6px;
 }
 .reward-unlocked {
   color: var(--accent);
@@ -2468,9 +2476,51 @@ a.feed-card-cover:hover {
 .reward-locked {
   color: var(--muted);
 }
-.rewards-road [aria-current='step'] {
-  border-color: var(--accent);
-  box-shadow: inset 3px 0 var(--accent);
+.rewards-road .reward-current {
+  border: 1px solid #ff6b00;
+  background: #ff6b0014;
+  box-shadow: 0 0 16px rgba(255, 107, 0, 0.35);
+}
+.reward-current .reward-status {
+  color: #ffb16c;
+}
+.reward-status {
+  display: inline-block;
+  font-size: 11px;
+}
+.rewards-dialog .inline-actions {
+  flex-wrap: wrap;
+}
+.rewards-tabs {
+  gap: 8px;
+}
+.rewards-tabs .button {
+  white-space: normal;
+}
+.xp-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: 10px;
+  margin-top: 1rem;
+}
+.xp-guide-card {
+  padding: 12px;
+  border: 1px solid #ff6b003d;
+  border-radius: 6px;
+  background: #ff6b000a;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.xp-guide-card > strong {
+  color: #ffb16c;
+}
+.xp-guide-card h3 {
+  font-size: 13px;
+  margin-block: 6px;
+}
+.xp-guide-note {
+  margin-top: 1rem;
+  font-size: 11px;
 }
 @media (prefers-reduced-motion: reduce) {
   .frame-boss .frame-overlay {
