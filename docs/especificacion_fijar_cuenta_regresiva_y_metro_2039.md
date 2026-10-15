@@ -1,157 +1,214 @@
-# Especificación Técnica: Fijar Cuenta Regresiva Favorita y Nuevo Contador "Metro 2039"
+# Especificación Técnica: Reubicación de Botón Fijar, Navegación Inferior y Contador "Metro 2039"
 
 ---
 
-## 1. Resumen y Objetivos
+## 1. Resumen y Objetivos del Rediseño de Layout
 
-Esta especificación detalla dos nuevas capacidades para el sistema de cuentas regresivas (*countdown slider*) de SaveState:
+Con base en el mockup wireframe del usuario (adjunto en la imagen), se optimiza la disposición espacial del carrusel de cuentas regresivas para permitir la escalabilidad de muchos más contadores (1, 2, 3, 4, 5, etc.) de forma limpia y ergonómica:
 
-1. **Fijar Cuenta Regresiva Favorita (Persistencia Local)**:
-   - Permite al usuario marcar con un botón `[ 📌 Fijar como principal ]` cualquier cuenta regresiva del carrusel (GTA VI, Zelda: OOT, The Game Awards, Avengers: Doomsday, Metro 2039).
-   - La selección se almacena en el navegador mediante `localStorage` (`savestate_pinned_countdown`).
-   - Al entrar nuevamente al sitio o recargar, el componente detecta automáticamente la preferencia y abre directamente en la cuenta regresiva fijada, sin necesidad de navegar manualmente.
-   - Se incluye un indicador visual `📌` en la pestaña activa para reconocer rápidamente cuál está seleccionada como principal.
+```mermaid
+flowchart TD
+    subgraph Layout["Nuevo Layout de Cuentas Regresivas"]
+        T["Fila Superior: Tabs de Contadores Exclusivos<br>[ GTA VI ] [ Zelda: OOT ] [ The Game Awards ] [ Avengers ] [ Metro 2039 ] ..."]
+        
+        subgraph Banner["Recuadro Principal de Cuenta Regresiva"]
+            P["Esquina Superior Derecha:<br>[ 📌 Fijar como principal ]"]
+            R["Radar del Juego // Lanzamiento Oficial"]
+            L["Logo / Portada Oficial"]
+            C["Reloj Gigante de Cuenta Regresiva (DÍAS | HORAS | MINUTOS | SEGUNDOS)"]
+            Pl["Plataformas Oficiales"]
+        end
+        
+        F["Fila Inferior Centrada:<br>[ ← ]  1 / 5  [ → ]"]
+    end
 
-2. **Nuevo Contador de Lanzamiento: "Metro 2039"**:
-   - **Fecha de lanzamiento**: **4 de febrero de 2027** (`2027-02-04T00:00:00.000Z`).
-   - **Plataformas**: PC (Steam), PlayStation 5 y Xbox Series X|S.
-   - **Recursos gráficos** (ubicados en `C:\Users\benja\Downloads\ABDM\Pictures\Instagram_Picture`):
-     * **Hero**: `Hero for METRO 2039 by natsuko/imgi_5_1ecb86c96dd62c982d40d0699fc5a156.jpg` -> `public/metro/hero.jpg`.
-     * **Icono**: `Icon for METRO 2039 by r_dsgnd/imgi_2_256x256.png` (M agrietada) -> `public/metro/icon.png`.
-     * **Logo / Portada**: `Icon for METRO 2039 by r_dsgnd/imgi_2_512x512.png` (Artwork de Artyom y logo Metro 2039) -> `public/metro/logo.png`.
-   - **Estética Temática**: Clase CSS `.countdown-theme-metro` con resplandor ámbar post-apocalíptico / radiactivo (`#ff8c00` / `#ffaa22`), tipografía digital industrial y partículas de ceniza.
-
----
-
-## 2. Arquitectura de Datos y Dominio (`src/domain/gta6-countdown.ts`)
-
-### A. Constantes de Metro 2039
-```ts
-export const METRO_2039_RELEASE_DATE = '2027-02-04T00:00:00.000Z';
-export const METRO_2039_RELEASE_TEXT =
-  'Metro 2039 saldrá oficialmente el 4 de febrero de 2027 para PC, PlayStation 5 y Xbox Series X|S';
-
-export function getMetro2039Countdown(nowMs = Date.now()) {
-  return getCountdownTo(METRO_2039_RELEASE_DATE, nowMs);
-}
-
-export function shouldAnnounceMetro2039Countdown(history: unknown[], nowMs = Date.now()) {
-  return shouldAnnounceCountdown(
-    history,
-    getMetro2039Countdown(nowMs),
-    'metro-2039',
-    nowMs,
-  );
-}
+    T --> Banner
+    Banner --> F
 ```
 
-### B. Ampliación del Tipo e Identificadores
-```ts
-export type ReleaseCountdownId =
-  | 'gta6'
-  | 'zelda-oot'
-  | 'tga-2026'
-  | 'avengers-doomsday'
-  | 'metro-2039';
-```
+### Cambios de Arquitectura UI:
+1. **Botón Fijar en la Esquina Superior Derecha del Recuadro**:
+   - Se retira de la barra superior y se inserta **directamente dentro del recuadro** de la cuenta regresiva (`.gta6-countdown-banner`), alineado en la esquina superior derecha (`position: absolute; top: 1.25rem; right: 1.25rem;`).
+   - Mantiene la funcionalidad de persistencia en `localStorage` (`savestate_pinned_countdown`), con estado activo resplandeciente (`is-pinned`) e icono `📌`.
 
-### C. Configuración en `RELEASE_COUNTDOWNS`
-```ts
-{
-  id: 'metro-2039',
-  tabNumber: 5,
-  tabLabel: 'Metro 2039',
-  title: 'Metro 2039',
-  radarLabel: '4A GAMES // METRO MOSCOW RUINS',
-  releaseDate: METRO_2039_RELEASE_DATE,
-  releaseText: METRO_2039_RELEASE_TEXT,
-  referenceNote: 'Cuenta regresiva al 04/02/2027 · 00:00 UTC.',
-  timerAriaLabel: 'Tiempo restante hasta el 4 de febrero de 2027, 00:00 UTC',
-  releasedText: '☢️ ¡El invierno nuclear ha comenzado! Metro 2039 ya está disponible.',
-  heroImage: '/metro/hero.jpg',
-  iconImage: '/metro/icon.png',
-  logoImage: '/metro/logo.png',
-  themeClass: 'countdown-theme-metro',
-  platforms: [
-    { label: 'PC · Steam', icon: '/platforms/steam.png' },
-    { label: 'PlayStation 5', icon: '/platforms/playstation.png' },
-    { label: 'Xbox Series X|S', icon: '/platforms/xbox.png' },
-  ],
-}
+2. **Navegación del Carrusel (`← 1 / 5 →`) Centrada al Pie del Recuadro**:
+   - Los botones de navegación anterior/siguiente y el contador de posición (`X / Y`) se mueven a una nueva barra al pie del componente (`.countdown-slider-footer`), centrada horizontalmente justo debajo del recuadro del reloj.
+
+3. **Barra Superior Exclusiva para Pestañas (Tabs)**:
+   - Al trasladar tanto el botón fijar como los controles de flechas, la barra superior queda **100% dedicada a las pestañas de títulos**, permitiendo que crezca con muchos más contadores sin apretarse ni romper el diseño en pantallas móviles.
+
+4. **Nuevo Contador Oficial: Metro 2039**:
+   - Fecha: **4 de febrero de 2027** (`2027-02-04T00:00:00.000Z`).
+   - Plataformas: PC (Steam), PlayStation 5, Xbox Series X|S.
+   - Recursos gráficos listos en `public/metro/` (`hero.jpg`, `icon.png`, `icon-128.png`, `icon-512.png`, `logo.png`).
+   - Estética ámbar radiactiva `.countdown-theme-metro`.
+
+---
+
+## 2. Modificaciones al Componente (`src/components/gta6-countdown.tsx`)
+
+```tsx
+<div className="countdown-showcase">
+  {/* 1. Barra de pestañas exclusiva en la parte superior */}
+  <div className="countdown-selector-bar">
+    <div className="countdown-tabs" role="tablist" aria-label="Selector de cuentas regresivas">
+      {RELEASE_COUNTDOWNS.map((item, index) => (
+        <button
+          key={item.id}
+          ref={(node) => { tabs.current[index] = node; }}
+          id={`${id}-tab-${item.id}`}
+          type="button"
+          role="tab"
+          aria-selected={index === activeIndex}
+          aria-controls={`${id}-panel`}
+          tabIndex={index === activeIndex ? 0 : -1}
+          className={`countdown-tab ${index === activeIndex ? 'active' : ''}`}
+          onClick={() => setActiveIndex(index)}
+          onKeyDown={(event) => keydown(event, index)}
+        >
+          <Image src={item.iconImage} alt="" width={20} height={20} unoptimized />
+          <span className="countdown-tab-index">{item.tabNumber}</span>
+          <span>{item.tabLabel}</span>
+          {item.id === pinnedId && (
+            <span className="countdown-tab-pin-badge" title="Fijado como principal" aria-hidden="true">
+              📌
+            </span>
+          )}
+        </button>
+      ))}
+    </div>
+  </div>
+
+  {/* 2. Recuadro principal de la cuenta regresiva con botón Fijar en la esquina superior derecha */}
+  <section
+    id={`${id}-panel`}
+    role="tabpanel"
+    aria-labelledby={`${id}-tab-${active.id}`}
+    className={`gta6-countdown-banner ${active.themeClass}`}
+    style={{ '--countdown-hero': `url("${active.heroImage}")` } as CSSProperties}
+  >
+    <button
+      type="button"
+      className={`countdown-pin-btn${pinnedId === active.id ? ' is-pinned' : ''}`}
+      onClick={() => togglePin(active.id)}
+      aria-pressed={pinnedId === active.id}
+      title={
+        pinnedId === active.id
+          ? 'Contador fijado como principal (clic para desfijar)'
+          : 'Fijar este contador como principal al ingresar a SaveState'
+      }
+    >
+      <span aria-hidden="true">{pinnedId === active.id ? '📌' : '📍'}</span>
+      <span>{pinnedId === active.id ? 'Fijado' : 'Fijar'}</span>
+    </button>
+
+    <p className="gta6-radar">
+      <Image src={active.iconImage} alt="" width={40} height={40} unoptimized />
+      {active.radarLabel}
+    </p>
+
+    <h2>
+      <Image src={active.logoImage} alt={active.title} width={260} height={170} className="gta6-logo" unoptimized />
+    </h2>
+    <p>{active.releaseText}</p>
+
+    <div className="gta6-platforms">
+      {active.platforms.map((platform) => (
+        <span className="platform-tag" key={platform.label}>
+          <Image src={platform.icon} alt="" width={18} height={18} unoptimized />
+          {platform.label}
+        </span>
+      ))}
+    </div>
+
+    {countdown?.released ? (
+      <p className="gta6-released">{active.releasedText}</p>
+    ) : (
+      <div className="gta6-clock" role="timer" aria-label={active.timerAriaLabel} aria-live="off">
+        {(['days', 'hours', 'minutes', 'seconds'] as const).map((key, index) => (
+          <div key={key}>
+            <strong>{countdown ? String(countdown[key]).padStart(2, '0') : '—'}</strong>
+            <span>{['DÍAS', 'HORAS', 'MINUTOS', 'SEGUNDOS'][index]}</span>
+          </div>
+        ))}
+      </div>
+    )}
+
+    <small className="muted">{active.referenceNote}</small>
+  </section>
+
+  {/* 3. Controles del carrusel centrados al pie del recuadro */}
+  <div className="countdown-slider-footer">
+    <button
+      type="button"
+      className="button outline small"
+      aria-label="Contador anterior"
+      onClick={() =>
+        setActiveIndex(
+          (previous) => (previous - 1 + RELEASE_COUNTDOWNS.length) % RELEASE_COUNTDOWNS.length,
+        )
+      }
+    >
+      ←
+    </button>
+    <span className="countdown-slider-status" aria-live="polite">
+      {activeIndex + 1} / {RELEASE_COUNTDOWNS.length}
+    </span>
+    <button
+      type="button"
+      className="button outline small"
+      aria-label="Siguiente contador"
+      onClick={() => setActiveIndex((previous) => (previous + 1) % RELEASE_COUNTDOWNS.length)}
+    >
+      →
+    </button>
+  </div>
+</div>
 ```
 
 ---
 
-## 3. Experiencia UX/UI y Persistencia en el Componente (`src/components/gta6-countdown.tsx`)
-
-### A. Flujo de Persistencia con `localStorage`
-1. **Clave de almacenamiento**: `'savestate_pinned_countdown'`.
-2. **Al montar el componente (`useEffect`)**:
-   - Lee el valor almacenado.
-   - Si coincide con algún `id` de `RELEASE_COUNTDOWNS`, actualiza `activeIndex` a dicho índice y marca `pinnedId`.
-3. **Al pulsar el botón `[ 📌 Fijar como principal ]`**:
-   - Si la cuenta actual ya está fijada, se desfija (remueve de `localStorage` y limpia `pinnedId`).
-   - Si no está fijada, guarda el nuevo `id` en `localStorage` y actualiza `pinnedId`.
-4. **Indicadores visuales**:
-   - **En la barra de pestañas (Tabs)**: Si `item.id === pinnedId`, se renderiza una insignia o icono `📌` junto al nombre.
-   - **En los controles del carrusel / banner**: Se agrega un botón interactivo:
-     * Estado inactivo: `[ 📍 Fijar como principal ]`
-     * Estado activo: `[ 📌 Fijado como favorito ]` con resplandor dorado y estilo `active`.
-
----
-
-## 4. Estilos Visuales para Metro 2039 y Botón de Fijado (`src/app/globals.css`)
+## 3. Estilos CSS Requeridos (`src/app/globals.css`)
 
 ```css
-/* Metro 2039 Theme */
-.countdown-theme-metro {
-  border-color: #ff8c0055;
-  box-shadow: 0 16px 48px #000c, 0 0 32px #ff8c0022;
+/* Posicionamiento del botón Fijar en la esquina superior derecha del recuadro */
+.gta6-countdown-banner {
+  position: relative;
 }
-.countdown-theme-metro .gta6-radar {
-  color: #ffaa22;
+.gta6-countdown-banner .countdown-pin-btn {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 5;
 }
-.countdown-theme-metro .gta6-clock strong {
-  color: #ffaa22;
-  text-shadow: 0 0 20px #ff8c0066;
+@media (max-width: 600px) {
+  .gta6-countdown-banner .countdown-pin-btn {
+    top: 0.75rem;
+    right: 0.75rem;
+    font-size: 0.68rem;
+    padding: 3px 8px;
+  }
 }
 
-/* Botón de fijar cuenta regresiva */
-.countdown-pin-btn {
-  display: inline-flex;
+/* Controles de slider centrados al pie */
+.countdown-slider-footer {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.75rem;
-  padding: 5px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: #ffffff08;
-  color: var(--muted);
-  cursor: pointer;
-  transition: all 0.2s ease;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
 }
-.countdown-pin-btn:hover {
-  border-color: #f5d061aa;
-  color: #fff;
-  background: #ffffff14;
+
+/* Barra superior de pestañas full width */
+.countdown-selector-bar {
+  display: flex;
+  width: 100%;
+  margin-bottom: 0.75rem;
 }
-.countdown-pin-btn.is-pinned {
-  border-color: #f5d061;
-  background: #f5d06122;
-  color: #f5d061;
-  font-weight: 600;
-  box-shadow: 0 0 12px #f5d06133;
-}
-.countdown-tab-pin-badge {
-  font-size: 0.7rem;
-  margin-left: 4px;
+.countdown-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  width: 100%;
 }
 ```
-
----
-
-## 5. Integración con Discord Bot Cards y Service
-
-- Se exporta `discordMetro2039CountdownMessage(nowMs: number, baseAppUrl: string)` en `src/domain/discord-bot-cards.ts` con color `0xff8c00`, miniatura `/metro/icon.png` e imagen `/metro/hero.jpg`.
-- Se implementa `announceMetro2039CountdownToDiscord()` en `src/services/discord.ts`.
-- Pruebas unitarias actualizadas en `tests/unit/gta6-countdown.test.ts` y `tests/unit/release-countdown-service.test.ts`.
