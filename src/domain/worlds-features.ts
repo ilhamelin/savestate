@@ -14,7 +14,10 @@ export interface WorldsBroadcastSignal {
   href: string;
 }
 
-export const WORLDS_BROADCAST_SIGNALS: readonly WorldsBroadcastSignal[] = [
+export const WORLDS_BROADCAST_SIGNALS: readonly [
+  WorldsBroadcastSignal,
+  ...WorldsBroadcastSignal[],
+] = [
   {
     id: 'lvpes',
     label: '🇪🇸 Español · LVPes',
@@ -38,7 +41,7 @@ export const WORLDS_BROADCAST_SIGNALS: readonly WorldsBroadcastSignal[] = [
   },
 ] as const;
 
-export const DEFAULT_WORLDS_BROADCAST_SIGNAL: WorldsBroadcastSignal = WORLDS_BROADCAST_SIGNALS[0]!;
+export const DEFAULT_WORLDS_BROADCAST_SIGNAL: WorldsBroadcastSignal = WORLDS_BROADCAST_SIGNALS[0];
 
 export function findWorldsBroadcastSignal(id: string): WorldsBroadcastSignal {
   return WORLDS_BROADCAST_SIGNALS.find((item) => item.id === id) ?? DEFAULT_WORLDS_BROADCAST_SIGNAL;

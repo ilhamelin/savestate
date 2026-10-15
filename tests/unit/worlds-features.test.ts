@@ -12,6 +12,7 @@ import {
   worldsViewModeForKey,
   type WorldsViewMode,
   WORLDS_BROADCAST_SIGNALS,
+  DEFAULT_WORLDS_BROADCAST_SIGNAL,
   findWorldsBroadcastSignal,
   buildWorldsFrameUrl,
 } from '../../src/domain/worlds-features.ts';
@@ -119,9 +120,8 @@ test('Worlds transport wraps in both directions across all tracks and handles an
 
 test('Worlds broadcast signals replace inactive LLA channel with verified YouTube stream and exclude Demacia Cup', () => {
   const ids = WORLDS_BROADCAST_SIGNALS.map((s) => s.id);
-  assert.ok(ids.includes('lvpes'));
-  assert.ok(ids.includes('latam-yt'));
-  assert.ok(ids.includes('riotgames'));
+  assert.deepEqual(ids, ['lvpes', 'latam-yt', 'riotgames']);
+  assert.equal(DEFAULT_WORLDS_BROADCAST_SIGNAL, WORLDS_BROADCAST_SIGNALS[0]);
   assert.ok(
     !ids.includes('demacia-cup'),
     'Demacia Cup ya no debe estar presente en las señales de Worlds',

@@ -8,7 +8,10 @@
 begin;
 
 -- ============================================================================
--- 1. ÍNDICES DE CLAVES FORÁNEAS Y CONSULTAS FRECUENTES (NON-BLOCKING)
+-- 1. ÍNDICES DE CLAVES FORÁNEAS Y CONSULTAS FRECUENTES
+-- CREATE INDEX normal puede bloquear escrituras mientras construye el índice.
+-- Este script es transaccional: para tablas grandes, programar una ventana de
+-- mantenimiento o construir los índices CONCURRENTLY por separado, sin BEGIN.
 -- ============================================================================
 
 -- Social y Amistades
@@ -48,6 +51,7 @@ create index if not exists idx_user_badges_badge on public.user_badges(badge_id)
 create index if not exists idx_duel_votes_user on public.duel_votes(user_id);
 create index if not exists idx_duel_votes_chosen_game on public.duel_votes(chosen_game_id);
 create index if not exists idx_party_requests_game on public.party_requests(game_id);
+create index if not exists idx_party_requests_user on public.party_requests(user_id);
 create index if not exists idx_user_xp_events_user_recent on public.user_xp_events(user_id, created_at desc);
 
 -- Media y Vault
@@ -60,17 +64,19 @@ create index if not exists idx_user_vault_media_status on public.user_vault_medi
 
 alter table public.play_logs drop constraint if exists play_logs_console_progress_check;
 alter table public.play_logs add constraint play_logs_console_progress_check check (
-  console_progress is null or (
+  console_progress is null or case when (
     jsonb_typeof(console_progress) = 'object'
     and console_progress ?& array['kind','current','total']
+    and jsonb_typeof(console_progress->'kind') = 'string'
     and console_progress->>'kind' in ('gamerscore','trophies','achievements')
     and jsonb_typeof(console_progress->'current') = 'number'
     and jsonb_typeof(console_progress->'total') = 'number'
-    and (console_progress->>'current')::numeric between 0 and 10000000
+  ) then (
+    (console_progress->>'current')::numeric between 0 and 10000000
     and (console_progress->>'total')::numeric between 1 and 10000000
     and trunc((console_progress->>'current')::numeric) = (console_progress->>'current')::numeric
     and trunc((console_progress->>'total')::numeric) = (console_progress->>'total')::numeric
-  )
+  ) else false end
 );
 
 -- ============================================================================
@@ -92,9 +98,13 @@ create policy profiles_edit on public.profiles for update to authenticated
   using (id = (select auth.uid())) with check (id = (select auth.uid()));
 
 -- Biblioteca
-drop policy if exists library_edit on public.user_games;
-create policy library_edit on public.user_games for insert to authenticated
+drop policy if exists library_add on public.user_games;
+create policy library_add on public.user_games for insert to authenticated
   with check (user_id = (select auth.uid()));
+
+drop policy if exists library_edit on public.user_games;
+create policy library_edit on public.user_games for update to authenticated
+  using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
 
 drop policy if exists library_remove on public.user_games;
 create policy library_remove on public.user_games for delete to authenticated
@@ -121,6 +131,14 @@ create policy screen_owner_delete on public.user_screen_entries for delete to au
 drop policy if exists friend_messages_select on public.friend_messages;
 create policy friend_messages_select on public.friend_messages for select to authenticated
   using (sender_id = (select auth.uid()) or receiver_id = (select auth.uid()));
+
+drop policy if exists friend_messages_insert on public.friend_messages;
+create policy friend_messages_insert on public.friend_messages for insert to authenticated
+  with check (sender_id = (select auth.uid()) and exists (
+    select 1 from public.friendships f where f.status = 'accepted' and
+    ((f.sender_id = (select auth.uid()) and f.receiver_id = friend_messages.receiver_id)
+      or (f.receiver_id = (select auth.uid()) and f.sender_id = friend_messages.receiver_id))
+  ));
 
 -- Global Chat
 drop policy if exists global_chat_insert on public.global_chat_messages;
