@@ -44,7 +44,8 @@ test('Worlds service combines paginated schedule/live, deduplicates requests, ex
     maxActive = 0,
     failed = false,
     gameState = 'unstarted',
-    feedCalls = 0;
+    feedCalls = 0,
+    feedMode: 'ok' | 'error' | 'empty' = 'ok';
   Date.now = () => now;
   function event(id: string, blockName = 'Play-ins', state = 'unstarted') {
     return {
@@ -72,6 +73,8 @@ test('Worlds service combines paginated schedule/live, deduplicates requests, ex
     if (url.hostname === 'feed.lolesports.com') {
       active--;
       feedCalls++;
+      if (feedMode === 'error') throw new Error('Finished map feed removed');
+      if (feedMode === 'empty') return Response.json({ frames: [] });
       const later = url.searchParams.has('startingTime');
       return Response.json({
         gameMetadata: {
@@ -166,6 +169,26 @@ test('Worlds service combines paginated schedule/live, deduplicates requests, ex
     now += 15000;
     await fetchWorldsMatchDetail('1');
     assert.equal(feedCalls, 2);
+    // Finished telemetry remains cached for seven days, then survives feed failures/empty data.
+    now += 2 * 86400000;
+    await fetchWorldsMatchDetail('1');
+    assert.equal(feedCalls, 2);
+    now += 6 * 86400000;
+    feedMode = 'error';
+    const retained = await fetchWorldsMatchDetail('1');
+    assert.equal(feedCalls, 3);
+    assert.deepEqual(retained.gameTelemetry[1], liveDetail.gameTelemetry[1]);
+    now += 60000;
+    feedMode = 'empty';
+    const emptyFeed = await fetchWorldsMatchDetail('1');
+    assert.equal(feedCalls, 4);
+    assert.deepEqual(emptyFeed.gameTelemetry[1], liveDetail.gameTelemetry[1]);
+    // Even when a subsequent event response resets a map to unstarted, keep its prior detail.
+    now += 60000;
+    gameState = 'unstarted';
+    const resetDetail = await fetchWorldsMatchDetail('1');
+    assert.equal(feedCalls, 4);
+    assert.deepEqual(resetDetail.gameTelemetry[1], liveDetail.gameTelemetry[1]);
     now += 105000;
     failed = true;
     assert.equal((await fetchWorldsSchedule()).source, 'stale');

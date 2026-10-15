@@ -1,5 +1,10 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import {
+  hasWorldsTelemetryMetrics,
+  mergeWorldsTelemetry,
+  readSavedWorldsTelemetry,
+} from '@/domain/worlds-telemetry';
 import {
   FALLBACK_WORLDS_2026_ROSTERS,
   WORLDS_ROLES,
@@ -8,6 +13,7 @@ import {
   type WorldsPlayerProfile,
   type WorldsGamePlayerStats,
   type WorldsGameTeamStats,
+  type WorldsGameTelemetry,
 } from '@/domain/worlds-schedule';
 function Player({ player, league }: { player?: WorldsPlayerProfile; league?: string | null }) {
   return (
@@ -232,10 +238,61 @@ export function WorldsPerformance({
   detail: WorldsMatchDetail | null;
   bestOf: number;
 }) {
+  return <SeriesPerformance key={detail?.id ?? 'pending'} detail={detail} bestOf={bestOf} />;
+}
+
+function SeriesPerformance({
+  detail,
+  bestOf,
+}: {
+  detail: WorldsMatchDetail | null;
+  bestOf: number;
+}) {
   const [gameNumber, setGameNumber] = useState(1);
+  const [savedTelemetry, setSavedTelemetry] = useState<Record<number, WorldsGameTelemetry>>({});
+  const history = useRef<Record<number, WorldsGameTelemetry>>({});
+  useEffect(() => {
+    if (!detail) return;
+    const timer = window.setTimeout(() => {
+      const key = `savestate_worlds_telemetry_${detail.id}`;
+      let stored: Record<number, WorldsGameTelemetry> = {};
+      try {
+        stored = readSavedWorldsTelemetry(window.localStorage.getItem(key));
+      } catch {
+        /* Storage restrictions must not hide live telemetry. */
+      }
+      const merged = mergeWorldsTelemetry(
+        mergeWorldsTelemetry(stored, history.current),
+        detail.gameTelemetry,
+      );
+      const retained = Object.fromEntries(
+        Object.entries(merged).filter(
+          ([, value]) =>
+            detail.games.some(
+              (game) => game.id === value.gameId && game.number === value.gameNumber,
+            ) &&
+            (value.gameState === 'finished' || hasWorldsTelemetryMetrics(value)),
+        ),
+      );
+      history.current = retained;
+      setSavedTelemetry(retained);
+      try {
+        window.localStorage.setItem(key, JSON.stringify(retained));
+      } catch {
+        /* Keep the in-memory history when storage is unavailable or full. */
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [detail]);
   const count = detail?.games.length || bestOf;
   const selected = gameNumber <= count ? gameNumber : 1;
-  const telemetry = detail?.gameTelemetry?.[selected];
+  const telemetry =
+    mergeWorldsTelemetry(savedTelemetry, detail?.gameTelemetry ?? {})[selected] ?? null;
+  const fromSaved = Boolean(
+    telemetry &&
+    telemetry === savedTelemetry[selected] &&
+    telemetry !== detail?.gameTelemetry?.[selected],
+  );
   const game = detail?.games.find((g) => g.number === selected);
   const duration = telemetry?.durationSeconds;
   return (
@@ -258,7 +315,9 @@ export function WorldsPerformance({
         <>
           <div className="tags">
             <span className="tag">
-              {telemetry.gameState === 'finished' ? 'Mapa finalizado' : 'Datos en vivo'}
+              {telemetry.gameState === 'finished' || fromSaved
+                ? '✓ Mapa finalizado · Registro guardado'
+                : 'Datos en vivo'}
             </span>
             <span className="tag">
               ⏱️{' '}

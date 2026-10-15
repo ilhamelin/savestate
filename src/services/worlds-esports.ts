@@ -1,6 +1,7 @@
 import 'server-only';
 import fallbackEvents from '@/domain/worlds-2026-fallback.json';
 import { AppError } from '@/lib/http';
+import { mergeWorldsTelemetry } from '@/domain/worlds-telemetry';
 import {
   groupWorldsEventsByStage,
   parseWorldsScheduleEvents,
@@ -166,14 +167,18 @@ async function gameTelemetry(game: WorldsMatchDetail['games'][number]) {
       { ...last, gameMetadata: last.gameMetadata ?? first.gameMetadata },
       firstTs,
     );
+    if (!value) return cached?.value ?? null;
+    const retained = mergeWorldsTelemetry(cached?.value ? { [game.number]: cached.value } : {}, {
+      [game.number]: value,
+    })[game.number]!;
     if (telemetryCache.size >= 500) telemetryCache.delete(telemetryCache.keys().next().value!);
     telemetryCache.set(game.id, {
-      value,
-      expires: Date.now() + (value?.gameState === 'finished' ? 86400000 : 15000),
+      value: retained,
+      expires: Date.now() + (retained.gameState === 'finished' ? 7 * 86400 * 1000 : 15000),
     });
-    return value;
+    return retained;
   } catch {
-    return null;
+    return cached?.value ?? null;
   }
 }
 export async function fetchWorldsMatchDetail(matchId: string): Promise<WorldsMatchDetail> {
@@ -193,6 +198,14 @@ export async function fetchWorldsMatchDetail(matchId: string): Promise<WorldsMat
     ]);
     for (const roster of rosters) if (roster) detail.rosters[roster.code] = roster;
     for (const game of telemetry) if (game) detail.gameTelemetry[game.gameNumber] = game;
+    detail.gameTelemetry = mergeWorldsTelemetry(
+      Object.fromEntries(
+        Object.entries(cached?.value.gameTelemetry ?? {}).filter(([, value]) =>
+          detail.games.some((game) => game.id === value.gameId && game.number === value.gameNumber),
+        ),
+      ),
+      detail.gameTelemetry,
+    );
     if (detailsCache.size >= 100) detailsCache.delete(detailsCache.keys().next().value!);
     detailsCache.set(matchId, {
       value: detail,
