@@ -4614,10 +4614,16 @@ a.feed-card-cover:hover {
   font-size: 0.75rem;
 }
 .friend-presence {
+  min-width: 0;
+  max-width: 100%;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
   font-size: 0.78rem;
+}
+.friend-presence-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .friend-presence.is-online {
   color: #4ade80;

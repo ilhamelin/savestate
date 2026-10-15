@@ -1,14 +1,53 @@
 'use client';
 
-import { useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/client-api';
 import { useOnlineUsers } from '@/lib/presence';
-import { friendLevelTier } from '@/domain/player-friends';
+import { friendLevelTier, formatLastActivity } from '@/domain/player-friends';
 import type { FriendProfile, FriendRequest, PlayerFriend } from '@/domain/player-friends';
 import { FriendChatDrawer } from '@/components/friend-chat-drawer';
+
+function FriendPresenceStatus({
+  isOnline,
+  lastSeenAt,
+}: {
+  isOnline: boolean;
+  lastSeenAt?: string | null;
+}) {
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => {
+    const sync = () => setNow(Date.now());
+    const initial = setTimeout(sync, 0);
+    const interval = setInterval(sync, 30000);
+    return () => {
+      clearTimeout(initial);
+      clearInterval(interval);
+    };
+  }, []);
+  const timestamp = lastSeenAt ? Date.parse(lastSeenAt) : NaN;
+  const title =
+    now !== null && Number.isFinite(timestamp)
+      ? `Última actividad registrada: ${new Date(timestamp).toLocaleString('es-CL', { timeZone: 'America/Santiago' })}`
+      : undefined;
+  return (
+    <span
+      className={`friend-presence ${isOnline ? 'is-online' : 'is-offline'}`}
+      title={isOnline ? undefined : title}
+    >
+      <span className="friend-presence-dot" aria-hidden="true" />
+      <span className="friend-presence-label">
+        {isOnline
+          ? 'Activo ahora'
+          : now === null
+            ? 'Inactivo'
+            : formatLastActivity(lastSeenAt, now)}
+      </span>
+    </span>
+  );
+}
 
 function FriendIdentity({ profile, isOnline }: { profile: FriendProfile; isOnline: boolean }) {
   return (
@@ -22,10 +61,7 @@ function FriendIdentity({ profile, isOnline }: { profile: FriendProfile; isOnlin
       </span>
       <span className="friend-copy">
         <strong>@{profile.username}</strong>
-        <span className={`friend-presence ${isOnline ? 'is-online' : 'is-offline'}`}>
-          <span className="friend-presence-dot" aria-hidden="true" />
-          {isOnline ? 'Activo' : 'Inactivo'}
-        </span>
+        <FriendPresenceStatus isOnline={isOnline} lastSeenAt={profile.last_seen_at} />
       </span>
     </Link>
   );
