@@ -414,3 +414,193 @@
     transform: none;
   }
 }
+.hoyo-countdown-card {
+  background: #090f1bed;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.hoyo-countdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.hoyo-timer-digits {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  font-family: var(--font-mono), monospace;
+}
+.hoyo-timer-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #0006;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.6rem 0.85rem;
+  min-width: 58px;
+}
+.hoyo-timer-val {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--hoyo-accent);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.hoyo-timer-lbl {
+  font-size: 0.65rem;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.hoyo-progress-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.hoyo-progress-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: #ffffff14;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.hoyo-progress-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--hoyo-accent);
+  transition: width 300ms ease;
+}
+.hoyo-schedule-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  font-size: 0.8rem;
+}
+.hoyo-schedule-details dt {
+  color: var(--muted);
+}
+.hoyo-schedule-details dd {
+  margin: 0;
+  color: #e4e8f0;
+}
+.hoyo-countdown-status {
+  color: var(--hoyo-accent);
+  font-size: 0.8rem;
+}
+.hoyo-tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+.hoyo-tool-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #ffffff08;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease;
+  min-width: 0;
+}
+.hoyo-tool-item:hover {
+  border-color: var(--hoyo-accent);
+  transform: translateY(-2px);
+}
+.hoyo-tool-item > svg {
+  flex-shrink: 0;
+  color: var(--hoyo-accent);
+}
+.hoyo-tool-item > span {
+  flex: 1;
+  min-width: 0;
+}
+.hoyo-tool-item strong,
+.hoyo-tool-item small {
+  display: block;
+}
+.hoyo-tool-item strong {
+  font-size: 0.85rem;
+}
+.hoyo-tool-item small {
+  font-size: 0.75rem;
+}
+.hoyo-filter-bar {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.hoyo-filter-btn {
+  padding: 0.45rem 0.8rem;
+  min-height: 40px;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.78rem;
+  background: #ffffff0a;
+  border: 1px solid #465064;
+  color: var(--muted);
+  cursor: pointer;
+}
+.hoyo-filter-btn:hover {
+  color: #fff;
+  border-color: #fff;
+}
+.hoyo-filter-btn[data-active='true'] {
+  background: #ffffff14;
+  color: var(--hoyo-accent);
+  border-color: var(--hoyo-accent);
+}
+.hoyo-code-claimed {
+  opacity: 0.7;
+  filter: grayscale(0.5);
+  border-color: #00ff664d;
+}
+.hoyo-claim-status {
+  font-size: 0.75rem;
+}
+.hoyo-claim-status:empty {
+  display: none;
+}
+@media (max-width: 600px) {
+  .hoyo-countdown-card {
+    padding: 1rem;
+  }
+  .hoyo-timer-digits {
+    gap: 0.4rem;
+  }
+  .hoyo-timer-block {
+    flex: 1;
+    min-width: 0;
+    padding-inline: 0.35rem;
+  }
+  .hoyo-timer-val {
+    font-size: 1.3rem;
+  }
+  .hoyo-filter-btn {
+    min-height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hoyo-progress-bar-fill,
+  .hoyo-tool-item {
+    transition: none;
+  }
+  .hoyo-tool-item:hover {
+    transform: none;
+  }
+}

@@ -12,6 +12,10 @@ import {
   Radio,
   Sparkles,
   Ticket,
+  CalendarDays,
+  Map as MapIcon,
+  Trophy,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   HOYO_GAMES,
@@ -22,12 +26,20 @@ import {
   buildHoyoRedeemUrl,
   type HoyoGame,
   type HoyoNewsItem,
+  type HoyoNewsCategory,
+  HOYO_QUICK_TOOLS,
+  HOYO_CLAIMED_CODES_KEY,
+  hoyoClaimedCodeKey,
+  parseHoyoClaimedCodes,
+  filterHoyoNews,
 } from '@/domain/hoyo-hub';
 import { soundFx } from '@/lib/sound';
+import { HoyoVersionCountdown } from '@/components/hoyo-version-countdown';
 
 const subscribeHost = () => () => {};
 const hostSnapshot = () => window.location.hostname;
 const serverHost = () => '';
+const TOOL_ICONS = { calendar: CalendarDays, map: MapIcon, shield: ShieldCheck, trophy: Trophy };
 function newsDate(value: string) {
   return value
     ? new Intl.DateTimeFormat('es-CL', {
@@ -45,6 +57,11 @@ export function HoyoHub({ initialNews }: { initialNews: Record<HoyoGame, HoyoNew
   const config = HOYO_GAMES[activeGame],
     news = initialNews[activeGame];
   const version = hoyoVersionInNews(news);
+  const [selectedCategory, setSelectedCategory] = useState<HoyoNewsCategory>('todas');
+  const visibleNews = filterHoyoNews(news, selectedCategory);
+  const [claimedCodes, setClaimedCodes] = useState<Set<string>>(() => new Set());
+  const [claimsLoaded, setClaimsLoaded] = useState(false);
+  const [claimNotice, setClaimNotice] = useState('');
   const hostname = useSyncExternalStore(subscribeHost, hostSnapshot, serverHost);
   const [platform, setPlatform] = useState<'twitch' | 'youtube'>('twitch');
   const [cinemaMode, setCinemaMode] = useState(false);
@@ -58,6 +75,39 @@ export function HoyoHub({ initialNews }: { initialNews: Record<HoyoGame, HoyoNew
     platform === 'twitch'
       ? `https://www.twitch.tv/${config.twitchChannel}`
       : `https://www.youtube.com/${config.youtubeChannel}/live`;
+  useEffect(() => {
+    const initial = window.setTimeout(() => {
+      try {
+        setClaimedCodes(parseHoyoClaimedCodes(window.localStorage.getItem(HOYO_CLAIMED_CODES_KEY)));
+      } catch {
+        /* Preferences remain usable without persistent storage. */
+      }
+      setClaimsLoaded(true);
+    }, 0);
+    function onStorage(event: StorageEvent) {
+      if (event.key === HOYO_CLAIMED_CODES_KEY || event.key === null)
+        setClaimedCodes(parseHoyoClaimedCodes(event.newValue));
+    }
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.clearTimeout(initial);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, []);
+  function toggleClaimed(code: string) {
+    if (!claimsLoaded) return;
+    const key = hoyoClaimedCodeKey(activeGame, code),
+      next = new Set(claimedCodes);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    setClaimedCodes(next);
+    try {
+      window.localStorage.setItem(HOYO_CLAIMED_CODES_KEY, JSON.stringify([...next]));
+      setClaimNotice('Preferencia de canje guardada en este navegador.');
+    } catch {
+      setClaimNotice('Preferencia aplicada en esta sesión; el navegador no permite guardarla.');
+    }
+  }
   useEffect(
     () => () => {
       if (copyTimer.current) clearTimeout(copyTimer.current);
@@ -77,6 +127,7 @@ export function HoyoHub({ initialNews }: { initialNews: Record<HoyoGame, HoyoNew
   }, [cinemaMode]);
   function switchGame(game: HoyoGame) {
     soundFx.click();
+    setSelectedCategory('todas');
     const next = new URLSearchParams(params.toString());
     next.set('game', game);
     router.replace(`/hoyo?${next}`, { scroll: false });
@@ -213,6 +264,40 @@ export function HoyoHub({ initialNews }: { initialNews: Record<HoyoGame, HoyoNew
           </div>
         </div>
       </section>
+      <HoyoVersionCountdown game={activeGame} />
+      <section aria-labelledby="hoyo-tools-title">
+        <h2 id="hoyo-tools-title">Herramientas diarias</h2>
+        <div className="hoyo-tools-grid">
+          {HOYO_QUICK_TOOLS[activeGame].map((tool) => {
+            const Icon = TOOL_ICONS[tool.iconName];
+            const content = (
+              <>
+                <Icon size={24} aria-hidden="true" />
+                <span>
+                  <strong>{tool.label}</strong>
+                  <small className="muted">{tool.description}</small>
+                </span>
+                {tool.url.startsWith('https:') && <ExternalLink size={14} aria-hidden="true" />}
+              </>
+            );
+            return tool.url.startsWith('/') ? (
+              <Link key={tool.id} className="hoyo-tool-item" href={tool.url}>
+                {content}
+              </Link>
+            ) : (
+              <a
+                key={tool.id}
+                className="hoyo-tool-item"
+                href={tool.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {content}
+              </a>
+            );
+          })}
+        </div>
+      </section>
       <div className="hoyo-grid">
         {!cinemaMode ? (
           player(false)
@@ -232,14 +317,28 @@ export function HoyoHub({ initialNews }: { initialNews: Record<HoyoGame, HoyoNew
           </div>
           {config.featuredCodes.map((code) => {
             const expired = hoyoCodeExpired(code);
+            const claimed = claimedCodes.has(hoyoClaimedCodeKey(activeGame, code.code));
             return (
-              <article key={code.code} className={`hoyo-code-item${expired ? ' is-expired' : ''}`}>
+              <article
+                key={code.code}
+                className={`hoyo-code-item${expired ? ' is-expired' : ''}${claimed ? ' hoyo-code-claimed' : ''}`}
+              >
                 <div className="hoyo-code-header">
                   <code className="hoyo-code-text">{code.code}</code>
                   <span className="hoyo-tag">{expired ? 'Caducado' : 'Código de referencia'}</span>
                 </div>
                 <p className="muted">{code.rewards}</p>
                 <div className="hoyo-code-actions">
+                  <button
+                    type="button"
+                    className="hoyo-copy-btn"
+                    aria-pressed={claimed}
+                    disabled={!claimsLoaded}
+                    title={claimed ? 'Desmarcar como canjeado' : 'Marcar como canjeado'}
+                    onClick={() => toggleClaimed(code.code)}
+                  >
+                    {claimed ? '✓ Canjeado' : 'Ya lo canjeé'}
+                  </button>
                   <button
                     type="button"
                     className="hoyo-copy-btn"
@@ -274,6 +373,9 @@ export function HoyoHub({ initialNews }: { initialNews: Record<HoyoGame, HoyoNew
           <Link href={`/rift?game=${config.enkaUrlSlug}`} className="button outline small">
             Ver mi vitrina en Rift ↗
           </Link>
+          <p role="status" className="hoyo-claim-status muted">
+            {claimNotice}
+          </p>
         </aside>
       </div>
       <section className="hoyo-news-section" aria-labelledby="hoyo-news-title">
@@ -291,9 +393,30 @@ export function HoyoHub({ initialNews }: { initialNews: Record<HoyoGame, HoyoNew
             HoYoLAB <ExternalLink size={14} />
           </a>
         </div>
-        {news.length ? (
+        <div className="hoyo-filter-bar" aria-label="Filtrar noticias">
+          {(
+            [
+              ['todas', 'Todas'],
+              ['actualizacion', 'Actualizaciones'],
+              ['evento', 'Eventos'],
+              ['aviso', 'Avisos'],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              className="hoyo-filter-btn"
+              data-active={selectedCategory === id}
+              aria-pressed={selectedCategory === id}
+              onClick={() => setSelectedCategory(id)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {visibleNews.length ? (
           <div className="hoyo-news-grid">
-            {news.map((item) => (
+            {visibleNews.map((item) => (
               <a
                 key={item.id}
                 href={item.postUrl}
@@ -345,8 +468,16 @@ export function HoyoHub({ initialNews }: { initialNews: Record<HoyoGame, HoyoNew
           </div>
         ) : (
           <div className="panel hoyo-news-empty">
-            <p>No fue posible cargar las comunicaciones de {config.title} en este momento.</p>
-            <p className="muted">Puedes abrir HoYoLAB desde el enlace superior.</p>
+            <p>
+              {news.length
+                ? 'No hay noticias de esta categoría.'
+                : `No fue posible cargar las comunicaciones de ${config.title} en este momento.`}
+            </p>
+            <p className="muted">
+              {news.length
+                ? 'Prueba otra categoría para ver más noticias.'
+                : 'Puedes abrir HoYoLAB desde el enlace superior.'}
+            </p>
           </div>
         )}
       </section>

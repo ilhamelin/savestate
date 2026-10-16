@@ -1,6 +1,175 @@
 import { newsText } from './gaming-news.ts';
 
 export type HoyoGame = 'genshin' | 'hsr';
+export type HoyoNewsCategory = 'todas' | HoyoNewsItem['category'];
+export interface HoyoCountdown {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+  totalSeconds: number;
+  isPast: boolean;
+  formatted: string;
+}
+export interface HoyoVersionSchedule {
+  currentVersion: string;
+  nextVersion: string;
+  currentTitle: string;
+  nextReleaseDate: string;
+  phase: 1 | 2;
+  phaseEndDate: string;
+  specialProgramDate: string;
+  cycleTotalDays: number;
+  daysIntoCycle: number;
+  progressPercent: number;
+}
+// Editorial reference dates supplied for the hub, not an automatic confirmation by HoYoverse.
+export const HOYO_VERSION_SCHEDULES: Record<HoyoGame, HoyoVersionSchedule> = {
+  genshin: {
+    currentVersion: '7.1',
+    nextVersion: '7.2',
+    currentTitle: 'Un réquiem para el inframundo',
+    nextReleaseDate: '2026-11-04T03:00:00Z',
+    phase: 2,
+    phaseEndDate: '2026-11-04T02:59:59Z',
+    specialProgramDate: '2026-10-23T12:00:00Z',
+    cycleTotalDays: 42,
+    daysIntoCycle: 23,
+    progressPercent: 55,
+  },
+  hsr: {
+    currentVersion: '4.6',
+    nextVersion: '4.7',
+    currentTitle: 'Danza con la bestia antes de que se alce la luna',
+    nextReleaseDate: '2026-11-10T03:00:00Z',
+    phase: 2,
+    phaseEndDate: '2026-11-10T02:59:59Z',
+    specialProgramDate: '2026-10-30T11:30:00Z',
+    cycleTotalDays: 42,
+    daysIntoCycle: 19,
+    progressPercent: 45,
+  },
+};
+export interface HoyoQuickTool {
+  id: string;
+  label: string;
+  description: string;
+  url: string;
+  iconName: 'calendar' | 'map' | 'shield' | 'trophy';
+}
+export const HOYO_QUICK_TOOLS: Record<HoyoGame, HoyoQuickTool[]> = {
+  genshin: [
+    {
+      id: 'checkin',
+      label: 'Check-in Diario',
+      description: 'Reclama las recompensas del calendario',
+      url: 'https://act.hoyolab.com/ys/event/signin-sea-v3/index.html?act_id=e202102251931481',
+      iconName: 'calendar',
+    },
+    {
+      id: 'map',
+      label: 'Mapa de Teyvat',
+      description: 'Cofres, óculos y rutas de farmeo',
+      url: 'https://act.hoyolab.com/ys/app/interactive-map/index.html',
+      iconName: 'map',
+    },
+    {
+      id: 'showcase',
+      label: 'Mi Vitrina Genshin',
+      description: 'Tus personajes en el tracker de SaveState',
+      url: '/rift?game=genshin',
+      iconName: 'trophy',
+    },
+  ],
+  hsr: [
+    {
+      id: 'checkin',
+      label: 'Check-in Diario',
+      description: 'Reclama las recompensas del calendario',
+      url: 'https://act.hoyolab.com/bbs/event/signin/hkrpg/index.html?act_id=e202303301540311',
+      iconName: 'calendar',
+    },
+    {
+      id: 'map',
+      label: 'Mapa del Expreso',
+      description: 'Tesoros y rutas de los mundos',
+      url: 'https://act.hoyolab.com/sr/app/interactive-map/index.html',
+      iconName: 'map',
+    },
+    {
+      id: 'showcase',
+      label: 'Mi Vitrina HSR',
+      description: 'Tus personajes en el tracker de SaveState',
+      url: '/rift?game=hsr',
+      iconName: 'trophy',
+    },
+  ],
+};
+export function calculateHoyoCountdown(targetDateIso: string, nowMs = Date.now()): HoyoCountdown {
+  const targetMs = Date.parse(targetDateIso);
+  if (!Number.isFinite(targetMs) || !Number.isFinite(nowMs))
+    return {
+      days: 0,
+      hours: 0,
+      minutes: 0,
+      seconds: 0,
+      totalSeconds: 0,
+      isPast: true,
+      formatted: '00d 00h 00m 00s',
+    };
+  const totalSeconds = Math.max(0, Math.floor((targetMs - nowMs) / 1000));
+  const days = Math.floor(totalSeconds / 86400),
+    hours = Math.floor((totalSeconds % 86400) / 3600),
+    minutes = Math.floor((totalSeconds % 3600) / 60),
+    seconds = totalSeconds % 60;
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return {
+    days,
+    hours,
+    minutes,
+    seconds,
+    totalSeconds,
+    isPast: targetMs <= nowMs,
+    formatted: `${days}d ${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`,
+  };
+}
+export function hoyoCycleProgress(schedule: HoyoVersionSchedule, nowMs = Date.now()) {
+  const end = Date.parse(schedule.nextReleaseDate),
+    span = schedule.cycleTotalDays * 86400000;
+  if (!Number.isFinite(end) || !Number.isFinite(nowMs) || !Number.isFinite(span) || span <= 0)
+    return { daysIntoCycle: 0, progressPercent: 0 };
+  const elapsed = Math.max(0, Math.min(span, nowMs - (end - span)));
+  return {
+    daysIntoCycle: Math.floor(elapsed / 86400000),
+    progressPercent: Math.round((elapsed / span) * 1000) / 10,
+  };
+}
+export function filterHoyoNews(news: HoyoNewsItem[], category: HoyoNewsCategory): HoyoNewsItem[] {
+  return category === 'todas' ? news : news.filter((item) => item.category === category);
+}
+export const HOYO_CLAIMED_CODES_KEY = 'hoyo_claimed_codes';
+export function hoyoClaimedCodeKey(game: HoyoGame, code: string) {
+  return `${game}:${code}`;
+}
+export function parseHoyoClaimedCodes(raw: string | null): Set<string> {
+  try {
+    const values: unknown = JSON.parse(raw ?? '[]');
+    if (!Array.isArray(values)) return new Set();
+    const result = new Set<string>();
+    for (const value of values.slice(0, 1000)) {
+      if (typeof value !== 'string') continue;
+      if (/^(genshin|hsr):[A-Za-z0-9_-]{1,100}$/.test(value)) result.add(value);
+      else
+        for (const game of ['genshin', 'hsr'] as const) {
+          if (HOYO_GAMES[game].featuredCodes.some((code) => code.code === value))
+            result.add(hoyoClaimedCodeKey(game, value));
+        }
+    }
+    return result;
+  } catch {
+    return new Set();
+  }
+}
 export interface HoyoCode {
   code: string;
   rewards: string;
