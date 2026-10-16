@@ -66,6 +66,44 @@ export function buildWorldsFrameUrl(
   return null;
 }
 
+export interface WorldsGameVodGroup {
+  gameNumber: number;
+  preferredVod: { provider: 'youtube'; parameter: string; locale: string };
+  availableVods: { provider: 'youtube'; parameter: string; locale: string }[];
+}
+
+export function deduplicateWorldsVods(
+  games: { number: number; vods: WorldsGameVodGroup['availableVods'] }[],
+  preferredSignalId?: string,
+): WorldsGameVodGroup[] {
+  const priority =
+    preferredSignalId === 'riotgames'
+      ? ['en-US', 'es-MX', 'es-ES']
+      : preferredSignalId === 'lvpes'
+        ? ['es-ES', 'es-MX', 'en-US']
+        : ['es-MX', 'es-ES', 'en-US'];
+  const groups = new Map<number, WorldsGameVodGroup['availableVods']>();
+  for (const game of games) {
+    if (!game.vods?.length) continue;
+    const available = groups.get(game.number) ?? [];
+    for (const vod of game.vods) {
+      if (!available.some((item) => item.parameter === vod.parameter && item.locale === vod.locale))
+        available.push(vod);
+    }
+    groups.set(game.number, available);
+  }
+  return [...groups]
+    .map(([gameNumber, availableVods]) => ({
+      gameNumber,
+      preferredVod:
+        priority
+          .map((locale) => availableVods.find((vod) => vod.locale === locale))
+          .find((vod) => vod !== undefined) ?? availableVods[0]!,
+      availableVods,
+    }))
+    .sort((a, b) => a.gameNumber - b.gameNumber);
+}
+
 // Official League of Legends uploads verified through YouTube oEmbed, 2026-10-14.
 export const WORLDS_ANTHEMS = [
   { year: 2026, title: 'Know My Name', artist: 'True Damage', id: 'mlFxxNsExJc' },

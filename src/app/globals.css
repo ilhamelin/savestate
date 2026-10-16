@@ -7146,6 +7146,13 @@ button.discord-channel-pill:focus-visible {
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
+.worlds-vod-audio-selector {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-block: 0.75rem;
+}
 .worlds-description {
   border-top: 2px solid #4ade80;
   background: linear-gradient(135deg, #0d1c16ee, #0d1520f5);

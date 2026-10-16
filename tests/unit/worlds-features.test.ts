@@ -15,7 +15,55 @@ import {
   DEFAULT_WORLDS_BROADCAST_SIGNAL,
   findWorldsBroadcastSignal,
   buildWorldsFrameUrl,
+  deduplicateWorldsVods,
 } from '../../src/domain/worlds-features.ts';
+
+test('Worlds VOD groups prefer the selected broadcast language and fall back deterministically', () => {
+  const vods = ['pt-BR', 'en-US', 'es-MX', 'es-ES'].map((locale, index) => ({
+    provider: 'youtube' as const,
+    parameter: `video-${index}`,
+    locale,
+  }));
+  const games = [{ number: 1, vods }];
+  for (const [signal, locale] of [
+    ['riotgames', 'en-US'],
+    ['lvpes', 'es-ES'],
+    ['latam-yt', 'es-MX'],
+    ['unknown', 'es-MX'],
+    [undefined, 'es-MX'],
+  ])
+    assert.equal(deduplicateWorldsVods(games, signal)[0]?.preferredVod.locale, locale);
+  assert.equal(
+    deduplicateWorldsVods([{ number: 1, vods: vods.slice(0, 2) }], 'lvpes')[0]?.preferredVod.locale,
+    'en-US',
+  );
+  assert.equal(
+    deduplicateWorldsVods([{ number: 1, vods: [vods[0]!] }])[0]?.preferredVod.locale,
+    'pt-BR',
+  );
+  assert.deepEqual(deduplicateWorldsVods([]), []);
+  assert.deepEqual(deduplicateWorldsVods([{ number: 1, vods: [] }]), []);
+});
+
+test('Worlds VOD groups sort maps, remove repeated records and preserve input/audio alternatives', () => {
+  const mx = { provider: 'youtube' as const, parameter: 'mexicoVideo1', locale: 'es-MX' };
+  const en = { provider: 'youtube' as const, parameter: 'englishVid1', locale: 'en-US' };
+  const games = [
+    { number: 3, vods: [en] },
+    { number: 1, vods: [mx, mx, en] },
+    { number: 2, vods: [] },
+    { number: 1, vods: [en] },
+  ];
+  const before = structuredClone(games);
+  const grouped = deduplicateWorldsVods(games);
+  assert.deepEqual(
+    grouped.map((group) => group.gameNumber),
+    [1, 3],
+  );
+  assert.deepEqual(grouped[0]?.availableVods, [mx, en]);
+  assert.equal(grouped[0]?.preferredVod, mx);
+  assert.deepEqual(games, before);
+});
 
 test('Worlds soundtrack contains eleven verified official uploads with matching years and titles', () => {
   assert.deepEqual(

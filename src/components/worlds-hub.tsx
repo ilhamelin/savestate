@@ -8,6 +8,7 @@ import {
   WORLDS_BROADCAST_SIGNALS,
   findWorldsBroadcastSignal,
   buildWorldsFrameUrl,
+  deduplicateWorldsVods,
   type WorldsViewMode,
 } from '@/domain/worlds-features';
 import {
@@ -205,11 +206,17 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
   // Never render details from the previous selection while a new request starts.
   const selectedDetail = detail?.id === match?.id ? detail : null;
   const description = match ? describeWorldsMatch(match, selectedDetail) : null;
-  const vods =
+  const vodGroups = deduplicateWorldsVods(selectedDetail?.games ?? [], signal);
+  const allFlatVods =
     selectedDetail?.games.flatMap((game) =>
       game.vods.map((vod) => ({ ...vod, number: game.number })),
     ) ?? [];
-  const activeVod = vods.find((vod) => vod.parameter === vodId);
+  const activeVod = allFlatVods.find((vod) => vod.parameter === vodId);
+  const audioVods =
+    vodGroups
+      .find((group) => group.gameNumber === activeVod?.number)
+      ?.availableVods.filter((vod) => ['es-MX', 'es-ES', 'en-US', 'pt-BR'].includes(vod.locale)) ??
+    [];
   const activeSignal = findWorldsBroadcastSignal(signal);
   const frameUrl = buildWorldsFrameUrl(activeSignal, hostname, activeVod?.parameter);
   function selectStage(slug: WorldsStageSlug) {
@@ -380,19 +387,44 @@ export function WorldsHub({ initial }: { initial: WorldsSchedule }) {
                   {item.label}
                 </button>
               ))}
-              {vods.map((vod) => (
+              {vodGroups.map((group) => (
                 <button
                   type="button"
                   className="button outline small"
-                  key={`${vod.number}-${vod.parameter}-${vod.locale}`}
-                  aria-pressed={activeVod?.parameter === vod.parameter}
-                  onClick={() => setVodId(vod.parameter)}
+                  key={`game-${group.gameNumber}`}
+                  aria-pressed={activeVod?.number === group.gameNumber}
+                  onClick={() => setVodId(group.preferredVod.parameter)}
                 >
-                  🎬 Juego {vod.number}
-                  {vod.locale ? ` · ${vod.locale}` : ''}
+                  🎬 Juego {group.gameNumber}
                 </button>
               ))}
             </div>
+            {activeVod && audioVods.length > 1 && (
+              <div
+                className="worlds-vod-audio-selector"
+                role="group"
+                aria-label={`Audio del Juego ${activeVod.number}`}
+              >
+                <span className="muted">Audio:</span>
+                {audioVods.map((vod) => (
+                  <button
+                    type="button"
+                    key={`${vod.parameter}-${vod.locale}`}
+                    className={`button outline small ${vod.parameter === activeVod.parameter ? 'active' : ''}`}
+                    aria-pressed={vod.parameter === activeVod.parameter}
+                    onClick={() => setVodId(vod.parameter)}
+                  >
+                    {vod.locale === 'es-MX'
+                      ? '🇲🇽 Latam'
+                      : vod.locale === 'es-ES'
+                        ? '🇪🇸 España'
+                        : vod.locale === 'en-US'
+                          ? '🇺🇸 Inglés'
+                          : '🇧🇷 Portugués'}
+                  </button>
+                ))}
+              </div>
+            )}
             <p className="muted">
               {activeVod
                 ? 'Repetición oficial de esta serie.'
