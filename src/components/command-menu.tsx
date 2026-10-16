@@ -125,6 +125,7 @@ export function CommandMenu({
     ['Momentos Gamer', '/highlights'],
     ['Foro · SaveState Boards', '/forum'],
     ['Rift Tracker (League of Legends)', '/rift'],
+    ['HoYo Hub · Directos y Códigos (Genshin & HSR)', '/hoyo'],
     [
       authenticated ? 'Mi perfil' : 'Iniciar sesión',
       authenticated

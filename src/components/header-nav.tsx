@@ -13,6 +13,7 @@ import {
   Swords,
   Trophy,
   Film,
+  Orbit,
 } from 'lucide-react';
 
 const links = [
@@ -27,6 +28,7 @@ const links = [
   { href: '/players', label: 'Jugadores', icon: UserCheck },
   { href: '/rift', label: 'Rift', icon: Swords },
   { href: '/worlds', label: 'Worlds', icon: Trophy },
+  { href: '/hoyo', label: 'HoYo', icon: Orbit },
 ];
 export function HeaderNav() {
   const pathname = usePathname();
