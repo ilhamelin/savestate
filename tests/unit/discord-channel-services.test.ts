@@ -8,6 +8,7 @@ test('Discord Bridge reads real allowlisted channels, isolates cache entries and
   const fixture = `data:text/javascript,${encodeURIComponent(`
     import {AppError} from '@/lib/http';
     export const state={authenticated:true,claims:0,lastSearch:null,linked:false,privateAllowed:true,prepared:null,removed:null};
+    export async function authenticatedAdmin(){throw new AppError('Admin access not allowed in Discord tests',403);}
     const owner='11111111-1111-4111-8111-111111111111';
     export function unstable_cache(fn){const cache=new Map();return (...args)=>{const key=JSON.stringify(args);if(!cache.has(key))cache.set(key,fn(...args));return cache.get(key);};}
     export function revalidateTag(){}

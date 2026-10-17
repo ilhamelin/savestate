@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#ff6b00" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Guardian · Sin conexión</title>
+    <link rel="manifest" href="/guardian-assets/manifest.webmanifest" />
+    <link rel="stylesheet" href="/guardian-assets/offline.css" />
+    <script src="/guardian-assets/offline.js" defer></script>
+  </head>
+  <body>
+    <div class="guardian-app-viewport">
+      <header class="guardian-mobile-header">
+        <strong>🛡️ SAVESTATE GUARDIAN</strong><span>○ OFFLINE</span>
+      </header>
+      <main class="guardian-mobile-body">
+        <h1>Security Token</h1>
+        <p>La clave se genera en este teléfono cada 20 segundos.</p>
+        <output id="code" aria-label="Clave activa">--- ---</output
+        ><progress id="remaining" max="20" value="0" aria-label="Segundos restantes"></progress>
+        <p id="status" role="status">Cargando clave local…</p>
+        <button id="copy" type="button" disabled>Copiar clave</button
+        ><button id="forget" type="button">Olvidar dispositivo</button
+        ><a href="/guardian">↻ Reintentar conexión</a>
+        <p>
+          El directorio de jugadores requiere conexión y sesión de administrador. No se almacena
+          offline.
+        </p>
+      </main>
+      <nav class="guardian-bottom-nav" aria-label="Secciones de Guardian">
+        <button type="button" aria-pressed="true" disabled>🔐 Token 20s</button>
+        <button
+          type="button"
+          disabled
+          title="El directorio requiere conexión y sesión de administrador"
+        >
+          👥 Jugadores
+        </button>
+        <button type="button" disabled title="Requiere conexión">🚨 Alerta</button>
+        <button type="button" disabled title="Requiere conexión">🎛️ Switches</button>
+        <button type="button" disabled title="Requiere conexión">📊 HUD</button>
+      </nav>
+    </div>
+  </body>
+</html>

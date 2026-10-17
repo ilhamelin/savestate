@@ -1354,3 +1354,98 @@ body:has(.screen-trailer-modal[open]) {
     transform: none;
   }
 }
+.screen-adaptations-hub {
+  margin-block: 1.5rem 2rem;
+  padding: 1.25rem;
+  border: 1px solid #00f0ff44;
+  border-radius: 10px;
+  background: #09101bd9;
+  min-width: 0;
+}
+.screen-adaptations-hub h2 {
+  font-size: clamp(0.95rem, 2vw, 1.2rem);
+}
+.screen-adaptations-track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 180px;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: #00f0ff66 #0b1018;
+  padding-block: 1rem 0.65rem;
+}
+.screen-adaptation-card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0.65rem;
+  background: #0b1422;
+  border: 1px solid #253750;
+  border-radius: 8px;
+  scroll-snap-align: start;
+}
+.screen-adaptation-card:focus-within {
+  border-color: #00f0ff;
+}
+.screen-adaptation-select {
+  display: grid;
+  gap: 0.65rem;
+  background: none;
+  border: 0;
+  color: inherit;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+}
+.screen-adaptation-select strong {
+  font-size: 0.85rem;
+}
+.screen-adaptation-poster {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 2/3;
+  overflow: hidden;
+  border-radius: 5px;
+  background: #111a29;
+  font-size: 2rem;
+}
+.screen-adaptation-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.screen-adaptation-game {
+  display: block;
+  font-size: 0.7rem;
+  color: #00f0ff;
+  border: 1px solid #00f0ff44;
+  padding: 0.35rem;
+  border-radius: 4px;
+}
+.screen-adaptation-providers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: auto;
+}
+.screen-adaptation-providers a {
+  font-size: 0.65rem;
+  background: #171c2f;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid #39405f;
+  border-radius: 4px;
+}
+.screen-adaptation-providers small {
+  font-size: 0.7rem;
+}
+@media (max-width: 600px) {
+  .screen-adaptations-hub {
+    padding: 0.85rem;
+  }
+  .screen-adaptations-track {
+    grid-auto-columns: 155px;
+  }
+}

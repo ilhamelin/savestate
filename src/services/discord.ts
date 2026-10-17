@@ -58,6 +58,46 @@ function configuration() {
     throw new AppError('El chat de Discord aún no está configurado.', 503);
   return { token, channel };
 }
+export async function guardianDiscordHealth() {
+  if (!process.env.DISCORD_BOT_TOKEN) return { configured: false, available: false };
+  try {
+    await discordRequest('https://discord.com/api/v10/users/@me', {
+      headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` },
+    });
+    return { configured: true, available: true };
+  } catch {
+    return { configured: true, available: false };
+  }
+}
+export async function postGuardianBroadcast(
+  id: string,
+  message: string,
+  category: 'info' | 'warning' | 'event',
+) {
+  const { token } = configuration();
+  const channel = (await fetchAuthorizedChannels()).announcements;
+  if (!channel) throw new AppError('Canal de anuncios no disponible.', 503);
+  await discordRequest(`https://discord.com/api/v10/channels/${channel}/messages`, {
+    method: 'POST',
+    headers: { Authorization: `Bot ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      allowed_mentions: { parse: [] },
+      embeds: [
+        {
+          title: '🚨 SAVESTATE // TRANSMISIÓN DEL OPERADOR',
+          description: message,
+          color: category === 'info' ? 0x00f0ff : category === 'warning' ? 0xff9900 : 0xa855f7,
+        },
+      ],
+      components: [
+        { type: 1, components: [{ type: 2, style: 5, label: 'Ver en SaveState', url: appUrl() }] },
+      ],
+      nonce: createHash('sha256').update(`guardian:${id}`).digest('hex').slice(0, 24),
+      enforce_nonce: true,
+    }),
+  });
+  revalidateTag('discord-messages', 'max');
+}
 async function discordRequest(url: string, options: RequestInit, retryRateLimits = false) {
   async function attempt(retries: number): Promise<Response> {
     let response: Response;

@@ -21,6 +21,8 @@ export type ThemePreset =
   'cyan' | 'green' | 'pink' | 'amber' | 'halloween' | 'purple' | 'christmas' | 'ice';
 export type Theme = ThemePreset | `#${string}`;
 export interface Profile {
+  access_locked?: boolean;
+  access_locked_at?: string | null;
   xp: number;
   level: number;
   equipped_title: import('./progression.ts').PlayerTitle;

@@ -1,7 +1,7 @@
 import { ScreenHub } from '@/components/screen/screen-hub';
 import { currentUser } from '@/lib/session';
 import {
-  getRadarFeaturedMedia,
+  getScreenAdaptations,
   getScreenTrending,
   getScreenMediaDetail,
   screenEntries,
@@ -27,12 +27,19 @@ export default async function ScreenPage({
     } catch {
       /* Default region. */
     }
-  const [featured, items, journal, user] = await Promise.all([
-    getRadarFeaturedMedia(region),
+  const [adaptations, items, journal, user] = await Promise.all([
+    getScreenAdaptations(region),
     getScreenTrending('popular', region).catch(() => []),
     screenEntries(),
     currentUser(),
   ]);
+  const featured = GAME_ADAPTATIONS_MATRIX.filter((link) => link.featuredOrder)
+    .sort((a, b) => a.featuredOrder! - b.featuredOrder!)
+    .flatMap((link) =>
+      adaptations.filter(
+        (item) => item.tmdbId === link.tmdbId && item.mediaType === link.mediaType,
+      ),
+    );
   let selected = featured[0] ?? null;
   if (typeof params.select === 'string')
     try {
@@ -48,6 +55,7 @@ export default async function ScreenPage({
   return (
     <ScreenHub
       featured={featured}
+      adaptations={adaptations}
       initialItems={items}
       entries={journal.entries}
       initialDetail={selected}

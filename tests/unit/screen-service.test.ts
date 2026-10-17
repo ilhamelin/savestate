@@ -101,6 +101,13 @@ test('Screen uses bounded server-only TMDB requests, regional providers and owne
     );
     assert.equal((await service.getScreenMediaDetail(106379, 'tv')).trailerVideoId, '0kAAqslOS64');
     assert.deepEqual(demo.providers, []);
+    const adaptations = await service.getScreenAdaptations('CL');
+    assert.deepEqual(
+      adaptations.map((item) => item.tmdbId),
+      [94605, 100088, 105248, 106379, 502356, 939243, 123548, 52814],
+    );
+    assert.equal(new Set(adaptations.map((item) => item.id)).size, 8);
+    assert.ok(adaptations.every((item) => item.source === 'demo' && item.providers.length === 0));
     assert.equal(requests, 0);
     assert.ok((await service.searchScreenMedia('Arcane')).some((item) => item.tmdbId === 94605));
     process.env.TMDB_READ_TOKEN = 'tmdb-test-token';

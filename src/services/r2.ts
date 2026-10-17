@@ -4,10 +4,12 @@ import {
   PutObjectCommand,
   HeadObjectCommand,
   DeleteObjectCommand,
+  ListObjectsV2Command,
+  DeleteObjectsCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { createClient } from '@supabase/supabase-js';
-import { authenticated } from '@/lib/session';
+import { authenticated, authenticatedAdmin } from '@/lib/session';
 import { publicEnv } from '@/lib/env';
 import { AppError, dbCheck } from '@/lib/http';
 import type { Database } from '@/lib/database.types';
@@ -48,6 +50,37 @@ function configuration() {
       responseChecksumValidation: 'WHEN_REQUIRED',
     }),
   };
+}
+// Administrative cleanup uses an immutable UUID prefix, never a client-supplied object key.
+export async function purgePlayerVault(targetId: string) {
+  const admin = await authenticatedAdmin();
+  const id = uuid(targetId).toLowerCase();
+  if (id === admin.id.toLowerCase())
+    throw new AppError('No puedes eliminar tu propia bóveda desde Guardian.', 403);
+  const { client, bucket } = configuration();
+  const prefix = `${id}/`;
+  let token: string | undefined;
+  do {
+    const page = await client.send(
+      new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix, ContinuationToken: token }),
+    );
+    const objects = (page.Contents ?? []).map(({ Key }) => {
+      if (!Key?.startsWith(prefix))
+        throw new AppError('Objeto fuera de la bóveda del jugador.', 503);
+      return { Key };
+    });
+    if (objects.length) {
+      const deleted = await client.send(
+        new DeleteObjectsCommand({ Bucket: bucket, Delete: { Objects: objects, Quiet: true } }),
+      );
+      if (deleted.Errors?.length)
+        throw new AppError(
+          'No se pudo limpiar la bóveda. Reintenta antes de eliminar la cuenta.',
+          503,
+        );
+    }
+    token = page.IsTruncated ? page.NextContinuationToken : undefined;
+  } while (token);
 }
 // Dedicated vault writer. Every caller must prove the session owner before obtaining it.
 function vaultWriter() {

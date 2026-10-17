@@ -4,11 +4,15 @@ import { Gamepad2, ArrowUpRight } from 'lucide-react';
 import { CommandMenu } from '@/components/command-menu';
 import { NotificationBell } from '@/components/notification-bell';
 import { HeaderNav } from '@/components/header-nav';
+import { LevelUpModal } from '@/components/level-up-modal';
 import { currentUser, currentViewerProfile } from '@/lib/session';
 export async function Header() {
   const [user, profile] = await Promise.all([currentUser(), currentViewerProfile()]);
   return (
     <header className="site-header">
+      {user && profile && (
+        <LevelUpModal key={user.id} userId={user.id} initialLevel={profile.level ?? 1} />
+      )}
       <Image
         src="/icons/halloween/telarana-de-halloween.png"
         alt=""
@@ -29,7 +33,10 @@ export async function Header() {
             unoptimized
           />
           SAVE<span className="accent text-halloween-orange">STATE</span>
-          <small>SPOOKY CHECKPOINT</small>
+          <small>
+            <span className="seasonal-only">SPOOKY CHECKPOINT</span>
+            <span className="classic-only">SAVE YOUR PROGRESS</span>
+          </small>
         </span>
         <Image
           src="/icons/halloween/calabaza.png"

@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { readJsonResponse } from '@/lib/api-response';
+import { optimizeVaultImage } from '@/lib/vault-image';
 import {
   VAULT_MIMES,
   validateVaultFile,
@@ -67,26 +68,30 @@ export function VaultRoom({ onSelect }: { onSelect?: (item: VaultItem) => void }
     setNotice('');
     try {
       validateVaultFile(selected.name, selected.size, selected.type);
-      if (!vaultHasSpace(snapshot.storage, selected.size))
-        throw new Error('El archivo supera el espacio libre de tu Memory Card.');
       setBusy(true);
+      setNotice('Preparando captura…');
+      const optimized = await optimizeVaultImage(selected);
+      if (!vaultHasSpace(snapshot.storage, optimized.size))
+        throw new Error('El archivo supera el espacio libre de tu Memory Card.');
       const prepared = await vaultRequest<{
         id: string;
         presignedUrl: string;
         headers: Record<string, string>;
-      }>('POST', { fileName: selected.name, fileSize: selected.size, mimeType: selected.type });
+      }>('POST', { fileName: optimized.name, fileSize: optimized.size, mimeType: optimized.type });
       setNotice('Subiendo directamente a R2… No cierres esta ventana.');
       const uploaded = await fetch(prepared.presignedUrl, {
         method: 'PUT',
         headers: prepared.headers,
-        body: selected,
+        body: optimized,
       });
       if (!uploaded.ok)
         throw new Error(
           'R2 rechazó la subida. Revisa la conexión y la configuración CORS del bucket.',
         );
       setSnapshot(await vaultRequest<VaultSnapshot>('PUT', { id: prepared.id }));
-      setNotice('💾 Checkpoint guardado en tu bóveda.');
+      setNotice(
+        `💾 Checkpoint guardado en tu bóveda.${optimized !== selected ? ` WebP: ${Math.round((1 - optimized.size / selected.size) * 100)}% menos espacio.` : ''}`,
+      );
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : 'No se pudo subir.');
       setNotice('');

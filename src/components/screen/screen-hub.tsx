@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { ScreenHeroRadar } from './screen-hero-radar';
+import { ScreenAdaptationsHub } from './screen-adaptations-hub';
 import { ScreenFilterBar } from './screen-filter-bar';
 import { ScreenMediaGrid } from './screen-media-grid';
 import { ScreenTelemetryDrawer } from './screen-telemetry-drawer';
@@ -22,6 +23,7 @@ import {
 type DetailResult = { detail: ScreenDetail; progress: ScreenUserProgress; available: boolean };
 export function ScreenHub({
   featured,
+  adaptations,
   initialItems,
   entries,
   initialDetail,
@@ -31,6 +33,7 @@ export function ScreenHub({
   initialOpenMobile = false,
 }: {
   featured: ScreenMediaItem[];
+  adaptations: ScreenMediaItem[];
   initialItems: ScreenMediaItem[];
   entries: ScreenEntryRow[];
   initialDetail: ScreenDetail | null;
@@ -317,6 +320,12 @@ export function ScreenHub({
         region={region}
         items={featured}
         progress={progressMap}
+        onSelect={(item) => void select(item)}
+      />
+      <ScreenAdaptationsHub
+        initialItems={adaptations}
+        initialRegion={initialRegion}
+        region={region}
         onSelect={(item) => void select(item)}
       />
       {initialItems.some((item) => item.source === 'demo') && (

@@ -40,7 +40,7 @@ export function unlockAudio() {
   if (!isAudioEnabled()) return;
   try {
     context ??= new window.AudioContext();
-    if (context.state === 'suspended') void context.resume().catch(() => {});
+    if (context.state === 'suspended') return context.resume().catch(() => {});
   } catch {
     /* Audio support is optional. */
   }

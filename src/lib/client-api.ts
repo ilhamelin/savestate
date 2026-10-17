@@ -14,5 +14,6 @@ export async function api<T = unknown>(
   const result = await readJsonResponse<{ data?: T }>(response);
   if (!result || !('data' in result))
     throw new Error('El servidor devolvió una respuesta incompleta. Inténtalo de nuevo.');
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('savestate:progress-changed'));
   return result.data as T;
 }

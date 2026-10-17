@@ -195,6 +195,14 @@ export async function getRadarFeaturedMedia(region = 'CL') {
     },
   );
 }
+export async function getScreenAdaptations(region = 'CL'): Promise<ScreenDetail[]> {
+  const country = screenRegion(region);
+  return mapBatches(GAME_ADAPTATIONS_MATRIX, (item) =>
+    getScreenMediaDetail(item.tmdbId, item.mediaType, country).catch(() =>
+      demoMedia(item.tmdbId, item.mediaType),
+    ),
+  );
+}
 export async function getScreenTrending(
   filter = 'popular',
   region = 'CL',
@@ -205,12 +213,7 @@ export async function getScreenTrending(
     return GAME_ADAPTATIONS_MATRIX.filter(
       (item) => (mode !== 'tv' && mode !== 'movie') || item.mediaType === mode,
     ).map((item) => demoMedia(item.tmdbId, item.mediaType));
-  if (mode === 'adaptations')
-    return mapBatches(GAME_ADAPTATIONS_MATRIX, (item) =>
-      getScreenMediaDetail(item.tmdbId, item.mediaType, country).catch(() =>
-        demoMedia(item.tmdbId, item.mediaType),
-      ),
-    );
+  if (mode === 'adaptations') return getScreenAdaptations(country);
   const path =
     mode === 'movie'
       ? 'movie/popular'

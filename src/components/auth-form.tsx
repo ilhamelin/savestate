@@ -78,6 +78,13 @@ export function AuthForm({ configured, reset = false }: { configured: boolean; r
             return;
           }
           if (mode === 'signup') {
+            const status = await fetch('/api/system-status', { cache: 'no-store' });
+            if (!status.ok)
+              throw new Error(
+                'No se pudo verificar si el registro está abierto. Inténtalo de nuevo.',
+              );
+            if (!(await status.json()).switches.registrations_open)
+              throw new Error('El registro de nuevos usuarios está cerrado temporalmente.');
             const { error } = await db.auth.signUp({
               email,
               password,

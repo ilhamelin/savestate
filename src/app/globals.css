@@ -5,6 +5,7 @@
 @import './dossier.css';
 @import './profile-enhancements.css';
 @import './halloween.css';
+@import './guardian.css';
 @theme inline {
   --color-void-950: #08090c;
   --color-surface-900: #111319;
@@ -8720,4 +8721,267 @@ body:has(.worlds-hub) {
   .vault-storage progress::-webkit-progress-value {
     transition: none;
   }
+}
+.system-broadcast {
+  --broadcast-color: #00f0ff;
+  position: relative;
+  z-index: 91;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--broadcast-color);
+  color: var(--broadcast-color);
+  background: #090e18f5;
+  box-shadow: inset 0 0 20px color-mix(in srgb, var(--broadcast-color) 12%, transparent);
+  animation: broadcast-arrival 300ms ease-out;
+}
+.system-broadcast-warning {
+  --broadcast-color: #ff9900;
+}
+.system-broadcast-event {
+  --broadcast-color: #a855f7;
+}
+.system-broadcast p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.system-broadcast button {
+  flex-shrink: 0;
+  min-width: 40px;
+  min-height: 40px;
+  border: 1px solid currentColor;
+  border-radius: 5px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+@keyframes broadcast-arrival {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .system-broadcast {
+    animation: none;
+  }
+}
+html[data-seasonal-theme='classic'] body {
+  background-color: #08090c;
+  background-image:
+    radial-gradient(ellipse at 50% 15%, #08090c8c 0%, #08090ceb 80%),
+    url('/wallpapers/savestate_retro_grid.jpg');
+}
+html[data-seasonal-theme='classic']
+  :is(
+    .halloween-bats-layer,
+    .brand-halloween-pumpkin,
+    .brand-halloween-hat,
+    .corner-web,
+    .halloween-player-badge,
+    .halloween-footer-pumpkin,
+    .seasonal-only
+  ) {
+  display: none !important;
+}
+.classic-only {
+  display: none;
+}
+html[data-seasonal-theme='classic'] .classic-only {
+  display: initial;
+}
+html[data-seasonal-theme='classic'] .text-halloween-orange {
+  color: var(--accent) !important;
+  text-shadow: none;
+}
+html[data-seasonal-theme='classic'] .site-header {
+  border-bottom: 1px solid var(--line) !important;
+  box-shadow: 0 4px 20px #0004 !important;
+}
+html[data-seasonal-theme='classic']
+  .site-header
+  nav
+  a:is(:hover, :focus-visible, .nav-item-active) {
+  color: var(--accent) !important;
+  text-shadow: none;
+  border-bottom-color: var(--accent) !important;
+  background: transparent !important;
+}
+html[data-seasonal-theme='classic'] .header-actions > .button.small {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  box-shadow: 3px 3px 0 #16262d !important;
+}
+html[data-seasonal-theme='classic'] .site-header .notification-badge {
+  background: var(--accent) !important;
+  box-shadow: none !important;
+}
+html[data-seasonal-theme='classic']
+  :is(.checkpoint-terminal-web, .checkpoint-terminal-pumpkin, .freebies-halloween-eyebrow img) {
+  display: none;
+}
+html[data-seasonal-theme='classic'] .halloween-glow-text {
+  text-shadow: none;
+}
+.level-up-modal {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(520px, calc(100vw - 2rem));
+  max-height: 85dvh;
+  overflow: auto;
+  text-align: center;
+  padding: 2rem 1.5rem;
+  color: #edfaff;
+  background: #081420f5;
+  border: 2px solid #00f0ff99;
+  border-radius: 12px;
+  box-shadow:
+    0 0 50px #00f0ff33,
+    inset 0 0 35px #a855f722;
+}
+.level-up-modal::backdrop {
+  background: #03060ad9;
+  backdrop-filter: blur(5px);
+}
+.level-up-modal h2 {
+  font-family: var(--font-pixel), monospace;
+  font-size: clamp(1rem, 4vw, 1.5rem);
+}
+.level-up-modal .button {
+  display: block;
+  margin: 1rem auto 0;
+}
+.level-up-number {
+  display: block;
+  font-family: var(--font-pixel), monospace;
+  font-size: clamp(4rem, 15vw, 6rem);
+  color: #00f0ff;
+  text-shadow: 0 0 30px #00f0ff66;
+}
+.level-up-confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.level-up-confetti i {
+  position: absolute;
+  top: -15px;
+  left: var(--x);
+  width: 7px;
+  height: 7px;
+  background: var(--color);
+  animation: level-up-pixel 2s var(--delay) ease-in forwards;
+}
+@keyframes level-up-pixel {
+  from {
+    transform: translateY(0) rotate(0);
+  }
+  to {
+    transform: translateY(550px) rotate(220deg);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .level-up-confetti {
+    display: none;
+  }
+}
+@media (max-width: 1024px) {
+  html[data-seasonal-theme='classic'] body {
+    background-attachment: scroll;
+  }
+}
+/* Guardian tactical signals and the global XP event. */
+.operator-hologram {
+  position: fixed;
+  top: max(1rem, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  width: min(520px, calc(100vw - 2rem));
+  padding: 1rem;
+  border: 1px solid #00f0ff99;
+  border-radius: 10px;
+  background: #071620f5;
+  box-shadow: 0 0 30px #00f0ff33;
+  color: #e2fbff;
+  overflow-wrap: anywhere;
+}
+.operator-hologram strong {
+  color: #00f0ff;
+  font-size: 0.8rem;
+}
+.operator-hologram.is-kick {
+  border-color: #ff9900;
+}
+.operator-hologram.is-kick strong {
+  color: #ffb74d;
+}
+.operator-hologram > div {
+  flex: 1;
+  min-width: 0;
+}
+.operator-hologram button {
+  flex-shrink: 0;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.double-xp-event {
+  padding: 0.5rem 1rem;
+  text-align: center;
+  color: #ffe298;
+  background: #2c2009;
+  border-bottom: 1px solid #ffd70088;
+  font-size: 0.8rem;
+}
+html[data-double-xp='true'] .level-progress {
+  box-shadow: 0 0 20px #ffd70033;
+  border-color: #ffd70088;
+}
+.checkpoint-error {
+  padding: 4rem 1rem;
+}
+.checkpoint-error-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #ff00551f;
+  border: 1px solid #ff0055;
+  color: #ff0055;
+  margin-bottom: 1rem;
+}
+.checkpoint-error .eyebrow {
+  color: #ff0055;
+  letter-spacing: 0.1em;
+}
+.checkpoint-error h1 {
+  font-size: 1.75rem;
+  margin: 0.5rem 0;
+}
+.checkpoint-error-description {
+  max-width: 520px;
+  margin: 0 auto 1.5rem;
+}
+.checkpoint-error-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
 }

@@ -20,16 +20,20 @@ export default function Home() {
     <>
       <section className="hero">
         <div className="hero-copy">
-          <div className="halloween-hero-chip">
+          <div className="halloween-hero-chip seasonal-only">
             <Image src="/icons/halloween/calabaza.png" alt="" width={16} height={16} unoptimized />
             <span>SPOOKY CHECKPOINT // EDICIÓN NOCHE DE BRUJAS</span>
           </div>
+          <p className="eyebrow classic-only">SAVESTATE // TU PRÓXIMO CHECKPOINT</p>
           <h1 className="halloween-glow-text">
             CADA JUEGO.
             <br />
             CADA PARTIDA.
             <br />
-            <span className="accent text-halloween-orange">TU HISTORIA EMBRUJADA.</span>
+            <span className="accent text-halloween-orange seasonal-only">
+              TU HISTORIA EMBRUJADA.
+            </span>
+            <span className="accent classic-only">TU HISTORIA.</span>
           </h1>
           <p className="hero-description">
             Tu diario de a bordo para una odisea gamer. Organiza lo que juegas, registra lo que

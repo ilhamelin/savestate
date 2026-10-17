@@ -28,7 +28,7 @@ test('Worlds VOD groups prefer the selected broadcast language and fall back det
   for (const [signal, locale] of [
     ['riotgames', 'en-US'],
     ['lvpes', 'es-ES'],
-    ['latam-yt', 'es-MX'],
+    ['lolesportsla', 'es-MX'],
     ['unknown', 'es-MX'],
     [undefined, 'es-MX'],
   ])
@@ -166,9 +166,9 @@ test('Worlds transport wraps in both directions across all tracks and handles an
     assert.equal(prevTrackIndex(nextTrackIndex(index, 17), 17), index);
 });
 
-test('Worlds broadcast signals replace inactive LLA channel with verified YouTube stream and exclude Demacia Cup', () => {
+test('Worlds broadcast signals use official lolesportsla Twitch and exclude inactive signals', () => {
   const ids = WORLDS_BROADCAST_SIGNALS.map((s) => s.id);
-  assert.deepEqual(ids, ['lvpes', 'latam-yt', 'riotgames']);
+  assert.deepEqual(ids, ['lvpes', 'lolesportsla', 'riotgames']);
   assert.equal(DEFAULT_WORLDS_BROADCAST_SIGNAL, WORLDS_BROADCAST_SIGNALS[0]);
   assert.ok(
     !ids.includes('demacia-cup'),
@@ -176,19 +176,22 @@ test('Worlds broadcast signals replace inactive LLA channel with verified YouTub
   );
   assert.ok(!ids.includes('lla'), 'El canal de Twitch lla ya no debe estar configurado');
   assert.equal(new Set(ids).size, 3);
-  assert.equal(findWorldsBroadcastSignal('latam-yt').videoId, 'iFmz2yFuQbw');
+  assert.equal(findWorldsBroadcastSignal('lolesportsla').channel, 'lolesportsla');
+  assert.ok(!ids.includes('latam-yt'));
   assert.equal(findWorldsBroadcastSignal('demacia-cup').id, 'lvpes');
   assert.equal(findWorldsBroadcastSignal('lla').id, 'lvpes');
   assert.equal(findWorldsBroadcastSignal('unknown').id, 'lvpes');
 
-  const latam = WORLDS_BROADCAST_SIGNALS.find((s) => s.id === 'latam-yt');
-  assert.equal(latam?.kind, 'youtube');
-  assert.equal(latam?.videoId, 'iFmz2yFuQbw');
-  assert.equal(latam?.href, 'https://www.youtube.com/watch?v=iFmz2yFuQbw');
+  const latam = WORLDS_BROADCAST_SIGNALS.find((s) => s.id === 'lolesportsla');
+  assert.equal(latam?.kind, 'twitch');
+  assert.equal(latam?.channel, 'lolesportsla');
+  assert.equal(latam?.href, 'https://www.twitch.tv/lolesportsla');
 
   // Verify frame URL builder
-  const ytUrl = buildWorldsFrameUrl(latam!, 'localhost');
-  assert.equal(ytUrl, 'https://www.youtube-nocookie.com/embed/iFmz2yFuQbw?autoplay=0&rel=0');
+  const latamFrame = new URL(buildWorldsFrameUrl(latam!, 'localhost')!);
+  assert.equal(latamFrame.origin, 'https://player.twitch.tv');
+  assert.equal(latamFrame.searchParams.get('channel'), 'lolesportsla');
+  assert.equal(latamFrame.searchParams.get('parent'), 'localhost');
 
   const lvpes = WORLDS_BROADCAST_SIGNALS.find((s) => s.id === 'lvpes')!;
   const twitchUrl = buildWorldsFrameUrl(lvpes, 'savestate.test');

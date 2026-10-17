@@ -41,6 +41,26 @@ type ForeignKey<Name extends string, Column extends string, Target extends strin
 export type Database = {
   public: {
     Tables: {
+      system_broadcasts: Table<
+        import('@/domain/guardian-suite').SystemBroadcast & {
+          active: boolean;
+          created_by: string | null;
+        }
+      >;
+      system_switches: Table<{
+        key: string;
+        value: boolean | string;
+        updated_at: string;
+        updated_by: string | null;
+      }>;
+      security_audit_logs: Table<{
+        id: string;
+        event: string;
+        key_hash: string | null;
+        metadata: Record<string, unknown>;
+        created_at: string;
+      }>;
+      gatekeeper_attempts: Table<{ key_hash: string; window_start: string; attempts: number }>;
       user_vault_media: Table<VaultMedia>;
       user_screen_entries: Table<ScreenEntryRow>;
       global_chat_messages: Table<
@@ -121,6 +141,40 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      grant_player_xp: {
+        Args: { p_target_id: string; p_amount: number };
+        Returns: { new_xp: number; new_level: number }[];
+      };
+      guardian_broadcast: {
+        Args: { p_message: string; p_category: string; p_active: boolean; p_actor: string };
+        Returns: string | null;
+      };
+      guardian_set_switch: {
+        Args: { p_key: string; p_value: boolean | string; p_actor: string };
+        Returns: boolean;
+      };
+      guardian_telemetry: {
+        Args: Record<string, never>;
+        Returns: {
+          storage_bytes: number;
+          users_total: number;
+          users_recent: number;
+          db_connections_active?: number;
+          db_connections_max?: number;
+          db_size_bytes?: number;
+          db_cache_hit_ratio?: number | null;
+        };
+      };
+      guardian_operator_signal: {
+        Args: { p_target_id: string; p_actor: string; p_event: string; p_message: string | null };
+        Returns: boolean;
+      };
+      reset_player_account: { Args: { p_target_id: string }; Returns: boolean };
+      acknowledge_player_gate: {
+        Args: { p_target_id: string; p_locked_at: string };
+        Returns: boolean;
+      };
+      claim_gatekeeper_attempt: { Args: { p_key_hash: string }; Returns: boolean };
       get_user_vault_storage: { Args: { p_user_id?: string }; Returns: VaultStorage[] };
       reserve_vault_upload: {
         Args: { p_user_id: string; p_key: string; p_name: string; p_size: number; p_mime: string };

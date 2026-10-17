@@ -26,11 +26,11 @@ export const WORLDS_BROADCAST_SIGNALS: readonly [
     href: 'https://www.twitch.tv/lvpes',
   },
   {
-    id: 'latam-yt',
-    label: '🇲🇽 Español Latam · YouTube',
-    kind: 'youtube',
-    videoId: 'iFmz2yFuQbw',
-    href: 'https://www.youtube.com/watch?v=iFmz2yFuQbw',
+    id: 'lolesportsla',
+    label: '🇲🇽 Español Latam · Twitch',
+    kind: 'twitch',
+    channel: 'lolesportsla',
+    href: 'https://www.twitch.tv/lolesportsla',
   },
   {
     id: 'riotgames',

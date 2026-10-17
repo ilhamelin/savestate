@@ -106,7 +106,7 @@ export const GAME_ADAPTATIONS_MATRIX: GameAdaptationLink[] = [
     streamingBadges: ['NETFLIX'],
   },
   {
-    tmdbId: 87108,
+    tmdbId: 52814,
     mediaType: 'tv',
     title: 'Halo: La Serie',
     gameSlug: 'halo-infinite',
