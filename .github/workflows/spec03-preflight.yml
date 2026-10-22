@@ -14,20 +14,6 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
-      - name: Install server QR encoder and independent test decoder
-        run: |
-          npm install --save-exact qrcode@1.5.4
-          npm install --save-dev --save-exact @types/qrcode@1.5.6 jsqr@1.4.0
-      - name: Format and save generated dependency lock
-        run: |
-          npx prettier --write 'src/domain/memory-card.ts' 'src/lib/memory-card-qr.ts' 'src/components/retro-card-3d.tsx' 'src/styles/retro-card-3d.css' 'src/components/memory-card-export.tsx' 'src/lib/memory-card-export.ts' 'src/app/players/[username]/page.tsx' 'src/app/globals.css' 'tests/unit/retro-card-3d.test.ts' package.json package-lock.json
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add 'src/domain/memory-card.ts' 'src/lib/memory-card-qr.ts' 'src/components/retro-card-3d.tsx' 'src/styles/retro-card-3d.css' 'src/components/memory-card-export.tsx' 'src/lib/memory-card-export.ts' 'src/app/players/[username]/page.tsx' 'src/app/globals.css' 'tests/unit/retro-card-3d.test.ts' package.json package-lock.json
-          if ! git diff --cached --quiet; then
-            git commit -m "chore(SPEC-03): lock server QR dependency and format feature"
-            git push origin HEAD:feature/virtual-3d-memory-card
-          fi
       - run: npm run check
       - name: Production build
         run: npm run build
@@ -36,6 +22,8 @@ jobs:
           npm install --no-save --package-lock=false playwright esbuild
           npx playwright install --with-deps chromium
       - name: Browser acceptance
+        id: browser
+        continue-on-error: true
         run: |
           cat > "$RUNNER_TEMP/spec03-browser.mjs" <<'JS'
           import { chromium } from 'playwright';
@@ -58,7 +46,8 @@ jobs:
                   {skin=><button id="export">Export {skin}</button>}
                 </RetroCard3D>);
             `, resolveDir: process.cwd(), loader: 'tsx' },
-            bundle: true, write: true, outfile: temp + '/spec03-fixture.js', jsx: 'automatic',
+            nodePaths: [process.cwd() + '/node_modules'],
+          bundle: true, write: true, outfile: temp + '/spec03-fixture.js', jsx: 'automatic',
             alias: { 'next/image': temp + '/spec03-image.tsx', '@': process.cwd() + '/src' },
             define: { 'process.env.NODE_ENV': '"production"' },
           });
@@ -127,7 +116,7 @@ jobs:
           BASE_BUILD: ${{ runner.temp }}/spec03-base
         run: |
           node --input-type=module <<'JS'
-          import { readFileSync, existsSync } from 'node:fs';
+          import { readFileSync, existsSync, readdirSync } from 'node:fs';
           import { join } from 'node:path';
           import { runInNewContext } from 'node:vm';
           import { gzipSync } from 'node:zlib';
@@ -156,8 +145,17 @@ jobs:
           }
           const base = size(process.env.BASE_BUILD);
           const feature = size(process.cwd());
+          function allAssets(root) {
+            const folder = join(root, '.next/static/chunks');
+            return readdirSync(folder).filter(p => /\.(js|css)$/.test(p))
+              .reduce((total, path) => total + gzipSync(readFileSync(join(folder, path)), { level: 9 }).length, 0);
+          }
+          const allAssetsDelta = allAssets(process.cwd()) - allAssets(process.env.BASE_BUILD);
           const delta = feature.total - base.total;
-          console.log('SPEC03_BUNDLE', JSON.stringify({ base, feature, delta, budgetBytes: 5000 }));
+          console.log('SPEC03_BUNDLE', JSON.stringify({ base, feature, delta, allAssetsDelta, budgetBytes: 5000 }));
           if (delta >= 5000) throw new Error('Profile initial JS + CSS gzip delta must stay below 5KB');
           
           JS
+      - name: Require browser acceptance
+        if: steps.browser.outcome != 'success'
+        run: exit 1
