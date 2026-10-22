@@ -9,5 +9,9 @@ function subscribe(listener: () => void) {
   };
 }
 export function useNetworkOnline() {
-  return useSyncExternalStore(subscribe, () => navigator.onLine, () => true);
+  return useSyncExternalStore(
+    subscribe,
+    () => navigator.onLine,
+    () => true,
+  );
 }

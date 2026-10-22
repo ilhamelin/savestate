@@ -1,5 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { revokeOfflineLibrary, synchronizeOfflineLibraryAccount } from '../../public/offline-library/store.mjs';
+import {
+  revokeOfflineLibrary,
+  synchronizeOfflineLibraryAccount,
+} from '../../public/offline-library/store.mjs';
 
 const installed = new WeakSet<object>();
 export function installOfflineLibraryAuth(auth: SupabaseClient['auth']) {

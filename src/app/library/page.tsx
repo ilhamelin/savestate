@@ -51,9 +51,12 @@ export default async function LibraryPage() {
           Importar biblioteca: Steam, PSN o Xbox →
         </Link>
       </p>
-      <OfflineLibraryControls key={user.id} userId={user.id}
+      <OfflineLibraryControls
+        key={user.id}
+        userId={user.id}
         rows={offlineLibraryRows(user.id, library.entries, library.games, library.logs)}
-        totalCount={library.count} />
+        totalCount={library.count}
+      />
       <SteamQuickSync initial={steamState} />
       <Library {...library} editable />
     </>
