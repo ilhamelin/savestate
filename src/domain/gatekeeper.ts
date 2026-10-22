@@ -1,3 +1,5 @@
+import { isOfflineLibraryAsset } from './offline-library.ts';
+
 export const GATE_STEP_SECONDS = 20;
 export const GATE_COOKIE = 'savestate_gate_pass';
 export const GATE_PASS_SECONDS = 12 * 60 * 60;
@@ -120,6 +122,7 @@ export async function validGatePass(
 export function gatekeeperExempt(path: string): boolean {
   // These machine endpoints already authenticate Discord signatures or CRON_SECRET.
   return (
+    isOfflineLibraryAsset(path) ||
     [
       '/gatekeeper',
       '/api/gatekeeper/verify',

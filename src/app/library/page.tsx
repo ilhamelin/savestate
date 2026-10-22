@@ -8,6 +8,8 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { SteamQuickSync } from '@/components/steam-quick-sync';
 import { steamSyncStatus } from '@/services/steam-sync';
+import { OfflineLibraryControls } from '@/components/offline-library-controls';
+import { offlineLibraryRows } from '@/domain/offline-library';
 export const metadata = { title: 'Mi biblioteca' };
 export default async function LibraryPage() {
   if (!isConfigured())
@@ -49,6 +51,9 @@ export default async function LibraryPage() {
           Importar biblioteca: Steam, PSN o Xbox →
         </Link>
       </p>
+      <OfflineLibraryControls key={user.id} userId={user.id}
+        rows={offlineLibraryRows(user.id, library.entries, library.games, library.logs)}
+        totalCount={library.count} />
       <SteamQuickSync initial={steamState} />
       <Library {...library} editable />
     </>

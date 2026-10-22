@@ -1,3 +1,4 @@
+import { isOfflineLibraryAsset } from '@/domain/offline-library';
 import { VAULT_PUBLIC_ORIGIN } from '@/domain/vault';
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
@@ -65,6 +66,7 @@ export async function proxy(request: NextRequest) {
   // Public catalogue API never accesses sessions, enabling shared cache safely.
   if (
     isConfigured() &&
+    !isOfflineLibraryAsset(request.nextUrl.pathname) &&
     !request.nextUrl.pathname.startsWith('/api/catalogue') &&
     request.nextUrl.pathname !== '/sitemap.xml' &&
     request.nextUrl.pathname !== '/robots.txt' &&

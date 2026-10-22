@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useNetworkOnline } from '@/lib/use-network-online';
 import Link from 'next/link';
 import { GameCard } from '@/components/game-card';
 import { achievementPercent, filterLibrary, type LibrarySort } from '@/domain/library-view';
@@ -23,13 +24,15 @@ export function Library({
   entries,
   games,
   logs,
-  editable = false,
+  editable: requestedEditable = false,
 }: {
   entries: UserGame[];
   games: Game[];
   logs: PlayLog[];
   editable?: boolean;
 }) {
+  const online = useNetworkOnline();
+  const editable = requestedEditable && online;
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState(''),
     [platform, setPlatform] = useState(''),

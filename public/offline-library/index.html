@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>Biblioteca offline | SaveState</title>
+  <link rel="stylesheet" href="/offline-library/style.css">
+  <script type="module" src="/offline-library/app.mjs"></script>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">SAVESTATE // COPIA PERSONAL</p>
+    <h1>Tu biblioteca, sin conexión.</h1>
+    <p id="connection" role="status">Comprobando conexión…</p>
+    <p id="last-sync" class="muted">Sin copia offline vigente</p>
+    <p class="muted">Solo lectura. No puedes editar ni sincronizar cambios desde esta pantalla.</p>
+    <div class="toolbar">
+      <a href="/library">Abrir biblioteca online ↗</a>
+      <button id="clear" type="button" disabled>Eliminar copia de este dispositivo</button>
+    </div>
+    <p id="status" role="status" aria-live="polite"></p>
+    <section aria-label="Buscar en la copia offline" class="filters">
+      <label>Buscar juego<input id="search" type="search" maxlength="100" placeholder="Título…"></label>
+      <label>Estado<select id="filter">
+        <option value="all">Todos</option>
+        <option value="playing">Jugando</option><option value="backlog">Backlog</option>
+        <option value="cleared">Completados</option><option value="platinum">100% Platinum</option>
+        <option value="dropped">Abandonados</option><option value="wishlist">Deseados</option>
+      </select></label>
+    </section>
+    <p id="summary" class="muted"></p>
+    <div id="rows" class="rows"></div>
+    <p id="empty">La copia se prepara desde tu biblioteca online, en un dispositivo de confianza.</p>
+    <noscript>Activa JavaScript para leer la copia guardada en este navegador.</noscript>
+  </main>
+</body>
+</html>

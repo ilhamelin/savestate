@@ -31,6 +31,7 @@ test(
     export const Header=()=>null;
     export const HalloweenBats=()=>null;
     export const OperatorSignalsListener=()=>null;
+    export const OfflineLibrarySessionSync=()=>null;
     export const SystemBroadcastBanner=()=>null;
     export default ()=>null;
   `);
@@ -47,6 +48,7 @@ test(
             '@/components/header',
             '@/components/halloween/halloween-bats',
             '@/components/operator-signals-listener',
+            '@/components/offline-library-session-sync',
             '@/components/system-broadcast-banner',
             '@/services/system-state',
             '@/lib/session',
