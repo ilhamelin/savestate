@@ -1,0 +1,33 @@
+name: Temporary offline library preflight
+on:
+  push:
+    branches: [feature/offline-library]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Read installed Next.js PWA and service worker guidance
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, readdirSync } from 'node:fs';
+          const root = 'node_modules/next/dist/docs/';
+          for (const file of readdirSync(root, {recursive:true}).filter(p => /progressive-web-apps\.md$|server-and-client-components\.md$/.test(p))) {
+            console.log('GUIDE_BEGIN ' + file);
+            console.log(readFileSync(root + file, 'utf8').split('\n').slice(0, 350).join('\n'));
+            console.log('GUIDE_END');
+          }
+          const walk = (dir) => readdirSync(dir,{withFileTypes:true}).flatMap(x => x.isDirectory() ? walk(dir+'/'+x.name) : [dir+'/'+x.name]);
+          for (const path of walk('src').filter(p => /\.[cm]?[jt]sx?$/.test(p))) {
+            const lines=readFileSync(path,'utf8').split('\n');
+            for(let i=0;i<lines.length;i++) if(/\.signOut\(/.test(lines[i])) console.log('SIGNOUT ' + path + ':' + (i+1) + ' ' + lines.slice(Math.max(0,i-2),i+3).join('\n'));
+          }
+          NODE
