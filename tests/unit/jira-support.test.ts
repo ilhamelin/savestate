@@ -5,57 +5,94 @@ import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import {
-  validateSupportTicket, validateTelemetry, redactTelemetry, supportPath,
-  TelemetryRingBuffer, DEFAULT_JIRA_CONFIG, SUPPORT_TIMEOUT_MS,
-  type SupportTicketRow, type SupportTicketInput,
+  validateSupportTicket,
+  validateTelemetry,
+  redactTelemetry,
+  supportPath,
+  TelemetryRingBuffer,
+  DEFAULT_JIRA_CONFIG,
+  SUPPORT_TIMEOUT_MS,
+  type SupportTicketRow,
+  type SupportTicketInput,
 } from '../../src/domain/support-ticket.ts';
 import type { SupportStore } from '../../src/services/support-store.ts';
 
 const valid = {
-  type: 'bug', title: 'No carga la biblioteca', description: 'La biblioteca no termina de cargar.',
+  type: 'bug',
+  title: 'No carga la biblioteca',
+  description: 'La biblioteca no termina de cargar.',
   pageUrl: 'https://savestate-eight.vercel.app/library?token=private#secret',
 };
 const hooks = registerHooks({
   resolve(specifier, context, next) {
-    if (specifier === 'server-only') return { url: 'data:text/javascript,export {};', shortCircuit: true };
+    if (specifier === 'server-only')
+      return { url: 'data:text/javascript,export {};', shortCircuit: true };
     if (specifier.startsWith('@/')) {
       const path = resolve('src', specifier.slice(2));
-      return { url: pathToFileURL(existsSync(path + '.ts') ? path + '.ts' : path + '.tsx').href, shortCircuit: true };
+      return {
+        url: pathToFileURL(existsSync(path + '.ts') ? path + '.ts' : path + '.tsx').href,
+        shortCircuit: true,
+      };
     }
     return next(specifier, context);
   },
   load(url, context, next) {
     if (url.startsWith('file:') && url.endsWith('.ts') && !url.includes('node_modules'))
-      return { format: 'module', source: stripTypeScriptTypes(readFileSync(fileURLToPath(url), 'utf8'), { mode: 'transform' }),
-        shortCircuit: true };
+      return {
+        format: 'module',
+        source: stripTypeScriptTypes(readFileSync(fileURLToPath(url), 'utf8'), {
+          mode: 'transform',
+        }),
+        shortCircuit: true,
+      };
     return next(url, context);
   },
 });
-const { sanitizeSupportTicket, sanitizeTelemetry } = await import('../../src/services/support-sanitize.ts');
-const { createSupportTicket, dispatchSupportTicket, portalTicketPayload, portalTicketResult, jiraConfig } =
-  await import('../../src/services/jira-support-service.ts');
+const { sanitizeSupportTicket, sanitizeTelemetry } =
+  await import('../../src/services/support-sanitize.ts');
+const {
+  createSupportTicket,
+  dispatchSupportTicket,
+  portalTicketPayload,
+  portalTicketResult,
+  jiraConfig,
+} = await import('../../src/services/jira-support-service.ts');
 test.after(() => hooks.deregister());
 
 function memoryStore(): SupportStore & { rows: SupportTicketRow[]; failSave: boolean } {
   return {
-    rows: [], failSave: false,
+    rows: [],
+    failSave: false,
     async save(input: SupportTicketInput, telemetryId?: string) {
       if (this.failSave) throw new Error('DB unavailable');
       const previous = this.rows.find((row) => telemetryId && row.telemetry_id === telemetryId);
       if (previous) return { ...previous };
       const row: SupportTicketRow = {
-        id: crypto.randomUUID(), input, telemetry_id: telemetryId ?? null,
-        status: 'queued', created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-        remote_id: null, jira_issue_key: null, attempts: 0, lease_token: null, locked_until: null,
+        id: crypto.randomUUID(),
+        input,
+        telemetry_id: telemetryId ?? null,
+        status: 'queued',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        remote_id: null,
+        jira_issue_key: null,
+        attempts: 0,
+        lease_token: null,
+        locked_until: null,
         next_attempt_at: new Date().toISOString(),
       };
-      this.rows.push(row); return { ...row };
+      this.rows.push(row);
+      return { ...row };
     },
     async claim(id) {
       const row = this.rows.find((item) => item.id === id);
       if (!row || row.status === 'synced_jira' || row.locked_until) return null;
       if (row.status === 'sending') row.status = 'needs_review';
-      Object.assign(row, { lease_token: crypto.randomUUID(), locked_until: 'locked', attempts: row.attempts + 1 });
+      Object.assign(row, {
+        lease_token: crypto.randomUUID(),
+        locked_until: 'locked',
+        attempts: row.attempts + 1,
+      });
       return { ...row };
     },
     async markSending(row) {
@@ -70,10 +107,18 @@ function memoryStore(): SupportStore & { rows: SupportTicketRow[]; failSave: boo
       Object.assign(saved, patch, { lease_token: null, locked_until: null });
       return { ...saved };
     },
-    async list() { return this.rows.map((row) => ({ ...row })); },
-    async pending() { return this.rows.filter((row) => row.status !== 'synced_jira').slice(0,3); },
-    async record(event) { return event.id; },
-    async events() { return []; },
+    async list() {
+      return this.rows.map((row) => ({ ...row }));
+    },
+    async pending() {
+      return this.rows.filter((row) => row.status !== 'synced_jira').slice(0, 3);
+    },
+    async record(event) {
+      return event.id;
+    },
+    async events() {
+      return [];
+    },
   };
 }
 function mockPortal(run: (url: string, init?: RequestInit) => Response | Promise<Response>) {
@@ -97,19 +142,28 @@ test('Support contracts validate categories, bounds and email; URL queries never
   for (const type of ['bug', 'game_suggestion', 'feature_request'])
     assert.equal(validateSupportTicket({ ...valid, type }).type, type);
   for (const patch of [
-    { type: 'admin' }, { title: 'four' }, { title: 'a'.repeat(201) },
-    { description: 'tiny' }, { description: 'a'.repeat(8001) },
-    { contactEmail: 'not an email' }, { contactEmail: 'a@b.com\nBcc:other' },
-    { systemContext: [] }, { pageUrl: undefined },
-  ]) assert.throws(() => validateSupportTicket({ ...valid, ...patch }));
+    { type: 'admin' },
+    { title: 'four' },
+    { title: 'a'.repeat(201) },
+    { description: 'tiny' },
+    { description: 'a'.repeat(8001) },
+    { contactEmail: 'not an email' },
+    { contactEmail: 'a@b.com\nBcc:other' },
+    { systemContext: [] },
+    { pageUrl: undefined },
+  ])
+    assert.throws(() => validateSupportTicket({ ...valid, ...patch }));
   assert.equal(supportPath('//evil.example/x?secret=1'), '/x');
   assert.equal(supportPath('https://x.test/library?a=1#b'), '/library');
 });
 test('Support sanitization strips real scripts, handlers, SVG and spoofed usernames before length validation', () => {
   const input = sanitizeSupportTicket({
-    ...valid, title: '<img src=x onerror=alert(1)>Error al guardar',
-    description: '<script>alert(1)</script><svg onload=alert(1)></svg><p>No funciona guardar mi partida.</p>',
-    username: 'operator', systemContext: { userAgent: '<b>Browser</b>' },
+    ...valid,
+    title: '<img src=x onerror=alert(1)>Error al guardar',
+    description:
+      '<script>alert(1)</script><svg onload=alert(1)></svg><p>No funciona guardar mi partida.</p>',
+    username: 'operator',
+    systemContext: { userAgent: '<b>Browser</b>' },
   });
   assert.equal(input.title, 'Error al guardar');
   assert.equal(input.description, 'No funciona guardar mi partida.');
@@ -119,15 +173,24 @@ test('Support sanitization strips real scripts, handlers, SVG and spoofed userna
 });
 test('Telemetry scrubs credentials, URL queries, emails and supplied identity/timestamps', () => {
   const value = sanitizeTelemetry({
-    message: 'Failure <img src=x onerror=alert(1)> https://x.test/path?token=secret#key user@example.com',
+    message:
+      'Failure <img src=x onerror=alert(1)> https://x.test/path?token=secret#key user@example.com',
     stack: 'Bearer secret password=123 cookie=abc 127.0.0.1',
-    pathname: '/library?private=value', timestamp: '1900-01-01',
-    userAgent: '<b>Browser</b>', userId: 'admin', escalatedToJira: true, jiraIssueKey: 'SOL-1',
+    pathname: '/library?private=value',
+    timestamp: '1900-01-01',
+    userAgent: '<b>Browser</b>',
+    userId: 'admin',
+    escalatedToJira: true,
+    jiraIssueKey: 'SOL-1',
   });
   assert.equal(value.pathname, '/library');
-  assert.equal(value.userId, null); assert.equal(value.escalatedToJira, false);
+  assert.equal(value.userId, null);
+  assert.equal(value.escalatedToJira, false);
   assert.equal(value.jiraIssueKey, null);
-  assert.doesNotMatch(JSON.stringify(value), /secret|private=value|user@example|127\.0|password=123|cookie=abc/);
+  assert.doesNotMatch(
+    JSON.stringify(value),
+    /secret|private=value|user@example|127\.0|password=123|cookie=abc/,
+  );
   assert.match(value.stack!, /redacted/);
   assert.match(value.timestamp, /^20/);
   assert.throws(() => validateTelemetry({ message: '', pathname: '/' }));
@@ -138,21 +201,30 @@ test('Telemetry ring bounds at 50, deduplicates for five minutes and never leaks
   const first = validateTelemetry({ message: 'Failure', pathname: '/', userAgent: '' }, 100000);
   buffer.add(first);
   assert.equal(buffer.add({ ...first, id: crypto.randomUUID() }).id, first.id);
-  assert.notEqual(buffer.add({ ...first, id: 'new', timestamp: new Date(400001).toISOString() }).id, first.id);
+  assert.notEqual(
+    buffer.add({ ...first, id: 'new', timestamp: new Date(400001).toISOString() }).id,
+    first.id,
+  );
   for (let i = 0; i < 55; i++) buffer.add({ ...first, id: String(i), message: 'Failure ' + i });
   assert.equal(buffer.list().length, 50);
   assert.equal(buffer.list()[0]?.id, '54');
-  const list = buffer.list(); list[0]!.message = 'changed';
+  const list = buffer.list();
+  list[0]!.message = 'changed';
   assert.notEqual(buffer.list()[0]?.message, 'changed');
 });
 test('Portal mapping uses its actual Spanish schema and nested Jira integration; local UUID is not a Jira issue', () => {
   const input = validateSupportTicket(valid);
   const payload = portalTicketPayload(input, portalId);
-  assert.equal(payload.tipo, 'incidente'); assert.equal(payload.prioridad_solicitada, 'alta');
+  assert.equal(payload.tipo, 'incidente');
+  assert.equal(payload.prioridad_solicitada, 'alta');
   assert.ok(payload.titulo.endsWith('[SS-' + portalId + ']'));
   assert.ok(payload.titulo.length <= 200);
   assert.equal(portalTicketPayload({ ...input, type: 'game_suggestion' }, portalId).tipo, 'mejora');
-  assert.deepEqual(portalTicketResult(received), { remote_id: portalId, jira_issue_key: 'SOL-149', status: 'synced_jira' });
+  assert.deepEqual(portalTicketResult(received), {
+    remote_id: portalId,
+    jira_issue_key: 'SOL-149',
+    status: 'synced_jira',
+  });
   assert.equal(portalTicketResult({ id: portalId })?.status, 'stored_local');
   assert.equal(portalTicketResult({ jira_issue_key: '<script>' }), null);
   assert.equal(portalTicketResult(null), null);
@@ -162,26 +234,38 @@ test('Support creates the durable row before networking and authenticates withou
   let writes = 0;
   const restore = mockPortal((_url, init) => {
     assert.equal(store.rows.length, 1);
-    assert.equal((init?.headers as Record<string,string>).Authorization, 'Bearer test-only-token');
+    assert.equal((init?.headers as Record<string, string>).Authorization, 'Bearer test-only-token');
     assert.equal(init?.redirect, 'error');
-    if (init?.method === 'POST') { writes++; return Response.json(received, { status: 201 }); }
+    if (init?.method === 'POST') {
+      writes++;
+      return Response.json(received, { status: 201 });
+    }
     return Response.json([]);
   });
   try {
     const result = await createSupportTicket(validateSupportTicket(valid), undefined, store);
-    assert.equal(result.status, 'synced_jira'); assert.equal(result.ticketId, 'SOL-149');
-    assert.equal(writes, 1); assert.doesNotMatch(JSON.stringify(result), /test-only-token/);
-  } finally { restore(); }
+    assert.equal(result.status, 'synced_jira');
+    assert.equal(result.ticketId, 'SOL-149');
+    assert.equal(writes, 1);
+    assert.doesNotMatch(JSON.stringify(result), /test-only-token/);
+  } finally {
+    restore();
+  }
 });
 test('Missing credential queues durably without calling the Portal', async () => {
   const store = memoryStore();
-  const restore = mockPortal(() => { throw new Error('must not fetch'); });
+  const restore = mockPortal(() => {
+    throw new Error('must not fetch');
+  });
   delete process.env.JIRA_PORTAL_TOKEN;
   try {
     const result = await createSupportTicket(validateSupportTicket(valid), undefined, store);
-    assert.equal(result.status, 'queued'); assert.match(result.ticketId, /^LOCAL-/);
+    assert.equal(result.status, 'queued');
+    assert.match(result.ticketId, /^LOCAL-/);
     assert.equal(store.rows.length, 1);
-  } finally { restore(); }
+  } finally {
+    restore();
+  }
 });
 test('A cold or unreachable Portal queues and retries successfully after recovery', async () => {
   const store = memoryStore();
@@ -196,15 +280,29 @@ test('A cold or unreachable Portal queues and retries successfully after recover
     offline = false;
     const row = await dispatchSupportTicket(store.rows[0]!.id, store);
     assert.equal(row?.jira_issue_key, 'SOL-149');
-  } finally { restore(); }
+  } finally {
+    restore();
+  }
 });
 test('Ambiguous POST timeouts enter reconciliation and never create duplicate remote requests', async () => {
   const store = memoryStore();
   let writes = 0;
   let remote = false;
   const restore = mockPortal((_url, init) => {
-    if (init?.method === 'POST') { writes++; throw new DOMException('timeout', 'TimeoutError'); }
-    return Response.json(remote ? [{ ...received, titulo: portalTicketPayload(store.rows[0]!.input, store.rows[0]!.id).titulo }] : []);
+    if (init?.method === 'POST') {
+      writes++;
+      throw new DOMException('timeout', 'TimeoutError');
+    }
+    return Response.json(
+      remote
+        ? [
+            {
+              ...received,
+              titulo: portalTicketPayload(store.rows[0]!.input, store.rows[0]!.id).titulo,
+            },
+          ]
+        : [],
+    );
   });
   try {
     await createSupportTicket(validateSupportTicket(valid), undefined, store);
@@ -215,30 +313,47 @@ test('Ambiguous POST timeouts enter reconciliation and never create duplicate re
     await dispatchSupportTicket(store.rows[0]!.id, store);
     assert.equal(store.rows[0]?.status, 'synced_jira');
     assert.equal(writes, 1);
-  } finally { restore(); }
+  } finally {
+    restore();
+  }
 });
 test('Accepted Portal UUID is retained and polled without repeating POST while Jira sync is pending', async () => {
   const store = memoryStore();
   let writes = 0;
   const restore = mockPortal((url, init) => {
-    if (init?.method === 'POST') { writes++; return Response.json({ id: portalId }); }
+    if (init?.method === 'POST') {
+      writes++;
+      return Response.json({ id: portalId });
+    }
     return Response.json(url.endsWith('/' + portalId) ? received : []);
   });
   try {
     const result = await createSupportTicket(validateSupportTicket(valid), undefined, store);
     assert.equal(result.status, 'stored_local');
     await dispatchSupportTicket(store.rows[0]!.id, store);
-    assert.equal(store.rows[0]?.status, 'synced_jira'); assert.equal(writes, 1);
-  } finally { restore(); }
+    assert.equal(store.rows[0]?.status, 'synced_jira');
+    assert.equal(writes, 1);
+  } finally {
+    restore();
+  }
 });
 test('Failed local storage never reports fictitious acceptance and never submits to Jira', async () => {
-  const store = memoryStore(); store.failSave = true;
+  const store = memoryStore();
+  store.failSave = true;
   let called = false;
-  const restore = mockPortal(() => { called = true; return Response.json(received); });
+  const restore = mockPortal(() => {
+    called = true;
+    return Response.json(received);
+  });
   try {
-    await assert.rejects(createSupportTicket(validateSupportTicket(valid), undefined, store), /DB unavailable/);
+    await assert.rejects(
+      createSupportTicket(validateSupportTicket(valid), undefined, store),
+      /DB unavailable/,
+    );
     assert.equal(called, false);
-  } finally { restore(); }
+  } finally {
+    restore();
+  }
 });
 test('Concurrent escalation creates one local record and at most one remote ticket', async () => {
   const store = memoryStore();
@@ -250,16 +365,27 @@ test('Concurrent escalation creates one local record and at most one remote tick
   });
   try {
     const input = validateSupportTicket(valid);
-    await Promise.all([createSupportTicket(input, portalId, store), createSupportTicket(input, portalId, store)]);
-    assert.equal(store.rows.length, 1); assert.equal(writes, 1);
-  } finally { restore(); }
+    await Promise.all([
+      createSupportTicket(input, portalId, store),
+      createSupportTicket(input, portalId, store),
+    ]);
+    assert.equal(store.rows.length, 1);
+    assert.equal(writes, 1);
+  } finally {
+    restore();
+  }
 });
 test('Server configuration accepts only secure URLs and no public credentials are configured', () => {
   assert.equal(jiraConfig().apiUrl, DEFAULT_JIRA_CONFIG.apiUrl);
   const saved = process.env.JIRA_API_URL;
   try {
-    for (const value of ['http://localhost', 'https://user:password@example.com', 'https://x.test?token=secret']) {
-      process.env.JIRA_API_URL = value; assert.throws(jiraConfig);
+    for (const value of [
+      'http://localhost',
+      'https://user:password@example.com',
+      'https://x.test?token=secret',
+    ]) {
+      process.env.JIRA_API_URL = value;
+      assert.throws(jiraConfig);
     }
   } finally {
     if (saved === undefined) delete process.env.JIRA_API_URL;

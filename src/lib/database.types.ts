@@ -43,8 +43,10 @@ export type Database = {
     Tables: {
       support_tickets: Table<import('@/domain/support-ticket').SupportTicketRow>;
       support_telemetry: Table<{
-        id: string; fingerprint: string;
-        event: import('@/domain/support-ticket').TelemetryErrorEvent; created_at: string;
+        id: string;
+        fingerprint: string;
+        event: import('@/domain/support-ticket').TelemetryErrorEvent;
+        created_at: string;
       }>;
       system_broadcasts: Table<
         import('@/domain/guardian-suite').SystemBroadcast & {
@@ -147,9 +149,15 @@ export type Database = {
     Views: Record<string, never>;
     Functions: {
       claim_support_attempt: { Args: { p_key_hash: string; p_kind: string }; Returns: boolean };
-      claim_support_ticket: { Args: { p_id: string }; Returns: import('@/domain/support-ticket').SupportTicketRow[] };
+      claim_support_ticket: {
+        Args: { p_id: string };
+        Returns: import('@/domain/support-ticket').SupportTicketRow[];
+      };
       record_support_telemetry: {
-        Args: { p_event: import('@/domain/support-ticket').TelemetryErrorEvent; p_fingerprint: string };
+        Args: {
+          p_event: import('@/domain/support-ticket').TelemetryErrorEvent;
+          p_fingerprint: string;
+        };
         Returns: string;
       };
       grant_player_xp: {

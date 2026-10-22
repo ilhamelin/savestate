@@ -13,15 +13,24 @@ export async function POST(request: Request) {
     const viewer = await currentViewerProfile();
     input.username = viewer?.username ?? null;
     const data = await createSupportTicket(input);
-    return Response.json({ data }, {
-      status: data.status === 'synced_jira' ? 201 : 202,
-      headers: { 'Cache-Control': 'private, no-store' },
-    });
-  } catch (error) { return errorResponse(error); }
+    return Response.json(
+      { data },
+      {
+        status: data.status === 'synced_jira' ? 201 : 202,
+        headers: { 'Cache-Control': 'private, no-store' },
+      },
+    );
+  } catch (error) {
+    return errorResponse(error);
+  }
 }
 export async function GET() {
   try {
     await authenticatedAdmin();
-    return Response.json(await supportDashboard(), { headers: { 'Cache-Control': 'private, no-store' } });
-  } catch (error) { return errorResponse(error); }
+    return Response.json(await supportDashboard(), {
+      headers: { 'Cache-Control': 'private, no-store' },
+    });
+  } catch (error) {
+    return errorResponse(error);
+  }
 }

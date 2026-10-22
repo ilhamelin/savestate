@@ -5,7 +5,8 @@ import { validateSupportTicket, validateTelemetry } from '@/domain/support-ticke
 
 export function cleanSupportText(value: unknown, max: number): string {
   return DOMPurify.sanitize(text(value, 'Texto', max, 0), {
-    ALLOWED_TAGS: [], ALLOWED_ATTR: [],
+    ALLOWED_TAGS: [],
+    ALLOWED_ATTR: [],
   }).trim();
 }
 export function sanitizeSupportTicket(raw: unknown) {
@@ -18,13 +19,17 @@ export function sanitizeSupportTicket(raw: unknown) {
     contactEmail: data.contactEmail ? cleanSupportText(data.contactEmail, 500) : null,
     // A public report cannot impersonate a SaveState account.
     username: null,
-    systemContext: context ? {
-      userAgent: cleanSupportText(context.userAgent, 600),
-      ...(context.screenResolution === undefined ? {} : {
-        screenResolution: cleanSupportText(context.screenResolution, 60),
-      }),
-      ...(context.theme === undefined ? {} : { theme: cleanSupportText(context.theme, 60) }),
-    } : undefined,
+    systemContext: context
+      ? {
+          userAgent: cleanSupportText(context.userAgent, 600),
+          ...(context.screenResolution === undefined
+            ? {}
+            : {
+                screenResolution: cleanSupportText(context.screenResolution, 60),
+              }),
+          ...(context.theme === undefined ? {} : { theme: cleanSupportText(context.theme, 60) }),
+        }
+      : undefined,
   });
 }
 export function sanitizeTelemetry(raw: unknown) {

@@ -73,14 +73,18 @@ export function supportPath(value: string): string {
     const parsed = new URL(value, 'https://savestate.invalid');
     const path = parsed.pathname;
     return path.startsWith('/') && !path.startsWith('//') ? path.slice(0, 300) : '/';
-  } catch { return '/'; }
+  } catch {
+    return '/';
+  }
 }
 export function validateSupportTicket(raw: unknown): SupportTicketInput {
   const data = object(raw);
   if (!SUPPORT_CATEGORIES.some(([type]) => type === data.type))
     throw new ValidationError('Categoría de soporte no válida.');
-  const email = data.contactEmail == null || data.contactEmail === ''
-    ? null : text(data.contactEmail, 'Correo', 254);
+  const email =
+    data.contactEmail == null || data.contactEmail === ''
+      ? null
+      : text(data.contactEmail, 'Correo', 254);
   if (email && !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email))
     throw new ValidationError('Correo de contacto no válido.');
   const context = data.systemContext === undefined ? null : object(data.systemContext);
@@ -91,13 +95,19 @@ export function validateSupportTicket(raw: unknown): SupportTicketInput {
     contactEmail: email,
     username: data.username == null ? null : text(data.username, 'Usuario', 30, 0),
     pageUrl: supportPath(text(data.pageUrl, 'Página', 2000)),
-    ...(context ? { systemContext: {
-      userAgent: text(context.userAgent, 'Navegador', 300, 0),
-      ...(context.screenResolution === undefined ? {} : {
-        screenResolution: text(context.screenResolution, 'Pantalla', 30, 0),
-      }),
-      ...(context.theme === undefined ? {} : { theme: text(context.theme, 'Tema', 30, 0) }),
-    } } : {}),
+    ...(context
+      ? {
+          systemContext: {
+            userAgent: text(context.userAgent, 'Navegador', 300, 0),
+            ...(context.screenResolution === undefined
+              ? {}
+              : {
+                  screenResolution: text(context.screenResolution, 'Pantalla', 30, 0),
+                }),
+            ...(context.theme === undefined ? {} : { theme: text(context.theme, 'Tema', 30, 0) }),
+          },
+        }
+      : {}),
   };
 }
 export function redactTelemetry(value: string): string {
@@ -106,7 +116,10 @@ export function redactTelemetry(value: string): string {
     .replace(/(\/[^\s<>?]*)\?[^\s)<>]+/g, '$1')
     .replace(/\bBearer\s+[^\s,;]+/gi, 'Bearer [redacted]')
     .replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, '[redacted]')
-    .replace(/\b(password|token|secret|authorization|cookie|api[_-]?key)\s*[:=]\s*[^\s,;]+/gi, '$1=[redacted]')
+    .replace(
+      /\b(password|token|secret|authorization|cookie|api[_-]?key)\s*[:=]\s*[^\s,;]+/gi,
+      '$1=[redacted]',
+    )
     .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[email]')
     .replace(/\b\d{1,3}(?:\.\d{1,3}){3}\b/g, '[ip]');
 }
@@ -115,7 +128,9 @@ export function validateTelemetry(raw: unknown, now = Date.now()): TelemetryErro
   return {
     id: crypto.randomUUID(),
     message: redactTelemetry(text(data.message, 'Error', 1000)).slice(0, 500),
-    ...(data.stack === undefined ? {} : { stack: redactTelemetry(text(data.stack, 'Stack', 3000, 0)).slice(0, 1500) }),
+    ...(data.stack === undefined
+      ? {}
+      : { stack: redactTelemetry(text(data.stack, 'Stack', 3000, 0)).slice(0, 1500) }),
     pathname: supportPath(text(data.pathname, 'Ruta', 2000)),
     timestamp: new Date(now).toISOString(),
     userId: null,
@@ -127,12 +142,18 @@ export function validateTelemetry(raw: unknown, now = Date.now()): TelemetryErro
 export class TelemetryRingBuffer {
   private events: TelemetryErrorEvent[] = [];
   add(event: TelemetryErrorEvent): TelemetryErrorEvent {
-    const existing = this.events.find((item) => item.message === event.message &&
-      item.pathname === event.pathname && item.stack === event.stack &&
-      Date.parse(event.timestamp) - Date.parse(item.timestamp) < 300000);
+    const existing = this.events.find(
+      (item) =>
+        item.message === event.message &&
+        item.pathname === event.pathname &&
+        item.stack === event.stack &&
+        Date.parse(event.timestamp) - Date.parse(item.timestamp) < 300000,
+    );
     if (existing) return { ...existing };
     this.events = [...this.events, { ...event }].slice(-TELEMETRY_LIMIT);
     return { ...event };
   }
-  list(): TelemetryErrorEvent[] { return this.events.toReversed().map((item) => ({ ...item })); }
+  list(): TelemetryErrorEvent[] {
+    return this.events.toReversed().map((item) => ({ ...item }));
+  }
 }

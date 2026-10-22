@@ -12,5 +12,7 @@ export async function GET(request: Request) {
     if (actual.length !== expected.length || !timingSafeEqual(actual, expected))
       throw new AppError('No autorizado.', 401);
     return Response.json(await retrySupportQueue(), { headers: { 'Cache-Control': 'no-store' } });
-  } catch (error) { return errorResponse(error); }
+  } catch (error) {
+    return errorResponse(error);
+  }
 }
