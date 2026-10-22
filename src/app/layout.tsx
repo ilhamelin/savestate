@@ -11,6 +11,7 @@ import { getSystemSwitches } from '@/services/system-state';
 import { currentUser } from '@/lib/session';
 import { OperatorSignalsListener } from '@/components/operator-signals-listener';
 import { effectiveSeasonalTheme } from '@/domain/seasonal-theme';
+import { OfflineLibrarySessionSync } from '@/components/offline-library-session-sync';
 import './globals.css';
 const pixel = Silkscreen({
   weight: ['400', '700'],
@@ -54,6 +55,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       className={`${pixel.variable} ${mono.variable}`}
     >
       <body>
+        <OfflineLibrarySessionSync />
         <OperatorSignalsListener userId={user?.id ?? null} />
         {standalone ? (
           <main id="main" className="guardian-standalone-main">

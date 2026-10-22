@@ -1,0 +1,21 @@
+name: Offline library browser
+on:
+  pull_request:
+    branches: [implementation/chatgpt, main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  chromium:
+    name: PWA offline and account isolation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: node --test tests/browser/offline-library.test.mjs
