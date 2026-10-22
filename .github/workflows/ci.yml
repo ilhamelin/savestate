@@ -1,0 +1,33 @@
+name: CI Runner
+
+on:
+  push:
+    branches:
+      - implementation/chatgpt
+      - main
+  pull_request:
+    branches:
+      - implementation/chatgpt
+      - main
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: Typecheck, Lint, Test & Format
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run verification suite
+        run: npm run check
