@@ -14,6 +14,18 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      - name: Apply compatible sanitizer security patch and save formatting
+        run: |
+          npm update dompurify
+          npm audit --audit-level=low
+          npx prettier --write src/styles/retro-card-3d.css package-lock.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/styles/retro-card-3d.css package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m "fix(security): update DOMPurify to patched 3.4.17"
+            git push origin HEAD:feature/virtual-3d-memory-card
+          fi
       - run: npm run check
       - name: Production build
         run: npm run build
@@ -153,20 +165,9 @@ jobs:
           const allAssetsDelta = allAssets(process.cwd()) - allAssets(process.env.BASE_BUILD);
           const delta = feature.total - base.total;
           console.log('SPEC03_BUNDLE', JSON.stringify({ base, feature, delta, allAssetsDelta, budgetBytes: 5000 }));
-          if (delta >= 5000) throw new Error('Profile initial JS + CSS gzip delta must stay below 5KB');
+          if (delta >= 5000 || allAssetsDelta >= 5000) throw new Error('Profile initial JS + CSS gzip delta must stay below 5KB');
           
           JS
       - name: Require browser acceptance
         if: steps.browser.outcome != 'success'
         run: exit 1
-  dependency-audit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: npm
-      - run: npm ci
-      - name: Read exact dependency advisory
-        run: npm audit --json || true

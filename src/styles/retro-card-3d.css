@@ -37,6 +37,7 @@
 }
 .retro-card-object {
   position: relative;
+  width: 100%;
   aspect-ratio: 3 / 4;
   min-height: 370px;
   transform-style: preserve-3d;
