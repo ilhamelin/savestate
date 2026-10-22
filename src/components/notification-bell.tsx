@@ -95,8 +95,7 @@ export function NotificationBell({ userId }: { userId: string }) {
           const since = badgeBaseline.current;
           badgeBaseline.current ??= result.data.generatedAt;
           for (const item of since ? result.data.items : []) {
-            if (item.read_at || Date.parse(item.created_at) < Date.parse(since!))
-              continue;
+            if (item.read_at || Date.parse(item.created_at) < Date.parse(since!)) continue;
             const notice = badgeUnlockNotification(
               { ...item, user_id: userId, badge_id: item.badgeId },
               userId,

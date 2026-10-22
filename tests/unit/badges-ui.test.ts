@@ -99,11 +99,23 @@ test('SPEC-02: owner onboarding, neutral visitor state, badge progress and toast
       entries: [
         { id: 'entry', game_id: 'game', status: 'playing', rating: null, updated_at: '2026-10-22' },
       ] as UserGame[],
-      games: [{
-        id: 'game', igdb_id: 1, title: 'Celeste', slug: 'celeste', cover_url: null,
-        release_year: 2018, genres: [], platforms: ['PC'], developer: null,
-        publisher: null, series: null, synopsis: null, cached_at: '2026-10-22T12:00:00Z',
-      }] satisfies Game[],
+      games: [
+        {
+          id: 'game',
+          igdb_id: 1,
+          title: 'Celeste',
+          slug: 'celeste',
+          cover_url: null,
+          release_year: 2018,
+          genres: [],
+          platforms: ['PC'],
+          developer: null,
+          publisher: null,
+          series: null,
+          synopsis: null,
+          cached_at: '2026-10-22T12:00:00Z',
+        },
+      ] satisfies Game[],
       logs: [],
       editable: true,
     });
