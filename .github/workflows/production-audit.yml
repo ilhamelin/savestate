@@ -1,0 +1,124 @@
+name: Production HTTP audit
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - implementation/chatgpt
+    paths:
+      - '.github/workflows/production-audit.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-http-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    name: Read-only production HTTP baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Sample public production responses
+        env:
+          GITHUB_TOKEN: ''
+        run: |
+          node --input-type=module <<'NODE'
+          import { writeFile, appendFile } from 'node:fs/promises';
+          const origin = 'https://savestate-eight.vercel.app';
+          const routes = [
+            ['/', [200, 307, 308]],
+            ['/explore', [200, 307, 308]],
+            ['/screen', [200, 307, 308]],
+            ['/hoyo', [200, 307, 308]],
+            ['/worlds', [200, 307, 308]],
+            ['/gatekeeper', [200]],
+            ['/robots.txt', [200]],
+            ['/sitemap.xml', [200]],
+            ['/api/system-status', [200, 401]],
+            ['/api/guardian/telemetry', [401, 403]],
+          ];
+          const samples = [];
+          const round = (value) => Math.round(value * 10) / 10;
+          for (const [path, expected] of routes) {
+            for (let sample = 1; sample <= 2; sample++) {
+              const started = performance.now();
+              try {
+                const response = await fetch(origin + path, {
+                  redirect: 'manual',
+                  signal: AbortSignal.timeout(10000),
+                  headers: { 'User-Agent': 'SaveState-ReadOnly-Audit/1.0' },
+                });
+                const headerMs = round(performance.now() - started);
+                const reader = response.body?.getReader();
+                let decodedBytes = 0;
+                let truncated = false;
+                if (reader) {
+                  while (true) {
+                    const chunk = await reader.read();
+                    if (chunk.done) break;
+                    decodedBytes += chunk.value.byteLength;
+                    if (decodedBytes > 2 * 1024 * 1024) {
+                      truncated = true;
+                      await reader.cancel();
+                      break;
+                    }
+                  }
+                }
+                const rawLocation = response.headers.get('location');
+                const location = rawLocation ? new URL(rawLocation, origin).pathname : null;
+                samples.push({
+                  path, sample, status: response.status, headerMs,
+                  totalMs: round(performance.now() - started), decodedBytes, truncated, location,
+                  cacheControl: response.headers.get('cache-control'),
+                  vercelCache: response.headers.get('x-vercel-cache'),
+                  contentType: response.headers.get('content-type'),
+                  hasCsp: response.headers.has('content-security-policy'),
+                  expectedStatus: expected.includes(response.status),
+                });
+              } catch (error) {
+                samples.push({
+                  path, sample, status: null, expectedStatus: false,
+                  totalMs: round(performance.now() - started),
+                  error: error instanceof Error ? error.name : 'RequestError',
+                });
+              }
+            }
+          }
+          const report = {
+            measuredAt: new Date().toISOString(), origin, runner: 'GitHub Actions ubuntu-latest',
+            method: '20 sequential anonymous GET requests, manual redirects, no credentials or cookies',
+            limitations: [
+              'Header latency includes network setup and is not browser LCP, INP or CLS.',
+              'Two samples per route cannot establish percentiles or cold-start latency.',
+              'Gatekeeper redirects do not measure the protected page SSR.',
+              'Decoded bytes are not compressed wire-transfer bytes.',
+              'No production runtime logs are accessed by this workflow.',
+            ],
+            samples,
+          };
+          await writeFile('production-http-audit.json', JSON.stringify(report, null, 2));
+          const rows = samples.map((s) =>
+            '| ' + [s.path, s.sample, s.status ?? s.error, s.headerMs ?? '-', s.totalMs, s.decodedBytes ?? '-', s.vercelCache ?? '-', s.location ?? '-'].join(' | ') + ' |');
+          await appendFile(process.env.GITHUB_STEP_SUMMARY,
+            '# Production HTTP baseline\n\n' + report.method + '\n\n' +
+            '| Route | Sample | Status | Headers ms | Total ms | Decoded bytes | Cache | Redirect path |\n' +
+            '| --- | --- | --- | --- | --- | --- | --- | --- |\n' + rows.join('\n') +
+            '\n\n' + report.limitations.map((line) => '- ' + line).join('\n') + '\n');
+          console.log('AUDIT_RESULT ' + JSON.stringify(report));
+          if (samples.some((s) => !s.expectedStatus)) process.exitCode = 1;
+          NODE
+      - name: Upload bounded audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-http-audit
+          path: production-http-audit.json
+          if-no-files-found: warn
+          retention-days: 7
