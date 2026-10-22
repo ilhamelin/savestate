@@ -15,16 +15,19 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Read installed Next.js streaming and layout guides
+      - name: Format implementation with repository Prettier
         run: |
+          npx prettier --write src/app/layout.tsx src/components/system-broadcast-stream.tsx src/components/system-broadcast-banner.tsx src/lib/system-status-polling.ts tests/unit/system-status-polling.test.ts tests/unit/system-broadcast-stream.test.ts
           node --input-type=module <<'NODE'
           import { readFileSync } from 'node:fs';
-          for (const path of [
-            'node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/loading.md',
-            'node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/layout.md',
-          ]) {
-            console.log('GUIDE_BEGIN ' + path);
-            console.log(readFileSync(path, 'utf8').split('\n').slice(0, 220).join('\n'));
-            console.log('GUIDE_END');
-          }
+          const paths = [
+            'src/app/layout.tsx',
+            'src/components/system-broadcast-stream.tsx',
+            'src/components/system-broadcast-banner.tsx',
+            'src/lib/system-status-polling.ts',
+            'tests/unit/system-status-polling.test.ts',
+            'tests/unit/system-broadcast-stream.test.ts',
+          ];
+          console.log('FORMATTED_FILES ' + JSON.stringify(paths.map(path => ({path, content: readFileSync(path, 'utf8')}))));
           NODE
+      - run: npm run check

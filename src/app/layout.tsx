@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from 'next';
+import { Suspense } from 'react';
 import { headers } from 'next/headers';
 import { Silkscreen, JetBrains_Mono } from 'next/font/google';
 import { Header } from '@/components/header';
 import { HalloweenBats } from '@/components/halloween/halloween-bats';
 import Image from 'next/image';
 import Link from 'next/link';
-import { SystemBroadcastBanner } from '@/components/system-broadcast-banner';
-import { getActiveSystemBroadcast, getSystemSwitches } from '@/services/system-state';
+import { SystemBroadcastStream } from '@/components/system-broadcast-stream';
+import { getSystemSwitches } from '@/services/system-state';
 import { currentUser } from '@/lib/session';
 import { OperatorSignalsListener } from '@/components/operator-signals-listener';
 import { effectiveSeasonalTheme } from '@/domain/seasonal-theme';
@@ -41,12 +42,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const userPromise = currentUser();
   const standalone =
     pathname === '/gatekeeper' || pathname === '/guardian' || pathname.startsWith('/guardian/');
-  const [switches, broadcast] = standalone
-    ? [null, null]
-    : await Promise.all([
-        getSystemSwitches().catch(() => null),
-        getActiveSystemBroadcast().catch(() => null),
-      ]);
+  const switches = standalone ? null : await getSystemSwitches().catch(() => null);
   const user = await userPromise;
   const seasonalTheme = effectiveSeasonalTheme(switches?.seasonal_theme);
   const isHalloween = seasonalTheme === 'halloween';
@@ -69,10 +65,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             <a href="#main" className="skip-link">
               Saltar al contenido
             </a>
-            <SystemBroadcastBanner
-              initial={broadcast}
-              initialDoubleXp={switches?.double_xp ?? false}
-            />
+            <Suspense fallback={null}>
+              <SystemBroadcastStream initialDoubleXp={switches?.double_xp ?? false} />
+            </Suspense>
             <Header />
             <main id="main" className="container">
               {children}
