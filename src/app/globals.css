@@ -6,6 +6,7 @@
 @import './profile-enhancements.css';
 @import './halloween.css';
 @import './guardian.css';
+@import '../styles/retro-card-3d.css';
 @theme inline {
   --color-void-950: #08090c;
   --color-surface-900: #111319;
