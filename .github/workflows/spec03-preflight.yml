@@ -159,3 +159,14 @@ jobs:
       - name: Require browser acceptance
         if: steps.browser.outcome != 'success'
         run: exit 1
+  dependency-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Read exact dependency advisory
+        run: npm audit --json || true
