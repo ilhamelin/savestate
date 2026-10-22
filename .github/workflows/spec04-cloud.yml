@@ -154,7 +154,9 @@ jobs:
            assert.ok(!saved.includes('blob:')&&!saved.includes('Mi casete')&&!saved.includes('Otra cinta'));
            await page.getByRole('button',{name:'Reproducir radio'}).click();
            await page.evaluate(()=>{history.pushState({},'','/guardian');dispatchEvent(new PopStateEvent('popstate'));});
-           await page.waitForFunction(()=>!document.querySelector('.retro-radio-deck')&&window.stats.contexts[0].state==='suspended');
+           await page.waitForFunction(()=>!document.querySelector('.retro-radio-deck')&&window.stats.contexts[0].state==='suspended',null,{timeout:10000}).catch(async error=>{
+            console.log('SPEC04_GUARDIAN_DEBUG',await page.evaluate(()=>({path:location.pathname,deck:!!document.querySelector('.retro-radio-deck'),states:window.stats.contexts.map(c=>c.state),intervals:window.stats.intervals.size,rafs:window.stats.rafs.size})),errors);throw error;
+           });
            await page.evaluate(()=>{history.pushState({},'','/explore');dispatchEvent(new PopStateEvent('popstate'));});
            await deck.waitFor();
            assert.equal(await page.evaluate(()=>window.stats.contexts.length),1);
