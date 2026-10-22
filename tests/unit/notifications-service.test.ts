@@ -55,6 +55,7 @@ test('Notification enrichment executes five independent queries together and inc
     assert.equal(item.trackerHref, '/players/owner#itch-tracker');
     assert.equal(item.friendshipId, 'request');
     assert.equal(item.badgeName, 'Medal');
+    assert.equal(item.badgeId, 'badge');
     assert.equal(item.forumHref, '/forum/retro-corner/thread');
     for (const table of ['profiles', 'badges', 'forum_threads', 'friendships', 'itch_trackers']) {
       state.errorTable = table;

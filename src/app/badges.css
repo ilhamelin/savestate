@@ -59,3 +59,140 @@
     bottom: calc(14px + env(safe-area-inset-bottom));
   }
 }
+
+.library-empty-hero {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.65fr) minmax(0, 1.5fr);
+  align-items: center;
+  gap: 2rem;
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: linear-gradient(135deg, #080d16f2, #141020e8);
+  box-shadow: inset 0 0 28px color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.library-empty-hero h2 {
+  margin-block: 0.6rem;
+}
+.library-empty-terminal {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.8rem;
+  padding: 1rem;
+  color: var(--accent);
+  font-size: 0.75rem;
+  border: 1px dashed var(--line);
+  overflow-wrap: anywhere;
+}
+.library-empty-actions {
+  flex-wrap: wrap;
+}
+.library-empty-actions .button {
+  min-height: 44px;
+  white-space: normal;
+}
+.library-import-cta {
+  box-shadow: 3px 3px 0 #7928ca;
+}
+.badge-level-panel {
+  display: grid;
+  gap: 0.6rem;
+  padding: 1.2rem;
+  margin-bottom: 1rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, var(--line));
+  background: var(--surface);
+  min-width: 0;
+}
+.badge-level-panel h3 {
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+.badge-level-panel progress {
+  display: block;
+  width: 100%;
+  height: 12px;
+  accent-color: var(--accent);
+}
+.badge-level-panel progress::-webkit-progress-bar {
+  background: #080d16;
+  border-radius: 2px;
+}
+.badge-level-panel progress::-webkit-progress-value {
+  background: linear-gradient(90deg, var(--accent), #a855f7);
+}
+.badge-level-panel progress::-moz-progress-bar {
+  background: linear-gradient(90deg, var(--accent), #a855f7);
+}
+.badge-unlock-toast {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  z-index: 120;
+  width: min(420px, calc(100vw - 2rem));
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1rem;
+  color: #f2f4f8;
+  background: #090e18f5;
+  border: 2px solid var(--accent);
+  border-radius: 2px;
+  box-shadow:
+    4px 4px 0 #000,
+    0 0 15px var(--accent);
+  animation: badge-unlock-life 6s ease both;
+}
+.badge-unlock-toast > svg {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+.badge-unlock-copy {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.badge-unlock-copy .eyebrow {
+  font-size: 0.65rem;
+}
+.badge-unlock-copy > p:last-child {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.badge-unlock-toast > button {
+  align-self: flex-start;
+  min-width: 44px;
+  min-height: 44px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+@keyframes badge-unlock-life {
+  0% {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  5%,
+  94% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@media (max-width: 600px) {
+  .library-empty-hero {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .library-empty-terminal {
+    padding: 0.75rem;
+  }
+  .library-empty-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .badge-unlock-toast {
+    animation: none;
+  }
+}

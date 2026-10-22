@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { LibraryEmptyHero } from '@/components/library-empty-hero';
 import { GameCard } from '@/components/game-card';
 import { achievementPercent, filterLibrary, type LibrarySort } from '@/domain/library-view';
 import { libraryPlatformOptions } from '@/domain/library-platforms';
@@ -38,6 +39,15 @@ export function Library({
   const [view, selectView] = useLibraryViewPreference();
   const [completedAchievements, setCompletedAchievements] = useState(false);
   const [page, setPage] = useState(0);
+  if (entries.length === 0) {
+    return editable ? (
+      <LibraryEmptyHero />
+    ) : (
+      <section className="empty-state">
+        <p>Esta biblioteca aún no tiene juegos registrados.</p>
+      </section>
+    );
+  }
   const gameMap = new Map(games.map((game) => [game.id, game]));
   const gameIds = new Set(entries.map((entry) => entry.game_id));
   const choices = games.filter((game) => gameIds.has(game.id));
@@ -243,15 +253,6 @@ export function Library({
           </button>
         ))}
       </div>
-      {!entries.length ? (
-        <div className="empty-state">
-          <h2>Tu próxima aventura empieza aquí.</h2>
-          <p>Agrega un juego desde su ficha para empezar el diario.</p>
-          <Link className="button" href="/explore">
-            Explorar catálogo
-          </Link>
-        </div>
-      ) : null}
       {entries.length > 0 && !visible.length ? (
         <div className="empty-state">
           <p>No hay juegos que coincidan con estos filtros.</p>
