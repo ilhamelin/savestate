@@ -1,0 +1,30 @@
+name: Temporary remote engineering preflight
+on:
+  push:
+    branches: [feature/nonblocking-broadcast-polling]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Read installed Next.js streaming and layout guides
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          for (const path of [
+            'node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/loading.md',
+            'node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/layout.md',
+          ]) {
+            console.log('GUIDE_BEGIN ' + path);
+            console.log(readFileSync(path, 'utf8').split('\n').slice(0, 220).join('\n'));
+            console.log('GUIDE_END');
+          }
+          NODE
