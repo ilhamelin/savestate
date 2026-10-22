@@ -16,8 +16,8 @@ jobs:
       - run: npm ci
       - name: Format changed sources
         run: |
-          npx prettier --write src/domain/support-ticket.ts src/services/support-sanitize.ts src/services/support-store.ts src/services/jira-support-service.ts src/lib/database.types.ts src/app/api/support/tickets/route.ts src/app/api/telemetry/errors/route.ts src/app/api/cron/jira-support/route.ts src/lib/client-error-report.ts src/components/support/client-error-reporter.tsx src/app/error.tsx src/domain/gatekeeper.ts vercel.json src/components/support/feedback-modal.tsx src/components/guardian/guardian-jira-panel.tsx src/styles/support.css src/app/layout.tsx src/components/guardian/guardian-console.tsx tests/unit/system-broadcast-stream.test.ts tests/unit/jira-support.test.ts
-          git add src/domain/support-ticket.ts src/services/support-sanitize.ts src/services/support-store.ts src/services/jira-support-service.ts src/lib/database.types.ts src/app/api/support/tickets/route.ts src/app/api/telemetry/errors/route.ts src/app/api/cron/jira-support/route.ts src/lib/client-error-report.ts src/components/support/client-error-reporter.tsx src/app/error.tsx src/domain/gatekeeper.ts vercel.json src/components/support/feedback-modal.tsx src/components/guardian/guardian-jira-panel.tsx src/styles/support.css src/app/layout.tsx src/components/guardian/guardian-console.tsx tests/unit/system-broadcast-stream.test.ts tests/unit/jira-support.test.ts
+          npx prettier --write src/domain/support-ticket.ts src/services/support-sanitize.ts src/services/support-store.ts src/services/jira-support-service.ts src/lib/database.types.ts src/app/api/support/tickets/route.ts src/app/api/telemetry/errors/route.ts src/app/api/cron/jira-support/route.ts src/lib/client-error-report.ts src/components/support/client-error-reporter.tsx src/app/error.tsx src/domain/gatekeeper.ts vercel.json src/components/support/feedback-modal.tsx src/components/guardian/guardian-jira-panel.tsx src/styles/support.css src/app/layout.tsx src/components/guardian/guardian-console.tsx tests/unit/system-broadcast-stream.test.ts tests/unit/jira-support.test.ts tests/unit/jira-support-routes.test.ts
+          git add src/domain/support-ticket.ts src/services/support-sanitize.ts src/services/support-store.ts src/services/jira-support-service.ts src/lib/database.types.ts src/app/api/support/tickets/route.ts src/app/api/telemetry/errors/route.ts src/app/api/cron/jira-support/route.ts src/lib/client-error-report.ts src/components/support/client-error-reporter.tsx src/app/error.tsx src/domain/gatekeeper.ts vercel.json src/components/support/feedback-modal.tsx src/components/guardian/guardian-jira-panel.tsx src/styles/support.css src/app/layout.tsx src/components/guardian/guardian-console.tsx tests/unit/system-broadcast-stream.test.ts tests/unit/jira-support.test.ts tests/unit/jira-support-routes.test.ts
           if ! git diff --cached --quiet; then
             git config user.name "SaveState CI"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -29,3 +29,24 @@ jobs:
       - run: npm test
       - run: npm run format:check
       - run: npm run build
+  postgres-acceptance:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: isolated-ci
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: isolated-ci
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node .github/spec05-sql-check.mjs
