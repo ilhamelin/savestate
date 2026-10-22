@@ -1,6 +1,7 @@
 'use client';
 import Image from 'next/image';
-import { useId, useState } from 'react';
+import { AUDIO_FOCUS_EVENT, requestAudioFocus } from '@/lib/retro-audio/audio-focus';
+import { useEffect, useId, useState } from 'react';
 import {
   WORLDS_ANTHEMS,
   KDA_TRACKS,
@@ -30,16 +31,25 @@ export function WorldsMusicPlayer() {
   const [showInfo, setShowInfo] = useState(false);
   const [origin, setOrigin] = useState('');
   const controlsId = useId();
+  useEffect(() => {
+    const focus = (event: Event) => {
+      if ((event as CustomEvent<unknown>).detail === 'retro-radio') setIsPlaying(false);
+    };
+    window.addEventListener(AUDIO_FOCUS_EVENT, focus);
+    return () => window.removeEventListener(AUDIO_FOCUS_EVENT, focus);
+  }, []);
 
   const isKda = selected >= WORLDS_ANTHEMS.length;
   const track = ALL_WORLDS_TRACKS[selected]!;
 
   function togglePlayback() {
+    if (!isPlaying) requestAudioFocus('worlds-music');
     setOrigin(window.location.origin);
     setIsPlaying((value) => !value);
   }
 
   function handleSelectTrack(index: number) {
+    requestAudioFocus('worlds-music');
     setSelected(index);
     if (
       (activeTab === 'kda' && index < WORLDS_ANTHEMS.length) ||
