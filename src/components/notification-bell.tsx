@@ -38,7 +38,11 @@ export function NotificationBell({ userId }: { userId: string }) {
   const pendingBadges = useRef(new Map<string, BadgeUnlockNotification>());
   const seenBadges = useRef(new Set<string>());
   const badgeBaseline = useRef<string | null>(null);
-  const dismissBadge = useCallback(() => setBadgeUnlocks((queue) => queue.slice(1)), []);
+  const activeBadgeId = badgeUnlocks[0]?.id;
+  const dismissBadge = useCallback(
+    () => setBadgeUnlocks(queue => queue.filter(item => item.id !== activeBadgeId)),
+    [activeBadgeId],
+  );
   useEffect(() => {
     let controller: AbortController | undefined;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -94,6 +98,12 @@ export function NotificationBell({ userId }: { userId: string }) {
           // Establish a server-clock baseline without replaying historical unlocks.
           const since = badgeBaseline.current;
           badgeBaseline.current ??= result.data.generatedAt;
+          if (since === null) {
+            for (const item of result.data.items) {
+              if (item.kind === 'badge_unlocked' && !pendingBadges.current.has(item.id))
+                seenBadges.current.add(item.id);
+            }
+          }
           for (const item of since ? result.data.items : []) {
             if (item.read_at || Date.parse(item.created_at) < Date.parse(since!)) continue;
             const notice = badgeUnlockNotification(
