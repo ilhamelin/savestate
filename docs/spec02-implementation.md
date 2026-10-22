@@ -10,3 +10,7 @@ Implementación de research/antigravity: docs/specs/SPEC-02-steam-onboarding-and
 - El toast usa un portal al body, región de estado no modal, cierre accesible y temporizador de 6 segundos. No reproduce audio automáticamente y respeta prefers-reduced-motion.
 - No requiere dependencias, nuevas credenciales ni migraciones. Reutiliza la notificación SQL de la migración 009.
 - Pruebas: fronteras de los cinco niveles, valores inválidos, normalización de notificaciones, destinatario, estados de biblioteca, progreso sin duplicados y ciclo de vida del toast.
+
+## Parche de seguridad de la plataforma
+
+La auditoría detectó que el lockfile base usaba Next.js 16.4.0. Se actualiza la dependencia existente a **16.4.1** (sin cambio de versión mayor) y se regenera el lockfile para corregir los avisos oficiales [GHSA-2464-fhr4-w9xw](https://github.com/advisories/GHSA-2464-fhr4-w9xw) y [GHSA-p3m5-59mp-jv5r](https://github.com/advisories/GHSA-p3m5-59mp-jv5r).
