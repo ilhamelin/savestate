@@ -32,7 +32,9 @@ export function WorldsMusicPlayer() {
   const [origin, setOrigin] = useState('');
   const controlsId = useId();
   useEffect(() => {
-    const focus = (event: Event) => { if ((event as CustomEvent<unknown>).detail === 'retro-radio') setIsPlaying(false); };
+    const focus = (event: Event) => {
+      if ((event as CustomEvent<unknown>).detail === 'retro-radio') setIsPlaying(false);
+    };
     window.addEventListener(AUDIO_FOCUS_EVENT, focus);
     return () => window.removeEventListener(AUDIO_FOCUS_EVENT, focus);
   }, []);
