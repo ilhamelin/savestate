@@ -40,7 +40,7 @@ export function NotificationBell({ userId }: { userId: string }) {
   const badgeBaseline = useRef<string | null>(null);
   const activeBadgeId = badgeUnlocks[0]?.id;
   const dismissBadge = useCallback(
-    () => setBadgeUnlocks(queue => queue.filter(item => item.id !== activeBadgeId)),
+    () => setBadgeUnlocks((queue) => queue.filter((item) => item.id !== activeBadgeId)),
     [activeBadgeId],
   );
   useEffect(() => {
