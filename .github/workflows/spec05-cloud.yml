@@ -1,0 +1,22 @@
+name: SPEC-05 cloud verification
+on:
+  push:
+    branches: [feature/jira-cloud-integration]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Read installed Next.js guides
+        run: |
+          find node_modules/next/dist/docs -iname '*route-handler*' -o -iname '*use-client*' -o -iname '*error-handling*'
+          for file in $(find node_modules/next/dist/docs -iname '*route-handler*' -o -iname '*use-client*' -o -iname '*error-handling*'); do cat "$file"; done
+      - run: npm run check
+      - run: npm run build
