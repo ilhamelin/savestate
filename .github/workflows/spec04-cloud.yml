@@ -16,10 +16,10 @@ jobs:
       - run: npm ci
       - name: Format feature in the cloud
         run: |
-          npx prettier --write 'src/domain/retro-audio.ts' 'src/lib/retro-audio/audio-focus.ts' 'src/lib/retro-audio/synth-chiptune.ts' 'src/lib/retro-audio/audio-engine.ts' 'src/components/retro-radio/cassette-slot.tsx' 'src/components/retro-radio/equalizer-visualizer.tsx' 'src/components/retro-radio/retro-radio-deck.tsx' 'src/styles/retro-radio.css' 'src/app/layout.tsx' 'src/components/worlds-music-player.tsx' 'tests/unit/retro-audio.test.ts'
+          npx prettier --write 'src/domain/retro-audio.ts' 'src/lib/retro-audio/audio-focus.ts' 'src/lib/retro-audio/synth-chiptune.ts' 'src/lib/retro-audio/audio-engine.ts' 'src/components/retro-radio/cassette-slot.tsx' 'src/components/retro-radio/equalizer-visualizer.tsx' 'src/components/retro-radio/retro-radio-deck.tsx' 'src/styles/retro-radio.css' 'src/app/layout.tsx' 'src/components/worlds-music-player.tsx' 'tests/unit/retro-audio.test.ts' 'tests/unit/system-broadcast-stream.test.ts'
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add 'src/domain/retro-audio.ts' 'src/lib/retro-audio/audio-focus.ts' 'src/lib/retro-audio/synth-chiptune.ts' 'src/lib/retro-audio/audio-engine.ts' 'src/components/retro-radio/cassette-slot.tsx' 'src/components/retro-radio/equalizer-visualizer.tsx' 'src/components/retro-radio/retro-radio-deck.tsx' 'src/styles/retro-radio.css' 'src/app/layout.tsx' 'src/components/worlds-music-player.tsx' 'tests/unit/retro-audio.test.ts'
+          git add 'src/domain/retro-audio.ts' 'src/lib/retro-audio/audio-focus.ts' 'src/lib/retro-audio/synth-chiptune.ts' 'src/lib/retro-audio/audio-engine.ts' 'src/components/retro-radio/cassette-slot.tsx' 'src/components/retro-radio/equalizer-visualizer.tsx' 'src/components/retro-radio/retro-radio-deck.tsx' 'src/styles/retro-radio.css' 'src/app/layout.tsx' 'src/components/worlds-music-player.tsx' 'tests/unit/retro-audio.test.ts' 'tests/unit/system-broadcast-stream.test.ts'
           if ! git diff --cached --quiet; then
             git commit -m "chore(SPEC-04): format retro radio implementation"
             git push origin HEAD:feature/retro-radio-deck
@@ -27,3 +27,202 @@ jobs:
       - run: npm run check
       - run: npm run lint -- --max-warnings=0
       - run: npm run build
+      - name: Install acceptance tools only in the runner
+        run: |
+          npm install --no-save --package-lock=false playwright esbuild
+          npx playwright install --with-deps chromium
+      - name: Real Web Audio browser acceptance
+        id: browser
+        continue-on-error: true
+        run: |
+          cat > spec04-browser.mjs <<'JS'
+          import { chromium } from 'playwright';
+          import { build } from 'esbuild';
+          import { createServer } from 'node:http';
+          import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
+          import assert from 'node:assert/strict';
+          const temp = process.env.RUNNER_TEMP;
+          writeFileSync(temp+'/radio-router.ts', `import {useSyncExternalStore} from 'react';
+          const subscribe=cb=>{window.addEventListener('popstate',cb);return()=>window.removeEventListener('popstate',cb);};
+          export const usePathname=()=>useSyncExternalStore(subscribe,()=>location.pathname,()=>'/');`);
+          await build({
+           stdin:{contents:`
+           import React from 'react'; import {createRoot} from 'react-dom/client';
+           import {RetroRadioDeck} from './src/components/retro-radio/retro-radio-deck';
+           window.stats={contexts:[],meters:[],filters:[],created:[],revoked:[],intervals:new Set(),rafs:new Set()};
+           const C=window.AudioContext;
+           window.AudioContext=class extends C{
+            constructor(...args){super(...args);window.stats.contexts.push(this);}
+            createAnalyser(){const node=super.createAnalyser();window.stats.meters.push(node);return node;}
+            createBiquadFilter(){const node=super.createBiquadFilter();window.stats.filters.push(node);return node;}
+           };
+           const create=URL.createObjectURL.bind(URL),revoke=URL.revokeObjectURL.bind(URL);
+           URL.createObjectURL=file=>{const url=create(file);window.stats.created.push(url);return url;};
+           URL.revokeObjectURL=url=>{window.stats.revoked.push(url);revoke(url);};
+           const interval=window.setInterval.bind(window),clear=window.clearInterval.bind(window);
+           window.setInterval=(cb,...args)=>{const id=interval(cb,...args);window.stats.intervals.add(id);return id;};
+           window.clearInterval=id=>{window.stats.intervals.delete(id);clear(id);};
+           const raf=window.requestAnimationFrame.bind(window),cancel=window.cancelAnimationFrame.bind(window);
+           window.requestAnimationFrame=cb=>{const id=raf(time=>{window.stats.rafs.delete(id);cb(time);});window.stats.rafs.add(id);return id;};
+           window.cancelAnimationFrame=id=>{window.stats.rafs.delete(id);cancel(id);};
+           const root=createRoot(document.getElementById('app'));
+           root.render(<React.StrictMode><RetroRadioDeck/></React.StrictMode>);
+           window.unmountRadio=()=>root.unmount();
+           `,resolveDir:process.cwd(),loader:'tsx'},
+           nodePaths:[process.cwd()+'/node_modules'],alias:{'@':process.cwd()+'/src','next/navigation':temp+'/radio-router.ts'},
+           bundle:true,write:true,outfile:temp+'/radio.js',jsx:'automatic',define:{'process.env.NODE_ENV':'"production"'},
+          });
+          const css=readdirSync('.next/static/chunks').filter(p=>p.endsWith('.css')).map(p=>readFileSync('.next/static/chunks/'+p,'utf8')).join('\n');
+          const html='<!doctype html><meta name="viewport" content="width=device-width, initial-scale=1"><style>'+css+'</style><input id="chat" aria-label="Chat fixture"><div class="worlds-music-hud" style="height:160px">Worlds fixture</div><div id="app"></div><script src="/radio.js"></script>';
+          const server=createServer((req,res)=>{res.setHeader('Content-Type',req.url==='/radio.js'?'text/javascript':'text/html');res.end(req.url==='/radio.js'?readFileSync(temp+'/radio.js'):html);});
+          await new Promise(resolve=>server.listen(4173,'127.0.0.1',resolve));
+          const browser=await chromium.launch({headless:true});
+          try{
+           const page=await browser.newPage({viewport:{width:375,height:812}});
+           const errors=[],network=[]; page.on('pageerror',e=>errors.push(e.message));
+           page.on('request',r=>{if(!r.url().startsWith('http://127.0.0.1:4173')&&!r.url().startsWith('blob:'))network.push(r.url());});
+           await page.goto('http://127.0.0.1:4173');
+           const deck=page.getByRole('complementary',{name:'SaveState Retro Radio'});
+           await deck.waitFor();
+           assert.equal(await page.evaluate(()=>window.stats.contexts.length),0,'no autoplay or context on mount');
+           await page.getByRole('button',{name:'Expandir Retro Radio'}).click();
+           for(const width of [320,375,768,1280]){
+            await page.setViewportSize({width,height:812});
+            const geometry=await deck.evaluate(el=>{const b=el.getBoundingClientRect();return {left:b.left,right:b.right,bottom:b.bottom,height:b.height,scrollWidth:el.scrollWidth,width:el.clientWidth};});
+            assert.ok(geometry.left>=0&&geometry.right<=width&&geometry.bottom<=812);
+            assert.ok(geometry.scrollWidth<=geometry.width+1,'no internal horizontal overflow');
+           }
+           await page.setViewportSize({width:375,height:812});
+           await page.getByRole('button',{name:'Reproducir radio'}).click();
+           await page.waitForFunction(()=>window.stats.contexts[0]?.state==='running'&&window.stats.meters.length===1);
+           await page.waitForFunction(()=>{const a=window.stats.meters[0],data=new Uint8Array(a.frequencyBinCount);a.getByteFrequencyData(data);return data.some(n=>n>0);});
+           await page.getByRole('button',{name:'Minimizar Retro Radio'}).click();
+           assert.equal(await page.evaluate(()=>window.stats.contexts[0].state),'running');
+           await page.evaluate(()=>{history.pushState({},'','/library');dispatchEvent(new PopStateEvent('popstate'));});
+           await page.evaluate(()=>{history.pushState({},'','/explore');dispatchEvent(new PopStateEvent('popstate'));});
+           assert.equal(await page.evaluate(()=>window.stats.contexts.length),1);
+           assert.equal(await page.evaluate(()=>window.stats.contexts[0].state),'running');
+           await page.getByRole('button',{name:'Pausar radio'}).focus();await page.keyboard.press('Space');
+           await page.waitForFunction(()=>window.stats.contexts[0].state==='suspended'&&window.stats.intervals.size===0&&window.stats.rafs.size===0);
+           await page.getByRole('button',{name:'Expandir Retro Radio'}).click();
+           await page.getByRole('button',{name:'Reproducir radio'}).click();
+           await page.emulateMedia({reducedMotion:'reduce'});
+           await page.waitForFunction(()=>window.stats.rafs.size===0);
+           assert.equal(await page.locator('.radio-spool').first().evaluate(el=>getComputedStyle(el).animationName),'none');
+           await page.emulateMedia({reducedMotion:'no-preference'});
+           await page.waitForFunction(()=>window.stats.rafs.size>0);
+           const play=page.getByRole('button',{name:'Pausar radio'});await play.focus();await page.keyboard.press('m');
+           assert.equal(await page.getByRole('button',{name:'Activar sonido'}).getAttribute('aria-pressed'),'true');
+           await page.keyboard.press('m');
+           await page.evaluate(()=>window.dispatchEvent(new CustomEvent('savestate:audio-focus',{detail:'worlds-music'})));
+           await page.waitForFunction(()=>window.stats.contexts[0].state==='suspended');
+           await page.locator('.radio-station-label select').selectOption('lofi_ambient');
+           await page.waitForFunction(()=>window.stats.contexts[0].state==='running');
+           await page.getByRole('button',{name:'Pausar radio'}).click();
+           await page.locator('.radio-station-label select').selectOption('synthwave_pulse');
+           await page.waitForFunction(()=>window.stats.contexts[0].state==='running');
+           await page.getByRole('button',{name:'Pausar radio'}).click();
+          
+           const samples=44100*30, wav=Buffer.alloc(44+samples*2);
+           wav.write('RIFF');wav.writeUInt32LE(wav.length-8,4);wav.write('WAVEfmt ',8);wav.writeUInt32LE(16,16);wav.writeUInt16LE(1,20);wav.writeUInt16LE(1,22);wav.writeUInt32LE(44100,24);wav.writeUInt32LE(88200,28);wav.writeUInt16LE(2,32);wav.writeUInt16LE(16,34);wav.write('data',36);wav.writeUInt32LE(samples*2,40);
+           for(let i=0;i<samples;i++)wav.writeInt16LE(Math.round(Math.sin(2*Math.PI*12000*i/44100)*13000),44+i*2);
+           await page.locator('input[type=file]').setInputFiles({name:'Mi casete privado.wav',mimeType:'audio/wav',buffer:wav});
+           if(await page.getByRole('button',{name:'Reproducir radio'}).count())await page.getByRole('button',{name:'Reproducir radio'}).click();
+           await page.waitForFunction(()=>window.stats.contexts[0].state==='running');
+           await page.waitForTimeout(300);
+           const rms=()=>page.evaluate(()=>{const data=new Float32Array(64);window.stats.meters[0].getFloatTimeDomainData(data);return Math.sqrt(data.reduce((s,v)=>s+v*v,0)/data.length);});
+           const clean=await rms();assert.ok(clean>0.05,'local cassette provides real audio samples');
+           await page.getByRole('button',{name:'TAPE',exact:true}).click();await page.waitForTimeout(200);
+           assert.ok(await rms()<clean*0.5,'lowpass attenuates the 12kHz test tone');
+           await page.getByRole('button',{name:'GAME BOY',exact:true}).click();
+           assert.equal(await page.evaluate(()=>window.stats.filters[0].type),'bandpass');
+           await page.getByRole('button',{name:'HI-FI',exact:true}).click();
+           await page.getByRole('button',{name:'🌧 Lluvia',exact:true}).click();
+           const original=await page.evaluate(()=>window.stats.created.at(-1));
+           await page.locator('input[type=file]').setInputFiles({name:'Otra cinta.wav',mimeType:'audio/wav',buffer:wav});
+           assert.ok(await page.evaluate(url=>window.stats.revoked.includes(url),original));
+           await page.waitForFunction(()=>window.stats.contexts[0].state==='running');
+           await page.getByRole('button',{name:'Minimizar Retro Radio'}).click();
+           assert.equal(await page.evaluate(()=>window.stats.contexts[0].state),'running');
+           await page.getByRole('button',{name:'Expandir Retro Radio'}).click();
+           await page.getByRole('button',{name:'Expulsar casete'}).click();
+           assert.deepEqual(await page.evaluate(()=>window.stats.revoked),await page.evaluate(()=>window.stats.created));
+           await page.locator('input[type=file]').setInputFiles({name:'Corrupto.mp3',mimeType:'audio/mpeg',buffer:Buffer.from('not-audio')});
+           await page.getByRole('status').filter({hasText:'ERR: INVALID CASSETTE FORMAT'}).waitFor();
+           assert.deepEqual(await page.evaluate(()=>window.stats.revoked),await page.evaluate(()=>window.stats.created));
+           const saved=await page.evaluate(()=>JSON.stringify(localStorage));
+           assert.ok(!saved.includes('blob:')&&!saved.includes('Mi casete')&&!saved.includes('Otra cinta'));
+           await page.getByRole('button',{name:'Reproducir radio'}).click();
+           await page.evaluate(()=>{history.pushState({},'','/guardian');dispatchEvent(new PopStateEvent('popstate'));});
+           await page.waitForFunction(()=>!document.querySelector('.retro-radio-deck')&&window.stats.contexts[0].state==='suspended');
+           await page.evaluate(()=>{history.pushState({},'','/explore');dispatchEvent(new PopStateEvent('popstate'));});
+           await deck.waitFor();
+           assert.equal(await page.evaluate(()=>window.stats.contexts.length),1);
+           await page.getByRole('button',{name:'Minimizar Retro Radio'}).count().then(async count=>{if(!count)await page.getByRole('button',{name:'Expandir Retro Radio'}).click();});
+           await page.locator('#chat').focus();
+           await page.getByRole('button',{name:'Expandir Retro Radio'}).waitFor();
+           await page.evaluate(()=>window.unmountRadio());
+           await page.waitForFunction(()=>window.stats.contexts[0].state==='closed'&&window.stats.intervals.size===0&&window.stats.rafs.size===0);
+           assert.deepEqual(network,[]);
+           assert.deepEqual(errors,[]);
+           console.log('SPEC04_BROWSER_OK: no autoplay; real oscillator and WAV samples; DSP attenuation; persistent pathname transitions; mini playback; keyboard; reduced motion; URL cleanup; corrupt codec recovery; audio focus; mobile collapse; disposal; zero external requests');
+          }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
+          
+          JS
+          node spec04-browser.mjs
+          rm spec04-browser.mjs
+      - name: Build unchanged baseline
+        run: |
+          git fetch origin ec9650aa0a68228c99e9a5f3eedcb0b1321c7229
+          git worktree add "$RUNNER_TEMP/spec04-base" ec9650aa0a68228c99e9a5f3eedcb0b1321c7229
+          npm ci --prefix "$RUNNER_TEMP/spec04-base"
+          cd "$RUNNER_TEMP/spec04-base"
+          npm run build
+      - name: Enforce 8KB gzip asset budget
+        env:
+          BASE_BUILD: ${{ runner.temp }}/spec04-base
+        run: |
+          node --input-type=module <<'JS'
+          import { readFileSync, existsSync, readdirSync } from 'node:fs';
+          import { join } from 'node:path';
+          import { runInNewContext } from 'node:vm';
+          import { gzipSync } from 'node:zlib';
+          function size(root) {
+            const context = {};
+            runInNewContext(readFileSync(join(root, '.next/server/app/players/[username]/page_client-reference-manifest.js'), 'utf8'), context);
+            const manifest = Object.values(context.__RSC_MANIFEST)[0];
+            const paths = new Set();
+            for (const module of Object.values(manifest.clientModules))
+              for (const chunk of module.chunks ?? [])
+                if (typeof chunk === 'string' && chunk.endsWith('.js')) paths.add(chunk.replace(/^\/?_next\//, ''));
+            for (const entries of Object.values(manifest.entryCSSFiles))
+              for (const entry of entries) {
+                const path = typeof entry === 'string' ? entry : entry.path;
+                if (path) paths.add(path.replace(/^\/?_next\//, ''));
+              }
+            let js = 0, css = 0;
+            for (const path of paths) {
+              const file = join(root, '.next', path);
+              if (!existsSync(file)) throw new Error('Missing emitted chunk: ' + file);
+              const length = gzipSync(readFileSync(file), { level: 9 }).length;
+              if (path.endsWith('.js')) js += length; else css += length;
+            }
+            if (js === 0 || css === 0) throw new Error('Empty route manifest measurement');
+            return { js, css, total: js + css, chunks: paths.size };
+          }
+          const base = size(process.env.BASE_BUILD);
+          const feature = size(process.cwd());
+          function allAssets(root) {
+            const folder = join(root, '.next/static/chunks');
+            return readdirSync(folder).filter(p => /\.(js|css)$/.test(p))
+              .reduce((total, path) => total + gzipSync(readFileSync(join(folder, path)), { level: 9 }).length, 0);
+          }
+          const allAssetsDelta = allAssets(process.cwd()) - allAssets(process.env.BASE_BUILD);
+          const delta = feature.total - base.total;
+          console.log('SPEC04_BUNDLE', JSON.stringify({ base, feature, delta, allAssetsDelta, budgetBytes: 8000 }));
+          if (delta >= 8000 || allAssetsDelta >= 8000) throw new Error('Profile initial JS + CSS gzip delta must stay below 8KB');
+          
+          JS
+      - name: Require browser acceptance
+        if: steps.browser.outcome != 'success'
+        run: exit 1
