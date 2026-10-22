@@ -1,6 +1,8 @@
 import type { Profile, Game } from '@/domain/model';
+import { CARD_SHELLS, type CardShellSkin, type CardQrCode } from '@/domain/memory-card';
 export type MemoryCardData = {
   profile: Pick<Profile, 'username' | 'avatar_url' | 'terminal_status' | 'owned_platforms'>;
+  qrCode?: CardQrCode;
   clearRate: number;
   hours: number;
   favorites: Pick<Game, 'id' | 'title' | 'cover_url'>[];
@@ -24,7 +26,7 @@ async function image(url: string | null): Promise<HTMLImageElement | null> {
     picture.src = url;
   });
 }
-export async function renderMemoryCard(data: MemoryCardData) {
+export async function renderMemoryCard(data: MemoryCardData, skin: CardShellSkin = 'ps1_memory_card') {
   const favorites = data.favorites.slice(0, 4);
   const [pictures] = await Promise.all([
     Promise.all([
@@ -40,7 +42,8 @@ export async function renderMemoryCard(data: MemoryCardData) {
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Este navegador no admite exportación Canvas.');
   const root = getComputedStyle(document.documentElement);
-  const accent = root.getPropertyValue('--accent').trim() || '#00f0ff';
+  const shell = CARD_SHELLS[skin];
+  const accent = skin === 'atomic_purple' ? '#d8b4fe' : root.getPropertyValue('--accent').trim() || '#00f0ff';
   const mono = root.getPropertyValue('--font-mono').trim() || 'monospace';
   const pixel = root.getPropertyValue('--font-pixel').trim() || 'monospace';
   function text(
@@ -95,15 +98,24 @@ export async function renderMemoryCard(data: MemoryCardData) {
   }
   ctx.fillStyle = '#08080c';
   ctx.fillRect(0, 0, 1080, 1350);
-  ctx.fillStyle = '#292e38';
+  ctx.fillStyle = shell.plastic;
   ctx.fillRect(28, 28, 1024, 1294);
+  // Molded ridges and cartridge notch stay outside the readable identity sticker.
+  if (skin !== 'ps1_memory_card') {
+    ctx.fillStyle = '#08080c';
+    ctx.fillRect(980, 28, 72, 66);
+    for (let i = 0; i < 3; i++) {
+      ctx.fillStyle = '#00000040';
+      ctx.fillRect(80, 52 + i * 12, 800, 4);
+    }
+  }
   ctx.fillStyle = '#111319';
-  ctx.fillRect(42, 42, 996, 1266);
+  ctx.fillRect(58, 155, 964, 1084);
   ctx.strokeStyle = accent;
   ctx.lineWidth = 3;
-  ctx.strokeRect(48, 48, 984, 1254);
-  text('SAVESTATE MEMORY CARD', 80, 105, 920, 38, accent, true);
-  text('SLOT 01  //  PLAYER SAVE  //  15 BLOCKS', 80, 142, 920, 20, '#a3aab9');
+  ctx.strokeRect(58, 155, 964, 1084);
+  text(skin === 'ps1_memory_card' ? 'SAVESTATE MEMORY CARD' : 'SAVESTATE GAME PAK', 80, 115, 920, 38, shell.ink, true);
+  text(shell.label.toUpperCase() + ' // PLAYER SAVE', 80, 142, 920, 20, shell.ink);
   cover(avatar, 80, 175, 148, 148);
   text(`@${data.profile.username}`, 260, 225, 740, 38);
   const status = data.profile.terminal_status || 'Ready to play';
@@ -140,7 +152,7 @@ export async function renderMemoryCard(data: MemoryCardData) {
     text(`SLOT ${String(i + 1).padStart(2, '0')}`, x, 1170, 215, 16, accent);
   }
   text(
-    `${location.origin}/players/${encodeURIComponent(data.profile.username)}`,
+    data.qrCode?.url ?? `${location.origin}/players/${encodeURIComponent(data.profile.username)}`,
     80,
     1225,
     920,
@@ -165,11 +177,11 @@ export async function renderMemoryCard(data: MemoryCardData) {
     ),
   };
 }
-export function downloadMemoryCard(blob: Blob, username: string) {
+export function downloadMemoryCard(blob: Blob, username: string, skin: CardShellSkin = 'ps1_memory_card') {
   const url = URL.createObjectURL(blob),
     link = document.createElement('a');
   link.href = url;
-  link.download = `savestate-memory-card-${username}.png`;
+  link.download = `savestate-${skin}-${username}.png`;
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }

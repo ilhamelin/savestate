@@ -1,3 +1,4 @@
+import { createMemoryCardQr } from '@/lib/memory-card-qr';
 import { resolvePlatformIcon } from '@/domain/platform-icons';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -13,7 +14,7 @@ import {
 import { PlayerFriendsWidget } from '@/components/player-friends-widget';
 import { serverClient } from '@/integrations/supabase/server';
 import { currentUser } from '@/lib/session';
-import { isConfigured, publicEnv } from '@/lib/env';
+import { isConfigured, publicEnv, appUrl } from '@/lib/env';
 import { wallpaperForDisplay } from '@/domain/wallpaper';
 import { dbCheck } from '@/lib/http';
 import { Library } from '@/components/library';
@@ -272,6 +273,7 @@ export default async function Player({ params }: { params: Promise<{ username: s
                     />
                     <MemoryCardExport
                       data={{
+                        qrCode: createMemoryCardQr(profile.username, appUrl()),
                         profile: {
                           username: profile.username,
                           avatar_url: profile.avatar_url,
