@@ -3,7 +3,12 @@ import Link from 'next/link';
 import { Bell } from 'lucide-react';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { BadgeUnlockToast } from '@/components/badge-unlock-toast';
-import { badgeUnlockNotification, badgeUnlockEvent, type BadgeUnlockNotification, type BadgeUnlockEvent } from '@/domain/badges';
+import {
+  badgeUnlockNotification,
+  badgeUnlockEvent,
+  type BadgeUnlockNotification,
+  type BadgeUnlockEvent,
+} from '@/domain/badges';
 import { useRouter } from 'next/navigation';
 import { browserClient } from '@/integrations/supabase/browser';
 import { useOnlineUsers } from '@/lib/presence';
@@ -33,7 +38,7 @@ export function NotificationBell({ userId }: { userId: string }) {
   const pendingBadges = useRef(new Map<string, BadgeUnlockNotification>());
   const seenBadges = useRef(new Set<string>());
   const badgeBaseline = useRef<string | null>(null);
-  const dismissBadge = useCallback(() => setBadgeUnlocks(queue => queue.slice(1)), []);
+  const dismissBadge = useCallback(() => setBadgeUnlocks((queue) => queue.slice(1)), []);
   useEffect(() => {
     let controller: AbortController | undefined;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -44,24 +49,27 @@ export function NotificationBell({ userId }: { userId: string }) {
     async function flushBadges() {
       if (flushingBadges || disposed || !pendingBadges.current.size) return;
       flushingBadges = true;
-      const notices = [...pendingBadges.current.values()].slice(0, 50)
+      const notices = [...pendingBadges.current.values()]
+        .slice(0, 50)
         .sort((a, b) => Date.parse(a.unlockedAt) - Date.parse(b.unlockedAt));
       let completed = false;
       try {
-        const result = await db.from('badges').select('id,name,description,category,icon_pixel,created_at')
-          .in('id', [...new Set(notices.map(notice => notice.badgeId))])
+        const result = await db
+          .from('badges')
+          .select('id,name,description,category,icon_pixel,created_at')
+          .in('id', [...new Set(notices.map((notice) => notice.badgeId))])
           .abortSignal(AbortSignal.any([badgeController.signal, AbortSignal.timeout(5000)]));
         if (disposed || result.error) return;
         const events: { id: string; event: BadgeUnlockEvent }[] = [];
         for (const notice of notices) {
           pendingBadges.current.delete(notice.id);
           if (seenBadges.current.has(notice.id)) continue;
-          const badge = result.data?.find(value => value.id === notice.badgeId);
+          const badge = result.data?.find((value) => value.id === notice.badgeId);
           const event = badge ? badgeUnlockEvent(notice, badge) : null;
           seenBadges.current.add(notice.id);
           if (event) events.push({ id: notice.id, event });
         }
-        if (events.length) setBadgeUnlocks(queue => [...queue, ...events]);
+        if (events.length) setBadgeUnlocks((queue) => [...queue, ...events]);
         completed = true;
       } catch {
         // Keep pending IDs for the next successful refresh; never invent a badge.
@@ -86,9 +94,14 @@ export function NotificationBell({ userId }: { userId: string }) {
           // Establish a server-clock baseline without replaying historical unlocks.
           badgeBaseline.current ??= result.data.generatedAt;
           for (const item of result.data.items) {
-            if (item.read_at || Date.parse(item.created_at) < Date.parse(badgeBaseline.current)) continue;
-            const notice = badgeUnlockNotification({ ...item, user_id: userId, badge_id: item.badgeId }, userId);
-            if (notice && !seenBadges.current.has(notice.id)) pendingBadges.current.set(notice.id, notice);
+            if (item.read_at || Date.parse(item.created_at) < Date.parse(badgeBaseline.current))
+              continue;
+            const notice = badgeUnlockNotification(
+              { ...item, user_id: userId, badge_id: item.badgeId },
+              userId,
+            );
+            if (notice && !seenBadges.current.has(notice.id))
+              pendingBadges.current.set(notice.id, notice);
           }
           await flushBadges();
         }
@@ -118,7 +131,8 @@ export function NotificationBell({ userId }: { userId: string }) {
         (payload) => {
           if (payload.eventType === 'INSERT') {
             const notice = badgeUnlockNotification(payload.new, userId);
-            if (notice && !seenBadges.current.has(notice.id)) pendingBadges.current.set(notice.id, notice);
+            if (notice && !seenBadges.current.has(notice.id))
+              pendingBadges.current.set(notice.id, notice);
           }
           schedule();
         },
@@ -234,7 +248,11 @@ export function NotificationBell({ userId }: { userId: string }) {
       }}
     >
       {badgeUnlocks[0] ? (
-        <BadgeUnlockToast key={badgeUnlocks[0].id} event={badgeUnlocks[0].event} onClose={dismissBadge} />
+        <BadgeUnlockToast
+          key={badgeUnlocks[0].id}
+          event={badgeUnlocks[0].event}
+          onClose={dismissBadge}
+        />
       ) : null}
       <button
         type="button"

@@ -40,7 +40,9 @@ export function Library({
   const [completedAchievements, setCompletedAchievements] = useState(false);
   const [page, setPage] = useState(0);
   if (entries.length === 0) {
-    return editable ? <LibraryEmptyHero /> : (
+    return editable ? (
+      <LibraryEmptyHero />
+    ) : (
       <section className="empty-state">
         <p>Esta biblioteca aún no tiene juegos registrados.</p>
       </section>

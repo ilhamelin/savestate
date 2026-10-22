@@ -3,9 +3,13 @@ import { calculatePlayerLevel, type Badge, type UserBadge } from '@/domain/badge
 import { BadgePixelIcon } from '@/components/badge-pixel-icon';
 
 export function BadgeGallery({ catalogue, earned }: { catalogue: Badge[]; earned: UserBadge[] }) {
-  const badges = [...new Map(catalogue.map(badge => [badge.id, badge])).values()];
-  const ids = new Set(badges.map(badge => badge.id));
-  const unlocked = new Map(earned.filter(badge => ids.has(badge.badge_id)).map(badge => [badge.badge_id, badge.unlocked_at]));
+  const badges = [...new Map(catalogue.map((badge) => [badge.id, badge])).values()];
+  const ids = new Set(badges.map((badge) => badge.id));
+  const unlocked = new Map(
+    earned
+      .filter((badge) => ids.has(badge.badge_id))
+      .map((badge) => [badge.badge_id, badge.unlocked_at]),
+  );
   const player = calculatePlayerLevel(unlocked.size, badges.length);
   return (
     <section id="player-badges" className="badge-showcase" aria-labelledby="badge-heading">
@@ -20,13 +24,20 @@ export function BadgeGallery({ catalogue, earned }: { catalogue: Badge[]; earned
       <div className="badge-level-panel">
         <p className="eyebrow">RANGO POR MEDALLAS · NIVEL {player.level}</p>
         <h3>{player.title}</h3>
-        <p>{player.earnedCount} de {player.totalCount} desbloqueadas — {player.progressPercentage}%</p>
-        <progress value={player.progressPercentage} max={100} aria-label="Progreso general de medallas"
-          aria-valuetext={`${player.earnedCount} de ${player.totalCount} medallas desbloqueadas`} />
+        <p>
+          {player.earnedCount} de {player.totalCount} desbloqueadas — {player.progressPercentage}%
+        </p>
+        <progress
+          value={player.progressPercentage}
+          max={100}
+          aria-label="Progreso general de medallas"
+          aria-valuetext={`${player.earnedCount} de ${player.totalCount} medallas desbloqueadas`}
+        />
         <small className="muted">
-          {player.nextLevelThreshold === null ? 'Rango máximo de medallas alcanzado.' :
-            `Siguiente rango: ${player.nextLevelThreshold} medallas.`}
-          {' '}Este rango es independiente del nivel de XP del perfil.
+          {player.nextLevelThreshold === null
+            ? 'Rango máximo de medallas alcanzado.'
+            : `Siguiente rango: ${player.nextLevelThreshold} medallas.`}{' '}
+          Este rango es independiente del nivel de XP del perfil.
         </small>
       </div>
       <div className="badge-grid">

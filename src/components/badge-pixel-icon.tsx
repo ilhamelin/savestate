@@ -9,8 +9,18 @@ const glyphs: Record<string, string> = {
 };
 
 export function BadgePixelIcon({ icon, size = 56 }: { icon: string; size?: number }) {
-  return <svg viewBox="0 0 16 16" width={size} height={size} fill="none"
-    stroke="currentColor" strokeWidth="1.5" shapeRendering="crispEdges" aria-hidden="true">
-    <path d={glyphs[icon] ?? glyphs.save} />
-  </svg>;
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      shapeRendering="crispEdges"
+      aria-hidden="true"
+    >
+      <path d={glyphs[icon] ?? glyphs.save} />
+    </svg>
+  );
 }
