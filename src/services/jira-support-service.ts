@@ -96,7 +96,10 @@ export async function dispatchSupportTicket(id: string, store: SupportStore = su
   const config = jiraConfig();
   const token = process.env.JIRA_PORTAL_TOKEN?.trim();
   if (!token)
-    return store.finish(row, { status: row.status === 'needs_review' ? 'needs_review' : row.remote_id ? 'stored_local' : 'queued' });
+    return store.finish(row, {
+      status:
+        row.status === 'needs_review' ? 'needs_review' : row.remote_id ? 'stored_local' : 'queued',
+    });
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), SUPPORT_TIMEOUT_MS);
   const options = {
