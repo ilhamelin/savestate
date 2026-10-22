@@ -1,5 +1,7 @@
 'use client';
 import Link from 'next/link';
+import { useEffect } from 'react';
+import { reportClientError } from '@/lib/client-error-report';
 import { RotateCcw, Compass, AlertTriangle } from 'lucide-react';
 import { soundFx } from '@/lib/sound';
 
@@ -10,6 +12,7 @@ export default function ErrorPage({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => { reportClientError(error, window.location.pathname); }, [error]);
   return (
     <div className="empty-state checkpoint-error" role="alert">
       <span className="checkpoint-error-icon">

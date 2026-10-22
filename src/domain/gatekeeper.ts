@@ -135,6 +135,7 @@ export function gatekeeperExempt(path: string): boolean {
       '/api/discord/interactions',
       '/api/cron/check-itch',
       '/api/cron/discord-freebies',
+      '/api/cron/jira-support',
     ].includes(path) ||
     path.startsWith('/api/guardian/') ||
     path.startsWith('/guardian-assets/') ||

@@ -3,7 +3,7 @@ on:
   push:
     branches: [feature/jira-cloud-integration]
 permissions:
-  contents: read
+  contents: write
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -14,9 +14,18 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Read installed Next.js guides
+      - name: Format changed sources
         run: |
-          find node_modules/next/dist/docs -iname '*route-handler*' -o -iname '*use-client*' -o -iname '*error-handling*'
-          for file in $(find node_modules/next/dist/docs -iname '*route-handler*' -o -iname '*use-client*' -o -iname '*error-handling*'); do cat "$file"; done
-      - run: npm run check
+          npx prettier --write src/domain/support-ticket.ts src/services/support-sanitize.ts src/services/support-store.ts src/services/jira-support-service.ts src/lib/database.types.ts src/app/api/support/tickets/route.ts src/app/api/telemetry/errors/route.ts src/app/api/cron/jira-support/route.ts src/lib/client-error-report.ts src/components/support/client-error-reporter.tsx src/app/error.tsx src/domain/gatekeeper.ts vercel.json src/components/support/feedback-modal.tsx src/components/guardian/guardian-jira-panel.tsx src/styles/support.css src/app/layout.tsx src/components/guardian/guardian-console.tsx tests/unit/system-broadcast-stream.test.ts tests/unit/jira-support.test.ts
+          git add src/domain/support-ticket.ts src/services/support-sanitize.ts src/services/support-store.ts src/services/jira-support-service.ts src/lib/database.types.ts src/app/api/support/tickets/route.ts src/app/api/telemetry/errors/route.ts src/app/api/cron/jira-support/route.ts src/lib/client-error-report.ts src/components/support/client-error-reporter.tsx src/app/error.tsx src/domain/gatekeeper.ts vercel.json src/components/support/feedback-modal.tsx src/components/guardian/guardian-jira-panel.tsx src/styles/support.css src/app/layout.tsx src/components/guardian/guardian-console.tsx tests/unit/system-broadcast-stream.test.ts tests/unit/jira-support.test.ts
+          if ! git diff --cached --quiet; then
+            git config user.name "SaveState CI"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "style: format SPEC-05 sources with Prettier"
+            git push origin HEAD:feature/jira-cloud-integration
+          fi
+      - run: npm run lint -- --max-warnings=0
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run format:check
       - run: npm run build

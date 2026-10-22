@@ -41,6 +41,11 @@ type ForeignKey<Name extends string, Column extends string, Target extends strin
 export type Database = {
   public: {
     Tables: {
+      support_tickets: Table<import('@/domain/support-ticket').SupportTicketRow>;
+      support_telemetry: Table<{
+        id: string; fingerprint: string;
+        event: import('@/domain/support-ticket').TelemetryErrorEvent; created_at: string;
+      }>;
       system_broadcasts: Table<
         import('@/domain/guardian-suite').SystemBroadcast & {
           active: boolean;
@@ -141,6 +146,12 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      claim_support_attempt: { Args: { p_key_hash: string; p_kind: string }; Returns: boolean };
+      claim_support_ticket: { Args: { p_id: string }; Returns: import('@/domain/support-ticket').SupportTicketRow[] };
+      record_support_telemetry: {
+        Args: { p_event: import('@/domain/support-ticket').TelemetryErrorEvent; p_fingerprint: string };
+        Returns: string;
+      };
       grant_player_xp: {
         Args: { p_target_id: string; p_amount: number };
         Returns: { new_xp: number; new_level: number }[];

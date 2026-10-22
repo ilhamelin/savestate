@@ -1,6 +1,16 @@
 {
   "crons": [
-    { "path": "/api/cron/check-itch", "schedule": "0 12 * * *" },
-    { "path": "/api/cron/discord-freebies", "schedule": "0 13 * * *" }
+    {
+      "path": "/api/cron/check-itch",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/discord-freebies",
+      "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/jira-support",
+      "schedule": "0 14 * * *"
+    }
   ]
 }

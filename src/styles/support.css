@@ -1,0 +1,36 @@
+.support-feedback-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(640px, calc(100vw - 2rem));
+  max-height: 85dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid #00f0ff;
+  border-radius: 10px;
+  padding: 0;
+  color: #f2f4f8;
+  background: #0b0f19;
+  box-shadow: 0 0 32px #00f0ff22;
+}
+.support-feedback-dialog::backdrop {
+  background: #030508cc;
+}
+.support-feedback-content { padding: 1.25rem; }
+.support-feedback-header {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem;
+}
+.support-feedback-header h2 { font-size: 1.1rem; }
+.support-feedback-dialog form, .support-success { display: grid; gap: 1rem; margin-top: 1rem; }
+.support-feedback-dialog label { display: grid; gap: .35rem; }
+.support-feedback-dialog textarea { resize: vertical; max-height: 40vh; }
+.support-feedback-dialog fieldset { min-width: 0; border: 0; }
+.support-success { overflow-wrap: anywhere; color: #4ade80; }
+.guardian-jira-links { display: grid; gap: .75rem; margin-block: 1rem; }
+.guardian-jira-panel h2 { font-size: 1rem; margin-block: 1rem .5rem; }
+.guardian-jira-list { list-style: none; padding: 0; display: grid; gap: .75rem; margin-block: 1rem; }
+.guardian-jira-list li { display: grid; gap: .5rem; padding: .85rem; background: #0d1322; border: 1px solid #00f0ff33; border-radius: 8px; min-width: 0; overflow-wrap: anywhere; }
+.guardian-jira-list pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .7rem; max-height: 180px; overflow-y: auto; }
+.guardian-jira-list small { color: var(--muted); }
+.guardian-bottom-nav { overflow-x: auto; }
+.guardian-bottom-nav button { flex: 1 0 62px; }
