@@ -18,21 +18,39 @@ export function FeedbackModal() {
   useEffect(() => {
     const node = dialog.current;
     if (!node) return;
-    if (!open) { if (node.open) node.close(); return; }
+    if (!open) {
+      if (node.open) node.close();
+      return;
+    }
     if (!node.open) node.showModal();
-    const focusable = () => Array.from(node.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), a[href], [tabindex="0"]',
-    )).filter((element) => element.getClientRects().length > 0);
+    const focusable = () =>
+      Array.from(
+        node.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), a[href], [tabindex="0"]',
+        ),
+      ).filter((element) => element.getClientRects().length > 0);
     if (!node.contains(document.activeElement)) focusable()[0]?.focus();
     const trap = (event: KeyboardEvent) => {
       if (event.key !== 'Tab' || !node.open) return;
       const items = focusable();
-      const first = items[0], last = items.at(-1);
-      if (!first || !last) { event.preventDefault(); return; }
-      if (event.shiftKey && (document.activeElement === first || !node.contains(document.activeElement))) {
-        event.preventDefault(); last.focus();
-      } else if (!event.shiftKey && (document.activeElement === last || !node.contains(document.activeElement))) {
-        event.preventDefault(); first.focus();
+      const first = items[0],
+        last = items.at(-1);
+      if (!first || !last) {
+        event.preventDefault();
+        return;
+      }
+      if (
+        event.shiftKey &&
+        (document.activeElement === first || !node.contains(document.activeElement))
+      ) {
+        event.preventDefault();
+        last.focus();
+      } else if (
+        !event.shiftKey &&
+        (document.activeElement === last || !node.contains(document.activeElement))
+      ) {
+        event.preventDefault();
+        first.focus();
       }
     };
     document.addEventListener('keydown', trap);
