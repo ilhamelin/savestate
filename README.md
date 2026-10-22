@@ -15,6 +15,20 @@ npm run dev
 
 Abre `http://localhost:3000`. La [guía de configuración](docs/configuracion.md) explica cómo crear Supabase, configurar email/Discord/Google y conectar Twitch/IGDB. Sin credenciales, la interfaz muestra el estado pendiente; no inventa juegos ni persiste datos en memoria.
 
+## Contribución y verificación en la nube
+
+El código de desarrollo se mantiene en `implementation/chatgpt`. Las especificaciones y auditorías se consultan en la rama [research/antigravity](https://github.com/ilhamelin/savestate/tree/research/antigravity/docs). Antes de implementar cambios, lee el [playbook de operación en la nube](.codex/CODEX_CLOUD_PLAYBOOK.md).
+
+1. Crea una rama `feature/<nombre>` o `fix/<nombre>` desde `implementation/chatgpt` y realiza cambios acotados.
+2. Abre un Pull Request con destino a `implementation/chatgpt`, describiendo el problema, la solución y las verificaciones necesarias.
+3. Revisa [GitHub Actions](https://github.com/ilhamelin/savestate/actions/workflows/ci.yml): el workflow [CI Runner](.github/workflows/ci.yml) usa Ubuntu, Node.js 24 y `npm ci`, y ejecuta `npm run check`. Esta suite incluye ESLint, generación de tipos de rutas de Next.js y `tsc --noEmit`, pruebas unitarias y comprobación de formato con Prettier.
+4. Confirma que los checks del commit actual y el preview de Vercel estén en verde antes de integrar el PR. Si fallan, consulta sus logs, corrige la causa y verifica de nuevo el último SHA.
+5. Tras integrar el cambio, comprueba el despliegue de Vercel asociado al commit. Los previews de PR y los despliegues de producción son distintos; producción sigue la rama configurada en Vercel.
+
+El CI se activa en Pull Requests hacia `implementation/chatgpt` o `main`, y en pushes a esas dos ramas. Un push a una rama de feature sin PR abierto no activa este workflow.
+
+Este flujo permite editar en GitHub y ejecutar las verificaciones en runners remotos, sin depender de una copia del proyecto en el PC. Las credenciales se configuran en los secretos y variables del entorno que las necesite; los valores configurados en Vercel no se transfieren automáticamente a GitHub Actions. Nunca subas `.env.local`, tokens ni claves privadas. Las pruebas unitarias no sustituyen las pruebas de integración que requieren servicios externos.
+
 ## Alcance implementado
 
 - Momentos Gamer: publicaciones con Markdown, capturas WebP privadas o YouTube, categorías, comentarios y reacciones. Consulta [la guía del módulo](docs/momentos_gamer.md).
@@ -79,7 +93,7 @@ La documentación original numerada y el compilado permanecen en la raíz. Las s
 - La puntuación única y Top 4 se protegen también en PostgreSQL.
 - Una biblioteca muestra hasta 500 registros recientes más sus favoritos; las estadísticas indican ese alcance. Las fichas muestran hasta 50 reseñas dentro de 200 fichas de biblioteca visibles y 300 comentarios. Las listas y señales tienen límites explícitos de consulta para la entrega inicial.
 
-Consulta [docs/estado_implementacion.md](docs/estado_implementacion.md) para resultados de verificación y pendientes. No hay remoto configurado y no se hizo push.
+Consulta [docs/estado_implementacion.md](docs/estado_implementacion.md) para resultados de verificación y pendientes.
 
 La [Fase 3: Sala Arcade, compañeros y habitaciones](docs/arcade_companeros_y_habitaciones.md) incorpora duelos comunitarios en el inicio, convocatorias de 48 horas en `/parties` y tres temas de perfil seleccionables en `/settings`. Requiere la migración `202610070008_arcade_and_parties.sql`; los duelos se activan desde SQL con juegos existentes del catálogo.
 
