@@ -14,14 +14,16 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
-      - name: Read installed Next.js guides required by AGENTS.md
+      - name: Format feature in the cloud
         run: |
-          node --input-type=module <<'JS'
-          import { readdirSync, readFileSync } from 'node:fs';
-          function walk(dir) {
-            return readdirSync(dir, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(dir + '/' + e.name) : [dir + '/' + e.name]);
-          }
-          const paths = walk('node_modules/next/dist/docs').filter(p => /layouts-and-pages|server-and-client-components|lazy-loading|use-client/.test(p) && /\.mdx?$/.test(p));
-          if (!paths.length) throw new Error('Installed Next.js guides unavailable');
-          for (const path of paths) console.log('GUIDE ' + path + '\n' + readFileSync(path, 'utf8').slice(0, 18000));
-          JS
+          npx prettier --write 'src/domain/retro-audio.ts' 'src/lib/retro-audio/audio-focus.ts' 'src/lib/retro-audio/synth-chiptune.ts' 'src/lib/retro-audio/audio-engine.ts' 'src/components/retro-radio/cassette-slot.tsx' 'src/components/retro-radio/equalizer-visualizer.tsx' 'src/components/retro-radio/retro-radio-deck.tsx' 'src/styles/retro-radio.css' 'src/app/layout.tsx' 'src/components/worlds-music-player.tsx' 'tests/unit/retro-audio.test.ts'
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add 'src/domain/retro-audio.ts' 'src/lib/retro-audio/audio-focus.ts' 'src/lib/retro-audio/synth-chiptune.ts' 'src/lib/retro-audio/audio-engine.ts' 'src/components/retro-radio/cassette-slot.tsx' 'src/components/retro-radio/equalizer-visualizer.tsx' 'src/components/retro-radio/retro-radio-deck.tsx' 'src/styles/retro-radio.css' 'src/app/layout.tsx' 'src/components/worlds-music-player.tsx' 'tests/unit/retro-audio.test.ts'
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(SPEC-04): format retro radio implementation"
+            git push origin HEAD:feature/retro-radio-deck
+          fi
+      - run: npm run check
+      - run: npm run lint -- --max-warnings=0
+      - run: npm run build

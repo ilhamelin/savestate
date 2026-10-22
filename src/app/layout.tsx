@@ -1,3 +1,5 @@
+import { RetroRadioDeck } from '@/components/retro-radio/retro-radio-deck';
+import '@/styles/retro-radio.css';
 import type { Metadata, Viewport } from 'next';
 import { Suspense } from 'react';
 import { headers } from 'next/headers';
@@ -156,6 +158,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             </footer>
           </>
         )}
+        <RetroRadioDeck />
       </body>
     </html>
   );
