@@ -26,7 +26,10 @@ async function image(url: string | null): Promise<HTMLImageElement | null> {
     picture.src = url;
   });
 }
-export async function renderMemoryCard(data: MemoryCardData, skin: CardShellSkin = 'ps1_memory_card') {
+export async function renderMemoryCard(
+  data: MemoryCardData,
+  skin: CardShellSkin = 'ps1_memory_card',
+) {
   const favorites = data.favorites.slice(0, 4);
   const [pictures] = await Promise.all([
     Promise.all([
@@ -43,7 +46,8 @@ export async function renderMemoryCard(data: MemoryCardData, skin: CardShellSkin
   if (!ctx) throw new Error('Este navegador no admite exportación Canvas.');
   const root = getComputedStyle(document.documentElement);
   const shell = CARD_SHELLS[skin];
-  const accent = skin === 'atomic_purple' ? '#d8b4fe' : root.getPropertyValue('--accent').trim() || '#00f0ff';
+  const accent =
+    skin === 'atomic_purple' ? '#d8b4fe' : root.getPropertyValue('--accent').trim() || '#00f0ff';
   const mono = root.getPropertyValue('--font-mono').trim() || 'monospace';
   const pixel = root.getPropertyValue('--font-pixel').trim() || 'monospace';
   function text(
@@ -114,7 +118,15 @@ export async function renderMemoryCard(data: MemoryCardData, skin: CardShellSkin
   ctx.strokeStyle = accent;
   ctx.lineWidth = 3;
   ctx.strokeRect(58, 155, 964, 1084);
-  text(skin === 'ps1_memory_card' ? 'SAVESTATE MEMORY CARD' : 'SAVESTATE GAME PAK', 80, 115, 920, 38, shell.ink, true);
+  text(
+    skin === 'ps1_memory_card' ? 'SAVESTATE MEMORY CARD' : 'SAVESTATE GAME PAK',
+    80,
+    115,
+    920,
+    38,
+    shell.ink,
+    true,
+  );
   text(shell.label.toUpperCase() + ' // PLAYER SAVE', 80, 142, 920, 20, shell.ink);
   cover(avatar, 80, 175, 148, 148);
   text(`@${data.profile.username}`, 260, 225, 740, 38);
@@ -177,7 +189,11 @@ export async function renderMemoryCard(data: MemoryCardData, skin: CardShellSkin
     ),
   };
 }
-export function downloadMemoryCard(blob: Blob, username: string, skin: CardShellSkin = 'ps1_memory_card') {
+export function downloadMemoryCard(
+  blob: Blob,
+  username: string,
+  skin: CardShellSkin = 'ps1_memory_card',
+) {
   const url = URL.createObjectURL(blob),
     link = document.createElement('a');
   link.href = url;

@@ -16,7 +16,9 @@ function nodes(value: unknown): View[] {
   const node = value as View;
   return [node, ...nodes(node.props.children)];
 }
-const fixture = 'data:text/javascript,' + encodeURIComponent(`
+const fixture =
+  'data:text/javascript,' +
+  encodeURIComponent(`
   let cursor=0;
   const slots=[];
   export const effects=[];
@@ -42,15 +44,26 @@ const hooks = registerHooks({
       return { url: fixture, shortCircuit: true };
     if (specifier.startsWith('@/')) {
       const file = resolve('src', specifier.slice(2));
-      return { url: pathToFileURL(existsSync(file + '.tsx') ? file + '.tsx' : file + '.ts').href, shortCircuit: true };
+      return {
+        url: pathToFileURL(existsSync(file + '.tsx') ? file + '.tsx' : file + '.ts').href,
+        shortCircuit: true,
+      };
     }
     return next(specifier, context);
   },
   load(url, context, next) {
     if (url.startsWith('file:') && /\.tsx?$/.test(url))
-      return { format: 'module', source: ts.transpileModule(readFileSync(fileURLToPath(url), 'utf8'), {
-        compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
-      }).outputText, shortCircuit: true };
+      return {
+        format: 'module',
+        source: ts.transpileModule(readFileSync(fileURLToPath(url), 'utf8'), {
+          compilerOptions: {
+            module: ts.ModuleKind.ESNext,
+            target: ts.ScriptTarget.ES2022,
+            jsx: ts.JsxEmit.ReactJSX,
+          },
+        }).outputText,
+        shortCircuit: true,
+      };
     return next(url, context);
   },
 });
@@ -58,13 +71,26 @@ after(() => hooks.deregister());
 function replaceGlobal(name: string, value: unknown) {
   const old = Object.getOwnPropertyDescriptor(globalThis, name);
   Object.defineProperty(globalThis, name, { configurable: true, value });
-  return () => old ? Object.defineProperty(globalThis, name, old) : Reflect.deleteProperty(globalThis, name);
+  return () =>
+    old ? Object.defineProperty(globalThis, name, old) : Reflect.deleteProperty(globalThis, name);
 }
 
 test('tilt is centered, clamped to twelve degrees and preserves the flip state', () => {
   const rect = { left: 10, top: 20, width: 100, height: 200 };
-  assert.deepEqual(cardTiltForPoint(60, 120, rect), { rotateX: 0, rotateY: 0, glareX: 50, glareY: 50, isFlipped: false });
-  assert.deepEqual(cardTiltForPoint(-500, 900, rect, true), { rotateX: -12, rotateY: -12, glareX: 0, glareY: 100, isFlipped: true });
+  assert.deepEqual(cardTiltForPoint(60, 120, rect), {
+    rotateX: 0,
+    rotateY: 0,
+    glareX: 50,
+    glareY: 50,
+    isFlipped: false,
+  });
+  assert.deepEqual(cardTiltForPoint(-500, 900, rect, true), {
+    rotateX: -12,
+    rotateY: -12,
+    glareX: 0,
+    glareY: 100,
+    isFlipped: true,
+  });
   assert.equal(cardTiltForPoint(110, 20, rect).rotateX, 12);
   assert.equal(cardTiltForPoint(110, 20, rect).rotateY, 12);
 });
@@ -75,10 +101,15 @@ test('reduced motion and invalid geometry always return a neutral tilt', () => {
     cardTiltForPoint(NaN, 0, rect),
     cardTiltForPoint(0, 0, { ...rect, width: 0 }),
     cardTiltForPoint(0, 0, { ...rect, height: Infinity }),
-  ]) assert.deepEqual(result, { rotateX: 0, rotateY: 0, glareX: 50, glareY: 50, isFlipped: false });
+  ])
+    assert.deepEqual(result, { rotateX: 0, rotateY: 0, glareX: 50, glareY: 50, isFlipped: false });
 });
 test('three chassis have distinct palettes and stable public identifiers', () => {
-  assert.deepEqual(Object.keys(CARD_SHELLS), ['ps1_memory_card', 'gameboy_cartridge', 'atomic_purple']);
+  assert.deepEqual(Object.keys(CARD_SHELLS), [
+    'ps1_memory_card',
+    'gameboy_cartridge',
+    'atomic_purple',
+  ]);
   assert.equal(new Set(Object.values(CARD_SHELLS).map((skin) => skin.plastic)).size, 3);
 });
 
@@ -86,10 +117,13 @@ test('QR independently decodes to the canonical profile URL, with a four-module 
   const { createMemoryCardQr } = await import('../../src/lib/memory-card-qr.ts');
   for (const username of ['ilhamelin_v2', 'player_with_a_long_username_123']) {
     const code = createMemoryCardQr(username, 'https://savestate-eight.vercel.app');
-    const scale = 8, width = code.size * scale;
+    const scale = 8,
+      width = code.size * scale;
     const pixels = new Uint8ClampedArray(width * width * 4).fill(255);
     for (const run of code.path.matchAll(/M(\d+),(\d+)\.5h(\d+)/g)) {
-      const x = Number(run[1]), y = Number(run[2]), length = Number(run[3]);
+      const x = Number(run[1]),
+        y = Number(run[2]),
+        length = Number(run[3]);
       assert.ok(x >= 4 && y >= 4 && x + length <= code.size - 4 && y < code.size - 4);
       for (let dy = 0; dy < scale; dy++)
         for (let dx = 0; dx < length * scale; dx++) {
@@ -111,19 +145,32 @@ test('accessible flip, chassis selection, touch tilt, animation cleanup and live
   const queued = new Map<number, FrameRequestCallback>();
   const restore = [
     replaceGlobal('window', { matchMedia: () => ({ matches: reduced }) }),
-    replaceGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { queued.set(++nextFrame, callback); return nextFrame; }),
-    replaceGlobal('cancelAnimationFrame', (id: number) => { queued.delete(id); }),
+    replaceGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      queued.set(++nextFrame, callback);
+      return nextFrame;
+    }),
+    replaceGlobal('cancelAnimationFrame', (id: number) => {
+      queued.delete(id);
+    }),
   ];
   try {
     const { RetroCard3D } = await import('../../src/components/retro-card-3d.tsx');
     const props: InteractiveCardProps = {
-      username: 'player', avatarUrl: null, clearRate: 50, hours: 123,
-      topGames: [], qrCode: { url: 'https://example.com/players/player', size: 29, path: 'M4,4.5h7' },
+      username: 'player',
+      avatarUrl: null,
+      clearRate: 50,
+      hours: 123,
+      topGames: [],
+      qrCode: { url: 'https://example.com/players/player', size: 29, path: 'M4,4.5h7' },
       children: (skin) => skin,
     };
     // These tests drive real component handlers with a small deterministic hook/JSX fixture.
-    const render = () => { runtime.begin(); return RetroCard3D(props); };
-    const find = (view: unknown, className: string) => nodes(view).find((n) => n.props.className === className)!;
+    const render = () => {
+      runtime.begin();
+      return RetroCard3D(props);
+    };
+    const find = (view: unknown, className: string) =>
+      nodes(view).find((n) => n.props.className === className)!;
     let view = render();
     assert.equal(find(view, 'retro-card-front').props['aria-hidden'], false);
     assert.equal(find(view, 'retro-card-back').props.inert, true);
@@ -146,13 +193,25 @@ test('accessible flip, chassis selection, touch tilt, animation cleanup and live
 
     const styles = new Map<string, string>();
     const scene = find(view, 'retro-card-scene');
-    (scene.props.ref as { current: unknown }).current = { getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }) };
-    (find(view, 'retro-card-tilt').props.ref as { current: unknown }).current = { style: { setProperty: (key: string, value: string) => styles.set(key, value) } };
+    (scene.props.ref as { current: unknown }).current = {
+      getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }),
+    };
+    (find(view, 'retro-card-tilt').props.ref as { current: unknown }).current = {
+      style: { setProperty: (key: string, value: string) => styles.set(key, value) },
+    };
     const move = scene.props.onPointerMove as (e: unknown) => void;
     move({ clientX: 100, clientY: 0, pointerType: 'mouse' });
-    (scene.props.onPointerDown as (e: unknown) => void)({ clientX: 75, clientY: 25, pointerType: 'touch' });
+    (scene.props.onPointerDown as (e: unknown) => void)({
+      clientX: 75,
+      clientY: 25,
+      pointerType: 'touch',
+    });
     assert.equal(queued.size, 1);
-    const flush = () => { const callbacks = [...queued.values()]; queued.clear(); callbacks.forEach((cb) => cb(0)); };
+    const flush = () => {
+      const callbacks = [...queued.values()];
+      queued.clear();
+      callbacks.forEach((cb) => cb(0));
+    };
     flush();
     assert.equal(styles.get('--card-rx'), '6deg');
     assert.equal(styles.get('--card-ry'), '6deg');
@@ -164,18 +223,29 @@ test('accessible flip, chassis selection, touch tilt, animation cleanup and live
     assert.equal(styles.get('--card-ry'), '0deg');
     assert.equal(styles.get('--card-glare'), '0');
     view = render();
-    (find(view, 'retro-card-scene').props.onPointerMove as (e: unknown) => void)({ clientX: 0, clientY: 0 });
+    (find(view, 'retro-card-scene').props.onPointerMove as (e: unknown) => void)({
+      clientX: 0,
+      clientY: 0,
+    });
     assert.equal(queued.size, 0);
     reduced = false;
     view = render();
-    (find(view, 'retro-card-scene').props.onPointerMove as (e: unknown) => void)({ clientX: 0, clientY: 0 });
+    (find(view, 'retro-card-scene').props.onPointerMove as (e: unknown) => void)({
+      clientX: 0,
+      clientY: 0,
+    });
     const cleanup = runtime.effects.at(-1)() as () => void;
     cleanup();
     assert.equal(queued.size, 0);
     runtime.clear();
     runtime.begin();
-    assert.equal((RetroCard3D({ ...props, defaultSkin: 'gameboy_cartridge' }) as View).props['data-skin'], 'gameboy_cartridge');
-  } finally { restore.reverse().forEach((fn) => fn()); }
+    assert.equal(
+      (RetroCard3D({ ...props, defaultSkin: 'gameboy_cartridge' }) as View).props['data-skin'],
+      'gameboy_cartridge',
+    );
+  } finally {
+    restore.reverse().forEach((fn) => fn());
+  }
 });
 
 test('CSS disables dynamic motion and uses separate tilt/flip planes without blocking mobile scroll', () => {
@@ -197,32 +267,75 @@ test('PNG remains 1080×1350 and exports every selected chassis, hardware and fo
   const labels: string[] = [];
   const paints: string[] = [];
   const context = {
-    fillStyle: '', strokeStyle: '', lineWidth: 0, font: '',
-    fillRect() { paints.push(this.fillStyle); },
-    strokeRect() {}, save() {}, restore() {}, beginPath() {}, rect() {}, clip() {}, drawImage() {},
+    fillStyle: '',
+    strokeStyle: '',
+    lineWidth: 0,
+    font: '',
+    fillRect() {
+      paints.push(this.fillStyle);
+    },
+    strokeRect() {},
+    save() {},
+    restore() {},
+    beginPath() {},
+    rect() {},
+    clip() {},
+    drawImage() {},
     measureText: (value: string) => ({ width: value.length * 8 }),
     fillText: (value: string) => labels.push(value),
   };
-  const canvas = { width: 0, height: 0, getContext: () => context,
-    toBlob: (callback: (blob: Blob) => void, format: string) => callback(new Blob(['png-fixture'], { type: format })) };
+  const canvas = {
+    width: 0,
+    height: 0,
+    getContext: () => context,
+    toBlob: (callback: (blob: Blob) => void, format: string) =>
+      callback(new Blob(['png-fixture'], { type: format })),
+  };
   const restore = [
-    replaceGlobal('document', { createElement: () => canvas, fonts: { ready: Promise.resolve() }, documentElement: {} }),
+    replaceGlobal('document', {
+      createElement: () => canvas,
+      fonts: { ready: Promise.resolve() },
+      documentElement: {},
+    }),
     replaceGlobal('getComputedStyle', () => ({ getPropertyValue: () => '' })),
     replaceGlobal('location', { origin: 'https://savestate-eight.vercel.app' }),
-    replaceGlobal('Image', class {
-      crossOrigin = ''; naturalWidth = 72; naturalHeight = 96;
-      onload: (() => void) | null = null; onerror: (() => void) | null = null;
-      set src(value: string) { if (value) queueMicrotask(() => { assert.equal(this.crossOrigin, 'anonymous'); this.onerror?.(); }); }
-    }),
+    replaceGlobal(
+      'Image',
+      class {
+        crossOrigin = '';
+        naturalWidth = 72;
+        naturalHeight = 96;
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        set src(value: string) {
+          if (value)
+            queueMicrotask(() => {
+              assert.equal(this.crossOrigin, 'anonymous');
+              this.onerror?.();
+            });
+        }
+      },
+    ),
   ];
   try {
     for (const skin of Object.keys(CARD_SHELLS) as (keyof typeof CARD_SHELLS)[]) {
       labels.length = paints.length = 0;
-      const result = await renderMemoryCard({
-        profile: { username: 'player', avatar_url: 'https://example.com/missing.png', terminal_status: 'Ready', owned_platforms: ['PS1', 'PC'] },
-        clearRate: 50, hours: 24,
-        favorites: [{ id: 'one', title: 'Celeste', cover_url: 'https://example.com/missing.png' }],
-      }, skin);
+      const result = await renderMemoryCard(
+        {
+          profile: {
+            username: 'player',
+            avatar_url: 'https://example.com/missing.png',
+            terminal_status: 'Ready',
+            owned_platforms: ['PS1', 'PC'],
+          },
+          clearRate: 50,
+          hours: 24,
+          favorites: [
+            { id: 'one', title: 'Celeste', cover_url: 'https://example.com/missing.png' },
+          ],
+        },
+        skin,
+      );
       assert.equal(canvas.width, 1080);
       assert.equal(canvas.height, 1350);
       assert.equal(result.blob.type, 'image/png');
@@ -232,5 +345,7 @@ test('PNG remains 1080×1350 and exports every selected chassis, hardware and fo
       assert.ok(labels.includes('PS1') && labels.includes('PC') && labels.includes('Celeste'));
       assert.equal(labels.filter((text) => /^SLOT 0[1-4]$/.test(text)).length, 4);
     }
-  } finally { restore.reverse().forEach((fn) => fn()); }
+  } finally {
+    restore.reverse().forEach((fn) => fn());
+  }
 });

@@ -37,10 +37,20 @@ export function cardTiltForPoint(
   reducedMotion = false,
 ): CardTiltState {
   const neutral = { rotateX: 0, rotateY: 0, glareX: 50, glareY: 50, isFlipped };
-  if (reducedMotion || rect.width <= 0 || rect.height <= 0 ||
-      ![clientX, clientY, rect.left, rect.top, rect.width, rect.height].every(Number.isFinite))
+  if (
+    reducedMotion ||
+    rect.width <= 0 ||
+    rect.height <= 0 ||
+    ![clientX, clientY, rect.left, rect.top, rect.width, rect.height].every(Number.isFinite)
+  )
     return neutral;
   const x = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
   const y = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
-  return { rotateX: (0.5 - y) * 24, rotateY: (x - 0.5) * 24, glareX: x * 100, glareY: y * 100, isFlipped };
+  return {
+    rotateX: (0.5 - y) * 24,
+    rotateY: (x - 0.5) * 24,
+    glareX: x * 100,
+    glareY: y * 100,
+    isFlipped,
+  };
 }
