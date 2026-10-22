@@ -38,8 +38,6 @@
 .retro-card-object {
   position: relative;
   width: 100%;
-  aspect-ratio: 3 / 4;
-  min-height: 370px;
   transform-style: preserve-3d;
   transition: transform 0.6s ease;
 }
@@ -47,6 +45,11 @@
   transform: rotateY(180deg);
 }
 .retro-card-front,
+.retro-card-front {
+  position: relative;
+  min-height: 440px;
+  gap: 0.75rem;
+}
 .retro-card-back {
   position: absolute;
   inset: 0;
@@ -231,9 +234,9 @@
   font-size: 0.75rem;
   margin-bottom: 1rem;
 }
-.retro-card[data-skin='gameboy_cartridge'] .retro-card-object,
-.retro-card[data-skin='atomic_purple'] .retro-card-object {
-  aspect-ratio: 6 / 7;
+.retro-card[data-skin='gameboy_cartridge'] .retro-card-front,
+.retro-card[data-skin='atomic_purple'] .retro-card-front {
+  min-height: 385px;
 }
 .retro-card[data-skin='gameboy_cartridge'] .retro-card-front,
 .retro-card[data-skin='atomic_purple'] .retro-card-front {

@@ -23,7 +23,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/styles/retro-card-3d.css package-lock.json
           if ! git diff --cached --quiet; then
-            git commit -m "fix(security): update DOMPurify to patched 3.4.17"
+            git commit -m "chore(SPEC-03): format styles and lock sanitizer patch"
             git push origin HEAD:feature/virtual-3d-memory-card
           fi
       - run: npm run check
@@ -50,6 +50,8 @@ jobs:
               import React from 'react';
               import {createRoot} from 'react-dom/client';
               import {RetroCard3D} from './src/components/retro-card-3d';
+              import {renderMemoryCard} from './src/lib/memory-card-export';
+              window.exportCard = skin => renderMemoryCard({profile:{username:'player',avatar_url:null,terminal_status:'Ready',owned_platforms:['PC']},clearRate:75,hours:123,favorites:[]},skin);
               createRoot(document.getElementById('app')).render(
                 <RetroCard3D username="player_with_a_long_username_123" avatarUrl={null} clearRate={75.5} hours={1234.5}
                   terminalStatus="Ready for the next checkpoint and a new adventure"
@@ -59,7 +61,7 @@ jobs:
                 </RetroCard3D>);
             `, resolveDir: process.cwd(), loader: 'tsx' },
             nodePaths: [process.cwd() + '/node_modules'],
-          bundle: true, write: true, outfile: temp + '/spec03-fixture.js', jsx: 'automatic',
+            bundle: true, write: true, outfile: temp + '/spec03-fixture.js', jsx: 'automatic',
             alias: { 'next/image': temp + '/spec03-image.tsx', '@': process.cwd() + '/src' },
             define: { 'process.env.NODE_ENV': '"production"' },
           });
@@ -86,6 +88,7 @@ jobs:
               const blocks=document.querySelector('.retro-card-blocks').getBoundingClientRect();
               return {fits:sticker.bottom<=front.bottom && blocks.bottom<=front.bottom,overflow:document.documentElement.scrollWidth>innerWidth};
              });
+             console.log('SPEC03_LAYOUT',width,skin,geometry);
              assert.equal(geometry.overflow,false,'horizontal overflow '+width+' '+skin);
              assert.equal(geometry.fits,true,'front content overflow '+width+' '+skin);
              assert.equal(await page.locator('#export').textContent(),'Export '+skin);
@@ -108,8 +111,19 @@ jobs:
            assert.equal(await page.locator('.retro-card-back').evaluate(el=>getComputedStyle(el).visibility),'visible');
            await page.getByRole('link',{name:'Abrir perfil de @player_with_a_long_username_123'}).focus();
            assert.equal(await page.locator('.retro-card-qr').evaluate(el=>document.activeElement===el),true);
+           for (const [skin, color] of [['ps1_memory_card',[172,176,187]],['gameboy_cartridge',[185,184,172]],['atomic_purple',[116,86,158]]]) {
+            const png = await page.evaluate(async skin => {
+              const {blob} = await window.exportCard(skin);
+              const image = await createImageBitmap(blob);
+              const canvas = new OffscreenCanvas(image.width,image.height);
+              const ctx=canvas.getContext('2d');ctx.drawImage(image,0,0);
+              return {width:image.width,height:image.height,type:blob.type,pixel:Array.from(ctx.getImageData(30,30,1,1).data).slice(0,3)};
+            },skin);
+            assert.equal(png.width,1080);assert.equal(png.height,1350);
+            assert.equal(png.type,'image/png');assert.deepEqual(png.pixel,color);
+           }
            assert.deepEqual(errors,[]);
-           console.log('SPEC03_BROWSER_OK: 12 mobile/desktop chassis layouts; keyboard flip, inert face, dynamic reduced motion, focusable QR; no runtime errors');
+           console.log('SPEC03_BROWSER_OK: 12 mobile/desktop chassis layouts; keyboard flip, inert face, dynamic reduced motion, focusable QR; real 1080x1350 PNG pixels for all skins; no runtime errors');
           } finally { await browser.close(); await new Promise(resolve=>server.close(resolve)); }
           
           JS
