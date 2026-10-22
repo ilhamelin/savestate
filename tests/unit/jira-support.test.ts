@@ -392,3 +392,23 @@ test('Server configuration accepts only secure URLs and no public credentials ar
     else process.env.JIRA_API_URL = saved;
   }
 });
+
+test('The eight-second transport deadline aborts a hanging Portal request and leaves a durable record', { timeout: 12000 }, async () => {
+  const store = memoryStore();
+  const restore = mockPortal((_url, init) => {
+    if (init?.method !== 'POST') return Response.json([]);
+    return new Promise<Response>((_resolve, reject) => {
+      const signal = init.signal!;
+      if (signal.aborted) reject(new DOMException('Aborted', 'AbortError'));
+      else signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), { once: true });
+    });
+  });
+  try {
+    const start = performance.now();
+    const result = await createSupportTicket(validateSupportTicket(valid), undefined, store);
+    assert.equal(result.status, 'queued');
+    assert.equal(store.rows[0]?.status, 'needs_review');
+    assert.ok(performance.now() - start >= 7500);
+    assert.ok(performance.now() - start < 11000);
+  } finally { restore(); }
+});

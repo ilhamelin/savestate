@@ -29,6 +29,12 @@ jobs:
       - run: npm test
       - run: npm run format:check
       - run: npm run build
+      - name: Browser acceptance tools (runner only)
+        run: |
+          npm install --no-save --package-lock=false playwright esbuild
+          npx playwright install --with-deps chromium
+      - name: Native dialog and Guardian browser acceptance
+        run: node .github/spec05-browser-check.mjs
   postgres-acceptance:
     runs-on: ubuntu-latest
     services:
