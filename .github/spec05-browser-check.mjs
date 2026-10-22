@@ -1,3 +1,4 @@
+/* global window, document */
 import { chromium } from 'playwright';
 import { build } from 'esbuild';
 import { createServer } from 'node:http';
