@@ -10,10 +10,8 @@ function worker() {
   const context = vm.createContext({
     URL,
     Request: class {
-      constructor(
-        public url: string,
-        public options: unknown,
-      ) {}
+      url: string;
+      constructor(url: string) { this.url = url; }
     },
     self: {
       location: { origin: 'https://savestate.test' },

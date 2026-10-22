@@ -1,4 +1,4 @@
-/* global document, navigator, window */
+/* global document, window */
 import {
   readOfflineLibrary,
   revokeOfflineLibrary,
