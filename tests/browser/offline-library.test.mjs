@@ -140,7 +140,7 @@ test(
       denied = true;
       await page.reload();
       await page.waitForFunction(() =>
-        document.querySelector('#status').textContent.includes('validarse'),
+        JSON.parse(globalThis.localStorage.getItem('savestate_offline_library_access_v1') || '{}').status === 'revoked',
       );
       assert.equal(
         await page.evaluate(async () =>

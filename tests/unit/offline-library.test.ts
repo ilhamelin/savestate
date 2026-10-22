@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { IDBFactory } from 'fake-indexeddb';
 import {
+  OFFLINE_DATABASE,
   OFFLINE_ACCESS_KEY,
   OFFLINE_MAX_AGE_MS,
   parseOfflineSnapshot,
@@ -41,6 +42,19 @@ function snapshot(ownerId = A, now = Date.now()) {
       },
     ],
   };
+}
+async function storedSnapshot() {
+  return new Promise<unknown>((resolve, reject) => {
+    const request = indexedDB.open(OFFLINE_DATABASE, 1);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const db = request.result;
+      const tx = db.transaction('state', 'readonly');
+      const value = tx.objectStore('state').get('snapshot');
+      tx.oncomplete = () => { db.close(); resolve(value.result); };
+      tx.onerror = () => { db.close(); reject(tx.error); };
+    };
+  });
 }
 function environment() {
   const values = new Map<string, string>();
@@ -104,12 +118,14 @@ test('Offline storage changes accounts atomically and rejects stale writes', asy
     assert.ok(second);
     assert.equal(await readOfflineLibrary(A), null);
     assert.equal(await readOfflineLibrary(B), null);
+    assert.equal(await storedSnapshot(), undefined);
     await assert.rejects(saveOfflineLibrary(first, snapshot()));
     await saveOfflineLibrary(second, snapshot(B));
     await deleteOfflineLibrarySnapshot(second);
     assert.equal(await readOfflineLibrary(B), null);
     await saveOfflineLibrary(second, snapshot(B));
     await revokeOfflineLibrary();
+    assert.equal(await storedSnapshot(), undefined);
     assert.equal(await readOfflineLibrary(), null);
     assert.throws(() => offlineLibraryLease(B));
     await assert.rejects(saveOfflineLibrary(second, snapshot(B)));

@@ -81,31 +81,35 @@ async function load() {
   let owner;
   try {
     if (online) {
+      let response;
       try {
-        const response = await fetch('/api/library/offline-access', {
+        response = await fetch('/api/library/offline-access', {
           cache: 'no-store',
           signal: AbortSignal.any([request.signal, AbortSignal.timeout(8000)]),
         });
-        if (version !== revision) return;
-        if (response.status === 401 || response.status === 403) {
-          await revokeOfflineLibrary();
-          element('status').textContent =
-            'Tu sesión necesita validarse. Abre la biblioteca online para continuar.';
-          return;
-        }
-        if (!response.ok) {
-          element('status').textContent =
-            'No pudimos validar el acceso. Reintenta cuando el servicio se recupere.';
-          return;
-        }
-        const result = await response.json();
-        if (typeof result.userId !== 'string') return;
-        owner = result.userId;
-        await synchronizeOfflineLibraryAccount(owner);
       } catch {
         if (request.signal.aborted || version !== revision) return;
         element('connection').textContent = '○ Modo Offline · Sin respuesta de la red';
         element('connection').className = 'offline';
+      }
+      if (version !== revision) return;
+      if (response) {
+        if (response.status === 401 || response.status === 403) {
+          await revokeOfflineLibrary();
+          element('status').textContent = 'Tu sesión necesita validarse. Abre la biblioteca online para continuar.';
+          return;
+        }
+        if (!response.ok) {
+          element('status').textContent = 'No pudimos validar el acceso. Reintenta cuando el servicio se recupere.';
+          return;
+        }
+        const result = await response.json();
+        if (typeof result.userId !== 'string') {
+          element('status').textContent = 'No pudimos validar la cuenta. Abre tu biblioteca online.';
+          return;
+        }
+        owner = result.userId;
+        await synchronizeOfflineLibraryAccount(owner);
       }
     }
     const value = await readOfflineLibrary(owner);
