@@ -1,8 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { startSystemStatusPolling, SYSTEM_STATUS_INTERVAL_MS, SYSTEM_STATUS_MAX_BACKOFF_MS } from '../../src/lib/system-status-polling.ts';
+import {
+  startSystemStatusPolling,
+  SYSTEM_STATUS_INTERVAL_MS,
+  SYSTEM_STATUS_MAX_BACKOFF_MS,
+} from '../../src/lib/system-status-polling.ts';
 
-const flush = async () => { await Promise.resolve(); await Promise.resolve(); };
+const flush = async () => {
+  await Promise.resolve();
+  await Promise.resolve();
+};
 function fixture(refresh: (signal: AbortSignal) => Promise<void> = async () => {}) {
   let active = true;
   const timers = new Set<{ callback: () => void; delay: number }>();
@@ -12,14 +19,26 @@ function fixture(refresh: (signal: AbortSignal) => Promise<void> = async () => {
     schedule(callback, delay) {
       const timer = { callback, delay };
       timers.add(timer);
-      return () => { timers.delete(timer); };
+      return () => {
+        timers.delete(timer);
+      };
     },
-    refresh: (signal) => { signals.push(signal); return refresh(signal); },
+    refresh: (signal) => {
+      signals.push(signal);
+      return refresh(signal);
+    },
   });
   return {
-    polling, signals, timers,
-    setActive(value: boolean) { active = value; polling.wake(); },
-    nextDelay() { return [...timers][0]?.delay; },
+    polling,
+    signals,
+    timers,
+    setActive(value: boolean) {
+      active = value;
+      polling.wake();
+    },
+    nextDelay() {
+      return [...timers][0]?.delay;
+    },
     tick() {
       const timer = [...timers][0];
       assert.ok(timer);
@@ -31,7 +50,12 @@ function fixture(refresh: (signal: AbortSignal) => Promise<void> = async () => {
 
 test('Status polling uses 30s after completion and never overlaps requests', async () => {
   let release!: () => void;
-  const state = fixture(() => new Promise<void>((resolve) => { release = resolve; }));
+  const state = fixture(
+    () =>
+      new Promise<void>((resolve) => {
+        release = resolve;
+      }),
+  );
   assert.equal(state.signals.length, 1);
   assert.equal(state.timers.size, 0);
   state.polling.wake();
@@ -44,7 +68,7 @@ test('Status polling uses 30s after completion and never overlaps requests', asy
   assert.equal(state.signals.length, 2);
   assert.equal(state.timers.size, 0);
   state.polling.stop();
-  assert.equal(state.signals[1].aborted, true);
+  assert.equal(state.signals[1]!.aborted, true);
   release();
   await flush();
   assert.equal(state.timers.size, 0);
@@ -70,7 +94,9 @@ test('Status polling pauses timers while hidden/offline and resumes once', async
 
 test('Status polling caps error backoff at 120s and resets after recovery', async () => {
   let failing = true;
-  const state = fixture(async () => { if (failing) throw new Error('network/HTTP failure'); });
+  const state = fixture(async () => {
+    if (failing) throw new Error('network/HTTP failure');
+  });
   await flush();
   assert.equal(state.nextDelay(), 60_000);
   state.tick();
@@ -88,9 +114,14 @@ test('Status polling caps error backoff at 120s and resets after recovery', asyn
 
 test('Status polling aborts an inactive request and handles resume before it settles', async () => {
   let release!: () => void;
-  const state = fixture(() => new Promise<void>((resolve) => { release = resolve; }));
+  const state = fixture(
+    () =>
+      new Promise<void>((resolve) => {
+        release = resolve;
+      }),
+  );
   state.setActive(false);
-  assert.equal(state.signals[0].aborted, true);
+  assert.equal(state.signals[0]!.aborted, true);
   state.setActive(true);
   state.polling.wake();
   assert.equal(state.signals.length, 1);

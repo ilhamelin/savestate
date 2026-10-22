@@ -14,7 +14,7 @@ export function SystemBroadcastBanner({
   const [doubleXp, setDoubleXp] = useState(initialDoubleXp);
   const [dismissed, setDismissed] = useState<string | null>(null);
   useEffect(() => {
-    let seasonalTimer: ReturnType<typeof window.setTimeout> | undefined;
+    let seasonalTimer: number | undefined;
     function updateSeasonalTheme() {
       document.documentElement.dataset.seasonalTheme = effectiveSeasonalTheme(
         document.documentElement.dataset.seasonalTheme,
@@ -32,7 +32,10 @@ export function SystemBroadcastBanner({
         return () => window.clearTimeout(timer);
       },
       async refresh(signal) {
-        const requestSignal = AbortSignal.any([signal, AbortSignal.timeout(SYSTEM_STATUS_TIMEOUT_MS)]);
+        const requestSignal = AbortSignal.any([
+          signal,
+          AbortSignal.timeout(SYSTEM_STATUS_TIMEOUT_MS),
+        ]);
         const response = await fetch('/api/system-status', {
           cache: 'no-store',
           signal: requestSignal,
