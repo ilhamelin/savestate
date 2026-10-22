@@ -96,16 +96,19 @@ async function load() {
       if (response) {
         if (response.status === 401 || response.status === 403) {
           await revokeOfflineLibrary();
-          element('status').textContent = 'Tu sesión necesita validarse. Abre la biblioteca online para continuar.';
+          element('status').textContent =
+            'Tu sesión necesita validarse. Abre la biblioteca online para continuar.';
           return;
         }
         if (!response.ok) {
-          element('status').textContent = 'No pudimos validar el acceso. Reintenta cuando el servicio se recupere.';
+          element('status').textContent =
+            'No pudimos validar el acceso. Reintenta cuando el servicio se recupere.';
           return;
         }
         const result = await response.json();
         if (typeof result.userId !== 'string') {
-          element('status').textContent = 'No pudimos validar la cuenta. Abre tu biblioteca online.';
+          element('status').textContent =
+            'No pudimos validar la cuenta. Abre tu biblioteca online.';
           return;
         }
         owner = result.userId;

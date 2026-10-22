@@ -51,8 +51,14 @@ async function storedSnapshot() {
       const db = request.result;
       const tx = db.transaction('state', 'readonly');
       const value = tx.objectStore('state').get('snapshot');
-      tx.oncomplete = () => { db.close(); resolve(value.result); };
-      tx.onerror = () => { db.close(); reject(tx.error); };
+      tx.oncomplete = () => {
+        db.close();
+        resolve(value.result);
+      };
+      tx.onerror = () => {
+        db.close();
+        reject(tx.error);
+      };
     };
   });
 }
