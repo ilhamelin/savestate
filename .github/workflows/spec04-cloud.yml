@@ -1,0 +1,27 @@
+name: SPEC-04 cloud verification
+on:
+  push:
+    branches: [feature/retro-radio-deck]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Read installed Next.js guides required by AGENTS.md
+        run: |
+          node --input-type=module <<'JS'
+          import { readdirSync, readFileSync } from 'node:fs';
+          function walk(dir) {
+            return readdirSync(dir, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(dir + '/' + e.name) : [dir + '/' + e.name]);
+          }
+          const paths = walk('node_modules/next/dist/docs').filter(p => /layouts-and-pages|server-and-client-components|lazy-loading|use-client/.test(p) && /\.mdx?$/.test(p));
+          if (!paths.length) throw new Error('Installed Next.js guides unavailable');
+          for (const path of paths) console.log('GUIDE ' + path + '\n' + readFileSync(path, 'utf8').slice(0, 18000));
+          JS
