@@ -24,3 +24,12 @@ jobs:
           git diff --cached --quiet || git commit -m "style: format SPEC-02 onboarding and badge features"
           git push origin HEAD:feature/steam-onboarding-and-badges
       - run: npm run check
+      - name: Inspect dependency audit
+        if: always()
+        run: |
+          npm audit --json > /tmp/spec02-audit.json || true
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const audit=JSON.parse(readFileSync('/tmp/spec02-audit.json','utf8'));
+          console.log(JSON.stringify({metadata:audit.metadata, vulnerabilities:Object.values(audit.vulnerabilities??{}).map(v=>({name:v.name,severity:v.severity,isDirect:v.isDirect,via:v.via,fixAvailable:v.fixAvailable}))}));
+          NODE

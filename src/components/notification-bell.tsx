@@ -92,9 +92,10 @@ export function NotificationBell({ userId }: { userId: string }) {
           setSummary(result.data);
           setError('');
           // Establish a server-clock baseline without replaying historical unlocks.
+          const since = badgeBaseline.current;
           badgeBaseline.current ??= result.data.generatedAt;
-          for (const item of result.data.items) {
-            if (item.read_at || Date.parse(item.created_at) < Date.parse(badgeBaseline.current))
+          for (const item of since ? result.data.items : []) {
+            if (item.read_at || Date.parse(item.created_at) < Date.parse(since!))
               continue;
             const notice = badgeUnlockNotification(
               { ...item, user_id: userId, badge_id: item.badgeId },
