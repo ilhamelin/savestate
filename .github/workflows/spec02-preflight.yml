@@ -1,0 +1,26 @@
+name: Temporary SPEC-02 preflight
+on:
+  push:
+    branches: [feature/steam-onboarding-and-badges]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Format feature files remotely
+        run: |
+          npx prettier --write 'src/domain/badges.ts' 'src/components/badge-pixel-icon.tsx' 'src/components/badge-gallery.tsx' 'src/components/library-empty-hero.tsx' 'src/components/library.tsx' 'src/components/badge-unlock-toast.tsx' 'src/components/notification-bell.tsx' 'src/domain/notifications.ts' 'src/services/notifications.ts' 'tests/unit/notifications-service.test.ts' 'src/app/badges.css' 'tests/unit/badges-level.test.ts' 'tests/unit/badges-ui.test.ts' 'docs/spec02-implementation.md'
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add 'src/domain/badges.ts' 'src/components/badge-pixel-icon.tsx' 'src/components/badge-gallery.tsx' 'src/components/library-empty-hero.tsx' 'src/components/library.tsx' 'src/components/badge-unlock-toast.tsx' 'src/components/notification-bell.tsx' 'src/domain/notifications.ts' 'src/services/notifications.ts' 'tests/unit/notifications-service.test.ts' 'src/app/badges.css' 'tests/unit/badges-level.test.ts' 'tests/unit/badges-ui.test.ts' 'docs/spec02-implementation.md'
+          git diff --cached --quiet || git commit -m "style: format SPEC-02 onboarding and badge features"
+          git push origin HEAD:feature/steam-onboarding-and-badges
+      - run: npm run check

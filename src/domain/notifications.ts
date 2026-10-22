@@ -21,6 +21,7 @@ export interface NotificationSummary {
     created_at: string;
     username: string | null;
     badgeName?: string | null;
+    badgeId?: string | null;
     forumHref?: string | null;
     friendshipId?: string | null;
     trackerHref?: string | null;

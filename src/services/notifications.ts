@@ -77,6 +77,7 @@ export async function notificationSummary(): Promise<NotificationSummary> {
         friendshipId,
         username: profiles.data?.find((p) => p.id === actor_id)?.username ?? null,
         badgeName: badges.data?.find((badge) => badge.id === row.badge_id)?.name ?? null,
+        badgeId: row.badge_id ?? null,
         forumHref: threads.data?.find((t) => t.id === row.forum_thread_id)
           ? `/forum/${threads.data.find((t) => t.id === row.forum_thread_id)!.category_id}/${row.forum_thread_id}`
           : null,
