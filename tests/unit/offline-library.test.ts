@@ -168,10 +168,14 @@ test('Every wrapped signOut erases the offline copy before invoking Supabase', a
 
 test('Offline projection includes only the owner and never exports logs or private content', () => {
   const games = [{ id: GAME, title: 'Celeste', slug: 'celeste' }] as Game[];
-  const entries = [{ id: 'entry', user_id: A, game_id: GAME, status: 'playing', rating: 9 },
-    { id: 'other', user_id: B, game_id: GAME, status: 'playing', rating: null }] as UserGame[];
-  const logs = [{ user_game_id: 'entry', hours_played: 2, platform_played: 'PC', note: 'secret' },
-    { user_game_id: 'other', hours_played: 1000, platform_played: 'Xbox', note: 'private' }] as PlayLog[];
+  const entries = [
+    { id: 'entry', user_id: A, game_id: GAME, status: 'playing', rating: 9 },
+    { id: 'other', user_id: B, game_id: GAME, status: 'playing', rating: null },
+  ] as UserGame[];
+  const logs = [
+    { user_game_id: 'entry', hours_played: 2, platform_played: 'PC', note: 'secret' },
+    { user_game_id: 'other', hours_played: 1000, platform_played: 'Xbox', note: 'private' },
+  ] as PlayLog[];
   const rows = offlineLibraryRows(A, entries, games, logs);
   assert.equal(rows.length, 1);
   assert.equal(rows[0]?.hours, 2);
@@ -180,11 +184,22 @@ test('Offline projection includes only the owner and never exports logs or priva
   assert.doesNotMatch(JSON.stringify(rows), /secret|private|Xbox/);
 });
 test('Only explicitly listed public offline assets bypass Gatekeeper, never account APIs', () => {
-  for (const path of ['/library-sw.js', '/offline-library/index.html', '/offline-library/style.css', '/offline-library/app.mjs', '/offline-library/store.mjs']) {
+  for (const path of [
+    '/library-sw.js',
+    '/offline-library/index.html',
+    '/offline-library/style.css',
+    '/offline-library/app.mjs',
+    '/offline-library/store.mjs',
+  ]) {
     assert.equal(isOfflineLibraryAsset(path), true);
     assert.equal(gatekeeperExempt(path), true);
   }
-  for (const path of ['/library', '/api/library/offline-access', '/offline-library/secrets', '/offline-library/../api/library']) {
+  for (const path of [
+    '/library',
+    '/api/library/offline-access',
+    '/offline-library/secrets',
+    '/offline-library/../api/library',
+  ]) {
     assert.equal(isOfflineLibraryAsset(path), false);
     assert.equal(gatekeeperExempt(path), false);
   }

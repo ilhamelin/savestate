@@ -11,7 +11,9 @@ function worker() {
     URL,
     Request: class {
       url: string;
-      constructor(url: string) { this.url = url; }
+      constructor(url: string) {
+        this.url = url;
+      }
     },
     self: {
       location: { origin: 'https://savestate.test' },
