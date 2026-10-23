@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 const temp = process.env.RUNNER_TEMP;
 writeFileSync(temp + '/nav.mjs', 'export function useRouter(){return {refresh(){}};}');
 writeFileSync(temp + '/link.mjs', "import React from 'react';export default function Link(props){return React.createElement('a',props,props.children);}");
+writeFileSync(temp + '/image.mjs', "import React from 'react';export default function Image({fill,unoptimized,...props}){return React.createElement('img',props);}");
 await build({ stdin: { resolveDir: process.cwd(), loader: 'tsx', contents: `
 import React from 'react';import {createRoot} from 'react-dom/client';
 import {PartyBoard} from './src/components/arcade/party-board';
@@ -45,7 +46,7 @@ window.fetch=async(input,init={})=>{
 };
 const initial=feed();initial.items.push({...row('expired'),expires_at:new Date(now-1000).toISOString()});
 createRoot(document.getElementById('app')).render(<main className="container"><div className="arcade-section"><PartyBoard initial={initial} viewerId={user}/></div></main>);
-` }, alias: { '@': process.cwd()+'/src', 'next/navigation': temp+'/nav.mjs', 'next/link': temp+'/link.mjs' },
+` }, alias: { '@': process.cwd()+'/src', 'next/navigation': temp+'/nav.mjs', 'next/link': temp+'/link.mjs', 'next/image': temp+'/image.mjs' },
  nodePaths:[process.cwd()+'/node_modules'], bundle:true, outfile:temp+'/arcade.js', jsx:'automatic',
  define:{'process.env.NODE_ENV':'"production"'} });
 const css=readdirSync('.next/static/chunks').filter(p=>p.endsWith('.css')).map(p=>readFileSync('.next/static/chunks/'+p,'utf8')).join('\n');
@@ -55,7 +56,7 @@ await new Promise(resolve=>server.listen(4178,'127.0.0.1',resolve));
 const browser=await chromium.launch({headless:true,...(existsSync('/usr/bin/google-chrome')?{channel:'chrome'}:{})});
 try {
  const page=await browser.newPage({viewport:{width:375,height:812}});
- const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ const errors=[];page.on('pageerror',error=>{errors.push(error.message);console.log('PAGE_ERROR:',error.message);});
  await page.goto('http://127.0.0.1:4178/arcade');
  await page.getByRole('heading',{name:'Compañeros de partida'}).waitFor();
  assert.equal(await page.locator('.party-card').count(),12);
