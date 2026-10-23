@@ -1,4 +1,5 @@
 'use client';
+
 import { useEffect, useRef, useState } from 'react';
 import { gateCodeFromKey, gateSecretBytes } from '@/domain/gatekeeper';
 import { loadGuardianKey, saveGuardianKey, removeGuardianKey } from '@/lib/guardian-device';
@@ -6,6 +7,7 @@ import { GuardianCloudPanel } from './guardian-cloud-panel';
 import { GuardianJiraPanel } from './guardian-jira-panel';
 import { PlayerManagementDialog } from './player-management-dialog';
 import { GuardianAlertPanel, GuardianSwitchPanel, GuardianHudPanel } from './operator-panels';
+
 interface GuardianPlayer {
   id: string;
   username: string;
@@ -15,24 +17,26 @@ interface GuardianPlayer {
   created_at: string;
   access_locked?: boolean;
 }
+
 export function GuardianConsole({ username, adminId }: { username: string; adminId: string }) {
   const [managed, setManaged] = useState<GuardianPlayer | null>(null);
   const [tab, setTab] = useState<
     'token' | 'players' | 'alert' | 'switches' | 'hud' | 'jira' | 'cloud'
   >('token');
   const [online, setOnline] = useState(true);
-  const [key, setKey] = useState<CryptoKey | null>(null),
-    [code, setCode] = useState('------');
-  const [remaining, setRemaining] = useState(20),
-    [notice, setNotice] = useState(''),
-    [busy, setBusy] = useState(false);
-  const [players, setPlayers] = useState<GuardianPlayer[]>([]),
-    [query, setQuery] = useState(''),
-    [page, setPage] = useState(0),
-    [count, setCount] = useState(0),
-    [total, setTotal] = useState(0),
-    [refresh, setRefresh] = useState(0);
+  const [key, setKey] = useState<CryptoKey | null>(null);
+  const [code, setCode] = useState('------');
+  const [remaining, setRemaining] = useState(20);
+  const [notice, setNotice] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [players, setPlayers] = useState<GuardianPlayer[]>([]);
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(0);
+  const [count, setCount] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [refresh, setRefresh] = useState(0);
   const touchStart = useRef<number | null>(null);
+
   useEffect(() => {
     const update = () => setOnline(navigator.onLine);
     const timer = window.setTimeout(update, 0);
@@ -44,6 +48,7 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
       window.removeEventListener('offline', update);
     };
   }, []);
+
   useEffect(() => {
     let active = true;
     loadGuardianKey()
@@ -53,22 +58,25 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
       .catch(() => {
         if (active) setNotice('Almacenamiento local no disponible.');
       });
-    if ('serviceWorker' in navigator)
+    if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/guardian-sw.js', { scope: '/guardian' }).catch(() => {
-        if (active)
+        if (active) {
           setNotice('No se pudo preparar el modo offline. Vuelve a abrir Guardian con conexión.');
+        }
       });
+    }
     return () => {
       active = false;
     };
   }, []);
+
   useEffect(() => {
     if (!key) return;
     let active = true;
     const tick = async () => {
       try {
-        const now = Date.now(),
-          value = await gateCodeFromKey(key, now);
+        const now = Date.now();
+        const value = await gateCodeFromKey(key, now);
         if (active) {
           setCode(value);
           setRemaining(20 - (Math.floor(now / 1000) % 20));
@@ -86,6 +94,7 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
       document.removeEventListener('visibilitychange', tick);
     };
   }, [key]);
+
   useEffect(() => {
     if (tab !== 'players') return;
     const controller = new AbortController();
@@ -103,8 +112,9 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
           setTotal(result.total);
         }
       } catch (err) {
-        if (!controller.signal.aborted)
+        if (!controller.signal.aborted) {
           setNotice(err instanceof Error ? err.message : 'Sin conexión al directorio.');
+        }
       }
     }, 250);
     return () => {
@@ -112,6 +122,7 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
       controller.abort();
     };
   }, [tab, query, page, refresh]);
+
   useEffect(() => {
     if (tab !== 'players') return;
     const refreshVisible = () => {
@@ -124,14 +135,32 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
       document.removeEventListener('visibilitychange', refreshVisible);
     };
   }, [tab]);
+
   return (
     <div className="guardian-app-viewport">
       <header className="guardian-mobile-header">
-        <strong>🛡️ SAVESTATE GUARDIAN</strong>
-        <span className={`guardian-online-state${online ? '' : ' is-offline'}`}>
-          {online ? '● ONLINE' : '○ OFFLINE'} @{username}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-base">🛡️</span>
+          <strong className="text-xs tracking-wider text-slate-100 uppercase">
+            SAVESTATE GUARDIAN
+          </strong>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span
+            className={`w-2 h-2 rounded-full ${
+              online
+                ? 'bg-emerald-400 shadow-[0_0_8px_#10b981]'
+                : 'bg-amber-400 shadow-[0_0_8px_#f59e0b]'
+            }`}
+          ></span>
+          <span
+            className={`text-[11px] font-semibold ${online ? 'text-emerald-300' : 'text-amber-300'}`}
+          >
+            {online ? 'ONLINE' : 'OFFLINE'} @{username}
+          </span>
+        </div>
       </header>
+
       <div
         className="guardian-mobile-body"
         onTouchStart={(event) => {
@@ -143,47 +172,85 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
             tab === 'players' &&
             touchStart.current !== null &&
             (event.changedTouches[0]?.clientY ?? 0) - touchStart.current > 80
-          )
+          ) {
             setRefresh((value) => value + 1);
+          }
           touchStart.current = null;
         }}
       >
-        <h1 className="guardian-screen-title">
-          {
-            {
-              token: 'Security Token',
-              players: 'Directorio de jugadores',
-              alert: 'Alerta global',
-              switches: 'Interruptores maestros',
-              hud: 'Monitor de salud',
-              jira: 'Jira / Tickets',
-              cloud: 'Cloud / CI',
-            }[tab]
-          }
-        </h1>
-        <p className="muted">
-          En el navegador del teléfono, usa «Instalar aplicación» o «Agregar a pantalla de inicio».
-          Sincroniza la hora automáticamente.
-        </p>
-        {tab === 'token' ? (
-          <div className="guardian-token">
-            <p className="muted">RFC 6238 · 6 dígitos · paso de 20 segundos</p>
-            <output className="guardian-digits" aria-label="Clave activa" aria-live="off">
-              {code.slice(0, 3)} {code.slice(3)}
-            </output>
-            <progress
-              max={20}
-              value={key ? remaining : 0}
-              aria-label="Segundos restantes de la clave"
-            />
-            <p>
-              {key
-                ? `${remaining}s · Generación local, disponible offline`
-                : 'Dispositivo sin activar'}
+        {tab !== 'cloud' && (
+          <div className="guardian-screen-header">
+            <h1 className="guardian-screen-title">
+              {
+                {
+                  token: '🔐 Security Token',
+                  players: '👥 Directorio de jugadores',
+                  alert: '🚨 Transmisión y alertas',
+                  switches: '🎛️ Interruptores maestros',
+                  hud: '📊 Monitor de salud',
+                  jira: '🎫 Jira / Tickets de soporte',
+                  cloud: '☁️ Cloud & CI Observer',
+                }[tab]
+              }
+            </h1>
+            <p className="guardian-screen-subtitle">
+              Panel de control del Operador Supremo SaveState
             </p>
-            <div className="guardian-token-actions">
+          </div>
+        )}
+
+        {tab === 'token' ? (
+          <div className="guardian-token-card">
+            <div className="guardian-cloud-header mb-2">
+              <div className="guardian-cloud-title-group">
+                <span className="provider-badge">🔐 TOTP RFC 6238</span>
+                <span className="provider-sub">Autenticación local</span>
+              </div>
+              <div className={`status-pill ${key ? 'status-ready' : 'status-neutral'}`}>
+                <span className={`pulse-dot ${key ? 'dot-green' : ''}`}></span>
+                <span>{key ? 'ACTIVO' : 'SIN ACTIVAR'}</span>
+              </div>
+            </div>
+
+            <div className="guardian-token-screen">
+              <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest block text-center mb-1">
+                CLAVE DINÁMICA DE PASO
+              </span>
+              <output className="guardian-digits" aria-label="Clave activa" aria-live="off">
+                {code.slice(0, 3)} {code.slice(3)}
+              </output>
+              <div className="guardian-timer-track">
+                <div
+                  className="guardian-timer-bar"
+                  style={{ width: `${key ? (remaining / 20) * 100 : 0}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-xs text-slate-400 mt-2 px-1">
+                <span className="font-mono text-cyan-300 font-bold">
+                  {key ? `${remaining}s restantes` : '0s'}
+                </span>
+                <span className="text-[11px] text-slate-400">Offline · Ciclos de 20s</span>
+              </div>
+            </div>
+
+            <div className="guardian-token-action-grid">
               <button
-                className="button"
+                className="btn-cloud-primary"
+                type="button"
+                disabled={!key || !/^\d{6}$/.test(code)}
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(code);
+                    setNotice('Clave copiada al portapapeles.');
+                  } catch {
+                    setNotice('No se pudo copiar. Selecciona la clave manualmente.');
+                  }
+                }}
+              >
+                📋 Copiar clave
+              </button>
+              <button
+                className="btn-cloud-secondary"
                 type="button"
                 disabled={busy}
                 onClick={async () => {
@@ -214,26 +281,11 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
                   }
                 }}
               >
-                {key ? 'Reactivar dispositivo' : 'Activar en este dispositivo'}
-              </button>
-              <button
-                className="button guardian-copy-button"
-                type="button"
-                disabled={!key || !/^\d{6}$/.test(code)}
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(code);
-                    setNotice('Clave copiada.');
-                  } catch {
-                    setNotice('No se pudo copiar. Selecciona la clave manualmente.');
-                  }
-                }}
-              >
-                Copiar clave
+                {key ? '🔄 Reactivar' : '⚡ Activar en este equipo'}
               </button>
               {key && (
                 <button
-                  className="button outline"
+                  className="btn-cloud-danger"
                   type="button"
                   onClick={async () => {
                     try {
@@ -246,97 +298,133 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
                     }
                   }}
                 >
-                  Olvidar dispositivo
+                  ✕ Olvidar
                 </button>
               )}
             </div>
-            <p className="muted">
-              Activa solo un teléfono de confianza: la clave criptográfica local permite generar
-              códigos offline hasta que se rote la semilla del servidor.
-            </p>
+
+            <div className="cloud-details-box text-xs mt-3">
+              <div className="cloud-detail-row">
+                <span className="cloud-detail-label">Algoritmo:</span>
+                <span className="cloud-detail-value">HMAC-SHA1 (RFC 6238)</span>
+              </div>
+              <div className="cloud-detail-row">
+                <span className="cloud-detail-label">Semilla criptográfica:</span>
+                <span className="cloud-detail-value text-emerald-400">
+                  {key ? 'Almacenada localmente' : 'No enlazada'}
+                </span>
+              </div>
+              <div className="cloud-detail-row">
+                <span className="cloud-detail-label">Seguridad de red:</span>
+                <span className="cloud-detail-value">Cero fugas de semilla</span>
+              </div>
+            </div>
           </div>
         ) : tab === 'players' ? (
-          <section>
-            <p>
-              {total} jugadores registrados · {count} coincidencias
-            </p>
-            <label>
-              Buscar jugador
-              <input
-                type="search"
-                maxLength={30}
-                value={query}
-                onChange={(event) => {
-                  setQuery(event.target.value);
-                  setPage(0);
-                }}
-              />
-            </label>
-            <button
-              className="button outline small"
-              type="button"
-              onClick={() => setRefresh((value) => value + 1)}
-            >
-              ↻ Actualizar directorio
-            </button>
-            <ul className="guardian-players">
+          <section className="guardian-players-section">
+            <div className="guardian-players-search-card">
+              <div className="flex items-center gap-2">
+                <input
+                  type="search"
+                  className="guardian-search-input"
+                  placeholder="🔍 Buscar por nombre de usuario..."
+                  maxLength={30}
+                  value={query}
+                  onChange={(event) => {
+                    setQuery(event.target.value);
+                    setPage(0);
+                  }}
+                />
+                <button
+                  className="btn-cloud-refresh"
+                  type="button"
+                  title="Actualizar directorio"
+                  onClick={() => setRefresh((value) => value + 1)}
+                >
+                  ↻
+                </button>
+              </div>
+              <div className="flex justify-between items-center text-xs text-slate-400 pt-1">
+                <span>{total} jugadores registrados</span>
+                <span className="text-cyan-300 font-bold">{count} coincidencias</span>
+              </div>
+            </div>
+
+            <ul className="guardian-players-grid">
               {players.map((player) => (
-                <li key={player.id}>
-                  {player.avatar_url ? (
-                    <img src={player.avatar_url} width={40} height={40} alt="" loading="lazy" />
-                  ) : (
-                    <span aria-hidden="true">▣</span>
-                  )}
-                  <div>
-                    <strong>@{player.username}</strong>
-                    <span className="guardian-player-level">LVL {player.level}</span>
-                    <span>{player.terminal_status || 'Sin estado de terminal'}</span>
-                    <small>
-                      {player.access_locked ? '🔒 Acceso Bloqueado' : '🟢 Acceso Normal'}
-                    </small>
-                    <small>
-                      Registro:{' '}
-                      {new Date(player.created_at).toLocaleDateString('es-CL', {
-                        timeZone: 'America/Santiago',
-                      })}
-                    </small>
-                    <button
-                      type="button"
-                      className="button outline small"
-                      disabled={!online}
-                      onClick={() => setManaged(player)}
+                <li key={player.id} className="guardian-player-card">
+                  <div className="guardian-player-avatar-wrap">
+                    {player.avatar_url ? (
+                      <img
+                        src={player.avatar_url}
+                        width={42}
+                        height={42}
+                        alt=""
+                        loading="lazy"
+                        className="rounded-lg object-cover border border-cyan-800/40"
+                      />
+                    ) : (
+                      <div className="guardian-player-avatar-fallback">▣</div>
+                    )}
+                    <span className="guardian-player-lvl-pill">LVL {player.level}</span>
+                  </div>
+
+                  <div className="guardian-player-info">
+                    <div className="guardian-player-top">
+                      <strong className="guardian-player-name">@{player.username}</strong>
+                      <span
+                        className={`guardian-lock-badge ${player.access_locked ? 'is-locked' : 'is-ok'}`}
+                      >
+                        {player.access_locked ? '🔒 Bloqueado' : '🟢 Normal'}
+                      </span>
+                    </div>
+                    <p
+                      className="guardian-player-status truncate"
+                      title={player.terminal_status || ''}
                     >
-                      {player.id === adminId ? '🛡️ Tu cuenta (Operador)' : '⚙️ Administrar'}
-                    </button>
+                      {player.terminal_status || 'Sin estado de terminal'}
+                    </p>
+                    <div className="guardian-player-meta">
+                      <small className="text-slate-500 text-[10px]">
+                        {new Date(player.created_at).toLocaleDateString('es-CL', {
+                          timeZone: 'America/Santiago',
+                        })}
+                      </small>
+                      <button
+                        type="button"
+                        className="btn-cloud-pr"
+                        disabled={!online}
+                        onClick={() => setManaged(player)}
+                      >
+                        {player.id === adminId ? '🛡️ Tu cuenta' : '⚙️ Administrar'}
+                      </button>
+                    </div>
                   </div>
                 </li>
               ))}
             </ul>
-            <div className="filter-buttons">
+
+            <div className="guardian-pagination-bar">
               <button
                 type="button"
-                className="button outline small"
+                className="btn-cloud-secondary"
                 disabled={page === 0}
                 onClick={() => setPage((value) => value - 1)}
               >
                 ← Anterior
               </button>
-              <span>
+              <span className="pagination-counter">
                 {page + 1} / {Math.max(1, Math.ceil(count / 50))}
               </span>
               <button
                 type="button"
-                className="button outline small"
+                className="btn-cloud-secondary"
                 disabled={(page + 1) * 50 >= count}
                 onClick={() => setPage((value) => value + 1)}
               >
                 Siguiente →
               </button>
             </div>
-            <p className="muted">
-              Desliza hacia abajo desde el inicio para actualizar. El directorio requiere conexión y
-              sesión de administrador.
-            </p>
           </section>
         ) : tab === 'alert' ? (
           <GuardianAlertPanel />
@@ -349,12 +437,15 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
         ) : (
           <GuardianHudPanel adminId={adminId} />
         )}
+
         {notice && (
           <p className="notice" role="status">
             {notice}
           </p>
         )}
       </div>
+
+      {/* REDESIGNED BOTTOM NAVIGATION (SLEEK, UNCONGESTED CYBER BAR) */}
       <nav className="guardian-bottom-nav" aria-label="Secciones de Guardian">
         {(
           [
@@ -363,23 +454,26 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
             ['alert', '🚨', 'Alerta'],
             ['switches', '🎛️', 'Switches'],
             ['hud', '📊', 'HUD'],
-            ['jira', '🎫', 'Jira / Tickets'],
-            ['cloud', '☁️', 'Cloud / CI'],
+            ['jira', '🎫', 'Jira'],
+            ['cloud', '☁️', 'Cloud'],
           ] as const
         ).map(([id, icon, label]) => (
           <button
             key={id}
             type="button"
-            className="button outline"
+            className="guardian-nav-btn"
             aria-pressed={tab === id}
             disabled={!online && id !== 'token'}
             onClick={() => setTab(id)}
           >
-            <span aria-hidden="true">{icon}</span>
-            <span>{label}</span>
+            <span className="nav-icon" aria-hidden="true">
+              {icon}
+            </span>
+            <span className="nav-label">{label}</span>
           </button>
         ))}
       </nav>
+
       {managed && (
         <PlayerManagementDialog
           key={managed.id}

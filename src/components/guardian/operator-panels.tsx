@@ -64,61 +64,109 @@ export function GuardianAlertPanel() {
     }
   }
   return (
-    <section className="guardian-operator-panel">
-      <h2>🚨 Transmisión global</h2>
-      <p className="notice">{active ? `Activa: ${active}` : 'No hay alertas activas.'}</p>
+    <section className="guardian-cloud-card" aria-label="Transmisión global">
+      <div className="guardian-cloud-header">
+        <div className="guardian-cloud-title-group">
+          <span className="provider-badge">🚨 BROADCAST</span>
+          <span className="provider-sub">Transmisión global en vivo</span>
+        </div>
+        <div className={`status-pill ${active ? 'status-ready' : 'status-neutral'}`}>
+          <span className={`pulse-dot ${active ? 'dot-amber' : ''}`}></span>
+          <span>{active ? 'ALERTA ACTIVA' : 'EN ESPERA'}</span>
+        </div>
+      </div>
+
+      {active ? (
+        <div className="guardian-active-alert-box">
+          <div className="flex items-center justify-between text-[10px] text-amber-400 font-bold uppercase tracking-wider mb-1">
+            <span>🔴 En el encabezado web</span>
+            <span>Activo</span>
+          </div>
+          <p className="guardian-active-alert-text">“{active}”</p>
+        </div>
+      ) : (
+        <div className="cloud-details-box text-xs">
+          <span className="text-slate-400">Sin transmisiones activas en el banner superior.</span>
+        </div>
+      )}
+
       <form
+        className="guardian-broadcast-form mt-2"
         onSubmit={(event) => {
           event.preventDefault();
           void publish(true);
         }}
       >
-        <label>
-          Mensaje
+        <div className="guardian-form-group">
+          <div className="guardian-field-label">
+            <label htmlFor="guardian-broadcast-message">Mensaje del anuncio</label>
+            <span className="text-[10px] text-slate-400 font-mono">{message.length}/240</span>
+          </div>
           <textarea
+            id="guardian-broadcast-message"
             required
             maxLength={240}
-            rows={4}
+            rows={3}
+            className="guardian-cyber-textarea"
+            placeholder="Mensaje global para todos los jugadores conectados..."
             value={message}
             onChange={(event) => setMessage(event.target.value)}
           />
-        </label>
-        <small>{message.length}/240</small>
-        <label>
-          Categoría
+        </div>
+
+        <div className="guardian-form-group">
+          <label className="guardian-field-label" htmlFor="guardian-broadcast-category">
+            Categoría y estilo visual
+          </label>
           <select
+            id="guardian-broadcast-category"
+            className="guardian-cyber-select"
             value={category}
             onChange={(event) => setCategory(event.target.value as typeof category)}
           >
-            <option value="info">Información · Cian</option>
-            <option value="warning">Advertencia · Ámbar</option>
-            <option value="event">Evento · Púrpura</option>
+            <option value="info">Información · Cian (#00f0ff)</option>
+            <option value="warning">Advertencia · Ámbar (#f59e0b)</option>
+            <option value="event">Evento Especial · Púrpura (#c084fc)</option>
           </select>
-        </label>
-        <label className="guardian-check">
+        </div>
+
+        <div className="guardian-cyber-check">
           <input
+            id="guardian-broadcast-discord"
             type="checkbox"
             checked={discord}
             onChange={(event) => setDiscord(event.target.checked)}
           />
-          Enviar también a #anuncios-savestate
-        </label>
-        <button type="submit" className="button" disabled={busy || !message.trim()}>
-          {busy ? 'Procesando…' : '🚨 Lanzar alerta'}
-        </button>
-        <button
-          type="button"
-          className="button outline"
-          disabled={busy || !active}
-          onClick={() => void publish(false)}
-        >
-          Apagar alerta web
-        </button>
+          <label htmlFor="guardian-broadcast-discord" className="text-xs text-slate-300">
+            Enviar también a{' '}
+            <strong className="text-cyan-400 font-mono">#anuncios-savestate</strong>
+          </label>
+        </div>
+
+        <div className="cloud-btn-grid mt-2">
+          <button type="submit" className="btn-cloud-primary" disabled={busy || !message.trim()}>
+            {busy ? 'Transmitiendo…' : '🚨 Lanzar alerta'}
+          </button>
+          <button
+            type="button"
+            className="btn-cloud-danger"
+            disabled={busy || !active}
+            onClick={() => void publish(false)}
+          >
+            ✕ Apagar alerta
+          </button>
+        </div>
       </form>
-      <p role="status">{notice}</p>
+
+      {notice && (
+        <p className="notice mt-2" role="status">
+          {notice}
+        </p>
+      )}
     </section>
   );
 }
+
 export function GuardianSwitchPanel() {
   const [switches, setSwitches] = useState<SystemSwitches | null>(null);
   const [busy, setBusy] = useState(false),
@@ -154,85 +202,178 @@ export function GuardianSwitchPanel() {
     }
   }
   return (
-    <section className="guardian-operator-panel">
-      <h2>🎛️ Interruptores maestros</h2>
+    <section className="guardian-cloud-card" aria-label="Interruptores maestros">
+      <div className="guardian-cloud-header">
+        <div className="guardian-cloud-title-group">
+          <span className="provider-badge">🎛️ MASTER CONTROLS</span>
+          <span className="provider-sub">Interruptores de sistema en tiempo real</span>
+        </div>
+        <div className="status-pill status-ready">
+          <span className="pulse-dot dot-green"></span>
+          <span>SINCRONIZADO</span>
+        </div>
+      </div>
+
       {switches ? (
-        <>
-          <button
-            type="button"
-            className="guardian-switch"
-            role="switch"
-            aria-checked={switches.gatekeeper_enabled}
-            disabled={busy}
-            onClick={() =>
-              switches.gatekeeper_enabled ? void update('gatekeeper_enabled', false) : setArm(true)
-            }
-          >
-            🛡️ Web Gatekeeper{' '}
-            <strong>{switches.gatekeeper_enabled ? 'ACTIVO' : 'DESACTIVADO'}</strong>
-          </button>
-          {arm && (
-            <div className="notice">
-              <p>
-                El bloqueo exigirá el código del teléfono a los visitantes. Comprueba que puedes
-                generarlo antes de activarlo.
-              </p>
-              <button
-                className="button"
-                type="button"
-                disabled={busy}
-                onClick={() => void update('gatekeeper_enabled', true)}
-              >
-                Confirmar activación del bloqueo
-              </button>
-              <button className="button outline" type="button" onClick={() => setArm(false)}>
-                Cancelar
-              </button>
-            </div>
-          )}
-          <button
-            type="button"
-            className="guardian-switch"
-            role="switch"
-            aria-checked={switches.registrations_open}
-            disabled={busy}
-            onClick={() => void update('registrations_open', !switches.registrations_open)}
-          >
-            📝 Registro de nuevos usuarios{' '}
-            <strong>{switches.registrations_open ? 'ABIERTOS' : 'CERRADOS'}</strong>
-          </button>
-          <button
-            type="button"
-            className="guardian-switch"
-            role="switch"
-            aria-checked={switches.double_xp}
-            disabled={busy}
-            onClick={() => void update('double_xp', !switches.double_xp)}
-          >
-            ⚡ Evento Doble XP (Multiplicador x2){' '}
-            <strong>{switches.double_xp ? 'ACTIVO (x2 XP)' : 'NORMAL (x1)'}</strong>
-          </button>
-          <button
-            type="button"
-            className="guardian-switch"
-            role="switch"
-            aria-checked={switches.seasonal_theme === 'halloween'}
-            disabled={busy}
-            onClick={() =>
-              void update(
-                'seasonal_theme',
-                switches.seasonal_theme === 'halloween' ? 'classic' : 'halloween',
-              )
-            }
-          >
-            🎃 Tema estacional{' '}
-            <strong>{switches.seasonal_theme === 'halloween' ? 'HALLOWEEN' : 'CLÁSICO'}</strong>
-          </button>
-        </>
+        <div className="guardian-switches-list">
+          {/* 1. Gatekeeper switch */}
+          <div className="guardian-switch-wrapper">
+            <button
+              type="button"
+              className={`guardian-switch-btn ${switches.gatekeeper_enabled ? 'is-on' : 'is-off'}`}
+              role="switch"
+              aria-checked={switches.gatekeeper_enabled}
+              disabled={busy}
+              onClick={() =>
+                switches.gatekeeper_enabled
+                  ? void update('gatekeeper_enabled', false)
+                  : setArm(true)
+              }
+            >
+              <div className="guardian-switch-info">
+                <div className="guardian-switch-title">
+                  <span className="switch-icon">🛡️</span>
+                  <span>Web Gatekeeper Lock</span>
+                </div>
+                <small className="guardian-switch-desc">
+                  Bloqueo 2FA de acceso total a visitantes no autenticados
+                </small>
+              </div>
+              <div className="guardian-toggle-track">
+                <span className="toggle-thumb" />
+                <span className="toggle-label">
+                  {switches.gatekeeper_enabled ? 'ACTIVO' : 'OFF'}
+                </span>
+              </div>
+            </button>
+
+            {arm && (
+              <div className="guardian-arm-box">
+                <p className="text-xs text-amber-200 mb-2 font-medium">
+                  ⚠️ Advertencia: El bloqueo exigirá el código de seguridad móvil a todos los
+                  visitantes. Verifica que tengas tu TOTP activo antes de confirmar.
+                </p>
+                <div className="cloud-btn-grid">
+                  <button
+                    className="btn-cloud-primary"
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void update('gatekeeper_enabled', true)}
+                  >
+                    Confirmar bloqueo
+                  </button>
+                  <button
+                    className="btn-cloud-secondary"
+                    type="button"
+                    onClick={() => setArm(false)}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 2. Registrations */}
+          <div className="guardian-switch-wrapper">
+            <button
+              type="button"
+              className={`guardian-switch-btn ${switches.registrations_open ? 'is-on' : 'is-off'}`}
+              role="switch"
+              aria-checked={switches.registrations_open}
+              disabled={busy}
+              onClick={() => void update('registrations_open', !switches.registrations_open)}
+            >
+              <div className="guardian-switch-info">
+                <div className="guardian-switch-title">
+                  <span className="switch-icon">📝</span>
+                  <span>Registro de Nuevos Usuarios</span>
+                </div>
+                <small className="guardian-switch-desc">
+                  Permite o cierra la creación de nuevas cuentas
+                </small>
+              </div>
+              <div className="guardian-toggle-track">
+                <span className="toggle-thumb" />
+                <span className="toggle-label">
+                  {switches.registrations_open ? 'ABIERTOS' : 'CERRADOS'}
+                </span>
+              </div>
+            </button>
+          </div>
+
+          {/* 3. Double XP */}
+          <div className="guardian-switch-wrapper">
+            <button
+              type="button"
+              className={`guardian-switch-btn ${switches.double_xp ? 'is-on' : 'is-off'}`}
+              role="switch"
+              aria-checked={switches.double_xp}
+              disabled={busy}
+              onClick={() => void update('double_xp', !switches.double_xp)}
+            >
+              <div className="guardian-switch-info">
+                <div className="guardian-switch-title">
+                  <span className="switch-icon">⚡</span>
+                  <span>Evento Doble XP (Multiplicador x2)</span>
+                </div>
+                <small className="guardian-switch-desc">
+                  Duplica la ganancia de experiencia en misiones y logros
+                </small>
+              </div>
+              <div className="guardian-toggle-track">
+                <span className="toggle-thumb" />
+                <span className="toggle-label">
+                  {switches.double_xp ? 'ACTIVO (x2)' : 'NORMAL'}
+                </span>
+              </div>
+            </button>
+          </div>
+
+          {/* 4. Seasonal Theme */}
+          <div className="guardian-switch-wrapper">
+            <button
+              type="button"
+              className={`guardian-switch-btn ${switches.seasonal_theme === 'halloween' ? 'is-on theme-halloween' : 'is-off'}`}
+              role="switch"
+              aria-checked={switches.seasonal_theme === 'halloween'}
+              disabled={busy}
+              onClick={() =>
+                void update(
+                  'seasonal_theme',
+                  switches.seasonal_theme === 'halloween' ? 'classic' : 'halloween',
+                )
+              }
+            >
+              <div className="guardian-switch-info">
+                <div className="guardian-switch-title">
+                  <span className="switch-icon">🎃</span>
+                  <span>Atmósfera Estacional Halloween</span>
+                </div>
+                <small className="guardian-switch-desc">
+                  Efectos de murciélagos, partículas y paleta de noche de brujas
+                </small>
+              </div>
+              <div className="guardian-toggle-track">
+                <span className="toggle-thumb" />
+                <span className="toggle-label">
+                  {switches.seasonal_theme === 'halloween' ? 'HALLOWEEN' : 'CLÁSICO'}
+                </span>
+              </div>
+            </button>
+          </div>
+        </div>
       ) : (
-        <p>Cargando interruptores…</p>
+        <div className="cloud-details-box text-center py-4 text-xs text-slate-400">
+          Cargando interruptores maestros…
+        </div>
       )}
-      <p role="status">{notice}</p>
+
+      {notice && (
+        <p className="notice mt-3" role="status">
+          {notice}
+        </p>
+      )}
     </section>
   );
 }
