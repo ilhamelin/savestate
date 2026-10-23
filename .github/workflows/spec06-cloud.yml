@@ -30,3 +30,9 @@ jobs:
       - run: npm test
       - run: npm run format:check
       - run: npm run build
+      - name: Browser acceptance tools (runner only)
+        run: |
+          npm install --no-save --package-lock=false playwright esbuild
+          if ! command -v google-chrome; then npx playwright install chromium; fi
+      - name: Real mobile panel and polling acceptance
+        run: node .github/spec06-browser-check.mjs

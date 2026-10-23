@@ -135,7 +135,7 @@ export function createCloudObserver(options: ObserverOptions = {}) {
               Number.isFinite(reset) ? reset : 0,
             );
           }
-          if (!response.ok) throw new Error('Provider unavailable');
+          if (!response.ok) { await response.body?.cancel(); throw new Error('Provider unavailable'); }
           const reader = response.body?.getReader();
           let raw = '',
             bytes = 0;
@@ -259,7 +259,8 @@ export function createCloudObserver(options: ObserverOptions = {}) {
       const prs = list(pullRequests.value)
         .slice(0, 5)
         .map(normalizeGitHubPullRequest)
-        .filter((item) => item !== null && item.state === 'open');
+        .filter((item) => item !== null)
+        .filter((item) => item.state === 'open');
       const githubResources = [main, implementation, workflows, pullRequests];
       const vercelResources = [recent, production];
       const sampledAt = (items: Resource[]) => {
