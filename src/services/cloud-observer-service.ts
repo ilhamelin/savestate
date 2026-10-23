@@ -135,7 +135,10 @@ export function createCloudObserver(options: ObserverOptions = {}) {
               Number.isFinite(reset) ? reset : 0,
             );
           }
-          if (!response.ok) { await response.body?.cancel(); throw new Error('Provider unavailable'); }
+          if (!response.ok) {
+            await response.body?.cancel();
+            throw new Error('Provider unavailable');
+          }
           const reader = response.body?.getReader();
           let raw = '',
             bytes = 0;
