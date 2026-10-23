@@ -10,7 +10,8 @@ test('Legacy Discord stays in Chat while Arcade and LFG redirect permanently to 
   ]) {
     assert.ok(
       redirects.some(
-        (rule) => rule.source === source && rule.destination === destination && rule.permanent === true,
+        (rule) =>
+          rule.source === source && rule.destination === destination && rule.permanent === true,
       ),
     );
   }
