@@ -10,7 +10,7 @@ export default async function ArcadePage() {
   const configured = isConfigured();
   const [duel, feed, user] = await Promise.all([
     configured ? duelSummary() : null,
-    configured ? partyFeed({ page: 1 }) : { items: [], hasMore: false, generatedAt: Date.now() },
+    configured ? partyFeed({ page: 1 }) : { items: [], hasMore: false, generatedAt: 0 },
     currentUser(),
   ]);
   return (
