@@ -165,7 +165,7 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
           En el navegador del teléfono, usa «Instalar aplicación» o «Agregar a pantalla de inicio».
           Sincroniza la hora automáticamente.
         </p>
-        {tab === 'token' ? (\
+        {tab === 'token' ? (
           <div className="guardian-token">
             <p className="muted">RFC 6238 · 6 dígitos · paso de 20 segundos</p>
             <output className="guardian-digits" aria-label="Clave activa" aria-live="off">

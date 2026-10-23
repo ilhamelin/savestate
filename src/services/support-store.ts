@@ -22,7 +22,11 @@ export interface SupportStore {
 }
 function supportDb() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!key) throw new AppError('El canal de soporte todavía no está configurado (falta SUPABASE_SERVICE_ROLE_KEY).', 503);
+  if (!key)
+    throw new AppError(
+      'El canal de soporte todavía no está configurado (falta SUPABASE_SERVICE_ROLE_KEY).',
+      503,
+    );
   // Scoped to support tables/RPCs; all Guardian reads authorize before reaching this store.
   return createClient<Database>(publicEnv().url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -32,7 +36,10 @@ function check(error: { code?: string; message: string; details?: string } | nul
   if (error) {
     console.error('Support store DB error:', error);
     const detail = error.code ? `[${error.code}] ${error.message}` : error.message;
-    throw new AppError(`Soporte no disponible (${detail}). Comprueba la migración 040 o recarga el esquema.`, 503);
+    throw new AppError(
+      `Soporte no disponible (${detail}). Comprueba la migración 040 o recarga el esquema.`,
+      503,
+    );
   }
 }
 export async function claimSupportAttempt(request: Request, kind: 'support' | 'telemetry') {

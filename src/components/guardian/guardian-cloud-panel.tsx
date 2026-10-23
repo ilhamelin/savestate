@@ -126,15 +126,15 @@ export function GuardianCloudPanel() {
       polling.wake();
     };
     const initial = window.setTimeout(update, 0);
-    document.addEventListener('visibilitychange', update);\
+    document.addEventListener('visibilitychange', update);
     window.addEventListener('online', update);
     window.addEventListener('offline', update);
     return () => {
       disposed = true;
       wake.current = null;
-      clearTimeout(initial);\
+      clearTimeout(initial);
       polling.stop();
-      document.removeEventListener('visibilitychange', update);\
+      document.removeEventListener('visibilitychange', update);
       window.removeEventListener('online', update);
       window.removeEventListener('offline', update);
     };
@@ -170,7 +170,7 @@ export function GuardianCloudPanel() {
         </p>
       )}
       <section className="guardian-cloud-card" aria-labelledby="cloud-production">
-        <h2 id=\"cloud-production\">▲ Vercel · Producción</h2>
+        <h2 id="cloud-production">▲ Vercel · Producción</h2>
         <p className="muted">
           Último intento de producción; puede diferir de la versión que está sirviendo tráfico.
         </p>
@@ -195,7 +195,7 @@ export function GuardianCloudPanel() {
         </details>
       </section>
       <section className="guardian-cloud-card" aria-labelledby="cloud-ci">
-        <h2 id=\"cloud-ci\">⚡ GitHub Actions · CI Runner</h2>
+        <h2 id="cloud-ci">⚡ GitHub Actions · CI Runner</h2>
         {github?.notice && <p className="notice">{github.notice}</p>}
         {github?.stale && (
           <span className="cloud-stale">⚠ Datos anteriores · {localTime(github.updatedAt)}</span>
@@ -221,7 +221,7 @@ export function GuardianCloudPanel() {
         )}
       </section>
       <section className="guardian-cloud-card" aria-labelledby="cloud-commits">
-        <h2 id=\"cloud-commits\">⌘ Últimos commits</h2>
+        <h2 id="cloud-commits">⌘ Últimos commits</h2>
         <small className="muted">Datos de GitHub: {localTime(github?.updatedAt)}</small>
         <ul className="guardian-cloud-list">
           {github?.recentCommits.map((commit) => (
@@ -250,7 +250,7 @@ export function GuardianCloudPanel() {
         )}
       </section>
       <section className="guardian-cloud-card" aria-labelledby="cloud-prs">
-        <h2 id=\"cloud-prs\">⑂ Pull Requests activos</h2>
+        <h2 id="cloud-prs">⑂ Pull Requests activos</h2>
         <ul className="guardian-cloud-list">
           {github?.openPullRequests.map((pr) => (
             <li key={pr.number} className="guardian-cloud-entry">
