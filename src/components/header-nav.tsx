@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Compass,
-  Gamepad2,
   Library,
   Radio,
   Sparkles,
@@ -24,7 +23,6 @@ const links = [
   { href: '/feed', label: 'Transmisión', icon: Radio },
   { href: '/highlights', label: 'Momentos', icon: Sparkles },
   { href: '/forum', label: 'Foro', icon: MessageSquare },
-  { href: '/arcade', label: 'Arcade', icon: Gamepad2 },
   { href: '/chat', label: 'Chat Global', icon: MessageCircle },
   { href: '/lists', label: 'Listas', icon: Layers },
   { href: '/players', label: 'Jugadores', icon: UserCheck },
