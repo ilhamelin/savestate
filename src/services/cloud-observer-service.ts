@@ -244,14 +244,16 @@ export function createCloudObserver(options: ObserverOptions = {}) {
           .slice(0, 1)
           .map((item) => normalizeVercelDeployment(item, now()))
           .find((item) => item?.target === 'production') ?? null;
-      const commits = deduplicateCloudCommits([
-        ...list(main.value)
-          .slice(0, 4)
-          .map((item) => normalizeGitHubCommit(item, 'main')),
-        ...list(implementation.value)
-          .slice(0, 3)
-          .map((item) => normalizeGitHubCommit(item, 'implementation/chatgpt')),
-      ].filter((item) => item !== null));
+      const commits = deduplicateCloudCommits(
+        [
+          ...list(main.value)
+            .slice(0, 4)
+            .map((item) => normalizeGitHubCommit(item, 'main')),
+          ...list(implementation.value)
+            .slice(0, 3)
+            .map((item) => normalizeGitHubCommit(item, 'implementation/chatgpt')),
+        ].filter((item) => item !== null),
+      );
       const runs = list(cloudObject(workflows.value).workflow_runs)
         .slice(0, 3)
         .map((item) => normalizeGitHubWorkflow(item, now()))
