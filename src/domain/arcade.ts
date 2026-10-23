@@ -103,3 +103,33 @@ export function remainingPartyTime(expiresAt: string, now: number) {
   if (!minutes) return 'Expirada';
   return minutes < 60 ? `Expira en ${minutes} min` : `Expira en ${Math.ceil(minutes / 60)} h`;
 }
+
+export interface PartyFeedResponse {
+  items: PartyCardData[];
+  hasMore: boolean;
+  generatedAt: number;
+}
+export interface PartyFeedFilters {
+  platform?: PartyPlatform;
+  playstyle?: PartyStyle;
+  page: number;
+}
+export function partyFeedFilters(params: URLSearchParams): PartyFeedFilters {
+  for (const name of ['platform', 'playstyle', 'page']) {
+    if (params.getAll(name).length > 1) throw new ValidationError('Filtro repetido.');
+  }
+  const platform = params.get('platform') || undefined;
+  const playstyle = params.get('playstyle') || undefined;
+  const page = params.get('page') ?? '1';
+  if (platform && !PARTY_PLATFORMS.includes(platform as PartyPlatform))
+    throw new ValidationError('Plataforma inválida.');
+  if (playstyle && !PARTY_STYLES.includes(playstyle as PartyStyle))
+    throw new ValidationError('Estilo inválido.');
+  if (!/^[1-9]\d*$/.test(page) || !Number.isSafeInteger(Number(page)) || Number(page) > 10000)
+    throw new ValidationError('Página inválida (1–10000).');
+  return {
+    platform: platform as PartyPlatform | undefined,
+    playstyle: playstyle as PartyStyle | undefined,
+    page: Number(page),
+  };
+}
