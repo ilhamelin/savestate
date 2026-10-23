@@ -1,106 +1,172 @@
-# Savestate
+<img src="public/icons/icon-512.png" alt="SaveState" width="88" />
 
-Diario de videojuegos y catálogo social con estética pixel art/cyberpunk. Construido desde los siete documentos originales y las decisiones aprobadas en [docs/decisiones_aprobadas.md](docs/decisiones_aprobadas.md).
+# SaveState
 
-## Arranque
+**Cada juego. Cada partida. Tu historia.**
 
-Requiere Node.js 24.
+Tu diario de a bordo gamer: organiza tu biblioteca, registra tu progreso y comparte tus mejores momentos. SaveState reúne catálogo, comunidad y trackers en una experiencia web con estética cyber-retro, perfiles personalizables y formato PWA.
 
-```powershell
+[![CI](https://github.com/ilhamelin/savestate/actions/workflows/ci.yml/badge.svg?branch=implementation%2Fchatgpt)](https://github.com/ilhamelin/savestate/actions/workflows/ci.yml)
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-estricto-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
+
+[**Abrir SaveState ↗**](https://savestate-eight.vercel.app) · [Documentación](#documentación) · [Contribuir](#desarrollo-en-la-nube) · [Verificaciones](#calidad-y-verificación)
+
+> El acceso al despliegue puede estar limitado por Guardian. Algunas funciones requieren sesión, credenciales de proveedores o un escaparate público en el servicio de origen.
+
+## Un lugar para tu recorrido gamer
+
+### 🎮 Tu biblioteca, a tu manera
+
+- Organiza juegos en seis estados: **Playing, Backlog, Cleared, 100% Platinum, Dropped y Wishlist**.
+- Registra sesiones, horas, plataformas y progreso; consulta tu colección con filtros y vistas de tarjetas o tabla.
+- Puntúa de 1 a 10 en medios puntos, escribe reseñas con Markdown y protege spoilers.
+- Importa y sincroniza datos de Steam, con herramientas de importación para PlayStation y Xbox.
+- Destaca tu Top 4 y descubre tu resumen SaveState Wrapped.
+
+### 👾 Comunidad con identidad propia
+
+- Personaliza tu perfil con avatar, banner, fondos, hardware, títulos y marcos desbloqueables.
+- Sigue jugadores, gestiona amistades y conversa mediante mensajes privados.
+- Comparte Momentos con comentarios y reacciones; sigue la actividad en Transmisión.
+- Crea listas de juegos, participa en los foros y busca compañeros de partida.
+- Usa el Chat Global conectado a Discord, con imágenes, GIFs y frecuencias autorizadas del servidor.
+
+### 📡 Más allá del catálogo
+
+- **Rift:** trackers de League of Legends, Valorant, Genshin Impact, Honkai: Star Rail y Rust, con las estadísticas que cada proveedor permite consultar.
+- **Worlds:** calendario, señales oficiales, repeticiones, telemetría de partidas y reproductor musical.
+- **HoYo Hub:** directos, códigos y noticias de Genshin Impact y Honkai: Star Rail.
+- **Screen:** bitácora de cine, series y adaptaciones gamer, con tráileres, progreso por episodios y disponibilidad regional.
+- **Indie Tracker:** seguimiento de juegos de itch.io y avisos de nuevas versiones.
+- **Portada:** noticias RSS, radar de juegos gratis y cuentas regresivas.
+- **Bóveda / Memory Card:** galería personal de capturas y clips en Cloudflare R2, accesible desde el perfil.
+- **Guardian:** consola de operador para moderación, alertas, controles de acceso, salud del sistema y monitor Cloud / CI de Vercel y GitHub Actions.
+
+La PWA permite instalar SaveState en dispositivos compatibles. La biblioteca offline de solo lectura (PR #4) sigue pendiente de integración. Las integraciones muestran sus estados de configuración, error o datos parciales; su disponibilidad depende del proveedor y de los permisos de la cuenta.
+
+## Stack y arquitectura
+
+**Next.js 16 · React 19 · TypeScript 5 · Tailwind CSS 4 · Supabase · Cloudflare R2 · Vercel**
+
+- **Web:** App Router, Server Components y streaming con Suspense.
+- **Datos e identidad:** PostgreSQL, Supabase Auth, políticas RLS y Realtime.
+- **Archivos:** Supabase Storage y subidas directas a R2 mediante URLs firmadas.
+- **Integraciones:** IGDB/Twitch, Steam, Riot Games, HenrikDev, Discord, Enka.Network, TMDB y fuentes de noticias/ofertas.
+- **Interfaz:** Silkscreen, JetBrains Mono, Lucide, temas estacionales y preferencias de movimiento reducido.
+
+Las reglas de negocio viven en el dominio; las consultas y los proveedores se mantienen separados de la interfaz.
+
+```text
+src/
+  app/                 Páginas, endpoints y callbacks
+  components/          Interfaz y controles interactivos
+  domain/              Modelos, validaciones y reglas de negocio
+  services/            Casos de uso y coordinación de proveedores
+  repositories/        Consultas de persistencia
+  integrations/        Clientes y adaptadores externos
+  lib/                 Sesiones, configuración y utilidades
+  proxy.ts             Proxy de Next.js 16 y políticas de seguridad
+supabase/migrations/   Esquema, funciones, índices y políticas RLS
+tests/unit/            Pruebas unitarias
+tests/integration/     Pruebas HTTP, SQL y servicios configurados
+public/                Iconos, fondos y recursos de la PWA
+docs/                  Guías de módulos, decisiones y verificaciones
+```
+
+## Desarrollo en la nube
+
+SaveState se mantiene mediante **GitHub + GitHub Actions + Vercel**. No necesitas conservar una copia del proyecto en tu PC para contribuir desde un entorno remoto.
+
+- **Producción:** [`main`](https://github.com/ilhamelin/savestate/tree/main), conectada al dominio público en Vercel.
+- **Desarrollo e integración:** [`implementation/chatgpt`](https://github.com/ilhamelin/savestate/tree/implementation/chatgpt).
+- **Especificaciones y propuestas:** [`research/antigravity`](https://github.com/ilhamelin/savestate/tree/research/antigravity/docs).
+- **Contrato de trabajo:** [playbook de operación en la nube](.codex/CODEX_CLOUD_PLAYBOOK.md).
+
+### Flujo de contribución
+
+1. Crea una rama `feature/<nombre>`, `fix/<nombre>` o `docs/<nombre>` desde `implementation/chatgpt`.
+2. Implementa un cambio acotado y actualiza sus pruebas o documentación.
+3. Abre un Pull Request hacia `implementation/chatgpt` explicando el problema, el resultado y cómo se verificó.
+4. Espera los checks del **último commit** y el build/preview de Vercel antes de fusionar.
+5. Tras integrar, comprueba el despliegue asociado al commit en la rama de producción configurada en Vercel.
+
+El [workflow de CI](.github/workflows/ci.yml) se ejecuta en PRs hacia `implementation/chatgpt` o `main`, y en pushes a esas ramas. Los previews de PR son distintos del despliegue de producción.
+
+Las variables de Vercel **no se transfieren automáticamente a GitHub Actions**. Configura cada entorno por separado y nunca incluyas secretos en commits, issues o logs.
+
+### Preparar un entorno aislado
+
+Requiere **Node.js 24 o superior** y npm. Estos pasos también sirven en un contenedor o espacio de desarrollo remoto:
+
+```bash
 npm ci
-Copy-Item .env.example .env.local
-# Completa las credenciales y aplica las migraciones según la guía.
+cp .env.example .env.local
+```
+
+Completa las variables necesarias para el módulo que vas a trabajar y prepara su esquema de Supabase antes de probar guardados. Consulta la [guía inicial](docs/configuracion.md), las [migraciones versionadas](supabase/migrations) y la guía específica del módulo; no reapliques migraciones indiscriminadamente sobre producción.
+
+```bash
 npm run dev
 ```
 
-Abre `http://localhost:3000`. La [guía de configuración](docs/configuracion.md) explica cómo crear Supabase, configurar email/Discord/Google y conectar Twitch/IGDB. Sin credenciales, la interfaz muestra el estado pendiente; no inventa juegos ni persiste datos en memoria.
+Abre la URL que exponga el entorno de desarrollo; por defecto, `http://localhost:3000`. Sin las credenciales necesarias, algunas vistas muestran configuración pendiente o un modo demo identificado, como Screen.
 
-## Contribución y verificación en la nube
+## Calidad y verificación
 
-El código de desarrollo se mantiene en `implementation/chatgpt`. Las especificaciones y auditorías se consultan en la rama [research/antigravity](https://github.com/ilhamelin/savestate/tree/research/antigravity/docs). Antes de implementar cambios, lee el [playbook de operación en la nube](.codex/CODEX_CLOUD_PLAYBOOK.md).
-
-1. Crea una rama `feature/<nombre>` o `fix/<nombre>` desde `implementation/chatgpt` y realiza cambios acotados.
-2. Abre un Pull Request con destino a `implementation/chatgpt`, describiendo el problema, la solución y las verificaciones necesarias.
-3. Revisa [GitHub Actions](https://github.com/ilhamelin/savestate/actions/workflows/ci.yml): el workflow [CI Runner](.github/workflows/ci.yml) usa Ubuntu, Node.js 24 y `npm ci`, y ejecuta `npm run check`. Esta suite incluye ESLint, generación de tipos de rutas de Next.js y `tsc --noEmit`, pruebas unitarias y comprobación de formato con Prettier.
-4. Confirma que los checks del commit actual y el preview de Vercel estén en verde antes de integrar el PR. Si fallan, consulta sus logs, corrige la causa y verifica de nuevo el último SHA.
-5. Tras integrar el cambio, comprueba el despliegue de Vercel asociado al commit. Los previews de PR y los despliegues de producción son distintos; producción sigue la rama configurada en Vercel.
-
-El CI se activa en Pull Requests hacia `implementation/chatgpt` o `main`, y en pushes a esas dos ramas. Un push a una rama de feature sin PR abierto no activa este workflow.
-
-Este flujo permite editar en GitHub y ejecutar las verificaciones en runners remotos, sin depender de una copia del proyecto en el PC. Las credenciales se configuran en los secretos y variables del entorno que las necesite; los valores configurados en Vercel no se transfieren automáticamente a GitHub Actions. Nunca subas `.env.local`, tokens ni claves privadas. Las pruebas unitarias no sustituyen las pruebas de integración que requieren servicios externos.
-
-## Alcance implementado
-
-- Momentos Gamer: publicaciones con Markdown, capturas WebP privadas o YouTube, categorías, comentarios y reacciones. Consulta [la guía del módulo](docs/momentos_gamer.md).
-- Catálogo IGDB con búsqueda por título/estudio/saga, filtros, fichas SSR, caché de metadatos y contingencia con PostgreSQL.
-- Explorar con orden, páginas de 24 juegos, filtros en la URL y agregado rápido a biblioteca sin sobrescribir entradas existentes.
-- Buscador de catálogo en listas y «Qué juego hoy» para elegir al azar entre juegos del backlog por plataforma/género.
-- Email/contraseña, recuperación, callbacks Discord/Google y cierre de sesiones.
-- Seis estados de biblioteca, múltiples Play Logs y Top 4 ordenado.
-- Una puntuación por usuario/juego, de 1 a 10 en medios puntos, compartida por biblioteca y reseña mediante una transacción.
-- Markdown sanitizado, spoilers ocultos por defecto, reacciones gamer, comentarios y reportes.
-- Perfiles, vista previa de avatar/banner en ajustes, galería de avatares, subida WebP limitada, temas, enlaces y estadísticas de partidas.
-- Seguimiento unilateral, solicitudes de amistad bidireccional y biblioteca privada para amigos aceptados.
-- Feed con suscripción Realtime, listas compartibles y notificaciones internas.
-- Panel de moderación para roles administrativos asignados en Supabase.
-
-Steam, chat privado, emulación web y avatares modulares no forman parte de esta entrega.
-
-La aplicación cuenta con despliegue en [Vercel](https://savestate-eight.vercel.app) y comprobaciones reales de IGDB, Supabase y sesión documentadas en `docs/`. Las nuevas mejoras de descubrimiento y sus verificaciones se detallan en [docs/mejoras_descubrimiento.md](docs/mejoras_descubrimiento.md). Storage, Realtime, ambos accesos OAuth completos y la latencia objetivo deben certificarse por separado; un build correcto no certifica esos flujos.
-
-## Stack y organización
-
-Next.js 16 App Router · React 19 · TypeScript 5 estricto · Tailwind CSS v4 · Supabase/PostgreSQL 16 · IGDB v4. Silkscreen y JetBrains Mono para tipografía; Lucide para iconos; canvas-confetti solo bajo demanda y respetando movimiento reducido.
-
-```text
-docs/                    Documentos fuente, decisiones y configuración
-src/app/                 Páginas SSR, APIs y callbacks de autenticación
-src/components/          Interfaz y controles accesibles
-src/domain/              Tipos y reglas independientes del framework
-src/services/            Casos de uso y sanitización
-src/repositories/        Consultas de persistencia
-src/integrations/         Supabase e IGDB
-src/lib/                 Configuración, sesiones, errores y tipos SQL
-supabase/migrations/     Esquema, RLS, funciones y hardening
-tests/unit/              Reglas críticas y sanitización
-tests/integration/       Asunciones HTTP y pruebas SQL de privacidad
-public/avatars/          Galería pixel art en SVG
+```bash
+npm run check
 ```
 
-La documentación original numerada y el compilado permanecen en la raíz. Las siete copias canónicas están en `docs/`; el README documental original se conserva en `docs/indice_original.md`.
+La suite ejecuta **ESLint → generación de tipos de rutas y TypeScript → pruebas unitarias con el runner nativo de Node → Prettier**.
 
-## Comandos
+Comandos disponibles:
 
-| Comando                    | Propósito                                             |
-| -------------------------- | ----------------------------------------------------- |
-| `npm run dev`              | Desarrollo local                                      |
-| `npm run build`            | Compilación de producción                             |
-| `npm run start`            | Servidor de producción local                          |
-| `npm run lint`             | Reglas TypeScript, React Hooks y accesibilidad        |
-| `npm run typecheck`        | TypeScript estricto                                   |
-| `npm test`                 | Tests unitarios con Node                              |
-| `npm run test:integration` | Tests HTTP/SQL cuando sus entornos están configurados |
-| `npm run format`           | Formatear código sin alterar documentación fuente     |
-| `npm run check`            | Lint, tipos, tests y comprobación de formato          |
+- `npm run dev`: servidor de desarrollo.
+- `npm run build`: compilación de producción.
+- `npm run start`: servidor del build de producción.
+- `npm run lint`: reglas de código, React Hooks y accesibilidad.
+- `npm run typecheck`: `next typegen && tsc --noEmit`.
+- `npm test`: pruebas unitarias.
+- `npm run test:integration`: pruebas que requieren un entorno preparado; algunas se omiten si falta su configuración.
+- `npm run format` / `npm run format:check`: aplicar o verificar formato.
 
-## Seguridad y límites actuales
+Un build correcto no certifica OAuth, RLS, Storage, Realtime ni las APIs de terceros. Esos flujos requieren sus verificaciones de integración en un entorno aislado.
 
-- Las tablas aplican RLS. Seguir no otorga acceso privado; solo una amistad aceptada lo permite.
-- El correo vive en Supabase Auth, fuera de perfiles públicos.
-- Claves de servicio y Twitch exclusivamente en servidor. `.env.local` está ignorado.
-- Mutaciones JSON exigen mismo origen y sesión verificada. Las respuestas personales no usan caché compartida.
-- Markdown se sanitiza al guardar y al renderizar; CSP usa nonce por solicitud.
-- La puntuación única y Top 4 se protegen también en PostgreSQL.
-- Una biblioteca muestra hasta 500 registros recientes más sus favoritos; las estadísticas indican ese alcance. Las fichas muestran hasta 50 reseñas dentro de 200 fichas de biblioteca visibles y 300 comentarios. Las listas y señales tienen límites explícitos de consulta para la entrega inicial.
+## Seguridad, privacidad y límites
 
-Consulta [docs/estado_implementacion.md](docs/estado_implementacion.md) para resultados de verificación y pendientes.
+- Las políticas RLS y la autorización del servidor controlan el acceso a los datos personales y los canales privados.
+- Las claves de servicio y de proveedores se utilizan en el servidor. `.env.local` permanece fuera de Git; toma [`.env.example`](.env.example) como referencia.
+- Las mutaciones protegidas validan sesión y origen. Las respuestas personales no deben almacenarse en cachés compartidas.
+- El Markdown se sanitiza y el proxy aplica CSP con nonce por solicitud.
+- **Los enlaces de archivos de R2 son públicos:** la galería tiene acceso por propietario, pero compartir una URL no transmite sus permisos. No subas material confidencial.
+- Las consultas tienen límites explícitos. La biblioteca carga hasta 500 registros recientes más sus favoritos; no debe confundirse esa selección con un análisis ilimitado del historial.
+- Los rangos, horarios, ofertas, códigos y disponibilidad de streaming dependen de fuentes externas y pueden cambiar.
 
-La [Fase 3: Sala Arcade, compañeros y habitaciones](docs/arcade_companeros_y_habitaciones.md) incorpora duelos comunitarios en el inicio, convocatorias de 48 horas en `/parties` y tres temas de perfil seleccionables en `/settings`. Requiere la migración `202610070008_arcade_and_parties.sql`; los duelos se activan desde SQL con juegos existentes del catálogo.
+Consulta también los [términos de uso](https://savestate-eight.vercel.app/terms) y la [política de privacidad](https://savestate-eight.vercel.app/privacy).
 
-La [Entrega A de v2: PWA y medallas](docs/v2_entrega_a_pwa_y_badges.md) añade el manifiesto instalable, iconos móviles y una vitrina pública de siete logros con desbloqueo automático y notificaciones. Requiere `202610070009_badges.sql`; «100% Platino» cuenta exclusivamente juegos en `platinum`.
+## Documentación
 
-La [Entrega B: importador Steam y Wrapped](docs/v2_entrega_b_steam_y_wrapped.md) incorpora `/library/import` y `/players/[username]/wrapped`, con confirmación previa, conservación de registros existentes y exportación PNG de 1080×1920. Requiere la migración `202610070010_steam_import.sql`; configurar `STEAM_API_KEY` únicamente en servidor para habilitar la consulta de bibliotecas públicas de Steam.
+### Para empezar
 
-[SaveState Boards](docs/foros_implementacion_y_verificacion.md) incorpora cinco canales en `/forum`, hilos y respuestas paginados, Markdown y spoilers, reacciones, notificaciones con destino al hilo y avisos Realtime. Requiere `202610080011_forum_boards.sql`.
+- [Configuración del entorno](docs/configuracion.md)
+- [Arquitectura](docs/arquitectura_savestate.md)
+- [Decisiones aprobadas](docs/decisiones_aprobadas.md)
+- [Auditoría de producción](docs/auditoria_produccion_2026-10-22.md)
+- [Streaming y optimización del polling](docs/optimizacion_broadcast_y_polling.md)
 
-El [importador multiplataforma](docs/importador_consolas_implementacion.md) amplía `/library/import` con pestañas PSN y Xbox, archivos CSV/JSON, listas de títulos, confirmación de edición del catálogo, plataforma y horas. Añade identificadores públicos de consola en Profile Studio y el perfil. Requiere `202610080016_console_imports.sql`; no necesita nuevas claves de proveedor.
+### Guías por módulo
+
+- [Steam Sync](docs/steam_sync_implementacion_y_verificacion.md) · [Importación de consolas](docs/importador_consolas_implementacion.md)
+- [Momentos](docs/momentos_gamer.md) · [Foros](docs/foros_implementacion_y_verificacion.md) · [Amigos](docs/widget_amigos_verificacion.md)
+- [Discord: comandos y roles vinculados](docs/discord_interactions_y_roles.md) · [Canales reales del Bridge](docs/discord_bridge_canales_reales.md)
+- [Rift Tracker](docs/rift_tracker.md) · [Valorant](docs/valorant_dual_tracker.md) · [Star Rail y Rust](docs/trackers_hsr_y_rust.md)
+- [Screen](docs/screen.md) · [Indie Tracker](docs/indie_tracker.md) · [Bóveda R2](docs/vault-r2.md)
+- [Guardian](docs/guardian_implementacion_y_activacion.md) · [Operator Suite](docs/especificacion_guardian_operator_suite.md)
+
+Las guías reflejan distintas etapas del proyecto. Para implementar un cambio, contrástalas con el código y las migraciones actuales. Las propuestas de `research/antigravity` no implican que todas sus funciones estén publicadas.
+
+---
+
+SaveState es un proyecto independiente. Las marcas, imágenes y demás materiales de terceros pertenecen a sus respectivos titulares.
