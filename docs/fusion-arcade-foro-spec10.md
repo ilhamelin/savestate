@@ -8,7 +8,7 @@ La entrada social es `/forum`. Por defecto muestra Debates; `/forum?tab=arcade` 
 - Debates consulta directorio, usuario y duelo concurrentemente. No solicita convocatorias.
 - El teaser utiliza los títulos de `DuelSummary.games`, asociados a los IDs del duelo. Si falta un juego usa el título del duelo.
 - Sin configuración no se consultan servicios de datos; siguen disponibles el selector y el aviso de configuración.
-- `/arcade` y `/parties` redirigen directamente con 308 a `/forum?tab=arcade`.
+- `/arcade` y `/parties` redirigen directamente con 308 a `/forum?tab=arcade`. `next.config.ts` aplica el destino antes del renderizado (también se conservan los `permanentRedirect` de las páginas). Así se evita la regla anterior hacia `/chat` y la respuesta 200 con meta-redirección de un render en streaming. [Referencia de Next.js](https://nextjs.org/docs/app/api-reference/config/next-config-js/redirects).
 - Navbar conserva 12 enlaces y activa Foro para ambas pestañas. El comando rápido y el retorno de login para publicar/votar apuntan al hub.
 - Las búsquedas, canales, ordenación y creación de hilos mantienen sus rutas de Debates. El pulso del teaser respeta movimiento reducido.
 

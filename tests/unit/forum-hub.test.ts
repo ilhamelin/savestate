@@ -203,3 +203,14 @@ test('Forum handles absent duels, anonymous Arcade and missing game metadata wit
   assert.match(html, /Duelo semanal/);
   assert.doesNotMatch(html, /undefined/);
 });
+
+test('Next routing sends both legacy entries directly to the Forum with permanent HTTP redirects', async () => {
+  const { default: config } = await import('../../next.config.ts');
+  const redirects = await config.redirects?.();
+  for (const source of ['/arcade', '/parties']) {
+    const rule = redirects?.find(rule => rule.source === source);
+    assert.equal(rule?.destination, '/forum?tab=arcade');
+    assert.equal(rule?.permanent, true);
+  }
+  assert.equal(redirects?.find(rule => rule.source === '/community/discord')?.destination, '/chat');
+});
