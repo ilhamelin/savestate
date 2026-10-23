@@ -1,155 +1,26 @@
 'use client';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CataloguePicker } from '@/components/catalogue-picker';
 import { api } from '@/lib/client-api';
 import { friendLevelTier } from '@/domain/player-friends';
 import {
-  PARTY_PLATFORMS,
-  PARTY_STYLES,
   PARTY_STYLE_LABELS,
   remainingPartyTime,
   type PartyCardData,
 } from '@/domain/arcade';
-export function PartyComposer() {
-  const dialog = useRef<HTMLDialogElement>(null),
-    trigger = useRef<HTMLButtonElement>(null),
-    busy = useRef(false);
-  const [pending, setPending] = useState(false),
-    [error, setError] = useState(''),
-    [version, setVersion] = useState(0);
-  const id = useId(),
-    router = useRouter();
-  async function create(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (busy.current) return;
-    busy.current = true;
-    setPending(true);
-    setError('');
-    const data = new FormData(event.currentTarget);
-    try {
-      await api('parties', {
-        action: 'create',
-        game_id: data.get('game'),
-        platform: data.get('platform'),
-        playstyle: data.get('playstyle'),
-        schedule: data.get('schedule'),
-        contact_note: data.get('contact_note'),
-      });
-      dialog.current?.close();
-      setVersion((n) => n + 1);
-      router.refresh();
-    } catch (failure) {
-      setError(failure instanceof Error ? failure.message : 'No se pudo publicar.');
-    } finally {
-      busy.current = false;
-      setPending(false);
-    }
-  }
-  return (
-    <>
-      <button
-        ref={trigger}
-        className="button"
-        onClick={() => {
-          setError('');
-          dialog.current?.showModal();
-        }}
-      >
-        Crear convocatoria
-      </button>
-      <dialog
-        ref={dialog}
-        className="party-dialog panel"
-        aria-labelledby={id}
-        onCancel={(event) => {
-          if (busy.current) event.preventDefault();
-        }}
-        onClose={() => trigger.current?.focus()}
-      >
-        <h2 id={id}>Busco compañero de partida</h2>
-        <p className="muted">
-          Visible para todos durante 48 horas. Usa un alias de contacto y evita compartir datos
-          personales.
-        </p>
-        <form method="post" onSubmit={create} key={version} className="form-stack">
-          <fieldset disabled={pending}>
-            <CataloguePicker games={[]} />
-            <div className="form-row">
-              <label>
-                Plataforma
-                <select name="platform">
-                  {PARTY_PLATFORMS.map((platform) => (
-                    <option key={platform}>{platform}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Estilo
-                <select name="playstyle">
-                  {PARTY_STYLES.map((style) => (
-                    <option value={style} key={style}>
-                      {PARTY_STYLE_LABELS[style]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <label>
-              Horario disponible
-              <input
-                name="schedule"
-                required
-                minLength={3}
-                maxLength={100}
-                placeholder="Viernes 21:00, GMT-3"
-              />
-            </label>
-            <label>
-              Nota de contacto
-              <textarea
-                name="contact_note"
-                required
-                minLength={3}
-                maxLength={500}
-                rows={3}
-                placeholder="Buscamos 2 para una raid. Discord: @player"
-              />
-            </label>
-          </fieldset>
-          {error ? (
-            <p role="alert" className="error-text">
-              {error}
-            </p>
-          ) : null}
-          <div className="inline-actions">
-            <button className="button" disabled={pending}>
-              {pending ? 'Publicando…' : 'Publicar convocatoria'}
-            </button>
-            <button
-              className="button secondary"
-              type="button"
-              disabled={pending}
-              onClick={() => dialog.current?.close()}
-            >
-              Cancelar
-            </button>
-          </div>
-        </form>
-      </dialog>
-    </>
-  );
-}
+export { PartyModal as PartyComposer } from '@/components/arcade/party-modal';
 export function PartyBoard({
   items,
   viewerId,
   generatedAt,
+  onRemoved,
 }: {
   items: PartyCardData[];
   viewerId: string | null;
   generatedAt: number;
+  onRemoved?: (id: string) => void;
 }) {
   const [now, setNow] = useState(generatedAt),
     [pending, setPending] = useState<string | null>(null),
@@ -182,13 +53,14 @@ export function PartyBoard({
     }
   }
   async function remove(id: string) {
-    if (busy.current) return;
+    if (busy.current || !window.confirm('¿Retirar esta convocatoria?')) return;
     busy.current = true;
     setPending(id);
     setError('');
     try {
       await api('parties', { action: 'delete', id });
-      router.refresh();
+      if (onRemoved) onRemoved(id);
+      else router.refresh();
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : 'No se pudo retirar.');
     } finally {
@@ -212,7 +84,7 @@ export function PartyBoard({
       ) : null}
       <div className="party-grid">
         {visible.map((item) => (
-          <article key={item.id} className="party-lobby-card panel">
+          <article key={item.id} className="party-card party-lobby-card panel">
             <div className="party-lobby-header">
               <div className="party-lobby-status">
                 <span className="news-pulse-dot" aria-hidden="true" /> LOBBY ABIERTO
@@ -242,7 +114,7 @@ export function PartyBoard({
               </div>
             </div>
             <div className="party-lobby-host">
-              <Link className="party-author text-link" href={`/players/${item.author.username}`}>
+              <Link className="party-author text-link" href={`/players/${encodeURIComponent(item.author.username)}`}>
                 {item.author.avatar_url ? (
                   <Image src={item.author.avatar_url} alt="" width={32} height={32} unoptimized />
                 ) : (

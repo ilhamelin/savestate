@@ -7,8 +7,8 @@ import {
   partyInput,
   type DuelSummary,
   type PartyCardData,
-  type PartyPlatform,
-  type PartyStyle,
+  type PartyFeedFilters,
+  type PartyFeedResponse,
 } from '@/domain/arcade';
 export async function duelSummary(id?: string): Promise<DuelSummary | null> {
   const db = await serverClient();
@@ -84,11 +84,7 @@ export async function partyMutation(input: unknown) {
   dbCheck(result.error);
   return { created: true };
 }
-export async function partyFeed(filters: {
-  platform?: PartyPlatform;
-  playstyle?: PartyStyle;
-  page: number;
-}) {
+export async function partyFeed(filters: PartyFeedFilters): Promise<PartyFeedResponse> {
   const db = await serverClient();
   const generatedAt = Date.now();
   let query = db

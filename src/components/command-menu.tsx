@@ -118,6 +118,7 @@ export function CommandMenu({
   }
   const links: [string, string][] = [
     ['Explorar catálogo', '/explore'],
+    ['Sala Arcade & LFG', '/arcade'],
     ['Listas de la comunidad', '/lists'],
     ['Transmisión', '/feed'],
     ['Chat Global · Centro de Mando Comunitario', '/chat'],
