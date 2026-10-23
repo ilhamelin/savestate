@@ -1,4 +1,4 @@
-/* global window, document, navigator, getComputedStyle */
+/* global window, document, getComputedStyle */
 import {chromium} from 'playwright';
 import {build} from 'esbuild';
 import {createServer} from 'node:http';
