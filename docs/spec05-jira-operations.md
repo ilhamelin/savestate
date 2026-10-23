@@ -43,3 +43,7 @@ No se modifica la CSP para permitir acceso al Portal desde el navegador: el tran
 - Guardian: comprobar accesos externos, listado, buffer y escalado. Un visitante debe recibir 403 en ambos GET.
 - Simular token vencido o API inaccesible: el reporte se conserva en cola.
 - Revisar que una respuesta demorada no genere otro POST y que el panel muestre conciliación pendiente.
+
+## Evidencia de aceptación de esta entrega
+
+[GitHub Actions · verificación completa](https://github.com/ilhamelin/savestate/actions/runs/39874802470): lint sin advertencias, TypeScript, 380 pruebas sin fallos, Prettier, build de producción Next.js 16, PostgreSQL 16 aislado y Chromium con componentes reales y transporte simulado. No se crearon tickets reales en el Portal/Jira. El harness temporal se retiró del árbol final; las pruebas unitarias y de rutas permanecen en el repositorio.
