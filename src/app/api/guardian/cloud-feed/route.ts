@@ -9,5 +9,7 @@ export async function GET() {
     return Response.json(await fetchCloudObserverFeed(), {
       headers: { 'Cache-Control': 'private, no-store' },
     });
-  } catch (error) { return errorResponse(error); }
+  } catch (error) {
+    return errorResponse(error);
+  }
 }

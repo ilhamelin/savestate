@@ -17,9 +17,9 @@ interface GuardianPlayer {
 }
 export function GuardianConsole({ username, adminId }: { username: string; adminId: string }) {
   const [managed, setManaged] = useState<GuardianPlayer | null>(null);
-  const [tab, setTab] = useState<'token' | 'players' | 'alert' | 'switches' | 'hud' | 'jira' | 'cloud'>(
-    'token',
-  );
+  const [tab, setTab] = useState<
+    'token' | 'players' | 'alert' | 'switches' | 'hud' | 'jira' | 'cloud'
+  >('token');
   const [online, setOnline] = useState(true);
   const [key, setKey] = useState<CryptoKey | null>(null),
     [code, setCode] = useState('------');

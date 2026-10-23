@@ -397,23 +397,99 @@ body:has(.guardian-app-viewport) > .halloween-bats-layer {
   }
 }
 
-.guardian-cloud-panel { display: grid; gap: 1rem; min-width: 0; }
-.guardian-cloud-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
-.guardian-cloud-card { padding: 1rem; border: 1px solid #00f0ff33; background: #090e18; border-radius: 10px; min-width: 0; overflow-wrap: anywhere; }
-.guardian-cloud-card h2 { font-size: 1rem; color: #00f0ff; margin-bottom: .65rem; }
-.guardian-cloud-entry { display: grid; gap: .45rem; padding-block: .8rem; border-top: 1px solid #1e293b; min-width: 0; overflow-wrap: anywhere; }
-.guardian-cloud-entry small { color: var(--muted); }
-.guardian-cloud-links { display: flex; flex-wrap: wrap; gap: .75rem; }
-.guardian-cloud-list { list-style: none; padding: 0; margin: 0; }
-.cloud-state,.cloud-branch,.cloud-stale { display: inline-flex; width: fit-content; align-items: center; gap: .3rem; padding: .2rem .5rem; border: 1px solid currentColor; border-radius: 5px; font-size: .7rem; }
-.cloud-state { color: #94a3b8; }
-.cloud-state-ready,.cloud-ci-success { color: #34d399; }
-.cloud-state-error,.cloud-ci-failure,.cloud-ci-timed_out { color: #ff4d78; }
-.cloud-state-building,.cloud-state-initializing,.cloud-ci-in_progress,.cloud-ci-queued,.cloud-stale { color: #fbbf24; }
-.cloud-state[data-building='true'] { animation: guardian-cloud-pulse 1.5s ease-in-out infinite alternate; }
-.cloud-branch.is-main { color: #00f0ff; }
-.cloud-branch.is-chatgpt { color: #00ff88; }
-@keyframes guardian-cloud-pulse { to { box-shadow: 0 0 12px #fbbf2466; } }
+.guardian-cloud-panel {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.guardian-cloud-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.guardian-cloud-card {
+  padding: 1rem;
+  border: 1px solid #00f0ff33;
+  background: #090e18;
+  border-radius: 10px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.guardian-cloud-card h2 {
+  font-size: 1rem;
+  color: #00f0ff;
+  margin-bottom: 0.65rem;
+}
+.guardian-cloud-entry {
+  display: grid;
+  gap: 0.45rem;
+  padding-block: 0.8rem;
+  border-top: 1px solid #1e293b;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.guardian-cloud-entry small {
+  color: var(--muted);
+}
+.guardian-cloud-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.guardian-cloud-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.cloud-state,
+.cloud-branch,
+.cloud-stale {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid currentColor;
+  border-radius: 5px;
+  font-size: 0.7rem;
+}
+.cloud-state {
+  color: #94a3b8;
+}
+.cloud-state-ready,
+.cloud-ci-success {
+  color: #34d399;
+}
+.cloud-state-error,
+.cloud-ci-failure,
+.cloud-ci-timed_out {
+  color: #ff4d78;
+}
+.cloud-state-building,
+.cloud-state-initializing,
+.cloud-ci-in_progress,
+.cloud-ci-queued,
+.cloud-stale {
+  color: #fbbf24;
+}
+.cloud-state[data-building='true'] {
+  animation: guardian-cloud-pulse 1.5s ease-in-out infinite alternate;
+}
+.cloud-branch.is-main {
+  color: #00f0ff;
+}
+.cloud-branch.is-chatgpt {
+  color: #00ff88;
+}
+@keyframes guardian-cloud-pulse {
+  to {
+    box-shadow: 0 0 12px #fbbf2466;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .cloud-state[data-building='true'] { animation: none; }
+  .cloud-state[data-building='true'] {
+    animation: none;
+  }
 }
