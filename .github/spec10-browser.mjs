@@ -1,5 +1,6 @@
 /* global document, window */
-import {chromium} from 'playwright';
+import {pathToFileURL} from 'node:url';
+const {chromium}=await import(pathToFileURL(process.env.RUNNER_TEMP+'/spec10-tools/node_modules/playwright/index.mjs').href);
 import {spawn} from 'node:child_process';
 import {existsSync} from 'node:fs';
 import {setTimeout as delay} from 'node:timers/promises';

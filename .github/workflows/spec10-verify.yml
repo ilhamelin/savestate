@@ -39,6 +39,6 @@ jobs:
       - run: npm run build
       - name: Browser tools (runner only)
         run: |
-          npm install --no-save --package-lock=false playwright
-          if ! command -v google-chrome; then npx playwright install chromium; fi
+          npm install --prefix "$RUNNER_TEMP/spec10-tools" --no-save --package-lock=false playwright
+          if ! command -v google-chrome; then "$RUNNER_TEMP/spec10-tools/node_modules/.bin/playwright" install chromium; fi
       - run: node .github/spec10-browser.mjs
