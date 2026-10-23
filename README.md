@@ -42,9 +42,9 @@ Tu diario de a bordo gamer: organiza tu biblioteca, registra tu progreso y compa
 - **Indie Tracker:** seguimiento de juegos de itch.io y avisos de nuevas versiones.
 - **Portada:** noticias RSS, radar de juegos gratis y cuentas regresivas.
 - **Bóveda / Memory Card:** galería personal de capturas y clips en Cloudflare R2, accesible desde el perfil.
-- **Guardian:** consola de operador para moderación, alertas, controles de acceso y salud del sistema.
+- **Guardian:** consola de operador para moderación, alertas, controles de acceso, salud del sistema y monitor Cloud / CI de Vercel y GitHub Actions.
 
-La PWA permite instalar SaveState en dispositivos compatibles. Las integraciones muestran sus estados de configuración, error o datos parciales; su disponibilidad depende del proveedor y de los permisos de la cuenta.
+La PWA permite instalar SaveState en dispositivos compatibles. La biblioteca offline de solo lectura (PR #4) sigue pendiente de integración. Las integraciones muestran sus estados de configuración, error o datos parciales; su disponibilidad depende del proveedor y de los permisos de la cuenta.
 
 ## Stack y arquitectura
 
@@ -79,6 +79,7 @@ docs/                  Guías de módulos, decisiones y verificaciones
 
 SaveState se mantiene mediante **GitHub + GitHub Actions + Vercel**. No necesitas conservar una copia del proyecto en tu PC para contribuir desde un entorno remoto.
 
+- **Producción:** [`main`](https://github.com/ilhamelin/savestate/tree/main), conectada al dominio público en Vercel.
 - **Desarrollo e integración:** [`implementation/chatgpt`](https://github.com/ilhamelin/savestate/tree/implementation/chatgpt).
 - **Especificaciones y propuestas:** [`research/antigravity`](https://github.com/ilhamelin/savestate/tree/research/antigravity/docs).
 - **Contrato de trabajo:** [playbook de operación en la nube](.codex/CODEX_CLOUD_PLAYBOOK.md).
