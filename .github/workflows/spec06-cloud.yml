@@ -17,8 +17,8 @@ jobs:
       - run: npm ci
       - name: Format changed sources
         run: |
-          npx prettier --write src/domain/cloud-observer.ts src/services/cloud-observer-service.ts src/app/api/guardian/cloud-feed/route.ts src/components/guardian/guardian-cloud-panel.tsx src/components/guardian/guardian-console.tsx src/app/guardian.css tests/unit/cloud-observer.test.ts
-          git add src/domain/cloud-observer.ts src/services/cloud-observer-service.ts src/app/api/guardian/cloud-feed/route.ts src/components/guardian/guardian-cloud-panel.tsx src/components/guardian/guardian-console.tsx src/app/guardian.css tests/unit/cloud-observer.test.ts
+          npx prettier --write tests/unit/gatekeeper.test.ts src/domain/cloud-observer.ts src/services/cloud-observer-service.ts src/app/api/guardian/cloud-feed/route.ts src/components/guardian/guardian-cloud-panel.tsx src/components/guardian/guardian-console.tsx src/app/guardian.css tests/unit/cloud-observer.test.ts
+          git add tests/unit/gatekeeper.test.ts src/domain/cloud-observer.ts src/services/cloud-observer-service.ts src/app/api/guardian/cloud-feed/route.ts src/components/guardian/guardian-cloud-panel.tsx src/components/guardian/guardian-console.tsx src/app/guardian.css tests/unit/cloud-observer.test.ts
           if ! git diff --cached --quiet; then
             git config user.name "SaveState CI"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

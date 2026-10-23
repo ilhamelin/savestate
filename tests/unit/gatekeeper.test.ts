@@ -113,4 +113,121 @@ test('Guardian offline runtime generates the same TOTP from a persisted non-expo
   const source = readFileSync('public/guardian-assets/offline.js', 'utf8').split(
     /\nstorage\(\)\s*\.then/,
   )[0]!;
-  const result = await runInNewContext(source + '\nguardianKey = providedKey; tick();', {\n    providedKey: clonedKey,\n    crypto: webcrypto,\n    Date: { now: () => now },\n    Uint8Array,\n    DataView,\n    document: {\n      getElementById(id: string) {\n        return (nodes[id] ??= { textContent: '', value: 0, disabled: true });\n      },\n    },\n  });\n  void result;\n  assert.equal(nodes.code?.textContent.replace(' ', ''), await gateCodeFromKey(clonedKey, now));\n  assert.equal(nodes.copy?.disabled, false);\n  const sw = readFileSync('public/guardian-sw.js', 'utf8');\n  assert.doesNotMatch(sw, /cache\\.put|cache\\.addAll\\([^)]*api\\/guardian/);\n  assert.match(sw, /fetch\\(event.request\\)\\.catch/);\n  assert.doesNotMatch(\n    readFileSync('public/guardian-assets/offline.html', 'utf8'),\n    /GATEKEEPER_SECRET/,\n  );\n});\n\ntest('Guardian service worker falls back only offline and never intercepts private APIs or caches account HTML', async () => {\n  type Event = {\n    request: { url: string; method: string; mode: string };\n    respondWith: (response: Promise<Response>) => void;\n  };\n  const handlers: Record<string, (event: Event) => void> = {};\n  let offline = true,\n    reads = 0;\n  runInNewContext(readFileSync('public/guardian-sw.js', 'utf8'), {\n    URL,\n    self: {\n      location: { origin: 'https://savestate.test' },\n      addEventListener(name: string, handler: (event: Event) => void) {\n        handlers[name] = handler;\n      },\n    },\n    caches: {\n      async match() {\n        reads++;\n        return new Response('public offline shell');\n      },\n    },\n    fetch: async () => {\n      if (offline) throw new Error('Offline');\n      return new Response('private online page', { status: 403 });\n    },\n  });\n  async function navigate(path: string) {\n    let response: Promise<Response> | undefined;\n    handlers.fetch!({\n      request: { url: `https://savestate.test${path}`, method: 'GET', mode: 'navigate' },\n      respondWith(value) {\n        response = value;\n      },\n    });\n    return response;\n  }\n  assert.equal(await (await navigate('/guardian'))?.text(), 'public offline shell');\n  assert.equal(reads, 1);\n  offline = false;\n  const online = await navigate('/guardian');\n  assert.equal(online?.status, 403);\n  assert.equal(await online?.text(), 'private online page');\n  assert.equal(reads, 1);\n  for (const path of ['/api/guardian/players', '/api/guardian/enroll', '/library'])\n    assert.equal(await navigate(path), undefined);\n});\n\ntest('Guardian device enrollment rejects unsupported CryptoKey storage instead of hanging', async () => {\n  const previous = Object.getOwnPropertyDescriptor(globalThis, 'indexedDB');\n  let closed = false;\n  Object.defineProperty(globalThis, 'indexedDB', {\n    configurable: true,\n    value: {\n      open() {\n        const request = {\n          onsuccess: null as (() => void) | null,\n          result: {\n            close() {\n              closed = true;\n            },\n            transaction() {\n              return {\n                objectStore() {\n                  return {\n                    put() {\n                      throw new Error('DataCloneError');\n                    },\n                  };\n                },\n              };\n            },\n          },\n        };\n        queueMicrotask(() => request.onsuccess?.());\n        return request;\n      },\n    },\n  });\n  try {\n    const key = await crypto.subtle.importKey(\n      'raw',\n      gateSecretBytes(secret),\n      { name: 'HMAC', hash: 'SHA-1' },\n      false,\n      ['sign'],\n    );\n    await assert.rejects(saveGuardianKey(key), /no permite guardar/);\n    assert.equal(closed, true);\n  } finally {\n    if (previous) Object.defineProperty(globalThis, 'indexedDB', previous);\n    else Reflect.deleteProperty(globalThis, 'indexedDB');\n  }\n});\n
+  const result = await runInNewContext(source + '\nguardianKey = providedKey; tick();', {
+    providedKey: clonedKey,
+    crypto: webcrypto,
+    Date: { now: () => now },
+    Uint8Array,
+    DataView,
+    document: {
+      getElementById(id: string) {
+        return (nodes[id] ??= { textContent: '', value: 0, disabled: true });
+      },
+    },
+  });
+  void result;
+  assert.equal(nodes.code?.textContent.replace(' ', ''), await gateCodeFromKey(clonedKey, now));
+  assert.equal(nodes.copy?.disabled, false);
+  const sw = readFileSync('public/guardian-sw.js', 'utf8');
+  assert.doesNotMatch(sw, /cache\.put|cache\.addAll\([^)]*api\/guardian/);
+  assert.match(sw, /fetch\(event.request\)\.catch/);
+  assert.doesNotMatch(
+    readFileSync('public/guardian-assets/offline.html', 'utf8'),
+    /GATEKEEPER_SECRET/,
+  );
+});
+
+test('Guardian service worker falls back only offline and never intercepts private APIs or caches account HTML', async () => {
+  type Event = {
+    request: { url: string; method: string; mode: string };
+    respondWith: (response: Promise<Response>) => void;
+  };
+  const handlers: Record<string, (event: Event) => void> = {};
+  let offline = true,
+    reads = 0;
+  runInNewContext(readFileSync('public/guardian-sw.js', 'utf8'), {
+    URL,
+    self: {
+      location: { origin: 'https://savestate.test' },
+      addEventListener(name: string, handler: (event: Event) => void) {
+        handlers[name] = handler;
+      },
+    },
+    caches: {
+      async match() {
+        reads++;
+        return new Response('public offline shell');
+      },
+    },
+    fetch: async () => {
+      if (offline) throw new Error('Offline');
+      return new Response('private online page', { status: 403 });
+    },
+  });
+  async function navigate(path: string) {
+    let response: Promise<Response> | undefined;
+    handlers.fetch!({
+      request: { url: `https://savestate.test${path}`, method: 'GET', mode: 'navigate' },
+      respondWith(value) {
+        response = value;
+      },
+    });
+    return response;
+  }
+  assert.equal(await (await navigate('/guardian'))?.text(), 'public offline shell');
+  assert.equal(reads, 1);
+  offline = false;
+  const online = await navigate('/guardian');
+  assert.equal(online?.status, 403);
+  assert.equal(await online?.text(), 'private online page');
+  assert.equal(reads, 1);
+  for (const path of ['/api/guardian/players', '/api/guardian/enroll', '/library'])
+    assert.equal(await navigate(path), undefined);
+});
+
+test('Guardian device enrollment rejects unsupported CryptoKey storage instead of hanging', async () => {
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'indexedDB');
+  let closed = false;
+  Object.defineProperty(globalThis, 'indexedDB', {
+    configurable: true,
+    value: {
+      open() {
+        const request = {
+          onsuccess: null as (() => void) | null,
+          result: {
+            close() {
+              closed = true;
+            },
+            transaction() {
+              return {
+                objectStore() {
+                  return {
+                    put() {
+                      throw new Error('DataCloneError');
+                    },
+                  };
+                },
+              };
+            },
+          },
+        };
+        queueMicrotask(() => request.onsuccess?.());
+        return request;
+      },
+    },
+  });
+  try {
+    const key = await crypto.subtle.importKey(
+      'raw',
+      gateSecretBytes(secret),
+      { name: 'HMAC', hash: 'SHA-1' },
+      false,
+      ['sign'],
+    );
+    await assert.rejects(saveGuardianKey(key), /no permite guardar/);
+    assert.equal(closed, true);
+  } finally {
+    if (previous) Object.defineProperty(globalThis, 'indexedDB', previous);
+    else Reflect.deleteProperty(globalThis, 'indexedDB');
+  }
+});
