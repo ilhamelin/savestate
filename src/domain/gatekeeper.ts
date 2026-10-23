@@ -138,6 +138,8 @@ export function gatekeeperExempt(path: string): boolean {
       '/api/cron/jira-support',
     ].includes(path) ||
     path.startsWith('/api/guardian/') ||
+    path.startsWith('/api/support/') ||
+    path.startsWith('/api/telemetry/') ||
     path.startsWith('/guardian-assets/') ||
     path.startsWith('/_next/')
   );
