@@ -5,11 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/client-api';
 import { friendLevelTier } from '@/domain/player-friends';
-import {
-  PARTY_STYLE_LABELS,
-  remainingPartyTime,
-  type PartyCardData,
-} from '@/domain/arcade';
+import { PARTY_STYLE_LABELS, remainingPartyTime, type PartyCardData } from '@/domain/arcade';
 export { PartyModal as PartyComposer } from '@/components/arcade/party-modal';
 export function PartyBoard({
   items,
@@ -114,7 +110,10 @@ export function PartyBoard({
               </div>
             </div>
             <div className="party-lobby-host">
-              <Link className="party-author text-link" href={`/players/${encodeURIComponent(item.author.username)}`}>
+              <Link
+                className="party-author text-link"
+                href={`/players/${encodeURIComponent(item.author.username)}`}
+              >
                 {item.author.avatar_url ? (
                   <Image src={item.author.avatar_url} alt="" width={32} height={32} unoptimized />
                 ) : (

@@ -127,5 +127,9 @@ export function partyFeedFilters(params: URLSearchParams): PartyFeedFilters {
     throw new ValidationError('Estilo inválido.');
   if (!/^[1-9]\d*$/.test(page) || !Number.isSafeInteger(Number(page)) || Number(page) > 10000)
     throw new ValidationError('Página inválida (1–10000).');
-  return { platform: platform as PartyPlatform | undefined, playstyle: playstyle as PartyStyle | undefined, page: Number(page) };
+  return {
+    platform: platform as PartyPlatform | undefined,
+    playstyle: playstyle as PartyStyle | undefined,
+    page: Number(page),
+  };
 }

@@ -18,11 +18,20 @@ export default async function ArcadePage() {
       <header className="panel arcade-heading">
         <p className="eyebrow">INSERT COIN // COMUNIDAD MULTIJUGADOR</p>
         <h1>Sala Arcade & LFG · Encuentra tu escuadrón</h1>
-        <p className="muted">Duelos comunitarios y lobbies de 48 horas para cooperar, competir o cazar logros.</p>
+        <p className="muted">
+          Duelos comunitarios y lobbies de 48 horas para cooperar, competir o cazar logros.
+        </p>
       </header>
       <SetupNotice />
-      {duel ? <GameDuelWidget initial={duel} authenticated={Boolean(user)} /> : (
-        <section className="panel"><h2>Duelo comunitario</h2><p className="muted">No hay un duelo activo por ahora. Las convocatorias siguen abiertas.</p></section>
+      {duel ? (
+        <GameDuelWidget initial={duel} authenticated={Boolean(user)} />
+      ) : (
+        <section className="panel">
+          <h2>Duelo comunitario</h2>
+          <p className="muted">
+            No hay un duelo activo por ahora. Las convocatorias siguen abiertas.
+          </p>
+        </section>
       )}
       <PartyBoard initial={feed} viewerId={user?.id ?? null} configured={configured} />
     </div>
