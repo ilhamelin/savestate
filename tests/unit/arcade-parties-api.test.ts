@@ -255,13 +255,23 @@ test('LFG POST deletes only the author row; unknown, foreign and malformed IDs a
   );
   assert.ok(operation);
 });
-test('LFG route alias is permanent and navigation opens Arcade without changing the chat destination', () => {
-  assert.match(readFileSync('src/app/parties/page.tsx', 'utf8'), /permanentRedirect\('\/arcade'\)/);
+test('LFG and Arcade redirect permanently to the Forum and navigation keeps a single community entry', () => {
+  for (const path of ['src/app/parties/page.tsx', 'src/app/arcade/page.tsx']) {
+    assert.match(readFileSync(path, 'utf8'), /permanentRedirect\('\/forum\?tab=arcade'\)/);
+  }
+  const nav = readFileSync('src/components/header-nav.tsx', 'utf8');
+  assert.match(nav, /href: '\/forum'/);
+  assert.doesNotMatch(nav, /href: '\/arcade'|Gamepad2/);
+  assert.equal([...nav.matchAll(/href: '/g)].length, 12);
+  assert.match(nav, /href: '\/chat'/);
   assert.match(
-    readFileSync('src/components/header-nav.tsx', 'utf8'),
-    /href: '\/arcade', label: 'Arcade', icon: Gamepad2/,
+    readFileSync('src/components/command-menu.tsx', 'utf8'),
+    /\['Foro: Sala Arcade & LFG', '\/forum\?tab=arcade'\]/,
   );
-  assert.match(readFileSync('src/components/header-nav.tsx', 'utf8'), /href: '\/chat'/);
+  assert.match(
+    readFileSync('src/components/arcade/party-board.tsx', 'utf8'),
+    /href="\/login\?next=\/forum\?tab=arcade"/,
+  );
   const sql = readFileSync('supabase/migrations/202610070008_arcade_and_parties.sql', 'utf8');
   assert.match(sql, /expires_at > now\(\)/);
   assert.match(sql, /interval '48 hours'/);

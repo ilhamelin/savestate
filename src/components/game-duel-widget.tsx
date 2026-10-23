@@ -9,9 +9,11 @@ import { duelPercentages, type DuelSummary } from '@/domain/arcade';
 export function GameDuelWidget({
   initial,
   authenticated,
+  loginHref = '/login?next=/',
 }: {
   initial: DuelSummary;
   authenticated: boolean;
+  loginHref?: string;
 }) {
   const [summary, setSummary] = useState<DuelSummary | null>(initial),
     [pending, setPending] = useState(false),
@@ -149,7 +151,7 @@ export function GameDuelWidget({
                   Votar por {game.title}
                 </button>
               ) : (
-                <Link className="text-link" href="/login?next=/">
+                <Link className="text-link" href={loginHref}>
                   Conecta para votar
                 </Link>
               )}
