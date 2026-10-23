@@ -29,6 +29,8 @@ test(
       return new Promise(resolve=>{state.release=resolve;});
     };
     export const Header=()=>null;
+    export const FeedbackModal=()=>null;
+    export const ClientErrorReporter=()=>null;
     export const RetroRadioDeck=()=>null;
     export const HalloweenBats=()=>null;
     export const OperatorSignalsListener=()=>null;
@@ -46,6 +48,8 @@ test(
             'next/image',
             'next/link',
             '@/components/header',
+            '@/components/support/feedback-modal',
+            '@/components/support/client-error-reporter',
             '@/components/retro-radio/retro-radio-deck',
             '@/components/halloween/halloween-bats',
             '@/components/operator-signals-listener',

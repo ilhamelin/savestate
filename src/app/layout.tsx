@@ -1,5 +1,8 @@
 import { RetroRadioDeck } from '@/components/retro-radio/retro-radio-deck';
 import '@/styles/retro-radio.css';
+import '@/styles/support.css';
+import { FeedbackModal } from '@/components/support/feedback-modal';
+import { ClientErrorReporter } from '@/components/support/client-error-reporter';
 import type { Metadata, Viewport } from 'next';
 import { Suspense } from 'react';
 import { headers } from 'next/headers';
@@ -56,6 +59,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       className={`${pixel.variable} ${mono.variable}`}
     >
       <body>
+        <ClientErrorReporter />
         <OperatorSignalsListener userId={user?.id ?? null} />
         {standalone ? (
           <main id="main" className="guardian-standalone-main">
@@ -129,6 +133,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                     />
                   )}
                 </div>
+                <FeedbackModal />
                 <a href="#main" className="button outline small">
                   ↑ Volver arriba
                 </a>

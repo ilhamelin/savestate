@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { gateCodeFromKey, gateSecretBytes } from '@/domain/gatekeeper';
 import { loadGuardianKey, saveGuardianKey, removeGuardianKey } from '@/lib/guardian-device';
+import { GuardianJiraPanel } from './guardian-jira-panel';
 import { PlayerManagementDialog } from './player-management-dialog';
 import { GuardianAlertPanel, GuardianSwitchPanel, GuardianHudPanel } from './operator-panels';
 interface GuardianPlayer {
@@ -15,7 +16,9 @@ interface GuardianPlayer {
 }
 export function GuardianConsole({ username, adminId }: { username: string; adminId: string }) {
   const [managed, setManaged] = useState<GuardianPlayer | null>(null);
-  const [tab, setTab] = useState<'token' | 'players' | 'alert' | 'switches' | 'hud'>('token');
+  const [tab, setTab] = useState<'token' | 'players' | 'alert' | 'switches' | 'hud' | 'jira'>(
+    'token',
+  );
   const [online, setOnline] = useState(true);
   const [key, setKey] = useState<CryptoKey | null>(null),
     [code, setCode] = useState('------');
@@ -152,6 +155,7 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
               alert: 'Alerta global',
               switches: 'Interruptores maestros',
               hud: 'Monitor de salud',
+              jira: 'Jira / Tickets',
             }[tab]
           }
         </h1>
@@ -334,6 +338,8 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
           </section>
         ) : tab === 'alert' ? (
           <GuardianAlertPanel />
+        ) : tab === 'jira' ? (
+          <GuardianJiraPanel />
         ) : tab === 'switches' ? (
           <GuardianSwitchPanel />
         ) : (
@@ -353,6 +359,7 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
             ['alert', '🚨', 'Alerta'],
             ['switches', '🎛️', 'Switches'],
             ['hud', '📊', 'HUD'],
+            ['jira', '🎫', 'Jira / Tickets'],
           ] as const
         ).map(([id, icon, label]) => (
           <button
