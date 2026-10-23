@@ -1,6 +1,6 @@
 # Sala Arcade y convocatorias LFG (SPEC-08)
 
-La ruta canónica es `/arcade`. `/parties` redirige permanentemente (308) a ella. El Chat Global conserva `/chat`.
+Desde SPEC-10, la ruta canónica es `/forum?tab=arcade`. `/arcade` y `/parties` redirigen permanentemente (308) a esa pestaña del Foro. El Chat Global conserva `/chat`. Consulta [la integración del hub comunitario](fusion-arcade-foro-spec10.md).
 
 ## Contratos y seguridad
 

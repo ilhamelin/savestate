@@ -10,7 +10,8 @@ const config: NextConfig = {
   },
   async redirects() {
     return [
-      { source: '/parties', destination: '/chat', permanent: true },
+      { source: '/arcade', destination: '/forum?tab=arcade', permanent: true },
+      { source: '/parties', destination: '/forum?tab=arcade', permanent: true },
       { source: '/community/discord', destination: '/chat', permanent: true },
     ];
   },
