@@ -1,0 +1,44 @@
+name: SPEC-10 remote acceptance
+on:
+  push:
+    branches: [feature/fusion-arcade-foro]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Installed Next.js route guidance
+        run: |
+          node --input-type=module <<'NODE'
+          import {readdirSync,readFileSync,existsSync} from 'node:fs';
+          const root='node_modules/next/dist/docs';
+          if(existsSync(root)){
+            const paths=readdirSync(root,{recursive:true}).filter(p=>/permanent-redirect|permanentRedirect|server-and-client-components|file-conventions\/page\./i.test(p));
+            for(const path of paths.slice(0,3)) console.log('NEXT_GUIDE: '+path+'\n'+readFileSync(root+'/'+path,'utf8').slice(0,14000));
+          }
+          NODE
+      - name: Format changed sources
+        run: |
+          npx prettier --write src/app/forum/page.tsx src/app/arcade/page.tsx src/app/parties/page.tsx src/components/header-nav.tsx src/components/command-menu.tsx src/components/arcade/party-board.tsx src/app/forum.css src/components/game-duel-widget.tsx tests/unit/arcade-parties-api.test.ts docs/arcade-lfg-spec08.md docs/fusion-arcade-foro-spec10.md tests/unit/forum-hub.test.ts
+          git add src/app/forum/page.tsx src/app/arcade/page.tsx src/app/parties/page.tsx src/components/header-nav.tsx src/components/command-menu.tsx src/components/arcade/party-board.tsx src/app/forum.css src/components/game-duel-widget.tsx tests/unit/arcade-parties-api.test.ts docs/arcade-lfg-spec08.md docs/fusion-arcade-foro-spec10.md tests/unit/forum-hub.test.ts
+          if ! git diff --cached --quiet; then
+            git config user.name "SaveState CI"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "style: format SPEC-10 sources"
+            git push origin HEAD:feature/fusion-arcade-foro
+          fi
+      - run: npm run check
+      - run: npm run build
+      - name: Browser tools (runner only)
+        run: |
+          npm install --no-save --package-lock=false playwright
+          if ! command -v google-chrome; then npx playwright install chromium; fi
+      - run: node .github/spec10-browser.mjs
