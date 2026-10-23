@@ -14,19 +14,45 @@ import { PartyBoard } from '@/components/arcade/party-board';
 
 function ForumHeading({ activeTab }: { activeTab: 'arcade' | 'debates' }) {
   const arcade = activeTab === 'arcade';
-  return <>
-    <div className="page-heading">
-      <div>
-        <p className="eyebrow">{arcade ? 'SAVESTATE BOARDS // SALA ARCADE & LFG' : 'SAVESTATE BOARDS'}</p>
-        <h1>{arcade ? 'Sala Arcade & Convocatorias de Escuadrón' : 'Una comunidad. Mil conversaciones.'}</h1>
-        <p className="muted">{arcade ? 'Duelos comunitarios y lobbies de 48 horas para cooperar, competir o cazar logros.' : 'De la taberna retro a tu próximo descubrimiento.'}</p>
+  return (
+    <>
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">
+            {arcade ? 'SAVESTATE BOARDS // SALA ARCADE & LFG' : 'SAVESTATE BOARDS'}
+          </p>
+          <h1>
+            {arcade
+              ? 'Sala Arcade & Convocatorias de Escuadrón'
+              : 'Una comunidad. Mil conversaciones.'}
+          </h1>
+          <p className="muted">
+            {arcade
+              ? 'Duelos comunitarios y lobbies de 48 horas para cooperar, competir o cazar logros.'
+              : 'De la taberna retro a tu próximo descubrimiento.'}
+          </p>
+        </div>
       </div>
-    </div>
-    <nav className="forum-view-tabs" aria-label="Secciones del Foro">
-      <Link href="/forum" className={`button small ${arcade ? 'outline' : ''}`} aria-current={!arcade ? 'page' : undefined} scroll={false}>💬 Debates Comunitarios</Link>
-      <Link href="/forum?tab=arcade" className={`button small ${arcade ? '' : 'outline'}`} aria-current={arcade ? 'page' : undefined} scroll={false}>🕹️ Sala Arcade & LFG</Link>
-    </nav>
-  </>;
+      <nav className="forum-view-tabs" aria-label="Secciones del Foro">
+        <Link
+          href="/forum"
+          className={`button small ${arcade ? 'outline' : ''}`}
+          aria-current={!arcade ? 'page' : undefined}
+          scroll={false}
+        >
+          💬 Debates Comunitarios
+        </Link>
+        <Link
+          href="/forum?tab=arcade"
+          className={`button small ${arcade ? '' : 'outline'}`}
+          aria-current={arcade ? 'page' : undefined}
+          scroll={false}
+        >
+          🕹️ Sala Arcade & LFG
+        </Link>
+      </nav>
+    </>
+  );
 }
 export interface ForumPageProps {
   searchParams: Promise<{
@@ -47,21 +73,37 @@ export default async function ForumPage({ searchParams }: ForumPageProps) {
       configured ? partyFeed({ page: 1 }) : { items: [], hasMore: false, generatedAt: 0 },
       currentUser(),
     ]);
-    return <>
-      <ForumHeading activeTab={activeTab} />
-      <div className="arcade-section forum-arcade-section">
-        <SetupNotice />
-        {duel ? <GameDuelWidget initial={duel} authenticated={Boolean(user)} loginHref="/login?next=/forum?tab=arcade" /> : (
-          <section className="panel">
-            <h2>Duelo comunitario</h2>
-            <p className="muted">No hay un duelo activo por ahora. Las convocatorias siguen abiertas.</p>
-          </section>
-        )}
-        <PartyBoard initial={feed} viewerId={user?.id ?? null} configured={configured} />
-      </div>
-    </>;
+    return (
+      <>
+        <ForumHeading activeTab={activeTab} />
+        <div className="arcade-section forum-arcade-section">
+          <SetupNotice />
+          {duel ? (
+            <GameDuelWidget
+              initial={duel}
+              authenticated={Boolean(user)}
+              loginHref="/login?next=/forum?tab=arcade"
+            />
+          ) : (
+            <section className="panel">
+              <h2>Duelo comunitario</h2>
+              <p className="muted">
+                No hay un duelo activo por ahora. Las convocatorias siguen abiertas.
+              </p>
+            </section>
+          )}
+          <PartyBoard initial={feed} viewerId={user?.id ?? null} configured={configured} />
+        </div>
+      </>
+    );
   }
-  if (!configured) return <><ForumHeading activeTab={activeTab} /><SetupNotice /></>;
+  if (!configured)
+    return (
+      <>
+        <ForumHeading activeTab={activeTab} />
+        <SetupNotice />
+      </>
+    );
   const query = forumSearch(search.q);
   const sort = FORUM_SORTS.find((value) => value === search.sort) ?? 'recent';
   const channel =
@@ -74,9 +116,10 @@ export default async function ForumPage({ searchParams }: ForumPageProps) {
     currentUser(),
     duelSummary(),
   ]);
-  const firstGame = duel?.games.find(game => game.id === duel.duel.game_a_id);
-  const secondGame = duel?.games.find(game => game.id === duel.duel.game_b_id);
-  const duelLabel = firstGame && secondGame ? `${firstGame.title} vs ${secondGame.title}` : duel?.duel.title;
+  const firstGame = duel?.games.find((game) => game.id === duel.duel.game_a_id);
+  const secondGame = duel?.games.find((game) => game.id === duel.duel.game_b_id);
+  const duelLabel =
+    firstGame && secondGame ? `${firstGame.title} vs ${secondGame.title}` : duel?.duel.title;
   const link = (nextSort = sort, nextChannel = channel) =>
     '/forum?' +
     new URLSearchParams({
@@ -144,10 +187,16 @@ export default async function ForumPage({ searchParams }: ForumPageProps) {
       {duel ? (
         <aside className="forum-arcade-banner" aria-label="Duelo comunitario en vivo">
           <div className="forum-arcade-banner-text">
-            <span className="forum-arcade-pulse" aria-hidden="true">⚡</span>
-            <div><strong>Duelo Comunitario en Vivo:</strong> <span>{duelLabel}</span></div>
+            <span className="forum-arcade-pulse" aria-hidden="true">
+              ⚡
+            </span>
+            <div>
+              <strong>Duelo Comunitario en Vivo:</strong> <span>{duelLabel}</span>
+            </div>
           </div>
-          <Link href="/forum?tab=arcade" className="button small outline">Votar en Arcade →</Link>
+          <Link href="/forum?tab=arcade" className="button small outline">
+            Votar en Arcade →
+          </Link>
         </aside>
       ) : null}
       <section className="forum-channels-grid" aria-label="Canales del foro">

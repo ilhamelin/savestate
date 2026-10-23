@@ -264,8 +264,14 @@ test('LFG and Arcade redirect permanently to the Forum and navigation keeps a si
   assert.doesNotMatch(nav, /href: '\/arcade'|Gamepad2/);
   assert.equal([...nav.matchAll(/href: '/g)].length, 12);
   assert.match(nav, /href: '\/chat'/);
-  assert.match(readFileSync('src/components/command-menu.tsx', 'utf8'), /\['Foro: Sala Arcade & LFG', '\/forum\?tab=arcade'\]/);
-  assert.match(readFileSync('src/components/arcade/party-board.tsx', 'utf8'), /href="\/login\?next=\/forum\?tab=arcade"/);
+  assert.match(
+    readFileSync('src/components/command-menu.tsx', 'utf8'),
+    /\['Foro: Sala Arcade & LFG', '\/forum\?tab=arcade'\]/,
+  );
+  assert.match(
+    readFileSync('src/components/arcade/party-board.tsx', 'utf8'),
+    /href="\/login\?next=\/forum\?tab=arcade"/,
+  );
   const sql = readFileSync('supabase/migrations/202610070008_arcade_and_parties.sql', 'utf8');
   assert.match(sql, /expires_at > now\(\)/);
   assert.match(sql, /interval '48 hours'/);

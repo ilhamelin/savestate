@@ -349,15 +349,31 @@
   color: var(--accent);
   animation: forum-arcade-pulse-glow 2s infinite ease-in-out;
 }
-.forum-arcade-section { margin-top: 24px; }
+.forum-arcade-section {
+  margin-top: 24px;
+}
 @keyframes forum-arcade-pulse-glow {
-  0%, 100% { opacity: 0.6; transform: scale(0.95); }
-  50% { opacity: 1; transform: scale(1.1); }
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
 }
 @media (max-width: 640px) {
-  .forum-arcade-banner { flex-direction: column; align-items: flex-start; }
-  .forum-view-tabs a { flex: 1 1 220px; }
+  .forum-arcade-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .forum-view-tabs a {
+    flex: 1 1 220px;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .forum-arcade-pulse { animation: none; }
+  .forum-arcade-pulse {
+    animation: none;
+  }
 }
