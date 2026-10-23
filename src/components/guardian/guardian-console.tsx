@@ -350,7 +350,7 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
               </div>
             </div>
 
-            <ul className="guardian-players-grid">
+            <ul className="guardian-players-list">
               {players.map((player) => (
                 <li key={player.id} className="guardian-player-card">
                   <div className="guardian-player-avatar-wrap">
@@ -364,14 +364,16 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
                         className="rounded-lg object-cover border border-cyan-800/40"
                       />
                     ) : (
-                      <div className="guardian-player-avatar-fallback">▣</div>
+                      <div className="guardian-player-avatar-fallback">
+                        {player.username.slice(0, 2).toUpperCase()}
+                      </div>
                     )}
                     <span className="guardian-player-lvl-pill">LVL {player.level}</span>
                   </div>
 
                   <div className="guardian-player-info">
                     <div className="guardian-player-top">
-                      <strong className="guardian-player-name">@{player.username}</strong>
+                      <strong className="guardian-player-name truncate">@{player.username}</strong>
                       <span
                         className={`guardian-lock-badge ${player.access_locked ? 'is-locked' : 'is-ok'}`}
                       >

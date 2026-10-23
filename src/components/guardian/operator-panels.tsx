@@ -428,174 +428,273 @@ export function GuardianHudPanel({ adminId }: { adminId: string }) {
     };
   }, []);
   return (
-    <section className="guardian-operator-panel">
-      <h2>📊 Telemetría del nodo</h2>
-      {error && <p role="alert">{error} Las últimas métricas pueden estar desactualizadas.</p>}
+    <section className="guardian-operator-panel" aria-label="Telemetría del nodo">
+      {error && (
+        <p className="notice mb-3" role="alert">
+          {error} Las últimas métricas pueden estar desactualizadas.
+        </p>
+      )}
       {telemetry ? (
-        <>
-          <article className="guardian-hardware-card" aria-label="Hardware de Supabase">
-            <header className="guardian-hw-header">
-              <span className="guardian-hw-icon" aria-hidden="true">
-                <Database size={22} />
-              </span>
-              <div className="guardian-hw-titles">
-                <h3>Primary Database</h3>
-                <small>
+        <div className="space-y-3">
+          {/* Card 1: Primary Database */}
+          <div className="guardian-cloud-card" aria-label="Hardware de Supabase">
+            <div className="guardian-cloud-header">
+              <div className="guardian-cloud-title-group">
+                <span className="provider-badge inline-flex items-center gap-1.5">
+                  <Database size={13} className="text-emerald-400" /> SUPABASE POSTGRESQL
+                </span>
+                <span className="provider-sub">
                   {[telemetry.database.region, telemetry.database.host]
                     .filter(Boolean)
-                    .join(' · ') || 'Supabase · PostgreSQL'}
-                </small>
+                    .join(' · ') || 'Primary Database'}
+                </span>
               </div>
-            </header>
-            <div className="guardian-hw-metrics">
-              <span>
-                CPU <strong>{metric(telemetry.database.cpuPercent, '%')}</strong>
-              </span>
-              <span>
-                Disk <strong>{metric(telemetry.database.diskPercent, '%')}</strong>
-              </span>
-              <span>
-                RAM <strong>{metric(telemetry.database.ramPercent, '%')}</strong>
-              </span>
-              <span>
-                <strong>
+              <div className="status-pill status-ready">
+                <span className="pulse-dot dot-green"></span>
+                <span>ONLINE</span>
+              </div>
+            </div>
+
+            <div className="hud-metric-chips-grid">
+              <div className="hud-chip">
+                <span className="hud-chip-label">CPU</span>
+                <strong className="hud-chip-val">
+                  {metric(telemetry.database.cpuPercent, '%')}
+                </strong>
+              </div>
+              <div className="hud-chip">
+                <span className="hud-chip-label">DISK</span>
+                <strong className="hud-chip-val">
+                  {metric(telemetry.database.diskPercent, '%')}
+                </strong>
+              </div>
+              <div className="hud-chip">
+                <span className="hud-chip-label">RAM</span>
+                <strong className="hud-chip-val">
+                  {metric(telemetry.database.ramPercent, '%')}
+                </strong>
+              </div>
+              <div className="hud-chip">
+                <span className="hud-chip-label">CONNS</span>
+                <strong className="hud-chip-val text-emerald-400">
                   {metric(telemetry.database.connections.active)} /{' '}
                   {metric(telemetry.database.connections.max)}
-                </strong>{' '}
-                conns
-              </span>
-            </div>
-            <p className="guardian-hw-footer">
-              Consulta SQL {telemetry.database.latencyMs} ms · Buffer cache{' '}
-              {metric(telemetry.database.cacheHitRatio, '%')}
-              <br />
-              Base de datos{' '}
-              {metric(
-                telemetry.database.diskSizeBytes === null
-                  ? null
-                  : Math.round(telemetry.database.diskSizeBytes / 1048576),
-                ' MB',
-              )}{' '}
-              · Disco /data{' '}
-              {metric(
-                telemetry.database.diskUsedBytes === null
-                  ? null
-                  : Math.round(telemetry.database.diskUsedBytes / 1048576),
-                ' MB',
-              )}{' '}
-              /{' '}
-              {metric(
-                telemetry.database.diskTotalBytes === null
-                  ? null
-                  : Math.round(telemetry.database.diskTotalBytes / 1048576),
-                ' MB',
-              )}
-              <br />
-              {telemetry.database.measuredAt
-                ? `Hardware: ${new Date(telemetry.database.measuredAt).toLocaleTimeString('es-CL')} · caché 60 s`
-                : 'Hardware no disponible; se mantienen las métricas SQL.'}
-              {telemetry.database.cpuPercent === null &&
-                ' CPU requiere dos muestras del mismo proceso.'}
-            </p>
-          </article>
-          <article className="guardian-hardware-card vercel" aria-label="Hardware de Vercel">
-            <header className="guardian-hw-header">
-              <span className="guardian-hw-icon vercel" aria-hidden="true">
-                ▲
-              </span>
-              <div className="guardian-hw-titles">
-                <h3>Vercel Serverless Network</h3>
-                <small>
-                  {telemetry.vercel.regionLabel.flag} {telemetry.vercel.regionLabel.label}
-                </small>
+                </strong>
               </div>
-            </header>
-            <div className="guardian-hw-metrics">
-              <span>
-                CPU <strong>{telemetry.vercel.computeMs} ms</strong>
-              </span>
-              <span>
-                RAM{' '}
-                <strong>
-                  {telemetry.vercel.memory.rssMB} MB ({metric(telemetry.vercel.memory.percent, '%')}
-                  )
-                </strong>
-              </span>
-              <span>
-                <strong>
-                  {telemetry.vercel.env.toUpperCase()} ·{' '}
-                  {telemetry.vercel.commit ? `#${telemetry.vercel.commit}` : 'SHA no disponible'}
-                </strong>
-              </span>
-              <span>
-                <strong>{telemetry.vercel.warm ? 'Warm' : 'Primera medición'}</strong>
-              </span>
             </div>
-            <p className="guardian-hw-footer">
-              Solicitud {telemetry.vercel.elapsedMs} ms · Heap {telemetry.vercel.memory.heapUsedMB}{' '}
-              MB · Límite {metric(telemetry.vercel.memory.limitMB, ' MB')}
-              <br />
-              Proceso activo {telemetry.vercel.uptimeSec} s · Medición de esta instancia; no
-              representa toda la red.
-            </p>
-          </article>
+
+            <div className="cloud-details-box text-xs">
+              <div className="cloud-detail-row">
+                <span className="cloud-detail-label">Latencia SQL:</span>
+                <span className="cloud-detail-value text-emerald-400">
+                  {telemetry.database.latencyMs} ms
+                </span>
+              </div>
+              <div className="cloud-detail-row">
+                <span className="cloud-detail-label">Buffer Cache:</span>
+                <span className="cloud-detail-value">
+                  {metric(telemetry.database.cacheHitRatio, '%')}
+                </span>
+              </div>
+              <div className="cloud-detail-row">
+                <span className="cloud-detail-label">Base de datos /data:</span>
+                <span className="cloud-detail-value">
+                  {metric(
+                    telemetry.database.diskSizeBytes === null
+                      ? null
+                      : Math.round(telemetry.database.diskSizeBytes / 1048576),
+                    ' MB',
+                  )}
+                  {' · '}
+                  {metric(
+                    telemetry.database.diskUsedBytes === null
+                      ? null
+                      : Math.round(telemetry.database.diskUsedBytes / 1048576),
+                    ' MB',
+                  )}
+                  {' / '}
+                  {metric(
+                    telemetry.database.diskTotalBytes === null
+                      ? null
+                      : Math.round(telemetry.database.diskTotalBytes / 1048576),
+                    ' MB',
+                  )}
+                </span>
+              </div>
+              {telemetry.database.measuredAt && (
+                <div className="cloud-detail-row">
+                  <span className="cloud-detail-label">Muestreo:</span>
+                  <span className="cloud-detail-value text-slate-400">
+                    {new Date(telemetry.database.measuredAt).toLocaleTimeString('es-CL')} (caché
+                    60s)
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Card 2: Vercel Serverless Network */}
+          <div className="guardian-cloud-card" aria-label="Hardware de Vercel">
+            <div className="guardian-cloud-header">
+              <div className="guardian-cloud-title-group">
+                <span className="provider-badge">▲ VERCEL SERVERLESS</span>
+                <span className="provider-sub">
+                  {telemetry.vercel.regionLabel.flag} {telemetry.vercel.regionLabel.label}
+                </span>
+              </div>
+              <div className="status-pill status-ready">
+                <span className="pulse-dot dot-green"></span>
+                <span>{telemetry.vercel.warm ? 'WARM' : 'READY'}</span>
+              </div>
+            </div>
+
+            <div className="hud-metric-chips-grid">
+              <div className="hud-chip">
+                <span className="hud-chip-label">COMPUTE</span>
+                <strong className="hud-chip-val">{telemetry.vercel.computeMs} ms</strong>
+              </div>
+              <div className="hud-chip">
+                <span className="hud-chip-label">RAM RSS</span>
+                <strong className="hud-chip-val">{telemetry.vercel.memory.rssMB} MB</strong>
+              </div>
+              <div className="hud-chip">
+                <span className="hud-chip-label">ENTORNO</span>
+                <strong className="hud-chip-val text-white">
+                  {telemetry.vercel.env.toUpperCase()}
+                </strong>
+              </div>
+              <div className="hud-chip">
+                <span className="hud-chip-label">COMMIT</span>
+                <strong className="hud-chip-val text-cyan-300">
+                  {telemetry.vercel.commit ? `#${telemetry.vercel.commit.slice(0, 7)}` : 'main'}
+                </strong>
+              </div>
+            </div>
+
+            <div className="cloud-details-box text-xs">
+              <div className="cloud-detail-row">
+                <span className="cloud-detail-label">Tiempo solicitud:</span>
+                <span className="cloud-detail-value text-emerald-400">
+                  {telemetry.vercel.elapsedMs} ms
+                </span>
+              </div>
+              <div className="cloud-detail-row">
+                <span className="cloud-detail-label">Heap utilizado:</span>
+                <span className="cloud-detail-value">
+                  {telemetry.vercel.memory.heapUsedMB} MB /{' '}
+                  {metric(telemetry.vercel.memory.limitMB, ' MB')}
+                </span>
+              </div>
+              <div className="cloud-detail-row">
+                <span className="cloud-detail-label">Uptime proceso:</span>
+                <span className="cloud-detail-value">{telemetry.vercel.uptimeSec} s</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: Grid de Telemetría */}
           <div className="guardian-hud-grid">
             <article>
-              <small>R2 · archivos registrados</small>
+              <small>📦 R2 · Archivos Bóveda</small>
               <strong>{(telemetry.storage.bytes / 1048576).toFixed(2)} MB</strong>
             </article>
             <article>
-              <small>Jugadores registrados</small>
+              <small>👥 Jugadores Registrados</small>
               <strong>{telemetry.users.total}</strong>
             </article>
             <article>
-              <small>En línea · Realtime Presence</small>
-              <strong>{online.size}</strong>
+              <small>🟢 Realtime Presence</small>
+              <strong className="text-emerald-400">{online.size} en línea</strong>
             </article>
             <article>
-              <small>Actividad de biblioteca · 15 min</small>
+              <small>⚡ Biblioteca (15 min)</small>
               <strong>{telemetry.users.recent}</strong>
             </article>
-            <article>
-              <small>Discord · API del bot</small>
-              <strong>
+            <article className="col-span-2">
+              <small>🤖 Discord · Bot Gateway</small>
+              <strong
+                className={telemetry.discord.available ? 'text-emerald-400' : 'text-amber-400'}
+              >
                 {telemetry.discord.available
-                  ? 'DISPONIBLE'
+                  ? '● DISPONIBLE Y CONECTADO'
                   : telemetry.discord.configured
-                    ? 'SIN RESPUESTA'
-                    : 'SIN CONFIGURAR'}
+                    ? '○ SIN RESPUESTA'
+                    : '○ SIN CONFIGURAR'}
               </strong>
             </article>
           </div>
-          <p className="muted">
+
+          <p className="text-[11px] text-slate-500 font-mono">
             Medido: {new Date(telemetry.measuredAt).toLocaleTimeString('es-CL')}. Los MB
-            corresponden a la suma registrada de la bóveda; no incluyen objetos huérfanos.
+            corresponden a la bóveda registrada.
           </p>
-        </>
+
+          {/* Card 4: Seguridad y Auditoría */}
+          <div className="guardian-cloud-card">
+            <div className="guardian-cloud-header">
+              <div className="guardian-cloud-title-group">
+                <span className="provider-badge">🛡️ SECURITY AUDIT</span>
+                <span className="provider-sub">Eventos y huellas de acceso</span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-mono">{logs.length} eventos</span>
+            </div>
+
+            <ul className="guardian-audit-list">
+              {logs.map((log) => (
+                <li key={log.id} className="guardian-audit-item">
+                  <div className="flex items-center justify-between gap-2">
+                    <strong className="text-xs text-cyan-300 font-mono">{log.event}</strong>
+                    <time className="text-[10px] text-slate-500 font-mono">
+                      {new Date(log.created_at).toLocaleTimeString('es-CL')}
+                    </time>
+                  </div>
+                  {log.key_hash && (
+                    <code className="text-[10px] text-slate-400 font-mono">
+                      Huella: {log.key_hash.slice(0, 12)}…
+                    </code>
+                  )}
+                  {log.metadata && Object.keys(log.metadata).length > 0 && (
+                    <small className="text-[10px] text-slate-500 font-mono truncate">
+                      {JSON.stringify(log.metadata)}
+                    </small>
+                  )}
+                </li>
+              ))}
+              {!logs.length && (
+                <li className="text-center text-xs text-slate-500 py-3">
+                  Sin eventos registrados.
+                </li>
+              )}
+            </ul>
+
+            {attempts.length > 0 && (
+              <details className="text-xs text-slate-400 mt-2">
+                <summary className="cursor-pointer hover:text-cyan-300 font-medium">
+                  Ventanas recientes del limitador ({attempts.length})
+                </summary>
+                <div className="space-y-1 mt-2 p-2 bg-black/50 rounded-lg">
+                  {attempts.map((attempt) => (
+                    <div
+                      key={attempt.key_hash}
+                      className="text-[10px] font-mono flex justify-between"
+                    >
+                      <code className="text-slate-300">{attempt.key_hash.slice(0, 12)}…</code>
+                      <span className="text-amber-400">{attempt.attempts} intentos</span>
+                      <span className="text-slate-500">
+                        {new Date(attempt.window_start).toLocaleTimeString('es-CL')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            )}
+          </div>
+        </div>
       ) : (
-        <p>Cargando salud del sistema…</p>
+        <div className="cloud-details-box text-center py-6 text-xs text-slate-400">
+          Cargando telemetría del nodo…
+        </div>
       )}
-      <h3>🛡️ Bitácora de seguridad</h3>
-      <ul className="guardian-audit-list">
-        {logs.map((log) => (
-          <li key={log.id}>
-            <strong>{log.event}</strong>
-            <time>{new Date(log.created_at).toLocaleString('es-CL')}</time>
-            {log.key_hash && <code>Huella: {log.key_hash.slice(0, 12)}…</code>}
-            <small>{JSON.stringify(log.metadata)}</small>
-          </li>
-        ))}
-      </ul>
-      {!logs.length && <p className="muted">Sin eventos registrados.</p>}
-      <details>
-        <summary>Ventanas recientes del limitador ({attempts.length})</summary>
-        {attempts.map((attempt) => (
-          <p key={attempt.key_hash}>
-            <code>{attempt.key_hash.slice(0, 12)}…</code> · {attempt.attempts} intentos ·{' '}
-            {new Date(attempt.window_start).toLocaleTimeString('es-CL')}
-          </p>
-        ))}
-      </details>
     </section>
   );
 }
