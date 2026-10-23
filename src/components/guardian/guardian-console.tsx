@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { gateCodeFromKey, gateSecretBytes } from '@/domain/gatekeeper';
 import { loadGuardianKey, saveGuardianKey, removeGuardianKey } from '@/lib/guardian-device';
+import { GuardianCloudPanel } from './guardian-cloud-panel';
 import { GuardianJiraPanel } from './guardian-jira-panel';
 import { PlayerManagementDialog } from './player-management-dialog';
 import { GuardianAlertPanel, GuardianSwitchPanel, GuardianHudPanel } from './operator-panels';
@@ -16,9 +17,9 @@ interface GuardianPlayer {
 }
 export function GuardianConsole({ username, adminId }: { username: string; adminId: string }) {
   const [managed, setManaged] = useState<GuardianPlayer | null>(null);
-  const [tab, setTab] = useState<'token' | 'players' | 'alert' | 'switches' | 'hud' | 'jira'>(
-    'token',
-  );
+  const [tab, setTab] = useState<
+    'token' | 'players' | 'alert' | 'switches' | 'hud' | 'jira' | 'cloud'
+  >('token');
   const [online, setOnline] = useState(true);
   const [key, setKey] = useState<CryptoKey | null>(null),
     [code, setCode] = useState('------');
@@ -156,6 +157,7 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
               switches: 'Interruptores maestros',
               hud: 'Monitor de salud',
               jira: 'Jira / Tickets',
+              cloud: 'Cloud / CI',
             }[tab]
           }
         </h1>
@@ -338,6 +340,8 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
           </section>
         ) : tab === 'alert' ? (
           <GuardianAlertPanel />
+        ) : tab === 'cloud' ? (
+          <GuardianCloudPanel />
         ) : tab === 'jira' ? (
           <GuardianJiraPanel />
         ) : tab === 'switches' ? (
@@ -360,6 +364,7 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
             ['switches', '🎛️', 'Switches'],
             ['hud', '📊', 'HUD'],
             ['jira', '🎫', 'Jira / Tickets'],
+            ['cloud', '☁️', 'Cloud / CI'],
           ] as const
         ).map(([id, icon, label]) => (
           <button
