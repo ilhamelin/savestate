@@ -16,8 +16,13 @@ export function GuardianJiraPanel() {
         fetch('/api/support/tickets', { cache: 'no-store', signal }),
         fetch('/api/telemetry/errors', { cache: 'no-store', signal }),
       ]);
-      if (!tickets.ok || !errors.ok)
-        throw new Error('No se pudo cargar Jira. Comprueba la sesión y la migración 040.');
+      if (!tickets.ok || !errors.ok) {
+        const failed = !tickets.ok ? tickets : errors;
+        const errJson = (await failed.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(
+          errJson?.error || `Error ${failed.status}: No se pudo cargar Jira. Comprueba la sesión.`,
+        );
+      }
       const [nextDashboard, nextEvents] = await Promise.all([tickets.json(), errors.json()]);
       if (!signal.aborted) {
         setDashboard(nextDashboard);
