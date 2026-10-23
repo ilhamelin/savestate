@@ -27,6 +27,7 @@ export function GuardianJiraPanel() {
       if (!signal.aborted) {
         setDashboard(nextDashboard);
         setEvents(nextEvents.events);
+        setNotice('');
       }
     } catch (error) {
       if (!signal.aborted) setNotice(error instanceof Error ? error.message : 'Sin conexión.');
