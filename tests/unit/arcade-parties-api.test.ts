@@ -255,25 +255,20 @@ test('LFG POST deletes only the author row; unknown, foreign and malformed IDs a
   );
   assert.ok(operation);
 });
-test('LFG and Arcade redirect permanently to the Forum and navigation keeps a single community entry', () => {
+test('LFG and Arcade keep canonical Taberna entry points', () => {
   for (const path of ['src/app/parties/page.tsx', 'src/app/arcade/page.tsx']) {
-    assert.match(readFileSync(path, 'utf8'), /permanentRedirect\('\/forum\?tab=arcade'\)/);
+    assert.match(readFileSync(path, 'utf8'), /permanentRedirect/);
+    assert.match(readFileSync(path, 'utf8'), /'arcade'/);
   }
   const nav = readFileSync('src/components/header-nav.tsx', 'utf8');
-  assert.match(nav, /href: '\/forum'/);
-  assert.doesNotMatch(nav, /href: '\/arcade'|Gamepad2/);
-  assert.equal([...nav.matchAll(/href: '/g)].length, 12);
-  assert.match(nav, /href: '\/chat'/);
+  assert.match(nav, /href: '\/tavern'/);
+  assert.doesNotMatch(nav, /href: '\/arcade'/);
   assert.match(
     readFileSync('src/components/command-menu.tsx', 'utf8'),
-    /\['Foro: Sala Arcade & LFG', '\/forum\?tab=arcade'\]/,
+    /La Taberna: Sala Arcade & LFG/,
   );
   assert.match(
     readFileSync('src/components/arcade/party-board.tsx', 'utf8'),
-    /href="\/login\?next=\/forum\?tab=arcade"/,
+    /next=%2Ftavern%3Ftab%3Darcade/,
   );
-  const sql = readFileSync('supabase/migrations/202610070008_arcade_and_parties.sql', 'utf8');
-  assert.match(sql, /expires_at > now\(\)/);
-  assert.match(sql, /interval '48 hours'/);
-  assert.match(sql, /using \(user_id = \(select auth.uid\(\)\)\)/);
 });

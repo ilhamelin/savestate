@@ -76,7 +76,7 @@ export function lolMomentLink(match: LolMatchSummary) {
     ...(medals.mvp ? ['• **Distintivo:** 👑 MVP del equipo'] : []),
   ].join('  \n');
   const draft = `${heading}\n\n${stats}\n\n🔗 Partida analizada en el [Rift Tracker](/rift).`;
-  return `/highlights?${new URLSearchParams({ draft, draftTitle: title })}`;
+  return `/tavern?${new URLSearchParams({ tab: 'momentos', draft, draftTitle: title })}`;
 }
 export const LOL_ROLES = {
   TOP: { label: 'Top', icon: '▲' },

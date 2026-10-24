@@ -17,6 +17,7 @@ export async function catalogue(filters: CatalogueFilters) {
   let source: 'igdb' | 'local' = 'local';
   let igdbIds: number[] | undefined;
   const releaseDates = new Map<number, number | null>();
+  const igdbScreenshots = new Map<number, string[]>();
   const igdbRatings = new Map<number, number | null>();
   // The 24h cache in fetchCatalogue is keyed by the complete query. Fresh local
   // rows alone cannot establish that a broader or different search is complete.
@@ -27,7 +28,8 @@ export async function catalogue(filters: CatalogueFilters) {
   ) {
     try {
       const games = await fetchCatalogue(filters);
-      const rows = games.map(({ first_release_date, igdb_rating, ...row }) => {
+      const rows = games.map(({ first_release_date, igdb_rating, screenshots, ...row }) => {
+        igdbScreenshots.set(row.igdb_id, screenshots ?? []);
         releaseDates.set(row.igdb_id, first_release_date);
         igdbRatings.set(row.igdb_id, igdb_rating ?? null);
         return row;
@@ -62,6 +64,7 @@ export async function catalogue(filters: CatalogueFilters) {
       const date = timestamp && Number.isFinite(timestamp) ? new Date(timestamp * 1000) : null;
       return {
         ...game,
+        screenshots: igdbScreenshots.get(game.igdb_id) ?? game.screenshots ?? [],
         release_date: date && Number.isFinite(date.getTime()) ? date.toISOString() : null,
         days_until_release: daysUntilRelease(timestamp),
       };

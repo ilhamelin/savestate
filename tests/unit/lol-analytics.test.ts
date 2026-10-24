@@ -148,7 +148,8 @@ test('Rift medals compare only teammates, allow tied MVP and handle zero team ki
   zero.participants = [zero.player, { ...zero.player, puuid: 'ally' }];
   assert.deepEqual(lolMatchMedals(zero), { multikill: null, mvp: false, killParticipation: 0 });
   const link = new URL(lolMomentLink(row), 'https://savestate.test');
-  assert.equal(link.pathname, '/highlights');
+  assert.equal(link.pathname, '/tavern');
+  assert.equal(link.searchParams.get('tab'), 'momentos');
   assert.ok(link.searchParams.get('draft')?.includes('Rammus'));
   assert.ok(link.searchParams.get('draftTitle')!.length <= 120);
 });
