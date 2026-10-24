@@ -34,6 +34,7 @@ export function metaRecord(value: unknown): Record<string, unknown> {
 }
 export function normalizedMetaTitle(title: string): string {
   return title
+    .replace(/[™®©]/g, '')
     .normalize('NFKD')
     .replace(/[\u0300-\u036f™®©]/g, '')
     .toLowerCase()

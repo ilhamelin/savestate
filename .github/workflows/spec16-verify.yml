@@ -18,10 +18,10 @@ jobs:
       - run: npm ci
       - name: Format feature files
         run: |
-          npx prettier --write 'src/domain/game-meta.ts' 'src/services/game-meta-service.ts' 'src/components/game-meta-hub.tsx' 'src/styles/game-meta-hub.css' 'src/app/games/[slug]/page.tsx' 'tests/unit/game-meta.test.ts'
+          npx prettier --write 'src/domain/game-meta.ts' 'src/services/game-meta-service.ts' 'src/components/game-meta-hub.tsx' 'src/styles/game-meta-hub.css' 'src/app/games/[slug]/page.tsx' 'tests/unit/game-meta.test.ts' 'src/app/game-meta-qa/page.tsx'
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- 'src/domain/game-meta.ts' 'src/services/game-meta-service.ts' 'src/components/game-meta-hub.tsx' 'src/styles/game-meta-hub.css' 'src/app/games/[slug]/page.tsx' 'tests/unit/game-meta.test.ts'
+          git add -- 'src/domain/game-meta.ts' 'src/services/game-meta-service.ts' 'src/components/game-meta-hub.tsx' 'src/styles/game-meta-hub.css' 'src/app/games/[slug]/page.tsx' 'tests/unit/game-meta.test.ts' 'src/app/game-meta-qa/page.tsx'
           if ! git diff --cached --quiet; then git commit -m "style: format game meta intelligence"; git push; fi
       - run: npm test
       - run: npm run typecheck
@@ -32,3 +32,13 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=1536
       - run: npm run format:check
       - run: npm run build
+      - name: Install isolated browser tooling
+        run: npm install --prefix "$RUNNER_TEMP/spec16-tools" --no-save --package-lock=false playwright
+      - name: Verify responsive panel and streaming
+        run: |
+          npm run start > "$RUNNER_TEMP/spec16-next.log" 2>&1 &
+          for attempt in $(seq 1 40); do
+            if curl -fsS http://localhost:3000/explore > /dev/null; then break; fi
+            sleep 1
+          done
+          node .github/spec16-browser.mjs
