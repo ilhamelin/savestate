@@ -1,4 +1,5 @@
 'use client';
+import { publishDependencyHealth } from '@/lib/dependency-health-client';
 import { useEffect, useState } from 'react';
 import type { SystemBroadcast } from '@/domain/guardian-suite';
 import { effectiveSeasonalTheme, HALLOWEEN_END_MS } from '@/domain/seasonal-theme';
@@ -43,7 +44,8 @@ export function SystemBroadcastBanner({
         if (!response.ok) throw new Error('System status unavailable');
         const result = await response.json();
         if (requestSignal.aborted) return;
-        setBroadcast(result.broadcast);
+        if (result.health) publishDependencyHealth(result.health);
+        if (result.stateAvailable !== false) setBroadcast(result.broadcast);
         if (typeof result.switches?.double_xp === 'boolean') {
           setDoubleXp(result.switches.double_xp);
           document.documentElement.dataset.doubleXp = String(result.switches.double_xp);

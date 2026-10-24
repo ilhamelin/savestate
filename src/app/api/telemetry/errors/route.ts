@@ -1,3 +1,5 @@
+import { knownDependencyFailure } from '@/domain/dependency-monitor';
+import { getSystemHealthReport } from '@/services/dependency-monitor-service';
 import { body, sameOrigin, errorResponse, AppError } from '@/lib/http';
 import { uuid, object } from '@/domain/validation';
 import { authenticatedAdmin } from '@/lib/session';
@@ -41,6 +43,8 @@ export async function POST(request: Request) {
       const id = uuid(raw.id);
       const event = (await supportStore.events()).find((item) => item.id === id);
       if (!event) throw new AppError('Este incidente ya no está en el buffer.', 404);
+      const outage = knownDependencyFailure(event.message, await getSystemHealthReport(false));
+      if (outage) throw new AppError('La sonda de ' + outage + ' indica una incidencia externa. El evento permanece en la bitácora; reintenta la escalada cuando se restablezca.', 409);
       const input = sanitizeSupportTicket({
         type: 'bug',
         title: ('Error web: ' + event.message).slice(0, 200),

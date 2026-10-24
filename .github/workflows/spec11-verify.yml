@@ -20,3 +20,15 @@ jobs:
         run: |
           cat node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/route.md
           cat node_modules/next/dist/docs/01-app/01-getting-started/05-server-and-client-components.md
+      - name: Format changed files
+        run: |
+          npx prettier --write 'src/domain/dependency-monitor.ts' 'src/services/dependency-monitor-service.ts' 'src/integrations/igdb/server.ts' 'src/app/api/system-status/route.ts' 'src/app/api/guardian/dependencies/probe/route.ts' 'src/lib/dependency-health-client.ts' 'src/components/dependency-alert-banner.tsx' 'src/components/dependency-status-dashboard.tsx' 'src/components/guardian/guardian-status-panel.tsx' 'src/app/status/page.tsx' 'src/components/guardian/guardian-console.tsx' 'src/components/system-broadcast-banner.tsx' 'src/app/library/import/page.tsx' 'src/app/explore/page.tsx' 'src/domain/gatekeeper.ts' 'src/proxy.ts' 'src/app/layout.tsx' 'src/app/api/telemetry/errors/route.ts' 'src/styles/dependency-monitor.css' 'tests/unit/dependency-monitor.test.ts'
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add 'src/domain/dependency-monitor.ts' 'src/services/dependency-monitor-service.ts' 'src/integrations/igdb/server.ts' 'src/app/api/system-status/route.ts' 'src/app/api/guardian/dependencies/probe/route.ts' 'src/lib/dependency-health-client.ts' 'src/components/dependency-alert-banner.tsx' 'src/components/dependency-status-dashboard.tsx' 'src/components/guardian/guardian-status-panel.tsx' 'src/app/status/page.tsx' 'src/components/guardian/guardian-console.tsx' 'src/components/system-broadcast-banner.tsx' 'src/app/library/import/page.tsx' 'src/app/explore/page.tsx' 'src/domain/gatekeeper.ts' 'src/proxy.ts' 'src/app/layout.tsx' 'src/app/api/telemetry/errors/route.ts' 'src/styles/dependency-monitor.css' 'tests/unit/dependency-monitor.test.ts'
+            git commit -m "style: format dependency monitoring implementation"
+            git push origin HEAD:feature/dependency-uptime-monitor
+          fi
+      - run: npm run check
+      - run: npm run build
