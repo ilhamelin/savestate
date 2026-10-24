@@ -68,21 +68,23 @@ grant execute on function public.guardian_soc_snapshot() to service_role;
 
 create or replace function public.guardian_soc_fail(p_ip inet,p_reason text)
 returns jsonb language plpgsql security definer set search_path='' as $$
-declare v public.guardian_threat_ips; v_attempts timestamptz[];
+declare v public.guardian_threat_ips; v_attempts timestamptz[]; v_now timestamptz;
 begin
   if p_ip is null or masklen(p_ip)<>(case family(p_ip) when 4 then 32 else 128 end) then raise exception 'IP no válida'; end if;
   perform pg_advisory_xact_lock(hashtextextended(host(p_ip),41001));
-  delete from public.guardian_threat_ips where last_seen_at<now()-interval '1 day' and (expires_at is null or expires_at<=now());
+  -- Capture time after waiting for the lock; transaction-start timestamps can reorder concurrent failures.
+  v_now:=clock_timestamp();
+  delete from public.guardian_threat_ips where last_seen_at<v_now-interval '1 day' and (expires_at is null or expires_at<=v_now);
   insert into public.guardian_threat_ips(ip) values(p_ip) on conflict do nothing;
   select * into v from public.guardian_threat_ips where ip=p_ip for update;
-  if v.expires_at>now() then
+  if v.expires_at>v_now then
     return jsonb_build_object('quarantined',true,'recentCount',cardinality(v.attempts),'expiresAt',floor(extract(epoch from v.expires_at)*1000));
   end if;
-  select coalesce(array_agg(t),'{}') into v_attempts from unnest(v.attempts) t where t>now()-interval '60 seconds' and t<=now();
-  v_attempts:=array_append(v_attempts,now());
-  update public.guardian_threat_ips set attempts=v_attempts,last_seen_at=now(),reason=left(p_reason,240),
-    quarantined_at=case when cardinality(v_attempts)>=5 then now() else null end,
-    expires_at=case when cardinality(v_attempts)>=5 then now()+interval '15 minutes' else null end
+  select coalesce(array_agg(t),'{}') into v_attempts from unnest(v.attempts) t where t>v_now-interval '60 seconds' and t<=v_now;
+  v_attempts:=array_append(v_attempts,v_now);
+  update public.guardian_threat_ips set attempts=v_attempts,last_seen_at=v_now,reason=left(p_reason,240),
+    quarantined_at=case when cardinality(v_attempts)>=5 then v_now else null end,
+    expires_at=case when cardinality(v_attempts)>=5 then v_now+interval '15 minutes' else null end
   where ip=p_ip returning * into v;
   if cardinality(v_attempts)>=5 then
     insert into public.security_audit_logs(event,metadata) values('threat_ip_quarantined',jsonb_build_object(
@@ -116,10 +118,11 @@ grant execute on function public.guardian_soc_quarantine(inet,text,text,uuid) to
 
 create or replace function public.guardian_soc_defcon(p_level int,p_actor uuid,p_reason text)
 returns boolean language plpgsql security definer set search_path='' as $$
-declare s public.guardian_soc_state; previous int;
+declare s public.guardian_soc_state; previous int; v_now timestamptz;
 begin
   if p_level is null or p_level not between 1 and 5 or p_actor is null or length(btrim(coalesce(p_reason,''))) not between 5 and 240 then raise exception 'Nivel o motivo no válido'; end if;
   perform pg_advisory_xact_lock(41002);
+  v_now:=clock_timestamp();
   select * into s from public.guardian_soc_state where singleton for update;
   select (value::text)::int into previous from public.system_switches where key='defcon_level' for update;
   if p_level<=3 and s.registrations_before is null then
@@ -128,21 +131,21 @@ begin
   if p_level=1 and s.gatekeeper_before is null then
     select value='true'::jsonb into s.gatekeeper_before from public.system_switches where key='gatekeeper_enabled';
   end if;
-  update public.system_switches set value=to_jsonb(p_level),updated_by=p_actor,updated_at=now() where key='defcon_level';
+  update public.system_switches set value=to_jsonb(p_level),updated_by=p_actor,updated_at=v_now where key='defcon_level';
   if p_level<=3 then
-    update public.system_switches set value='false',updated_by=p_actor,updated_at=now() where key='registrations_open';
+    update public.system_switches set value='false',updated_by=p_actor,updated_at=v_now where key='registrations_open';
   elsif s.registrations_before is not null then
-    update public.system_switches set value=to_jsonb(s.registrations_before),updated_by=p_actor,updated_at=now() where key='registrations_open';
+    update public.system_switches set value=to_jsonb(s.registrations_before),updated_by=p_actor,updated_at=v_now where key='registrations_open';
     s.registrations_before:=null;
   end if;
   if p_level=1 then
-    update public.system_switches set value='true',updated_by=p_actor,updated_at=now() where key='gatekeeper_enabled';
+    update public.system_switches set value='true',updated_by=p_actor,updated_at=v_now where key='gatekeeper_enabled';
   elsif s.gatekeeper_before is not null then
-    update public.system_switches set value=to_jsonb(s.gatekeeper_before),updated_by=p_actor,updated_at=now() where key='gatekeeper_enabled';
+    update public.system_switches set value=to_jsonb(s.gatekeeper_before),updated_by=p_actor,updated_at=v_now where key='gatekeeper_enabled';
     s.gatekeeper_before:=null;
   end if;
   update public.guardian_soc_state set registrations_before=s.registrations_before,gatekeeper_before=s.gatekeeper_before,
-    updated_by=p_actor,updated_at=now(),reason=p_reason where singleton;
+    updated_by=p_actor,updated_at=v_now,reason=p_reason where singleton;
   insert into public.security_audit_logs(event,metadata) values('defcon_escalation',jsonb_build_object(
     'level',p_level,'previous',previous,'actor_id',p_actor,'reason',p_reason,'severity',case when p_level<=2 then 'critical' when p_level=3 then 'high' else 'low' end));
   return true;

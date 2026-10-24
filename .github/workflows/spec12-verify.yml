@@ -36,9 +36,10 @@ jobs:
           psql -h 127.0.0.1 -U postgres -d soc_test -v ON_ERROR_STOP=1 -f supabase/migrations/202610240041_guardian_soc.sql
           psql -h 127.0.0.1 -U postgres -d soc_test -v ON_ERROR_STOP=1 -f supabase/migrations/202610240041_guardian_soc.sql
           psql -h 127.0.0.1 -U postgres -d soc_test -v ON_ERROR_STOP=1 -f tests/integration/guardian-soc.sql
+          bash tests/integration/guardian-soc-concurrency.sh
       - name: Format changed implementation
         run: |
-          npx prettier --write src/app/soc-qa/page.tsx scripts/spec12-browser.mjs src/domain/threat-shield.ts src/services/threat-shield-store.ts src/services/threat-shield-service.ts src/lib/database.types.ts src/domain/guardian-suite.ts src/services/system-state.ts src/app/api/guardian/soc/telemetry/route.ts src/app/api/guardian/soc/defcon/route.ts src/app/api/guardian/soc/quarantine/route.ts src/proxy.ts src/domain/gatekeeper.ts src/app/api/gatekeeper/verify/route.ts src/app/api/auth/password/route.ts src/components/auth-form.tsx src/components/guardian/guardian-soc-panel.tsx src/components/guardian/guardian-console.tsx src/styles/guardian-soc.css tests/unit/threat-shield.test.ts
+          npx prettier --write tests/unit/guardian-routes.test.ts src/app/soc-qa/page.tsx scripts/spec12-browser.mjs src/domain/threat-shield.ts src/services/threat-shield-store.ts src/services/threat-shield-service.ts src/lib/database.types.ts src/domain/guardian-suite.ts src/services/system-state.ts src/app/api/guardian/soc/telemetry/route.ts src/app/api/guardian/soc/defcon/route.ts src/app/api/guardian/soc/quarantine/route.ts src/proxy.ts src/domain/gatekeeper.ts src/app/api/gatekeeper/verify/route.ts src/app/api/auth/password/route.ts src/components/auth-form.tsx src/components/guardian/guardian-soc-panel.tsx src/components/guardian/guardian-console.tsx src/styles/guardian-soc.css tests/unit/threat-shield.test.ts
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
