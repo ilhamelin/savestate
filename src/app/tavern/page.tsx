@@ -60,6 +60,7 @@ function TavernHeading({ activeTab }: { activeTab: TavernTab }) {
             className={`button small ${activeTab === tab ? '' : 'outline'}`}
             aria-current={activeTab === tab ? 'page' : undefined}
             scroll={false}
+            prefetch={false}
           >
             {label}
           </Link>

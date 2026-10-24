@@ -13,13 +13,16 @@ test('Halloween respects operator preference and the inclusive Chilean closing d
   assert.equal(effectiveSeasonalTheme('classic', HALLOWEEN_END_MS - 1), 'classic');
 });
 
-test('Sitemap contains the 14 requested routes with priorities and a matching robots URL', () => {
+test('Sitemap indexes canonical routes including La Taberna with priorities and a matching robots URL', () => {
   const previous = process.env.NEXT_PUBLIC_APP_URL;
   try {
     process.env.NEXT_PUBLIC_APP_URL = 'https://savestate.example/';
     const entries = sitemap();
-    assert.equal(entries.length, 14);
-    assert.equal(new Set(entries.map((entry) => entry.url)).size, 14);
+    assert.equal(entries.length, 13);
+    assert.equal(new Set(entries.map((entry) => entry.url)).size, 13);
+    const paths = entries.map(entry=>new URL(entry.url).pathname);
+    assert.ok(paths.includes('/tavern'));
+    assert.ok(!paths.includes('/forum') && !paths.includes('/highlights'));
     for (const entry of entries) {
       const path = new URL(entry.url).pathname;
       assert.equal(
