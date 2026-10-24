@@ -1,3 +1,4 @@
+import { DependencyAlertBanner } from '@/components/dependency-alert-banner';
 import { currentUser } from '@/lib/session';
 import { redirect } from 'next/navigation';
 import { ImportHub } from '@/components/import-hub';
@@ -17,6 +18,7 @@ export default async function SteamImportPage() {
   dbCheck(result.error);
   return (
     <>
+      <DependencyAlertBanner service="steam" />
       <div className="page-heading">
         <div>
           <p className="eyebrow">LIBRARY TRANSFER / MULTIPLATAFORMA</p>

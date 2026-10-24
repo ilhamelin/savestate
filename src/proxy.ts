@@ -66,6 +66,8 @@ export async function proxy(request: NextRequest) {
   if (
     isConfigured() &&
     !request.nextUrl.pathname.startsWith('/api/catalogue') &&
+    request.nextUrl.pathname !== '/status' &&
+    request.nextUrl.pathname !== '/api/system-status' &&
     request.nextUrl.pathname !== '/sitemap.xml' &&
     request.nextUrl.pathname !== '/robots.txt' &&
     !request.nextUrl.pathname.startsWith('/guardian-assets/') &&

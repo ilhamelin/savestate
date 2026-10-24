@@ -1,3 +1,4 @@
+import { DependencyAlertBanner } from '@/components/dependency-alert-banner';
 import { Explore } from '@/components/explore';
 import { SuggestGame } from '@/components/community-forms';
 import { currentUser } from '@/lib/session';
@@ -17,6 +18,7 @@ export default async function ExplorePage({
   const user = await currentUser();
   return (
     <>
+      <DependencyAlertBanner service="igdb" />
       <div className="page-heading">
         <div>
           <p className="eyebrow">GLOBAL GAME DATABASE</p>

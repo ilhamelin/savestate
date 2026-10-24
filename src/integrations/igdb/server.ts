@@ -34,6 +34,10 @@ async function accessToken() {
     tokenRequest = null;
   }
 }
+/** Monitoring reuses tokens without creating OAuth traffic or spending catalogue quota. */
+export function cachedTwitchAccessToken(): string | null {
+  return token && token.expires > Date.now() + 60000 ? token.value : null;
+}
 export async function twitchAccessToken() {
   return accessToken();
 }

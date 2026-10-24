@@ -1,3 +1,4 @@
+import '@/styles/dependency-monitor.css';
 import { RetroRadioDeck } from '@/components/retro-radio/retro-radio-deck';
 import '@/styles/retro-radio.css';
 import '@/styles/support.css';
@@ -44,9 +45,13 @@ export const viewport: Viewport = {
 export const dynamic = 'force-dynamic';
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = (await headers()).get('x-pathname') ?? '';
-  const userPromise = currentUser();
+  const publicStatus = pathname === '/status';
+  const userPromise = publicStatus ? Promise.resolve(null) : currentUser();
   const standalone =
-    pathname === '/gatekeeper' || pathname === '/guardian' || pathname.startsWith('/guardian/');
+    publicStatus ||
+    pathname === '/gatekeeper' ||
+    pathname === '/guardian' ||
+    pathname.startsWith('/guardian/');
   const switches = standalone ? null : await getSystemSwitches().catch(() => null);
   const user = await userPromise;
   const seasonalTheme = effectiveSeasonalTheme(switches?.seasonal_theme);
@@ -107,6 +112,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                   <h2>Legal</h2>
                   <Link href="/terms">Términos de Servicio</Link>
                   <Link href="/privacy">Política de Privacidad</Link>
+                  <Link href="/status">Estado del sistema</Link>
                 </nav>
               </div>
               <div className="footer-controls">
