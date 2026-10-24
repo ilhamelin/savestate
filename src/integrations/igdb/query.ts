@@ -1,3 +1,4 @@
+import { igdbScreenshotUrls } from '../../domain/game-screenshots.ts';
 import { ValidationError, text } from '../../domain/validation.ts';
 export interface CatalogueFilters {
   q: string;
@@ -110,7 +111,7 @@ export function igdbQuery(filters: CatalogueFilters): string {
       : filters.sort === 'recent'
         ? 'first_release_date desc'
         : 'total_rating_count desc';
-  return `fields id,name,slug,cover.image_id,summary,first_release_date,total_rating,platforms.name,genres.name,involved_companies.developer,involved_companies.publisher,involved_companies.company.name,collections.name; where ${where.join(' & ')}; sort ${sort}; limit 24; offset ${filters.offset};`;
+  return `fields id,name,slug,cover.image_id,screenshots.image_id,summary,first_release_date,total_rating,platforms.name,genres.name,involved_companies.developer,involved_companies.publisher,involved_companies.company.name,collections.name; where ${where.join(' & ')}; sort ${sort}; limit 24; offset ${filters.offset};`;
 }
 export function daysUntilRelease(unixSeconds?: number | null, nowMs = Date.now()): number | null {
   if (!unixSeconds || !Number.isFinite(unixSeconds)) return null;
@@ -122,6 +123,7 @@ export interface IgdbGame {
   name: string;
   slug: string;
   cover?: { image_id?: string };
+  screenshots?: { image_id?: string }[];
   summary?: string;
   first_release_date?: number;
   total_rating?: number;
@@ -141,6 +143,7 @@ export function mapIgdbGame(game: IgdbGame) {
   const image = game.cover?.image_id;
   return {
     igdb_id: game.id,
+    screenshots: igdbScreenshotUrls(game.screenshots),
     title: game.name,
     slug: game.slug,
     cover_url:

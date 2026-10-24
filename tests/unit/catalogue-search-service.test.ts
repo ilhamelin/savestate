@@ -56,6 +56,7 @@ test('Catalogue uses IGDB ratings as fallback, preserves community priority and 
       slug: 'game-' + i,
       first_release_date: 1790000000,
       igdb_rating: 8.6,
+      screenshots: ['https://images.igdb.com/igdb/image/upload/t_screenshot_big/sc_' + i + '.jpg'],
     }));
     state.page = state.remote.map((g: { igdb_id: number }) => ({
       id: String(g.igdb_id),
@@ -67,12 +68,13 @@ test('Catalogue uses IGDB ratings as fallback, preserves community priority and 
     const result = await catalogue(filters);
     assert.equal(state.input.minRating, 8);
     assert.equal(result.source, 'igdb');
+    assert.deepEqual(result.games[0]?.screenshots, state.remote[1].screenshots);
     assert.equal(result.games.length, 23);
     assert.equal(result.nextOffset, 24);
     assert.equal(result.games[0]?.community_rating, 9);
     assert.equal(result.games[1]?.community_rating, 8.6);
     assert.ok(
-      state.saved.every((row: object) => !('igdb_rating' in row) && !('first_release_date' in row)),
+      state.saved.every((row: object) => !('igdb_rating' in row) && !('first_release_date' in row) && !('screenshots' in row)),
     );
     state.page.forEach((g: { community_rating: number | null }) => (g.community_rating = 2));
     const empty = await catalogue(filters);
@@ -83,6 +85,7 @@ test('Catalogue uses IGDB ratings as fallback, preserves community priority and 
     state.page[1].community_rating = 9;
     const fallback = await catalogue(filters);
     assert.equal(fallback.source, 'local');
+    assert.deepEqual(fallback.games[0]?.screenshots, []);
     assert.equal(fallback.games.length, 1);
     assert.equal(fallback.games[0]?.community_rating, 9);
   } finally {
