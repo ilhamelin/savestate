@@ -340,9 +340,14 @@ test('Cold serverless instances validate configured Twitch credentials without r
   const read = createDependencyMonitor({
     env: () => ({ TWITCH_CLIENT_ID: 'client', TWITCH_CLIENT_SECRET: 'secret' }),
     twitchToken: () => null,
-    async authorizeTwitch(signal) { assert.ok(signal instanceof AbortSignal); authorizations++; return 'private-cold-token'; },
+    async authorizeTwitch(signal) {
+      assert.ok(signal instanceof AbortSignal);
+      authorizations++;
+      return 'private-cold-token';
+    },
     fetcher: async (url, init) => {
-      if (String(url).includes('oauth2/validate')) assert.equal(new Headers(init?.headers).get('Authorization'), 'OAuth private-cold-token');
+      if (String(url).includes('oauth2/validate'))
+        assert.equal(new Headers(init?.headers).get('Authorization'), 'OAuth private-cold-token');
       return new Response(null);
     },
   });
@@ -352,15 +357,31 @@ test('Cold serverless instances validate configured Twitch credentials without r
   assert.equal(report.services.find((item) => item.id === 'igdb')?.status, 'operational');
   assert.doesNotMatch(JSON.stringify(report), /private-cold-token|secret/);
 });
-test('Cold OAuth authentication shares the probe deadline and cannot hold the report open', { timeout: 1000 }, async () => {
-  let aborted = false;
-  const read = createDependencyMonitor({
-    env: () => ({ TWITCH_CLIENT_ID: 'client', TWITCH_CLIENT_SECRET: 'secret' }), twitchToken: () => null,
-    authorizeTwitch: (signal) => new Promise<string>((_, reject) => signal.addEventListener('abort', () => { aborted = true; reject(new Error('Aborted')); }, { once: true })),
-    fetcher: async () => new Response(null), timeoutMs: 25,
-  });
-  const report = await read();
-  assert.equal(aborted, true);
-  assert.equal(report.services.find((item) => item.id === 'igdb')?.status, 'down');
-  assert.equal(report.services.find((item) => item.id === 'igdb')?.latencyMs, 25);
-});
+test(
+  'Cold OAuth authentication shares the probe deadline and cannot hold the report open',
+  { timeout: 1000 },
+  async () => {
+    let aborted = false;
+    const read = createDependencyMonitor({
+      env: () => ({ TWITCH_CLIENT_ID: 'client', TWITCH_CLIENT_SECRET: 'secret' }),
+      twitchToken: () => null,
+      authorizeTwitch: (signal) =>
+        new Promise<string>((_, reject) =>
+          signal.addEventListener(
+            'abort',
+            () => {
+              aborted = true;
+              reject(new Error('Aborted'));
+            },
+            { once: true },
+          ),
+        ),
+      fetcher: async () => new Response(null),
+      timeoutMs: 25,
+    });
+    const report = await read();
+    assert.equal(aborted, true);
+    assert.equal(report.services.find((item) => item.id === 'igdb')?.status, 'down');
+    assert.equal(report.services.find((item) => item.id === 'igdb')?.latencyMs, 25);
+  },
+);

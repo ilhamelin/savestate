@@ -142,7 +142,7 @@ export function createDependencyMonitor(options: MonitorOptions = {}) {
                 break;
               }
               await http('https://id.twitch.tv/oauth2/validate', {
-                headers: { Authorization: 'OAuth ' + (token ?? await authorizeTwitch(signal)) },
+                headers: { Authorization: 'OAuth ' + (token ?? (await authorizeTwitch(signal))) },
               });
               message =
                 'Token compartido de Twitch válido; no comprueba consultas del catálogo IGDB.';

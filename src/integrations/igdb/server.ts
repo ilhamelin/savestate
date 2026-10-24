@@ -20,7 +20,9 @@ async function accessToken(signal?: AbortSignal) {
       body: params,
       cache: 'no-store',
       redirect: 'error',
-      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(7000)]) : AbortSignal.timeout(7000),
+      signal: signal
+        ? AbortSignal.any([signal, AbortSignal.timeout(7000)])
+        : AbortSignal.timeout(7000),
     });
     if (!response.ok) throw new AppError('No se pudo conectar al catálogo.', 503);
     const data = (await response.json()) as { access_token?: string; expires_in?: number };
