@@ -55,6 +55,18 @@ export function GameScreenshotsModal({
         if (event.target === event.currentTarget) onClose();
       }}
       onKeyDown={(event) => {
+        if (event.key === 'Tab') {
+          const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('button:not([disabled]), a[href]'));
+          const first = controls[0];
+          const last = controls.at(-1);
+          if (event.shiftKey && document.activeElement === first && last) {
+            event.preventDefault();
+            last.focus();
+          } else if (!event.shiftKey && document.activeElement === last && first) {
+            event.preventDefault();
+            first.focus();
+          }
+        }
         if (event.key === 'Escape') {
           event.preventDefault();
           onClose();

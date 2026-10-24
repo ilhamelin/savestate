@@ -211,8 +211,9 @@ test('modal wraps arrow navigation, selects thumbnails, closes once on Escape an
     }
   }
   const body = { style: { overflow: 'auto' } };
+  const doc = { activeElement: new FocusTarget(), body };
   const restore = [
-    replaceGlobal('document', { activeElement: new FocusTarget(), body }),
+    replaceGlobal('document', doc),
     replaceGlobal('HTMLElement', FocusTarget),
   ];
   try {
@@ -260,6 +261,18 @@ test('modal wraps arrow navigation, selects thumbnails, closes once on Escape an
     assert.equal(body.style.overflow, 'auto');
     assert.equal(focused, 1);
     assert.equal(modalClosed, 1);
+    const first = new FocusTarget(), last = new FocusTarget();
+    let prevented = 0;
+    const tab = (shiftKey: boolean) => (view!.props.onKeyDown as (e: unknown) => void)({
+      key: 'Tab', shiftKey, currentTarget: { querySelectorAll: () => [first, last] },
+      preventDefault() { prevented++; },
+    });
+    doc.activeElement = last;
+    tab(false);
+    doc.activeElement = first;
+    tab(true);
+    assert.equal(prevented, 2, 'Both boundaries explicitly wrap focus');
+    assert.equal(focused, 3);
     view = render({ ...game, id: 'different', screenshots: [base + 'only.jpg'] })!;
     assert.ok(nodes(view).filter((n) => n.type === 'button' && n.props.disabled).length === 2);
     assert.equal(render(null), null);
