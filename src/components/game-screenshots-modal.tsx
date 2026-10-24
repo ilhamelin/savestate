@@ -20,6 +20,7 @@ export function GameScreenshotsModal({
   const screenshots = gameScreenshotUrls(game?.screenshots);
   const index =
     selection.gameId === game?.id && selection.index < screenshots.length ? selection.index : 0;
+  const currentScreenshot = screenshots[index];
   const hasImages = screenshots.length > 0;
   useEffect(() => {
     const element = dialog.current;
@@ -35,7 +36,7 @@ export function GameScreenshotsModal({
       if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
     };
   }, [game?.id, hasImages]);
-  if (!game || !hasImages) return null;
+  if (!game || !currentScreenshot) return null;
   function select(next: number) {
     setSelection({ gameId: game!.id, index: (next + screenshots.length) % screenshots.length });
   }
@@ -81,8 +82,8 @@ export function GameScreenshotsModal({
         </header>
         <div className="screenshots-stage">
           <Image
-            key={screenshots[index]}
-            src={screenshots[index]}
+            key={currentScreenshot}
+            src={currentScreenshot}
             alt={`Captura ${index + 1} de ${game.title}`}
             width={1280}
             height={720}
