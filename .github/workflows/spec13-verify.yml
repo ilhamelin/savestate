@@ -1,0 +1,20 @@
+name: SPEC-13 verification
+on:
+  push:
+    branches: [feature/game-live-radar-redesign]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/game-live-radar-redesign
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Read installed Next CSS guide
+        run: find node_modules/next/dist/docs -type f -name '*css*' -print -exec cat {} \;
