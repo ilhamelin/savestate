@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { gateCodeFromKey, gateSecretBytes } from '@/domain/gatekeeper';
 import { loadGuardianKey, saveGuardianKey, removeGuardianKey } from '@/lib/guardian-device';
+import { GuardianStatusPanel } from './guardian-status-panel';
 import { GuardianCloudPanel } from './guardian-cloud-panel';
 import { GuardianJiraPanel } from './guardian-jira-panel';
 import { PlayerManagementDialog } from './player-management-dialog';
@@ -21,7 +22,7 @@ interface GuardianPlayer {
 export function GuardianConsole({ username, adminId }: { username: string; adminId: string }) {
   const [managed, setManaged] = useState<GuardianPlayer | null>(null);
   const [tab, setTab] = useState<
-    'token' | 'players' | 'alert' | 'switches' | 'hud' | 'jira' | 'cloud'
+    'token' | 'players' | 'alert' | 'switches' | 'hud' | 'jira' | 'cloud' | 'status'
   >('token');
   const [online, setOnline] = useState(true);
   const [key, setKey] = useState<CryptoKey | null>(null);
@@ -190,6 +191,7 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
                   hud: '📊 Monitor de salud',
                   jira: '🎫 Jira / Tickets de soporte',
                   cloud: '☁️ Cloud & CI Observer',
+                  status: '🌐 Uptime y dependencias',
                 }[tab]
               }
             </h1>
@@ -430,6 +432,8 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
           </section>
         ) : tab === 'alert' ? (
           <GuardianAlertPanel />
+        ) : tab === 'status' ? (
+          <GuardianStatusPanel />
         ) : tab === 'cloud' ? (
           <GuardianCloudPanel />
         ) : tab === 'jira' ? (
@@ -458,6 +462,7 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
             ['hud', '📊', 'HUD'],
             ['jira', '🎫', 'Jira'],
             ['cloud', '☁️', 'Cloud'],
+            ['status', '🌐', 'Uptime'],
           ] as const
         ).map(([id, icon, label]) => (
           <button
