@@ -1,0 +1,22 @@
+name: SPEC-11 verification
+on:
+  push:
+    branches: [feature/dependency-uptime-monitor]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/dependency-uptime-monitor
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Read installed Next.js 16 guides
+        run: |
+          cat node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/route.md
+          cat node_modules/next/dist/docs/01-app/01-getting-started/05-server-and-client-components.md
