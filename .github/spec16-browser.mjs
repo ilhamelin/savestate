@@ -42,3 +42,16 @@ try {
   console.log('PASS mobile: one column, no overflow, reduced-motion safe');
   await mobile.close();await context.close();
 }finally{await browser.close();}
+
+const probes = [
+  ['steam', 'https://store.steampowered.com/api/storesearch/?term=Portal%202&l=spanish&cc=US'],
+  ['protondb','https://www.protondb.com/api/v1/reports/summaries/620.json'],
+  ['speedrun','https://www.speedrun.com/api/v1/games?name=Portal%202&max=1'],
+];
+await Promise.allSettled(probes.map(async ([name,url])=>{
+  try {
+    const response=await fetch(url,{signal:AbortSignal.timeout(5000),redirect:'error'});
+    const data=response.ok?await response.json():null;
+    console.log('PUBLIC_API_PROBE '+JSON.stringify({name,status:response.status,tier:data?.tier,total:data?.total,items:data?.items?.length,games:Array.isArray(data?.data)?data.data.length:undefined}));
+  } catch(error) { console.log('PUBLIC_API_PROBE '+JSON.stringify({name,error:error.name})); }
+}));

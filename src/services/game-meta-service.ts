@@ -3,6 +3,7 @@ import { unstable_cache } from 'next/cache';
 import { twitchAccessToken } from '@/integrations/igdb/server';
 import { catalogueAdmin } from '@/integrations/supabase/admin';
 import {
+  hasUnsafeUrlCharacters,
   metaRecord,
   normalizedMetaTitle,
   mapIgdbDuration,
@@ -145,7 +146,7 @@ async function speedrun(title: string): Promise<SpeedrunRecord | null> {
         !url.username &&
         !url.password &&
         !url.port &&
-        !/[\u0000-\u0020]/.test(link)
+        !hasUnsafeUrlCharacters(link)
       )
         result.speedrunUrl = url.href;
     } catch {
