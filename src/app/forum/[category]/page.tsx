@@ -79,7 +79,7 @@ export default async function CategoryPage({
   );
   return (
     <>
-      <Link className="accent" href="/forum">
+      <Link className="accent" href="/tavern">
         ← Todos los canales
       </Link>
       <nav className="forum-channel-switcher" aria-label="Cambiar canal del foro">

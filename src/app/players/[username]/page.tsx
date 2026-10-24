@@ -199,7 +199,7 @@ export default async function Player({ params }: { params: Promise<{ username: s
         ) : null}
         <nav className="tabs profile-shortcuts" aria-label="Accesos del jugador">
           {isOwner ? <a href="#player-vault">💾 Bóveda</a> : null}
-          <Link href={`/highlights?player=${profile.id}`}>Momentos</Link>
+          <Link href={`/tavern?tab=momentos&player=${profile.id}`}>Momentos</Link>
           <Link href={`/lists?player=${profile.id}`}>Listas</Link>
           <a href="#player-friends">Amigos ({friendships.friends.length})</a>
           <Link href={`/players/${profile.username}/wrapped`}>🎁 SaveState Wrapped →</Link>

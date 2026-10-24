@@ -12,11 +12,13 @@ export function ForumCreate({
   initialCategory,
   initialGame,
   toolbar,
+  returnHref,
 }: {
   categories: ForumCategory[];
   initialCategory?: string;
   initialGame?: Game | null;
   toolbar?: ReactNode;
+  returnHref?: string;
 }) {
   const [open, setOpen] = useState(Boolean(initialGame)),
     [category, setCategory] = useState(initialCategory ?? categories[0]?.id ?? 'general-gaming'),
@@ -76,7 +78,15 @@ export function ForumCreate({
                 content,
                 game_id: selected?.id ?? null,
               });
-              router.push(`/forum/${result.category_id}/${result.id}`);
+              if (returnHref) {
+                setOpen(false);
+                setTitle('');
+                setContent('');
+                setSelected(null);
+                setQuery('');
+                setGames([]);
+              }
+              router.push(returnHref ?? `/forum/${result.category_id}/${result.id}`);
               router.refresh();
             } catch (err) {
               setError(err instanceof Error ? err.message : 'No se pudo publicar.');
