@@ -1,0 +1,319 @@
+.game-specs-hub {
+  margin-block: 1.5rem;
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #101a2be8, #080e18ed);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 14px 40px #0004;
+}
+
+.game-specs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.game-specs-header .eyebrow {
+  color: #38bdf8;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+}
+
+.game-specs-header h2 {
+  font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+  margin-top: 0.2rem;
+}
+
+.game-specs-cache {
+  color: #94a3b8;
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+}
+
+.game-specs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 1.25rem;
+}
+
+.game-specs-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 1.25rem;
+  border: 1px solid #243249;
+  border-radius: 10px;
+  background: #060c16b8;
+}
+
+.game-specs-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.game-specs-eyebrow {
+  color: #94a3b8;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+}
+
+.game-specs-card h3 {
+  margin: 0.25rem 0 1rem;
+  font-size: 1.05rem;
+}
+
+/* Critic Consensus Styles */
+.critic-score-row {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #0f172a66;
+  border: 1px solid #1e293b;
+}
+
+.critic-score-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 68px;
+  height: 68px;
+  padding: 0.25rem;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 1.85rem;
+  font-variant-numeric: tabular-nums;
+  border: 2px solid currentColor;
+}
+
+.critic-score-badge[data-tier='positive'] {
+  color: #34d399;
+  border-color: #34d399;
+  box-shadow: 0 0 24px #34d39933;
+  background: #34d39912;
+}
+
+.critic-score-badge[data-tier='mixed'] {
+  color: #fbbf24;
+  border-color: #fbbf24;
+  box-shadow: 0 0 24px #fbbf2433;
+  background: #fbbf2412;
+}
+
+.critic-score-badge[data-tier='negative'] {
+  color: #f87171;
+  border-color: #f87171;
+  box-shadow: 0 0 24px #f8717133;
+  background: #f8717112;
+}
+
+.critic-score-badge[data-tier='unknown'] {
+  color: #94a3b8;
+  border-color: #94a3b8;
+  background: #94a3b812;
+}
+
+.critic-score-badge .score-label {
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  margin-top: -2px;
+}
+
+.critic-meta-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.critic-meta-provider {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #f8fafc;
+}
+
+.critic-meta-verdict {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.critic-quotes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-block: 0.5rem 1rem;
+}
+
+.critic-quote-item {
+  padding: 0.75rem 0.9rem;
+  border-left: 3px solid #38bdf8;
+  background: #0b132277;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.critic-quote-text {
+  color: #e2e8f0;
+  font-style: italic;
+  margin-bottom: 0.35rem;
+}
+
+.critic-quote-attribution {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
+.critic-quote-score {
+  font-weight: 700;
+  color: #fde047;
+}
+
+.game-specs-link {
+  display: inline-block;
+  margin-top: auto;
+  padding-top: 0.85rem;
+  color: #67e8f9;
+  font-size: 0.75rem;
+}
+
+.game-specs-link:hover {
+  text-decoration: underline;
+}
+
+/* Hardware Specs Styles */
+.specs-radio-min,
+.specs-radio-rec {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.specs-panel-min,
+.specs-panel-rec {
+  display: none;
+}
+
+.specs-radio-min:checked ~ .specs-panel-min {
+  display: block;
+}
+
+.specs-radio-rec:checked ~ .specs-panel-rec {
+  display: block;
+}
+
+.specs-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.specs-tab-button {
+  flex: 1;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  background: #0f172a88;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.specs-tab-button:hover {
+  color: #f8fafc;
+  border-color: #475569;
+}
+
+.specs-radio-min:checked ~ .specs-tabs .tab-label-min {
+  color: #38bdf8;
+  border-color: #38bdf8;
+  background: #38bdf814;
+}
+
+.specs-radio-rec:checked ~ .specs-tabs .tab-label-rec {
+  color: #38bdf8;
+  border-color: #38bdf8;
+  background: #38bdf814;
+}
+
+.specs-component-list {
+  display: grid;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.specs-component-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: #09101c77;
+  border: 1px solid #1e293b66;
+}
+
+.specs-component-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.68rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.specs-component-value {
+  font-size: 0.78rem;
+  color: #f1f5f9;
+  font-family: var(--font-mono), monospace;
+  overflow-wrap: anywhere;
+}
+
+.specs-console-notice {
+  padding: 1.25rem;
+  border-radius: 8px;
+  background: #0f172a66;
+  border: 1px solid #1e293b;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  margin-block: auto;
+}
+
+.specs-console-notice strong {
+  display: block;
+  color: #cbd5e1;
+  font-size: 0.9rem;
+  margin-bottom: 0.35rem;
+}
+
+@media (max-width: 767px) {
+  .game-specs-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .game-specs-card {
+    padding: 1rem;
+  }
+  .game-specs-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

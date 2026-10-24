@@ -1,4 +1,5 @@
 import { GameMetaHub } from '@/components/game-meta-hub';
+import { GameCriticAndSpecsHub } from '@/components/game-critic-and-specs';
 import { cache, Suspense } from 'react';
 import { GameLiveRadar } from '@/components/game-live-radar';
 import { GameForum } from '@/components/game-forum';
@@ -195,6 +196,15 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
         }
       >
         <GameMetaHub title={game.title} igdbId={game.igdb_id} />
+      </Suspense>
+      <Suspense
+        fallback={
+          <section className="panel skeleton muted" aria-busy="true">
+            Consultando crítica y requisitos de hardware…
+          </section>
+        }
+      >
+        <GameCriticAndSpecsHub title={game.title} igdbId={game.igdb_id} />
       </Suspense>
       <section className="panel">
         <h2>Estadísticas públicas</h2>
