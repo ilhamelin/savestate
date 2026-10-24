@@ -64,7 +64,7 @@ try {
   page.on('pageerror', (error) => errors.push(error.message));
   for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    const loaded = await page.goto(base + '/status', { waitUntil: 'networkidle' });
+    const loaded = await page.goto(base + '/status', { waitUntil: 'domcontentloaded' });
     assert.equal(loaded.status(), 200);
     await page.getByRole('heading', { name: 'Estado de SaveState y sus dependencias.' }).waitFor();
     await page.getByRole('heading', { name: 'Incidente en la base de datos principal' }).waitFor();
@@ -86,6 +86,9 @@ try {
   console.log(
     'PASS real route diagnostics survive unavailable DB + enabled Gatekeeper; cache stable; anonymous probe denied.',
   );
+} catch (error) {
+  console.log(logs.slice(-5000));
+  throw error;
 } finally {
   await browser?.close();
   server.kill('SIGTERM');
