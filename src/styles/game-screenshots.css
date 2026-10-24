@@ -104,7 +104,9 @@
   border-radius: 12px;
   background: #080e18;
   color: #f2f4f8;
-  box-shadow: 0 24px 100px #000c, 0 0 32px #22d3ee18;
+  box-shadow:
+    0 24px 100px #000c,
+    0 0 32px #22d3ee18;
 }
 .screenshots-lightbox::backdrop {
   background: #02040de0;
@@ -165,8 +167,12 @@
   opacity: 0.35;
   cursor: default;
 }
-.screenshots-previous { left: 0.75rem; }
-.screenshots-next { right: 0.75rem; }
+.screenshots-previous {
+  left: 0.75rem;
+}
+.screenshots-next {
+  right: 0.75rem;
+}
 .screenshots-lightbox-footer {
   margin-top: 0.75rem;
   font-variant-numeric: tabular-nums;
@@ -195,12 +201,21 @@
   border-radius: 3px;
 }
 @media (hover: none), (pointer: coarse) {
-  .game-peek-indicators { display: none; }
+  .game-peek-indicators {
+    display: none;
+  }
 }
 @media (max-width: 600px) {
-  .screenshots-lightbox-content { padding: 0.65rem; }
-  .screenshots-lightbox-header { align-items: flex-start; }
-  .screenshots-arrow { width: 44px; height: 44px; }
+  .screenshots-lightbox-content {
+    padding: 0.65rem;
+  }
+  .screenshots-lightbox-header {
+    align-items: flex-start;
+  }
+  .screenshots-arrow {
+    width: 44px;
+    height: 44px;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .game-card,
@@ -210,5 +225,7 @@
     transition: none !important;
   }
   .game-card:hover,
-  .game-card:hover .cover img { transform: none; }
+  .game-card:hover .cover img {
+    transform: none;
+  }
 }

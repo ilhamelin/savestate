@@ -74,7 +74,10 @@ test('Catalogue uses IGDB ratings as fallback, preserves community priority and 
     assert.equal(result.games[0]?.community_rating, 9);
     assert.equal(result.games[1]?.community_rating, 8.6);
     assert.ok(
-      state.saved.every((row: object) => !('igdb_rating' in row) && !('first_release_date' in row) && !('screenshots' in row)),
+      state.saved.every(
+        (row: object) =>
+          !('igdb_rating' in row) && !('first_release_date' in row) && !('screenshots' in row),
+      ),
     );
     state.page.forEach((g: { community_rating: number | null }) => (g.community_rating = 2));
     const empty = await catalogue(filters);
