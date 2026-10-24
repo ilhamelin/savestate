@@ -14,6 +14,7 @@ const fixture =
       "export async function claimSupportAttempt(){if(state.limited)throw new AppError('Limited',429);}" +
       'export const supportStore={record:async e=>{state.event=e;state.writes++;},events:async()=>{state.reads++;return[];},list:async()=>[]};' +
       "export async function createSupportTicket(input){state.input=input;state.writes++;return{ticketId:'LOCAL-test',status:'queued'};}" +
+      'export async function getSystemHealthReport(){return {overall:"operational",services:[]};}' +
       'export async function supportDashboard(){state.reads++;return{tickets:[]};}' +
       'export async function retrySupportQueue(){state.writes++;return{processed:0};}',
   );
@@ -24,7 +25,7 @@ const hooks = registerHooks({
     if (
       specifier === '@/lib/session' ||
       (context.parentURL?.includes('/route.ts') &&
-        ['@/services/support-store', '@/services/jira-support-service'].includes(specifier))
+        ['@/services/support-store', '@/services/jira-support-service', '@/services/dependency-monitor-service'].includes(specifier))
     )
       return { url: fixture, shortCircuit: true };
     if (specifier.startsWith('@/')) {

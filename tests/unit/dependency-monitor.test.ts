@@ -94,7 +94,7 @@ test('Core database failures take priority; peripheral outages degrade and missi
   assert.equal(computeOverallHealth([makeService('supabase', 'maintenance')]), 'maintenance');
   assert.equal(computeOverallHealth([]), 'maintenance');
 });
-function fixture() {
+function fixture(timeoutMs = 2000) {
   let clock = 1792713600000;
   const env: Record<string, string | undefined> = {
     NEXT_PUBLIC_SUPABASE_URL: 'https://private-project.supabase.co',
@@ -114,7 +114,7 @@ function fixture() {
     active++;
     maximum = Math.max(maximum, active);
     try {
-      await Promise.resolve();
+      await new Promise((resolve) => setTimeout(resolve, 1));
       return await responder(url, init);
     } finally {
       active--;
@@ -126,7 +126,7 @@ function fixture() {
     env: () => env,
     twitchToken: () => 'private-bearer',
     portal: () => env.JIRA_PORTAL_URL!,
-    timeoutMs: 40,
+    timeoutMs,
   });
   return {
     read,
@@ -188,7 +188,7 @@ test(
   'Rejected and never-settling providers become bounded down readings without crashing other probes',
   { timeout: 1000 },
   async () => {
-    const state = fixture();
+    const state = fixture(40);
     state.respond(async (url) => {
       if (url.includes('steampowered')) return new Promise<Response>(() => {});
       if (url.includes('discord')) throw new Error('private diagnostic');
