@@ -6,7 +6,7 @@ import { igdbQuery, mapIgdbGame, type CatalogueFilters, type IgdbGame } from './
 
 let token: { value: string; expires: number } | null = null;
 let tokenRequest: Promise<string> | null = null;
-async function accessToken() {
+async function accessToken(signal?: AbortSignal) {
   if (token && token.expires > Date.now() + 60000) return token.value;
   if (tokenRequest) return tokenRequest;
   tokenRequest = (async () => {
@@ -19,7 +19,8 @@ async function accessToken() {
       method: 'POST',
       body: params,
       cache: 'no-store',
-      signal: AbortSignal.timeout(7000),
+      redirect: 'error',
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(7000)]) : AbortSignal.timeout(7000),
     });
     if (!response.ok) throw new AppError('No se pudo conectar al catálogo.', 503);
     const data = (await response.json()) as { access_token?: string; expires_in?: number };
@@ -34,12 +35,12 @@ async function accessToken() {
     tokenRequest = null;
   }
 }
-/** Monitoring reuses tokens without creating OAuth traffic or spending catalogue quota. */
+/** Read-only peek into the existing per-instance OAuth cache. */
 export function cachedTwitchAccessToken(): string | null {
   return token && token.expires > Date.now() + 60000 ? token.value : null;
 }
-export async function twitchAccessToken() {
-  return accessToken();
+export async function twitchAccessToken(signal?: AbortSignal) {
+  return accessToken(signal);
 }
 export const fetchCatalogue = unstable_cache(
   async (filters: CatalogueFilters) => {

@@ -1,7 +1,7 @@
 import 'server-only';
 import { createClient } from '@supabase/supabase-js';
 import { jiraConfig } from '@/services/jira-support-service';
-import { cachedTwitchAccessToken } from '@/integrations/igdb/server';
+import { cachedTwitchAccessToken, twitchAccessToken } from '@/integrations/igdb/server';
 import {
   DEPENDENCY_CACHE_TTL_MS,
   DEPENDENCY_SERVICE_IDS,
@@ -19,6 +19,7 @@ interface MonitorOptions {
   env?: () => Record<string, string | undefined>;
   portal?: () => string;
   twitchToken?: () => string | null;
+  authorizeTwitch?: (signal: AbortSignal) => Promise<string>;
   timeoutMs?: number;
 }
 const definitions: Record<
@@ -63,6 +64,7 @@ export function createDependencyMonitor(options: MonitorOptions = {}) {
   const env = options.env ?? (() => process.env);
   const portal = options.portal ?? (() => jiraConfig().portalUrl);
   const twitchToken = options.twitchToken ?? cachedTwitchAccessToken;
+  const authorizeTwitch = options.authorizeTwitch ?? twitchAccessToken;
   let cached: { report: SystemHealthReport; expiresAt: number } | null = null;
   let pending: Promise<SystemHealthReport> | null = null;
   let configuration = '';
@@ -134,16 +136,13 @@ export function createDependencyMonitor(options: MonitorOptions = {}) {
               message = 'Portal accesible; no comprueba autenticación ni creación de tickets.';
               break;
             case 'igdb':
-              if (!config.TWITCH_CLIENT_ID || !config.TWITCH_CLIENT_SECRET || !token) {
+              if (!config.TWITCH_CLIENT_ID || !config.TWITCH_CLIENT_SECRET) {
                 maintenance = true;
-                message =
-                  config.TWITCH_CLIENT_ID && config.TWITCH_CLIENT_SECRET
-                    ? 'Credenciales configuradas; abre el catálogo para comprobar el token compartido. No se generan tokens desde el monitor.'
-                    : 'Twitch / IGDB sin configurar.';
+                message = 'Twitch / IGDB sin configurar.';
                 break;
               }
               await http('https://id.twitch.tv/oauth2/validate', {
-                headers: { Authorization: 'OAuth ' + token },
+                headers: { Authorization: 'OAuth ' + (token ?? await authorizeTwitch(signal)) },
               });
               message =
                 'Token compartido de Twitch válido; no comprueba consultas del catálogo IGDB.';
@@ -199,7 +198,6 @@ export function createDependencyMonitor(options: MonitorOptions = {}) {
       config.TWITCH_CLIENT_ID,
       config.TWITCH_CLIENT_SECRET,
       config.JIRA_PORTAL_URL,
-      token,
     ]);
     if (signature !== configuration) {
       cached = null;
