@@ -62,7 +62,9 @@ export function formatSpeedrunTime(seconds: number): string {
   return time + (hundredths % 100 ? '.' + pad(hundredths % 100) : '');
 }
 export function hasUnsafeUrlCharacters(value: string): boolean {
-  return Array.from(value).some(character => character.charCodeAt(0) <= 32 || character.charCodeAt(0) === 127);
+  return Array.from(value).some(
+    (character) => character.charCodeAt(0) <= 32 || character.charCodeAt(0) === 127,
+  );
 }
 export function sanitizeVideoUrl(value: string | null | undefined): string | null {
   if (!value || hasUnsafeUrlCharacters(value)) return null;
