@@ -20,7 +20,7 @@ test('Sitemap indexes canonical routes including La Taberna with priorities and 
     const entries = sitemap();
     assert.equal(entries.length, 13);
     assert.equal(new Set(entries.map((entry) => entry.url)).size, 13);
-    const paths = entries.map(entry=>new URL(entry.url).pathname);
+    const paths = entries.map((entry) => new URL(entry.url).pathname);
     assert.ok(paths.includes('/tavern'));
     assert.ok(!paths.includes('/forum') && !paths.includes('/highlights'));
     for (const entry of entries) {
