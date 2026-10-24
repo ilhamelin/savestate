@@ -66,7 +66,7 @@ function AchievementCard({ item }: { item: GameAchievementItem }) {
 }
 
 export function GameAchievementsView({ report }: { report: GameAchievementsReport }) {
-  if (!report.hasAchievements || !report.achievements.length) {
+  if (!report || !report.hasAchievements || !report.achievements?.length || !report.summary) {
     return null;
   }
 
@@ -148,14 +148,14 @@ export function GameAchievementsView({ report }: { report: GameAchievementsRepor
 }
 
 export async function GameAchievementsHub({ title }: { title: string }) {
-  let report: GameAchievementsReport;
+  let report: GameAchievementsReport | null = null;
   try {
     report = await getCachedGameAchievements(title);
   } catch {
     return null;
   }
 
-  if (!report.hasAchievements || !report.achievements.length) {
+  if (!report || !report.hasAchievements || !report.achievements?.length || !report.summary) {
     return null;
   }
 

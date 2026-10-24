@@ -3,6 +3,7 @@ import { formatGameHours, sanitizeVideoUrl, type GameMetaReport } from '@/domain
 import '@/styles/game-meta-hub.css';
 
 export function GameMetaView({ title, data }: { title: string; data: GameMetaReport }) {
+  if (!data) return null;
   const { duration, proton, speedrun } = data;
   if (!duration && !proton && !speedrun) return null;
   const durations = [
@@ -122,11 +123,12 @@ export function GameMetaView({ title, data }: { title: string; data: GameMetaRep
   );
 }
 export async function GameMetaHub({ title, igdbId }: { title: string; igdbId?: number | null }) {
-  let data: GameMetaReport;
+  let data: GameMetaReport | null = null;
   try {
     data = await fetchGameMeta(title, igdbId);
   } catch {
     return null;
   }
+  if (!data || (!data.duration && !data.proton && !data.speedrun)) return null;
   return <GameMetaView title={title} data={data} />;
 }

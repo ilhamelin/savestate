@@ -4,10 +4,20 @@ import Link from 'next/link';
 import { highlightFeed } from '@/services/highlights';
 import { PostMedia } from './highlights/post-media';
 export async function GameForum({ gameId }: { gameId: string }) {
-  const [threads, moments] = await Promise.all([
-    gameForumThreads(gameId),
-    highlightFeed({ game: gameId, page: 1, pageSize: 6, mediaOnly: true }),
-  ]);
+  let threads;
+  let moments;
+  try {
+    const results = await Promise.all([
+      gameForumThreads(gameId),
+      highlightFeed({ game: gameId, page: 1, pageSize: 6, mediaOnly: true }),
+    ]);
+    threads = results[0];
+    moments = results[1];
+  } catch {
+    return null;
+  }
+
+  if (!threads || !moments) return null;
   return (
     <>
       <section className="panel">

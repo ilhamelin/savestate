@@ -120,6 +120,7 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
               sizes="240px"
               alt={`Portada de ${game.title}`}
               priority
+              unoptimized
             />
           ) : (
             <span>Sin portada</span>
@@ -129,7 +130,7 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
           <p className="eyebrow">GAME DATA TERMINAL / {game.release_year ?? 'SIN FECHA'}</p>
           <h1>{game.title}</h1>
           <div className="tags">
-            {[...game.platforms, ...game.genres].map((tag) => (
+            {[...(game.platforms ?? []), ...(game.genres ?? [])].map((tag) => (
               <span className="tag" key={tag}>
                 {tag}
               </span>
@@ -268,7 +269,8 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
         </div>
       </div>
       {reviews.map((review) => {
-        const entry = entries.find((e) => e.id === review.user_game_id)!;
+        const entry = entries.find((e) => e.id === review.user_game_id);
+        if (!entry) return null;
         return (
           <ReviewCard
             key={`${review.id}-${review.updated_at}`}

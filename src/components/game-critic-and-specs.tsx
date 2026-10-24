@@ -47,8 +47,8 @@ function RequirementList({ specs }: { specs: PcRequirementSet | null }) {
 }
 
 export function GameSpecsView({ title, data }: { title: string; data: GameCriticAndSpecsReport }) {
+  if (!data || (!data.critic && !data.hardware)) return null;
   const { critic, hardware } = data;
-  if (!critic && !hardware) return null;
 
   const getVerdictText = (tier: string) => {
     switch (tier) {
@@ -194,14 +194,14 @@ export async function GameCriticAndSpecsHub({
   title: string;
   igdbId?: number | null;
 }) {
-  let data: GameCriticAndSpecsReport;
+  let data: GameCriticAndSpecsReport | null = null;
   try {
     data = await fetchGameCriticAndSpecs(title, igdbId);
   } catch {
     return null;
   }
 
-  if (!data.critic && !data.hardware) return null;
+  if (!data || (!data.critic && !data.hardware)) return null;
 
   return <GameSpecsView title={title} data={data} />;
 }
