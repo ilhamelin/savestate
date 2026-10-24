@@ -47,7 +47,7 @@ export function GameMetaView({ title, data }: { title: string; data: GameMetaRep
               Estimaciones comunitarias de IGDB. El tiempo varía según tu estilo.
             </p>
             <a
-              href="https://howlongtobeat.com/"
+              href={`https://howlongtobeat.com/?q=${encodeURIComponent(title)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="game-meta-link"
@@ -121,10 +121,10 @@ export function GameMetaView({ title, data }: { title: string; data: GameMetaRep
     </section>
   );
 }
-export async function GameMetaHub({ title }: { title: string }) {
+export async function GameMetaHub({ title, igdbId }: { title: string; igdbId?: number | null }) {
   let data: GameMetaReport;
   try {
-    data = await fetchGameMeta(title);
+    data = await fetchGameMeta(title, igdbId);
   } catch {
     return null;
   }

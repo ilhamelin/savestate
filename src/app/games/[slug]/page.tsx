@@ -194,7 +194,7 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
           </section>
         }
       >
-        <GameMetaHub title={game.title} />
+        <GameMetaHub title={game.title} igdbId={game.igdb_id} />
       </Suspense>
       <section className="panel">
         <h2>Estadísticas públicas</h2>

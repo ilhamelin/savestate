@@ -25,7 +25,7 @@ async function json(url: string, signal: AbortSignal, options: RequestInit = {})
   if (!response.ok) throw new Error('Game metadata unavailable');
   return response.json() as Promise<unknown>;
 }
-async function duration(title: string): Promise<GameDuration | null> {
+async function duration(title: string, igdbId?: number | null): Promise<GameDuration | null> {
   if (
     !process.env.TWITCH_CLIENT_ID ||
     !process.env.TWITCH_CLIENT_SECRET ||
@@ -35,8 +35,17 @@ async function duration(title: string): Promise<GameDuration | null> {
   const signal = AbortSignal.timeout(10000);
   const bearer = await twitchAccessToken(signal);
   async function igdb(path: 'games' | 'game_time_to_beats', body: string) {
-    const { data, error } = await catalogueAdmin().rpc('claim_igdb_request').abortSignal(signal);
-    if (error || !data) throw new Error('IGDB quota unavailable');
+    let allowed = false;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const { data, error } = await catalogueAdmin().rpc('claim_igdb_request').abortSignal(signal);
+      if (!error && data) {
+        allowed = true;
+        break;
+      }
+      if (signal.aborted) break;
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+    if (!allowed) throw new Error('IGDB quota unavailable');
     return json('https://api.igdb.com/v4/' + path, signal, {
       method: 'POST',
       body,
@@ -47,29 +56,44 @@ async function duration(title: string): Promise<GameDuration | null> {
       },
     });
   }
-  const games = await igdb(
-    'games',
-    `search ${JSON.stringify(title)}; fields id,name; where version_parent = null; limit 5;`,
-  );
-  const game = Array.isArray(games)
-    ? games
-        .map(metaRecord)
-        .find(
-          (item) =>
-            typeof item.name === 'string' &&
-            normalizedMetaTitle(item.name) === normalizedMetaTitle(title) &&
-            typeof item.id === 'number' &&
-            Number.isSafeInteger(item.id) &&
-            item.id > 0,
-        )
-    : null;
-  if (!game) return null;
-  const times = await igdb(
-    'game_time_to_beats',
-    `fields game_id,hastily,normally,completely; where game_id = ${game.id}; limit 1;`,
-  );
+  let gameId: number | null =
+    typeof igdbId === 'number' && Number.isSafeInteger(igdbId) && igdbId > 0 ? igdbId : null;
+  if (!gameId) {
+    const games = await igdb(
+      'games',
+      `search ${JSON.stringify(title)}; fields id,name; where version_parent = null; limit 5;`,
+    );
+    const game = Array.isArray(games)
+      ? games
+          .map(metaRecord)
+          .find(
+            (item) =>
+              typeof item.name === 'string' &&
+              normalizedMetaTitle(item.name) === normalizedMetaTitle(title) &&
+              typeof item.id === 'number' &&
+              Number.isSafeInteger(item.id) &&
+              item.id > 0,
+          )
+      : null;
+    if (!game) return null;
+    gameId = Number(game.id);
+  }
+  let times: unknown;
+  try {
+    times = await igdb('game_time_to_beats', `fields *; where game = ${gameId}; limit 1;`);
+  } catch {
+    times = await igdb(
+      'game_time_to_beats',
+      `fields game_id,hastily,normally,completely; where game_id = ${gameId}; limit 1;`,
+    );
+  }
   const row = Array.isArray(times)
-    ? times.find((item) => metaRecord(item).game_id === game.id)
+    ? (times.find(
+        (item) =>
+          metaRecord(item).game === gameId ||
+          metaRecord(item).game_id === gameId ||
+          metaRecord(item).id === gameId,
+      ) ?? times[0])
     : null;
   return mapIgdbDuration(row);
 }
@@ -156,12 +180,12 @@ async function speedrun(title: string): Promise<SpeedrunRecord | null> {
   return result;
 }
 export const fetchGameMeta = unstable_cache(
-  async (title: string): Promise<GameMetaReport> => {
+  async (title: string, igdbId?: number | null): Promise<GameMetaReport> => {
     const empty: GameMetaReport = { duration: null, proton: null, speedrun: null };
     const clean = typeof title === 'string' ? title.trim().replace(/[\r\n\t]+/g, ' ') : '';
     if (!clean || clean.length > 200 || !normalizedMetaTitle(clean)) return empty;
     const [time, compatibility, record] = await Promise.allSettled([
-      duration(clean),
+      duration(clean, igdbId),
       proton(clean),
       speedrun(clean),
     ]);
