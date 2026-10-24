@@ -56,7 +56,9 @@ export function GameScreenshotsModal({
       }}
       onKeyDown={(event) => {
         if (event.key === 'Tab') {
-          const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('button:not([disabled]), a[href]'));
+          const controls = Array.from(
+            event.currentTarget.querySelectorAll<HTMLElement>('button:not([disabled]), a[href]'),
+          );
           const first = controls[0];
           const last = controls.at(-1);
           if (event.shiftKey && document.activeElement === first && last) {

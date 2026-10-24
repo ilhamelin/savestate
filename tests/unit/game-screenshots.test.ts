@@ -212,10 +212,7 @@ test('modal wraps arrow navigation, selects thumbnails, closes once on Escape an
   }
   const body = { style: { overflow: 'auto' } };
   const doc = { activeElement: new FocusTarget(), body };
-  const restore = [
-    replaceGlobal('document', doc),
-    replaceGlobal('HTMLElement', FocusTarget),
-  ];
+  const restore = [replaceGlobal('document', doc), replaceGlobal('HTMLElement', FocusTarget)];
   try {
     const render = (value: Game | null = game) => {
       runtime.begin();
@@ -261,12 +258,18 @@ test('modal wraps arrow navigation, selects thumbnails, closes once on Escape an
     assert.equal(body.style.overflow, 'auto');
     assert.equal(focused, 1);
     assert.equal(modalClosed, 1);
-    const first = new FocusTarget(), last = new FocusTarget();
+    const first = new FocusTarget(),
+      last = new FocusTarget();
     let prevented = 0;
-    const tab = (shiftKey: boolean) => (view!.props.onKeyDown as (e: unknown) => void)({
-      key: 'Tab', shiftKey, currentTarget: { querySelectorAll: () => [first, last] },
-      preventDefault() { prevented++; },
-    });
+    const tab = (shiftKey: boolean) =>
+      (view!.props.onKeyDown as (e: unknown) => void)({
+        key: 'Tab',
+        shiftKey,
+        currentTarget: { querySelectorAll: () => [first, last] },
+        preventDefault() {
+          prevented++;
+        },
+      });
     doc.activeElement = last;
     tab(false);
     doc.activeElement = first;
