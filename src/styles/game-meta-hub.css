@@ -15,9 +15,18 @@
   gap: 0.75rem;
   margin-bottom: 1.25rem;
 }
-.game-meta-header .eyebrow { color: #67e8f9; font-size: 0.68rem; }
-.game-meta-header h2 { font-size: clamp(1.1rem, 2.5vw, 1.5rem); }
-.game-meta-cache { color: #94a3b8; font-size: 0.65rem; letter-spacing: 0.06em; }
+.game-meta-header .eyebrow {
+  color: #67e8f9;
+  font-size: 0.68rem;
+}
+.game-meta-header h2 {
+  font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+}
+.game-meta-cache {
+  color: #94a3b8;
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+}
 .game-meta-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
@@ -32,18 +41,66 @@
   border-radius: 8px;
   background: #060c16b8;
 }
-.game-meta-card h3 { margin: 0.5rem 0 1rem; font-size: 0.95rem; overflow-wrap: anywhere; }
-.game-meta-eyebrow { color: #94a3b8; font-size: 0.67rem; letter-spacing: 0.04em; }
-.game-meta-card .muted { margin-top: 0.85rem; font-size: 0.72rem; line-height: 1.6; }
-.game-meta-link { display: inline-block; margin-top: auto; padding-top: 0.85rem; color: #67e8f9; font-size: 0.75rem; }
-.game-meta-link:hover { text-decoration: underline; }
-.game-meta-duration dl { display: grid; gap: 0.8rem; }
-.game-meta-duration-row > div:first-child { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.75rem; }
-.game-meta-duration dd { color: #f1f5f9; font-weight: bold; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.game-meta-duration-track { height: 5px; margin-top: 6px; background: #1e293b; overflow: hidden; border-radius: 8px; }
-.game-meta-duration-track span { display: block; height: 100%; background: #34d399; border-radius: inherit; }
-.game-meta-duration-row[data-duration='extras'] span { background: #22d3ee; }
-.game-meta-duration-row[data-duration='complete'] span { background: #a78bfa; }
+.game-meta-card h3 {
+  margin: 0.5rem 0 1rem;
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+.game-meta-eyebrow {
+  color: #94a3b8;
+  font-size: 0.67rem;
+  letter-spacing: 0.04em;
+}
+.game-meta-card .muted {
+  margin-top: 0.85rem;
+  font-size: 0.72rem;
+  line-height: 1.6;
+}
+.game-meta-link {
+  display: inline-block;
+  margin-top: auto;
+  padding-top: 0.85rem;
+  color: #67e8f9;
+  font-size: 0.75rem;
+}
+.game-meta-link:hover {
+  text-decoration: underline;
+}
+.game-meta-duration dl {
+  display: grid;
+  gap: 0.8rem;
+}
+.game-meta-duration-row > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+}
+.game-meta-duration dd {
+  color: #f1f5f9;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.game-meta-duration-track {
+  height: 5px;
+  margin-top: 6px;
+  background: #1e293b;
+  overflow: hidden;
+  border-radius: 8px;
+}
+.game-meta-duration-track span {
+  display: block;
+  height: 100%;
+  background: #34d399;
+  border-radius: inherit;
+}
+.game-meta-duration-row[data-duration='extras'] span {
+  background: #22d3ee;
+}
+.game-meta-duration-row[data-duration='complete'] span {
+  background: #a78bfa;
+}
 .game-meta-tier {
   align-self: flex-start;
   padding: 0.55rem 0.85rem;
@@ -54,21 +111,79 @@
   letter-spacing: 0.09em;
   box-shadow: 0 0 18px #94a3b811;
 }
-.game-meta-tier[data-tier='platinum'] { color: #67e8f9; box-shadow: 0 0 18px #67e8f924; }
-.game-meta-tier[data-tier='gold'] { color: #f59e0b; box-shadow: 0 0 18px #f59e0b24; }
-.game-meta-tier[data-tier='silver'] { color: #94a3b8; }
-.game-meta-tier[data-tier='bronze'] { color: #d99b6b; }
-.game-meta-tier[data-tier='borked'] { color: #fb7185; }
-.game-meta-deck { align-self: flex-start; margin-top: 0.85rem; padding: 3px 7px; border: 1px solid #34d39955; border-radius: 5px; color: #6ee7b7; background: #34d3990a; font-size: 0.7rem; }
-.game-meta-reports { margin-top: 0.65rem; color: #cbd5e1; font-size: 0.8rem; }
-.game-meta-speedrun .game-meta-eyebrow { color: #fbbf24; }
-.game-meta-record { color: #fde68a; font: bold clamp(1.7rem, 3vw, 2.25rem) var(--font-mono), monospace; font-variant-numeric: tabular-nums; text-shadow: 0 0 20px #f59e0b24; }
-.game-meta-runner { margin-top: 0.5rem; overflow-wrap: anywhere; font-size: 0.8rem; }
-.game-meta-speedrun time { color: #94a3b8; font-size: 0.7rem; margin-top: 0.35rem; }
-.game-meta-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; margin-top: auto; padding-top: 1rem; }
-.game-meta-actions .game-meta-link { padding-top: 0.5rem; }
+.game-meta-tier[data-tier='platinum'] {
+  color: #67e8f9;
+  box-shadow: 0 0 18px #67e8f924;
+}
+.game-meta-tier[data-tier='gold'] {
+  color: #f59e0b;
+  box-shadow: 0 0 18px #f59e0b24;
+}
+.game-meta-tier[data-tier='silver'] {
+  color: #94a3b8;
+}
+.game-meta-tier[data-tier='bronze'] {
+  color: #d99b6b;
+}
+.game-meta-tier[data-tier='borked'] {
+  color: #fb7185;
+}
+.game-meta-deck {
+  align-self: flex-start;
+  margin-top: 0.85rem;
+  padding: 3px 7px;
+  border: 1px solid #34d39955;
+  border-radius: 5px;
+  color: #6ee7b7;
+  background: #34d3990a;
+  font-size: 0.7rem;
+}
+.game-meta-reports {
+  margin-top: 0.65rem;
+  color: #cbd5e1;
+  font-size: 0.8rem;
+}
+.game-meta-speedrun .game-meta-eyebrow {
+  color: #fbbf24;
+}
+.game-meta-record {
+  color: #fde68a;
+  font:
+    bold clamp(1.7rem, 3vw, 2.25rem) var(--font-mono),
+    monospace;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 20px #f59e0b24;
+}
+.game-meta-runner {
+  margin-top: 0.5rem;
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+}
+.game-meta-speedrun time {
+  color: #94a3b8;
+  font-size: 0.7rem;
+  margin-top: 0.35rem;
+}
+.game-meta-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  margin-top: auto;
+  padding-top: 1rem;
+}
+.game-meta-actions .game-meta-link {
+  padding-top: 0.5rem;
+}
 @media (max-width: 767px) {
-  .game-meta-grid { grid-template-columns: minmax(0, 1fr); }
-  .game-meta-card { padding: 1rem; }
-  .game-meta-header { align-items: flex-start; flex-direction: column; }
+  .game-meta-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .game-meta-card {
+    padding: 1rem;
+  }
+  .game-meta-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }

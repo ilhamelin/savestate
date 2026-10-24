@@ -187,7 +187,13 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
       >
         <GameLiveRadar title={game.title} />
       </Suspense>
-      <Suspense fallback={<section className="panel skeleton muted" aria-busy="true">Consultando duración, compatibilidad y récords…</section>}>
+      <Suspense
+        fallback={
+          <section className="panel skeleton muted" aria-busy="true">
+            Consultando duración, compatibilidad y récords…
+          </section>
+        }
+      >
         <GameMetaHub title={game.title} />
       </Suspense>
       <section className="panel">
