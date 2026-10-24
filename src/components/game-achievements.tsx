@@ -14,19 +14,22 @@ function AchievementCard({ item }: { item: GameAchievementItem }) {
   return (
     <div className={`achievement-card tier-${item.tier}`}>
       <div className="achievement-icon-wrapper">
+        <div className="achievement-icon-fallback" aria-hidden="true">
+          🏆
+        </div>
         {item.iconUrl ? (
           <img
             src={item.iconUrl}
-            alt={item.name}
+            alt=""
+            aria-hidden="true"
             className="achievement-img"
             loading="lazy"
             decoding="async"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
           />
-        ) : (
-          <div className="achievement-icon-fallback" aria-hidden="true">
-            🏆
-          </div>
-        )}
+        ) : null}
       </div>
 
       <div className="achievement-content">

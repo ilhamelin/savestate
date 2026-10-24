@@ -64,14 +64,7 @@ export function cleanText(input: unknown): string {
     .trim();
 }
 
-const ALLOWED_STEAM_IMG_HOSTS = [
-  'shared.fastly.steamstatic.com',
-  'shared.akamai.steamstatic.com',
-  'cdn.akamai.steamstatic.com',
-  'cdn.fastly.steamstatic.com',
-  'community.cloudflare.steamstatic.com',
-  'avatars.steamstatic.com',
-];
+const ALLOWED_STEAM_IMG_HOSTS = ['steamstatic.com', 'steamcdn-a.akamaihd.net', 'akamaihd.net'];
 
 export function sanitizeSteamImageUrl(url: unknown): string {
   if (typeof url !== 'string' || !url.trim()) return '';
