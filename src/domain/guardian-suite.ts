@@ -1,5 +1,7 @@
+import type { DefconLevel } from './threat-shield';
 import { object, text, ValidationError } from './validation.ts';
 export interface SystemSwitches {
+  defcon_level: DefconLevel;
   gatekeeper_enabled: boolean;
   registrations_open: boolean;
   double_xp: boolean;
@@ -12,6 +14,7 @@ export interface SystemBroadcast {
   created_at: string;
 }
 export const DEFAULT_SYSTEM_SWITCHES: SystemSwitches = {
+  defcon_level: 5,
   gatekeeper_enabled: false,
   registrations_open: true,
   double_xp: false,

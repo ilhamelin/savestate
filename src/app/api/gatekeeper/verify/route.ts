@@ -1,3 +1,5 @@
+import { refreshThreatShieldSnapshot, trustedThreatIp, threatQuarantineResponse, registerFailedAuthAttempt, claimSocAuthSlot } from '@/services/threat-shield-service';
+import { authenticatedAdmin } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { body, sameOrigin, errorResponse, AppError } from '@/lib/http';
 import { safeNext } from '@/domain/validation';
@@ -14,12 +16,25 @@ import { dbCheck } from '@/lib/http';
 export async function POST(request: Request) {
   try {
     sameOrigin(request);
+    const ip = trustedThreatIp(request);
+    const cachedBlock = threatQuarantineResponse(ip);
+    if (cachedBlock) return cachedBlock;
+    const policy = await refreshThreatShieldSnapshot();
+    const blocked = threatQuarantineResponse(ip);
+    if (blocked) return blocked;
+    if (process.env.VERCEL && !ip) throw new AppError('No se pudo identificar el origen de autenticación.', 503);
+    if (policy.level === 1) await authenticatedAdmin();
+    await claimSocAuthSlot(policy.level, ip);
     const input = await body(request, 2048);
     if (!input || typeof input !== 'object' || !('code' in input) || typeof input.code !== 'string')
       throw new AppError('Ingresa una clave de seis dígitos.', 400);
     const secret = configuredGateSecret();
     await claimGatekeeperAttempt(request, secret);
     if (!(await validGateCode(secret, input.code))) {
+      if (ip) {
+        const attempt = await registerFailedAuthAttempt(ip, 'Código TOTP incorrecto');
+        if (attempt.quarantined) return threatQuarantineResponse(ip)!;
+      }
       await auditGatekeeperFailure(request, secret);
       throw new AppError(
         'Clave incorrecta o caducada. Consulta la clave actual en la app móvil.',

@@ -128,6 +128,7 @@ export function gatekeeperExempt(path: string): boolean {
       '/guardian',
       '/guardian/',
       '/login',
+      '/api/auth/password',
       '/auth/callback',
       '/auth/confirm',
       '/manifest.webmanifest',
