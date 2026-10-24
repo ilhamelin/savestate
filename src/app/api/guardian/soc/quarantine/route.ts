@@ -10,5 +10,7 @@ export async function POST(request: Request) {
     const input = quarantineInput(await body(request, 2048));
     await changeQuarantine(input.ip, input.action, input.reason, admin.id);
     return Response.json({ success: true }, { headers: { 'Cache-Control': 'private, no-store' } });
-  } catch (error) { return errorResponse(error); }
+  } catch (error) {
+    return errorResponse(error);
+  }
 }

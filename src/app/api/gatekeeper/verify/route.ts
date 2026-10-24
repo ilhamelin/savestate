@@ -1,4 +1,10 @@
-import { refreshThreatShieldSnapshot, trustedThreatIp, threatQuarantineResponse, registerFailedAuthAttempt, claimSocAuthSlot } from '@/services/threat-shield-service';
+import {
+  refreshThreatShieldSnapshot,
+  trustedThreatIp,
+  threatQuarantineResponse,
+  registerFailedAuthAttempt,
+  claimSocAuthSlot,
+} from '@/services/threat-shield-service';
 import { authenticatedAdmin } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { body, sameOrigin, errorResponse, AppError } from '@/lib/http';
@@ -22,7 +28,8 @@ export async function POST(request: Request) {
     const policy = await refreshThreatShieldSnapshot();
     const blocked = threatQuarantineResponse(ip);
     if (blocked) return blocked;
-    if (process.env.VERCEL && !ip) throw new AppError('No se pudo identificar el origen de autenticación.', 503);
+    if (process.env.VERCEL && !ip)
+      throw new AppError('No se pudo identificar el origen de autenticación.', 503);
     if (policy.level === 1) await authenticatedAdmin();
     await claimSocAuthSlot(policy.level, ip);
     const input = await body(request, 2048);

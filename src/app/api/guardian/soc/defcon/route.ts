@@ -9,6 +9,11 @@ export async function POST(request: Request) {
     const admin = await authenticatedAdmin();
     const { level, reason } = defconInput(await body(request, 2048));
     await setDefconLevel(level, admin.id, reason);
-    return Response.json({ success: true, level }, { headers: { 'Cache-Control': 'private, no-store' } });
-  } catch (error) { return errorResponse(error); }
+    return Response.json(
+      { success: true, level },
+      { headers: { 'Cache-Control': 'private, no-store' } },
+    );
+  } catch (error) {
+    return errorResponse(error);
+  }
 }

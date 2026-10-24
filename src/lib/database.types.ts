@@ -151,8 +151,14 @@ export type Database = {
       guardian_soc_snapshot: { Args: Record<string, never>; Returns: unknown };
       guardian_soc_telemetry: { Args: Record<string, never>; Returns: unknown };
       guardian_soc_fail: { Args: { p_ip: string; p_reason: string }; Returns: unknown };
-      guardian_soc_defcon: { Args: { p_level: number; p_actor: string; p_reason: string }; Returns: boolean };
-      guardian_soc_quarantine: { Args: { p_ip: string; p_action: string; p_reason: string; p_actor: string }; Returns: boolean };
+      guardian_soc_defcon: {
+        Args: { p_level: number; p_actor: string; p_reason: string };
+        Returns: boolean;
+      };
+      guardian_soc_quarantine: {
+        Args: { p_ip: string; p_action: string; p_reason: string; p_actor: string };
+        Returns: boolean;
+      };
       claim_support_attempt: { Args: { p_key_hash: string; p_kind: string }; Returns: boolean };
       claim_support_ticket: {
         Args: { p_id: string };
