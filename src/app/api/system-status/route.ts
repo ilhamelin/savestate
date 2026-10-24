@@ -8,10 +8,14 @@ export async function GET(request?: Request) {
     healthOnly ? Promise.resolve(null) : getActiveSystemBroadcast(),
     getSystemHealthReport(false),
   ]);
-  return Response.json({
-    switches: switches.status === 'fulfilled' ? switches.value : null,
-    broadcast: broadcast.status === 'fulfilled' ? broadcast.value : null,
-    stateAvailable: switches.status === 'fulfilled' && broadcast.status === 'fulfilled' && !healthOnly,
-    health: health.status === 'fulfilled' ? health.value : null,
-  }, { headers: { 'Cache-Control': 'private, no-store' } });
+  return Response.json(
+    {
+      switches: switches.status === 'fulfilled' ? switches.value : null,
+      broadcast: broadcast.status === 'fulfilled' ? broadcast.value : null,
+      stateAvailable:
+        switches.status === 'fulfilled' && broadcast.status === 'fulfilled' && !healthOnly,
+      health: health.status === 'fulfilled' ? health.value : null,
+    },
+    { headers: { 'Cache-Control': 'private, no-store' } },
+  );
 }

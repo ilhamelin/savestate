@@ -8,8 +8,14 @@ export async function POST(request: Request) {
     sameOrigin(request);
     await authenticatedAdmin();
     // Per-runtime cooldown supplements shared in-flight deduplication. No cross-region guarantee.
-    if (Date.now() - lastProbe < 5000) throw new AppError('Espera 5 segundos antes de repetir la sonda.', 429);
+    if (Date.now() - lastProbe < 5000)
+      throw new AppError('Espera 5 segundos antes de repetir la sonda.', 429);
     lastProbe = Date.now();
-    return Response.json({ health: await getSystemHealthReport(true) }, { headers: { 'Cache-Control': 'private, no-store' } });
-  } catch (error) { return errorResponse(error); }
+    return Response.json(
+      { health: await getSystemHealthReport(true) },
+      { headers: { 'Cache-Control': 'private, no-store' } },
+    );
+  } catch (error) {
+    return errorResponse(error);
+  }
 }

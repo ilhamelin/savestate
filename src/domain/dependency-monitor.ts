@@ -1,4 +1,11 @@
-export const DEPENDENCY_SERVICE_IDS = ['supabase', 'steam', 'igdb', 'jira', 'discord', 'vercel'] as const;
+export const DEPENDENCY_SERVICE_IDS = [
+  'supabase',
+  'steam',
+  'igdb',
+  'jira',
+  'discord',
+  'vercel',
+] as const;
 export type DependencyServiceId = (typeof DEPENDENCY_SERVICE_IDS)[number];
 export type DependencyHealthStatus = 'operational' | 'degraded' | 'down' | 'maintenance';
 export interface DependencyHealthCheck {
@@ -46,15 +53,34 @@ export function computeOverallHealth(services: DependencyHealthCheck[]): Depende
   if (database?.status === 'maintenance' || services.length === 0) return 'maintenance';
   return services.some((service) => service.status !== 'operational') ? 'degraded' : 'operational';
 }
-export function dependencyIncident(report: SystemHealthReport | null, service?: DependencyServiceId) {
-  return report?.services.find((item) => (!service || item.id === service) && item.status !== 'operational') ?? null;
+export function dependencyIncident(
+  report: SystemHealthReport | null,
+  service?: DependencyServiceId,
+) {
+  return (
+    report?.services.find(
+      (item) => (!service || item.id === service) && item.status !== 'operational',
+    ) ?? null
+  );
 }
 /** Only explicit provider failures are eligible; generic browser errors remain actionable. */
-export function knownDependencyFailure(message: string, report: SystemHealthReport): DependencyServiceId | null {
+export function knownDependencyFailure(
+  message: string,
+  report: SystemHealthReport,
+): DependencyServiceId | null {
   const providers: [DependencyServiceId, RegExp][] = [
-    ['steam', /\b(?:steam|steampowered)\b/i], ['igdb', /\b(?:igdb|twitch)\b/i],
-    ['discord', /\bdiscord\b/i], ['jira', /\b(?:jira|portal de soporte)\b/i],
+    ['steam', /\b(?:steam|steampowered)\b/i],
+    ['igdb', /\b(?:igdb|twitch)\b/i],
+    ['discord', /\bdiscord\b/i],
+    ['jira', /\b(?:jira|portal de soporte)\b/i],
   ];
-  if (!/timeout|timed out|unavailable|no disponible|502|503|504|ECONNRESET/i.test(message)) return null;
-  return providers.find(([id, pattern]) => pattern.test(message) && report.services.some((item) => item.id === id && item.status === 'down'))?.[0] ?? null;
+  if (!/timeout|timed out|unavailable|no disponible|502|503|504|ECONNRESET/i.test(message))
+    return null;
+  return (
+    providers.find(
+      ([id, pattern]) =>
+        pattern.test(message) &&
+        report.services.some((item) => item.id === id && item.status === 'down'),
+    )?.[0] ?? null
+  );
 }

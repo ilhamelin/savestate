@@ -48,7 +48,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const publicStatus = pathname === '/status';
   const userPromise = publicStatus ? Promise.resolve(null) : currentUser();
   const standalone =
-    publicStatus || pathname === '/gatekeeper' || pathname === '/guardian' || pathname.startsWith('/guardian/');
+    publicStatus ||
+    pathname === '/gatekeeper' ||
+    pathname === '/guardian' ||
+    pathname.startsWith('/guardian/');
   const switches = standalone ? null : await getSystemSwitches().catch(() => null);
   const user = await userPromise;
   const seasonalTheme = effectiveSeasonalTheme(switches?.seasonal_theme);
