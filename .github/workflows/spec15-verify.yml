@@ -32,3 +32,13 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=1536
       - run: npm run format:check
       - run: npm run build
+      - name: Install isolated browser tooling
+        run: npm install --prefix "$RUNNER_TEMP/spec15-tools" --no-save --package-lock=false playwright
+      - name: Verify Explore in Chromium desktop and mobile
+        run: |
+          npm run start > "$RUNNER_TEMP/spec15-next.log" 2>&1 &
+          for attempt in $(seq 1 40); do
+            if curl -fsS http://localhost:3000/explore > /dev/null; then break; fi
+            sleep 1
+          done
+          node .github/spec15-browser.mjs
