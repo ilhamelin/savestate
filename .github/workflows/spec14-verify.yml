@@ -1,0 +1,22 @@
+name: SPEC-14 verification
+on:
+  push:
+    branches: [feature/la-taberna-community-fusion]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/la-taberna-community-fusion
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Read installed Next routing guides
+        run: |
+          find node_modules/next/dist/docs/01-app -name '*redirect*' -type f -print -exec cat {} \;
+          cat node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/page.md

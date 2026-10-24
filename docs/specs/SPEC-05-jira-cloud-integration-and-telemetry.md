@@ -149,7 +149,14 @@ export const DEFAULT_JIRA_CONFIG: JiraLinkConfig = {
        timestamp: new Date().toISOString(),
      };
      navigator.sendBeacon?.('/api/telemetry/errors', JSON.stringify(payload)) ||
-       fetch('/api/telemetry/errors', {\n         method: 'POST',\n         headers: { 'Content-Type': 'application/json' },\n         body: JSON.stringify(payload),\n         keepalive: true,\n       }).catch(() => {});\n   }\n   ```
+       fetch('/api/telemetry/errors', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify(payload),
+         keepalive: true,
+       }).catch(() => {});
+   }
+   ```
 2. La ruta `/api/telemetry/errors` mantiene un ring-buffer en memoria (máximo 50 eventos) desduplicados por hash para evitar saturación de logs.
 
 ---

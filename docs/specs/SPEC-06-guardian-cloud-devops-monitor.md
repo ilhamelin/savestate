@@ -134,7 +134,7 @@ export interface CloudObserverFeed {
    * Si no hay token o la petición responde con error (`401`, `403`, `500`), capturar silenciosamente y devolver `{ configured: false, latestProduction: null, recentDeployments: [] }`.
 3. **Consulta a la API de GitHub:**
    * Repositorio canónico: `ilhamelin/savestate`.
-   * Headers: `Accept: application/vnd.github.v3+json`, `User-Agent: SaveState-Guardian``.
+   * Headers: `Accept: application/vnd.github.v3+json`, `User-Agent: SaveState-Guardian`.
    * Si `process.env.GITHUB_TOKEN` está configurado, añadir `Authorization: Bearer ${GITHUB_TOKEN}` (aumenta el límite de 60 req/h a 5.000 req/h). Si no está configurado, consultar en modo público de solo lectura.
    * Consultas concurrentes vía `Promise.allSettled`:
      * Commits en `main`: `/repos/ilhamelin/savestate/commits?sha=main&per_page=4`
