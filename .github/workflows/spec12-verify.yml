@@ -7,6 +7,16 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: fixture-only-soc
+          POSTGRES_DB: soc_test
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGPASSWORD: fixture-only-soc
     steps:
       - uses: actions/checkout@v4
         with:
@@ -20,3 +30,9 @@ jobs:
         run: |
           cat node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/proxy.md
           cat node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/route.md
+      - name: Verify migration in disposable PostgreSQL
+        run: |
+          psql -h 127.0.0.1 -U postgres -d soc_test -v ON_ERROR_STOP=1 -f tests/fixtures/guardian-soc-schema.sql
+          psql -h 127.0.0.1 -U postgres -d soc_test -v ON_ERROR_STOP=1 -f supabase/migrations/202610240041_guardian_soc.sql
+          psql -h 127.0.0.1 -U postgres -d soc_test -v ON_ERROR_STOP=1 -f supabase/migrations/202610240041_guardian_soc.sql
+          psql -h 127.0.0.1 -U postgres -d soc_test -v ON_ERROR_STOP=1 -f tests/integration/guardian-soc.sql
