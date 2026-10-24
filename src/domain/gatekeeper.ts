@@ -121,6 +121,8 @@ export function gatekeeperExempt(path: string): boolean {
   // These machine endpoints already authenticate Discord signatures or CRON_SECRET.
   return (
     [
+      '/status',
+      '/api/system-status',
       '/gatekeeper',
       '/api/gatekeeper/verify',
       '/guardian',

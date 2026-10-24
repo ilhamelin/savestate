@@ -53,7 +53,9 @@ test('Sitemap contains the 14 requested routes with priorities and a matching ro
 test('SEO endpoints are public without exempting content or operator mutations', () => {
   assert.equal(gatekeeperExempt('/sitemap.xml'), true);
   assert.equal(gatekeeperExempt('/robots.txt'), true);
-  for (const path of ['/', '/settings', '/api/system-status', '/sitemap.xml/other']) {
+  assert.equal(gatekeeperExempt('/status'), true);
+  assert.equal(gatekeeperExempt('/api/system-status'), true);
+  for (const path of ['/', '/settings', '/status/private', '/sitemap.xml/other']) {
     assert.equal(gatekeeperExempt(path), false);
   }
 });
