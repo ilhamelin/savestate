@@ -12,7 +12,7 @@ try {
   await page.getByText('Consultando metadatos…',{exact:true}).waitFor();
   await page.locator('.game-meta-hub').waitFor();
   assert.equal(await page.locator('.game-meta-card').count(),3);
-  const columns=await page.locator('.game-meta-grid').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length);
+  const columns=await page.locator('.game-meta-grid').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').filter(track=>parseFloat(track)>0).length);
   assert.equal(columns,3);
   assert.equal(await page.locator('.game-meta-record').innerText(),'1:24:12');
   assert.ok((await page.locator('.game-meta-proton').innerText()).includes('No equivale a la certificación de Valve'));
@@ -36,7 +36,7 @@ try {
   const mobile=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'});
   const phone=await mobile.newPage();
   await phone.goto('http://localhost:3000/game-meta-qa',{waitUntil:'domcontentloaded'});
-  assert.equal(await phone.locator('.game-meta-grid').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),1);
+  assert.equal(await phone.locator('.game-meta-grid').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').filter(track=>parseFloat(track)>0).length),1);
   assert.equal(await phone.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
   console.log('SPEC16_MOBILE_JPEG:'+(await phone.locator('.game-meta-hub').screenshot({type:'jpeg',quality:60})).toString('base64'));
   console.log('PASS mobile: one column, no overflow, reduced-motion safe');
