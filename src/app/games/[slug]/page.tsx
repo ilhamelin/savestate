@@ -1,5 +1,6 @@
 import { GameMetaHub } from '@/components/game-meta-hub';
 import { GameCriticAndSpecsHub } from '@/components/game-critic-and-specs';
+import { GameAchievementsHub } from '@/components/game-achievements';
 import { cache, Suspense } from 'react';
 import { GameLiveRadar } from '@/components/game-live-radar';
 import { GameForum } from '@/components/game-forum';
@@ -205,6 +206,15 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
         }
       >
         <GameCriticAndSpecsHub title={game.title} igdbId={game.igdb_id} />
+      </Suspense>
+      <Suspense
+        fallback={
+          <section className="panel skeleton muted" aria-busy="true">
+            Consultando salón de trofeos y logros de Steam…
+          </section>
+        }
+      >
+        <GameAchievementsHub title={game.title} />
       </Suspense>
       <section className="panel">
         <h2>Estadísticas públicas</h2>

@@ -293,7 +293,9 @@ test('Status API survives database failures; manual probe requires admin and sam
         method: 'POST',
         headers: { Origin: 'http://localhost:3000' },
       });
-    const publicResponse = await status.GET();
+    const publicResponse = await status.GET(
+      new Request('http://localhost:3000/api/system-status'),
+    );
     assert.equal(publicResponse.status, 200);
     assert.match(publicResponse.headers.get('Cache-Control')!, /no-store/);
     const publicData = await publicResponse.json();

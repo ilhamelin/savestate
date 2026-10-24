@@ -1,7 +1,7 @@
 import { getSystemSwitches, getActiveSystemBroadcast } from '@/services/system-state';
 import { getSystemHealthReport } from '@/services/dependency-monitor-service';
 export const runtime = 'nodejs';
-export async function GET(request?: Request) {
+export async function GET(request: Request) {
   const healthOnly = request && new URL(request.url).searchParams.get('healthOnly') === '1';
   const [switches, broadcast, health] = await Promise.allSettled([
     healthOnly ? Promise.resolve(null) : getSystemSwitches(),

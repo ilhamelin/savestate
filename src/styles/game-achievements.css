@@ -1,0 +1,363 @@
+/* ==========================================================================
+   Salón de Trofeos y Logros de Steam (SPEC-18)
+   ========================================================================== */
+
+.achievements-hub-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.achievements-hub-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+.achievements-hub-header h2 {
+  margin: 0.25rem 0 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.achievements-community-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent, #60a5fa);
+  background: rgba(96, 165, 250, 0.08);
+  border: 1px solid rgba(96, 165, 250, 0.25);
+  border-radius: 9999px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.achievements-community-link:hover {
+  background: rgba(96, 165, 250, 0.16);
+  border-color: rgba(96, 165, 250, 0.45);
+  transform: translateY(-1px);
+}
+
+/* --------------------------------------------------------------------------
+   Resumen Estadístico de Rareza
+   -------------------------------------------------------------------------- */
+.achievements-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+}
+
+.achievement-stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 0.5rem;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  backdrop-filter: blur(8px);
+  text-align: center;
+  transition: border-color 0.2s ease;
+}
+
+.achievement-stat-card:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.stat-card-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-card-label {
+  margin-top: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted, #94a3b8);
+}
+
+.stat-platino .stat-card-value {
+  color: #5eead4;
+  text-shadow: 0 0 10px rgba(94, 234, 212, 0.4);
+}
+.stat-oro .stat-card-value {
+  color: #fbbf24;
+  text-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+}
+.stat-plata .stat-card-value {
+  color: #cbd5e1;
+}
+.stat-bronce .stat-card-value {
+  color: #f97316;
+}
+
+/* --------------------------------------------------------------------------
+   Rejilla de Logros y Tarjetas
+   -------------------------------------------------------------------------- */
+.achievements-list-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 0.85rem;
+}
+
+.achievement-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.85rem;
+  background: rgba(18, 22, 34, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.achievement-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Auras de rareza */
+.achievement-card.tier-platino {
+  border-color: rgba(94, 234, 212, 0.35);
+  box-shadow: inset 0 0 16px rgba(94, 234, 212, 0.06);
+}
+.achievement-card.tier-platino:hover {
+  border-color: rgba(94, 234, 212, 0.65);
+  box-shadow: 0 4px 20px rgba(94, 234, 212, 0.15);
+}
+
+.achievement-card.tier-oro {
+  border-color: rgba(251, 191, 36, 0.35);
+  box-shadow: inset 0 0 16px rgba(251, 191, 36, 0.06);
+}
+.achievement-card.tier-oro:hover {
+  border-color: rgba(251, 191, 36, 0.65);
+  box-shadow: 0 4px 20px rgba(251, 191, 36, 0.15);
+}
+
+.achievement-card.tier-plata {
+  border-color: rgba(203, 213, 225, 0.25);
+}
+.achievement-card.tier-plata:hover {
+  border-color: rgba(203, 213, 225, 0.5);
+  box-shadow: 0 4px 16px rgba(203, 213, 225, 0.1);
+}
+
+.achievement-card.tier-bronce {
+  border-color: rgba(249, 115, 22, 0.25);
+}
+.achievement-card.tier-bronce:hover {
+  border-color: rgba(249, 115, 22, 0.45);
+  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.1);
+}
+
+/* Icono del logro */
+.achievement-icon-wrapper {
+  position: relative;
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.achievement-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.achievement-icon-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Contenido del logro */
+.achievement-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.achievement-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.achievement-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--foreground, #f8fafc);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.achievement-badge {
+  flex-shrink: 0;
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.badge-platino {
+  background: rgba(94, 234, 212, 0.15);
+  color: #5eead4;
+  border: 1px solid rgba(94, 234, 212, 0.4);
+}
+.badge-oro {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+}
+.badge-plata {
+  background: rgba(203, 213, 225, 0.15);
+  color: #cbd5e1;
+  border: 1px solid rgba(203, 213, 225, 0.3);
+}
+.badge-bronce {
+  background: rgba(249, 115, 22, 0.15);
+  color: #f97316;
+  border: 1px solid rgba(249, 115, 22, 0.3);
+}
+
+.achievement-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--muted, #94a3b8);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.achievement-secret-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  opacity: 0.7;
+}
+
+/* Barra de progreso de rareza */
+.achievement-bar-bg {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  margin-top: 0.35rem;
+  overflow: hidden;
+}
+
+.achievement-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+.bar-platino {
+  background: linear-gradient(90deg, #2dd4bf, #5eead4);
+}
+.bar-oro {
+  background: linear-gradient(90deg, #d97706, #fbbf24);
+}
+.bar-plata {
+  background: linear-gradient(90deg, #64748b, #cbd5e1);
+}
+.bar-bronce {
+  background: linear-gradient(90deg, #ea580c, #f97316);
+}
+
+/* --------------------------------------------------------------------------
+   Expansión Progresiva con <details> y <summary>
+   -------------------------------------------------------------------------- */
+.achievements-disclosure {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.achievements-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--foreground, #f8fafc);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 0.65rem;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  list-style: none;
+}
+
+.achievements-toggle-btn::-webkit-details-marker {
+  display: none;
+}
+
+.achievements-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.achievements-disclosure[open] .achievements-toggle-btn {
+  margin-bottom: 0.85rem;
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+@media (max-width: 640px) {
+  .achievements-list-grid {
+    grid-template-columns: 1fr;
+  }
+  .achievements-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
