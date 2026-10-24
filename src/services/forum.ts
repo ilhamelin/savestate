@@ -268,7 +268,7 @@ export async function forumMutation(input: unknown) {
       .select('id,category_id')
       .single();
     dbCheck(result.error);
-    revalidatePath('/forum');
+    revalidatePath('/tavern');
     revalidateTag('forum-directory', { expire: 0 });
     if (process.env.DISCORD_WEBHOOK_URL) {
       const profile = await db.from('profiles').select('username').eq('id', user.id).maybeSingle();
@@ -292,7 +292,7 @@ export async function forumMutation(input: unknown) {
       .select('id')
       .single();
     dbCheck(result.error);
-    revalidatePath('/forum');
+    revalidatePath('/tavern');
     revalidateTag('forum-directory', { expire: 0 });
     return result.data;
   }
@@ -337,7 +337,7 @@ export async function forumMutation(input: unknown) {
         .select('id')
         .single();
     dbCheck(result.error);
-    revalidatePath('/forum');
+    revalidatePath('/tavern');
     revalidatePath('/forum/' + parent.data.category_id);
     revalidatePath('/forum/' + parent.data.category_id + '/' + reply.data.thread_id);
     revalidateTag('forum-directory', { expire: 0 });

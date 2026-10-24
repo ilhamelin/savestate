@@ -1,0 +1,23 @@
+name: SPEC-15 verification
+on:
+  push:
+    branches: [feature/game-screenshots-peek-lightbox]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/game-screenshots-peek-lightbox
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Read installed Next image and client component guides
+        run: |
+          cat node_modules/next/dist/docs/01-app/03-api-reference/02-components/image.md
+          cat node_modules/next/dist/docs/01-app/03-api-reference/01-directives/use-client.md
+          git grep -n -E 'mapIgdbGame|fetchGameDetail|upsert\(' -- src/integrations/igdb src/services src/components/game-card.tsx

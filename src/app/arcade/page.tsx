@@ -1,4 +1,5 @@
 import { permanentRedirect } from 'next/navigation';
-export default function ArcadePage() {
-  permanentRedirect('/forum?tab=arcade');
+import { legacyTavernHref, type TavernPageProps } from '@/domain/tavern';
+export default async function LegacyPage({ searchParams }: TavernPageProps) {
+  permanentRedirect(legacyTavernHref(await searchParams, 'arcade'));
 }

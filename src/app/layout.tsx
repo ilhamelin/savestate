@@ -99,12 +99,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                   <Link href="/hoyo">HoYo Hub</Link>
                   <Link href="/library">Biblioteca</Link>
                   <Link href="/lists">Listas</Link>
-                  <Link href="/highlights">Momentos</Link>
                 </nav>
                 <nav aria-label="Comunidad desde el pie de página">
                   <h2>Comunidad</h2>
                   <Link href="/feed">Transmisión</Link>
-                  <Link href="/forum">Foro</Link>
+                  <Link href="/tavern">La Taberna</Link>
                   <Link href="/chat">Chat Global</Link>
                   <Link href="/players">Jugadores</Link>
                 </nav>

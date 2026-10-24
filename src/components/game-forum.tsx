@@ -23,7 +23,7 @@ export async function GameForum({ gameId }: { gameId: string }) {
           {moments.posts.map((post) => (
             <article key={post.id}>
               <h3>
-                <Link href={`/highlights?post=${post.id}`}>{post.title}</Link>
+                <Link href={`/tavern?tab=momentos&post=${post.id}`}>{post.title}</Link>
               </h3>
               <p className="muted">
                 Por{' '}
@@ -35,7 +35,7 @@ export async function GameForum({ gameId }: { gameId: string }) {
                 title={post.title}
                 unavailable={post.mediaUnavailable}
               />
-              <Link className="accent" href={`/highlights?post=${post.id}`}>
+              <Link className="accent" href={`/tavern?tab=momentos&post=${post.id}`}>
                 Ver momento y comentarios ↗
               </Link>
             </article>
@@ -44,7 +44,7 @@ export async function GameForum({ gameId }: { gameId: string }) {
         {!moments.posts.length ? (
           <p className="muted">Todavía no hay momentos visibles de este juego.</p>
         ) : null}
-        <Link className="button outline small" href={`/highlights?game=${gameId}`}>
+        <Link className="button outline small" href={`/tavern?tab=momentos&game=${gameId}`}>
           Ver todos los momentos ↗
         </Link>
       </section>
