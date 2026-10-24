@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { gateCodeFromKey, gateSecretBytes } from '@/domain/gatekeeper';
 import { loadGuardianKey, saveGuardianKey, removeGuardianKey } from '@/lib/guardian-device';
+import { GuardianSocPanel } from './guardian-soc-panel';
 import { GuardianStatusPanel } from './guardian-status-panel';
 import { GuardianCloudPanel } from './guardian-cloud-panel';
 import { GuardianJiraPanel } from './guardian-jira-panel';
@@ -19,7 +20,7 @@ interface GuardianPlayer {
 export function GuardianConsole({ username, adminId }: { username: string; adminId: string }) {
   const [managed, setManaged] = useState<GuardianPlayer | null>(null);
   const [tab, setTab] = useState<
-    'token' | 'players' | 'alert' | 'switches' | 'hud' | 'jira' | 'cloud' | 'status'
+    'token' | 'players' | 'alert' | 'switches' | 'hud' | 'jira' | 'cloud' | 'status' | 'soc'
   >('token');
   const [online, setOnline] = useState(true);
   const [key, setKey] = useState<CryptoKey | null>(null),
@@ -160,6 +161,7 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
               jira: 'Jira / Tickets',
               cloud: 'Cloud / CI',
               status: 'Uptime y dependencias',
+              soc: 'SOC Shield',
             }[tab]
           }
         </h1>
@@ -342,6 +344,8 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
           </section>
         ) : tab === 'alert' ? (
           <GuardianAlertPanel />
+        ) : tab === 'soc' ? (
+          <GuardianSocPanel />
         ) : tab === 'status' ? (
           <GuardianStatusPanel />
         ) : tab === 'cloud' ? (
@@ -370,6 +374,7 @@ export function GuardianConsole({ username, adminId }: { username: string; admin
             ['jira', '🎫', 'Jira / Tickets'],
             ['cloud', '☁️', 'Cloud / CI'],
             ['status', '🌐', 'Uptime'],
+            ['soc', '🛡️', 'SOC Shield'],
           ] as const
         ).map(([id, icon, label]) => (
           <button

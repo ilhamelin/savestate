@@ -9,6 +9,11 @@ import { gateCode, createGatePass } from '../../src/domain/gatekeeper.ts';
 test('Guardian routes enforce verified admin, same origin, distributed limits and gate pass before page/API access', async () => {
   const fixture = `data:text/javascript,${encodeURIComponent(`
     export const state={user:null,profile:null,allowed:true,rateCalls:0,queries:[],audits:[],claimsEmail:'benjaigancioreyes56@gmail.com'};
+    export const trustedThreatIp=()=>null;
+    export const threatQuarantineResponse=()=>null;
+    export const refreshThreatShieldSnapshot=async()=>({level:5});
+    export const claimSocAuthSlot=async()=>{};
+    export const registerFailedAuthAttempt=async()=>({quarantined:false});
     export const cache=fn=>fn;
     export const isConfigured=()=>true;
     export const publicEnv=()=>({url:'https://example.supabase.co',key:'anon-test'});
@@ -29,6 +34,7 @@ test('Guardian routes enforce verified admin, same origin, distributed limits an
           '@supabase/supabase-js',
           '@supabase/ssr',
           '@/services/system-state',
+          '@/services/threat-shield-service',
         ].includes(specifier)
       )
         return { url: fixture, shortCircuit: true };

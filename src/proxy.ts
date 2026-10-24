@@ -1,11 +1,18 @@
+import { socQuarantineExempt, socRecoveryPath, socRestriction } from '@/domain/threat-shield';
+import {
+  trustedThreatIp,
+  threatQuarantineResponse,
+  refreshThreatShieldSnapshot,
+} from '@/services/threat-shield-service';
+import { isGuardianAdmin } from '@/domain/admin-access';
 import { VAULT_PUBLIC_ORIGIN } from '@/domain/vault';
 import { createServerClient } from '@supabase/ssr';
-import { NextResponse, type NextRequest } from 'next/server';
+import { NextResponse, type NextRequest, type NextFetchEvent } from 'next/server';
 import { isConfigured, publicEnv } from '@/lib/env';
 import type { Database } from '@/lib/database.types';
 import { GATE_COOKIE, gatekeeperExempt, validGatePass } from '@/domain/gatekeeper';
 import { getSystemSwitches } from '@/services/system-state';
-function securityHeaders(response: NextResponse, csp: string) {
+function securityHeaders<T extends Response>(response: T, csp: string) {
   response.headers.set('Content-Security-Policy', csp);
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
@@ -13,7 +20,17 @@ function securityHeaders(response: NextResponse, csp: string) {
   return response;
 }
 
-export async function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest, event?: NextFetchEvent) {
+  const path = request.nextUrl.pathname;
+  const clientIp = trustedThreatIp(request);
+  if (!socQuarantineExempt(path)) {
+    const blocked = threatQuarantineResponse(clientIp);
+    if (blocked) {
+      // Do not await DB I/O on denial; refresh is bounded and propagates manual unblocks.
+      if (event) event.waitUntil(refreshThreatShieldSnapshot().catch(() => null));
+      return blocked;
+    }
+  }
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
   const dev = process.env.NODE_ENV !== 'production';
   const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -29,6 +46,90 @@ export async function proxy(request: NextRequest) {
   headers.set('x-nonce', nonce);
   headers.set('Content-Security-Policy', csp);
   let response = NextResponse.next({ request: { headers } });
+  if (!socRecoveryPath(path)) {
+    try {
+      const policy = await refreshThreatShieldSnapshot();
+      const blocked = threatQuarantineResponse(clientIp);
+      if (blocked) return securityHeaders(blocked, csp);
+      const restriction = socRestriction(policy.level, path, request.method);
+      if (restriction === 'readonly')
+        return securityHeaders(
+          NextResponse.json(
+            { error: 'DEFCON activo: SaveState está temporalmente en modo solo lectura.' },
+            { status: 503, headers: { 'Cache-Control': 'private, no-store', 'Retry-After': '30' } },
+          ),
+          csp,
+        );
+      if (restriction === 'verified' || restriction === 'operator') {
+        const { url, key } = publicEnv();
+        const auth = createServerClient<Database>(url, key, {
+          cookies: {
+            getAll: () => request.cookies.getAll(),
+            setAll(values) {
+              values.forEach(({ name, value }) => request.cookies.set(name, value));
+              response = NextResponse.next({ request: { headers } });
+              values.forEach(({ name, value, options }) =>
+                response.cookies.set(name, value, options),
+              );
+            },
+          },
+        });
+        const { data, error } = await auth.auth.getUser();
+        const user = data.user;
+        const operator =
+          !error &&
+          user &&
+          isGuardianAdmin(
+            { id: user.id, email: user.email, emailConfirmed: Boolean(user.email_confirmed_at) },
+            { userId: process.env.ADMIN_USER_ID, email: process.env.ADMIN_EMAIL },
+          );
+        if (error || !user || (restriction === 'operator' ? !operator : !user.email_confirmed_at))
+          return securityHeaders(
+            NextResponse.json(
+              {
+                error:
+                  restriction === 'operator'
+                    ? 'Lockdown: acceso exclusivo al operador.'
+                    : 'DEFCON activo: se requiere una cuenta verificada.',
+              },
+              { status: 403, headers: { 'Cache-Control': 'private, no-store' } },
+            ),
+            csp,
+          );
+        if (
+          restriction === 'operator' &&
+          !(await validGatePass(
+            process.env.GATEKEEPER_SECRET ?? '',
+            request.cookies.get(GATE_COOKIE)?.value,
+            Date.now(),
+            { userId: user.id, lockedAt: policy.updatedAt },
+          ))
+        ) {
+          const denied = path.startsWith('/api/')
+            ? NextResponse.json(
+                { error: 'Valida una clave TOTP reciente del operador.' },
+                { status: 401 },
+              )
+            : NextResponse.redirect(
+                new URL(
+                  '/gatekeeper?' + new URLSearchParams({ next: path + request.nextUrl.search }),
+                  request.url,
+                ),
+              );
+          denied.headers.set('Cache-Control', 'private, no-store');
+          return securityHeaders(denied, csp);
+        }
+      }
+    } catch {
+      return securityHeaders(
+        NextResponse.json(
+          { error: 'No se pudo verificar la política de seguridad.' },
+          { status: 503, headers: { 'Cache-Control': 'private, no-store' } },
+        ),
+        csp,
+      );
+    }
+  }
   let gateEnabled = process.env.GATEKEEPER_ENABLED === 'true';
   if (!gatekeeperExempt(request.nextUrl.pathname)) {
     try {

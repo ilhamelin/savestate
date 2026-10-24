@@ -95,10 +95,20 @@ export function AuthForm({ configured, reset = false }: { configured: boolean; r
             setNotice('Revisa tu correo para confirmar tu cuenta.');
             return;
           }
-          const { error } =
-            mode === 'reset'
-              ? await db.auth.updateUser({ password })
-              : await db.auth.signInWithPassword({ email, password });
+          if (mode === 'signin') {
+            const response = await fetch('/api/auth/password', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password }),
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error ?? 'No se pudo iniciar sesión.');
+            window.location.assign(
+              safeNext(new URLSearchParams(window.location.search).get('next')),
+            );
+            return;
+          }
+          const { error } = await db.auth.updateUser({ password });
           if (error)
             throw new Error(
               mode === 'reset'
