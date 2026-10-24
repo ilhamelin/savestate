@@ -77,108 +77,172 @@ export function GuardianJiraPanel() {
   }
   return (
     <section
-      className="guardian-operator-panel guardian-jira-panel"
+      className="guardian-cloud-card guardian-jira-panel"
       aria-label="Jira y tickets de soporte"
     >
-      <p className="eyebrow">OPERATOR // SUPPORT CONTROL</p>
-      <div className="guardian-jira-links">
-        <a className="button" href={config.instanceUrl} target="_blank" rel="noopener noreferrer">
-          🚀 Abrir Jira Cloud ({config.projectKey}) ↗
+      <div className="guardian-cloud-header">
+        <div className="guardian-cloud-title-group">
+          <span className="provider-badge">🎫 JIRA SERVICEDESK</span>
+          <span className="provider-sub">Soporte e incidentes técnicos</span>
+        </div>
+        <div
+          className={`status-pill ${
+            dashboard?.connection === 'online' ? 'status-ready' : 'status-neutral'
+          }`}
+        >
+          <span
+            className={`pulse-dot ${
+              dashboard?.connection === 'online' ? 'dot-green' : 'dot-amber'
+            }`}
+          ></span>
+          <span>{dashboard?.connection === 'online' ? 'ONLINE' : 'STANDBY'}</span>
+        </div>
+      </div>
+
+      <div className="cloud-btn-grid mb-2">
+        <a
+          className="btn-cloud-primary"
+          href={config.instanceUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          🚀 Jira Cloud ({config.projectKey}) ↗
         </a>
         <a
-          className="button outline"
+          className="btn-cloud-secondary"
           href={config.portalUrl}
           target="_blank"
           rel="noopener noreferrer"
         >
-          🌐 Portal de Solicitudes ↗
+          🌐 Portal de Soporte ↗
         </a>
       </div>
-      <p role="status">
-        {dashboard?.connection === 'online' ? '● ONLINE' : '○ STANDBY'} · API del Portal
-      </p>
+
       {dashboard && !dashboard.authenticated && (
-        <p className="notice">
+        <p className="notice mb-2">
           Configura JIRA_PORTAL_TOKEN en el servidor para sincronizar. Los reportes permanecen
           guardados.
         </p>
       )}
-      <h2>Tickets de SaveState</h2>
-      <button
-        type="button"
-        className="button outline small"
-        disabled={Boolean(busy) || !dashboard}
-        onClick={() => void action('retry')}
-      >
-        {busy === 'retry' ? 'Revisando…' : '↻ Reintentar / conciliar cola'}
-      </button>
+
+      <div className="guardian-section-title-bar">
+        <h2 className="text-xs font-bold text-slate-200 tracking-wider uppercase">
+          Tickets de SaveState ({dashboard?.tickets.length ?? 0})
+        </h2>
+        <button
+          type="button"
+          className="btn-cloud-pr"
+          disabled={Boolean(busy) || !dashboard}
+          onClick={() => void action('retry')}
+        >
+          {busy === 'retry' ? 'Revisando…' : '↻ Conciliar cola'}
+        </button>
+      </div>
+
       <ul className="guardian-jira-list">
         {dashboard?.tickets.map((ticket) => (
-          <li key={ticket.id}>
-            <strong>{ticket.input.title}</strong>
-            <span className="tag">
-              {ticket.status === 'synced_jira'
-                ? '✓ Jira'
-                : ticket.status === 'needs_review' || ticket.status === 'sending'
-                  ? '⚠ Recepción por conciliar'
-                  : ticket.status === 'stored_local'
-                    ? 'Portal · Jira pendiente'
-                    : 'En cola'}
-            </span>
-            <small>
-              {new Date(ticket.created_at).toLocaleString('es-CL')} · {ticket.input.type}
-            </small>
-            {ticket.jira_issue_key ? (
-              <a
-                href={config.instanceUrl + '/browse/' + ticket.jira_issue_key}
-                target="_blank"
-                rel="noopener noreferrer"
+          <li key={ticket.id} className="guardian-jira-item">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <strong className="text-xs text-slate-100 font-semibold truncate flex-1">
+                {ticket.input.title}
+              </strong>
+              <span
+                className={`guardian-jira-tag ${
+                  ticket.status === 'synced_jira'
+                    ? 'is-synced'
+                    : ticket.status === 'needs_review' || ticket.status === 'sending'
+                      ? 'is-review'
+                      : 'is-pending'
+                }`}
               >
-                {ticket.jira_issue_key} ↗
-              </a>
-            ) : (
-              <small>LOCAL-{ticket.id}</small>
-            )}
+                {ticket.status === 'synced_jira'
+                  ? '✓ Jira'
+                  : ticket.status === 'needs_review' || ticket.status === 'sending'
+                    ? '⚠ Por conciliar'
+                    : ticket.status === 'stored_local'
+                      ? 'Local · Pendiente'
+                      : 'En cola'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
+              <span>
+                {new Date(ticket.created_at).toLocaleDateString('es-CL')} · {ticket.input.type}
+              </span>
+              {ticket.jira_issue_key ? (
+                <a
+                  className="cloud-detail-link text-cyan-400 hover:underline"
+                  href={config.instanceUrl + '/browse/' + ticket.jira_issue_key}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {ticket.jira_issue_key} ↗
+                </a>
+              ) : (
+                <span className="font-mono text-slate-500">LOCAL-{ticket.id.slice(0, 8)}</span>
+              )}
+            </div>
           </li>
         ))}
       </ul>
-      {dashboard?.tickets.length === 0 && <p className="muted">Aún no hay reportes recibidos.</p>}
-      <h2>Telemetría · últimos 50 incidentes</h2>
-      <p className="muted">
-        Buffer compartido entre funciones serverless. Sin cookies, parámetros de URL ni
-        identificadores de sesión. Los reportes de visitantes pueden requerir revisión.
+      {dashboard?.tickets.length === 0 && (
+        <p className="cloud-details-box text-center text-xs text-slate-400">
+          Aún no hay reportes recibidos en la cola.
+        </p>
+      )}
+
+      <div className="guardian-section-title-bar mt-3">
+        <h2 className="text-xs font-bold text-slate-200 tracking-wider uppercase">
+          Telemetría · incidentes
+        </h2>
+      </div>
+      <p className="text-[11px] text-slate-400 mb-2">
+        Buffer distribuido de errores serverless sin datos personales.
       </p>
+
       <ul className="guardian-jira-list">
         {events.map((event) => (
-          <li key={event.id}>
-            <strong>{event.message}</strong>
-            <small>
-              {event.pathname} · {new Date(event.timestamp).toLocaleString('es-CL')}
-            </small>
+          <li key={event.id} className="guardian-jira-item">
+            <div className="flex items-start justify-between gap-2">
+              <strong className="text-xs text-rose-300 font-medium break-all flex-1">
+                {event.message}
+              </strong>
+              <button
+                type="button"
+                className="btn-cloud-pr"
+                disabled={Boolean(busy) || event.escalatedToJira}
+                onClick={() => void action('escalate', event.id)}
+              >
+                {busy === event.id
+                  ? 'Escalando…'
+                  : event.escalatedToJira
+                    ? '✓ En Jira'
+                    : '⚡ Escalar'}
+              </button>
+            </div>
+            <div className="text-[10px] text-slate-400 font-mono mt-1">
+              {event.pathname} · {new Date(event.timestamp).toLocaleTimeString('es-CL')}
+            </div>
             {event.stack && (
-              <details>
-                <summary>Ver stack</summary>
-                <pre>{event.stack}</pre>
+              <details className="mt-1 text-[10px]">
+                <summary className="text-slate-400 cursor-pointer hover:text-cyan-300">
+                  Ver traza de error
+                </summary>
+                <pre className="mt-1 p-2 bg-black/60 rounded text-slate-300 text-[10px] overflow-x-auto font-mono">
+                  {event.stack}
+                </pre>
               </details>
             )}
-            <button
-              type="button"
-              className="button outline small"
-              disabled={Boolean(busy) || event.escalatedToJira}
-              onClick={() => void action('escalate', event.id)}
-            >
-              {busy === event.id
-                ? 'Escalando…'
-                : event.escalatedToJira
-                  ? '✓ Reporte registrado'
-                  : '⚡ Escalar a Jira'}
-            </button>
           </li>
         ))}
       </ul>
-      {!events.length && <p className="muted">Sin incidentes en el buffer.</p>}
+      {!events.length && (
+        <p className="cloud-details-box text-center text-xs text-slate-400">
+          Sin incidentes registrados en el buffer.
+        </p>
+      )}
+
       {notice && (
-        <p className="notice" role="status">
+        <p className="notice mt-3" role="status">
           {notice}
         </p>
       )}

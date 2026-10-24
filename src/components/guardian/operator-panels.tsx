@@ -64,61 +64,109 @@ export function GuardianAlertPanel() {
     }
   }
   return (
-    <section className="guardian-operator-panel">
-      <h2>🚨 Transmisión global</h2>
-      <p className="notice">{active ? `Activa: ${active}` : 'No hay alertas activas.'}</p>
+    <section className="guardian-cloud-card" aria-label="Transmisión global">
+      <div className="guardian-cloud-header">
+        <div className="guardian-cloud-title-group">
+          <span className="provider-badge">🚨 BROADCAST</span>
+          <span className="provider-sub">Transmisión global en vivo</span>
+        </div>
+        <div className={`status-pill ${active ? 'status-ready' : 'status-neutral'}`}>
+          <span className={`pulse-dot ${active ? 'dot-amber' : ''}`}></span>
+          <span>{active ? 'ALERTA ACTIVA' : 'EN ESPERA'}</span>
+        </div>
+      </div>
+
+      {active ? (
+        <div className="guardian-active-alert-box">
+          <div className="flex items-center justify-between text-[10px] text-amber-400 font-bold uppercase tracking-wider mb-1">
+            <span>🔴 En el encabezado web</span>
+            <span>Activo</span>
+          </div>
+          <p className="guardian-active-alert-text">“{active}”</p>
+        </div>
+      ) : (
+        <div className="cloud-details-box text-xs">
+          <span className="text-slate-400">Sin transmisiones activas en el banner superior.</span>
+        </div>
+      )}
+
       <form
+        className="guardian-broadcast-form mt-2"
         onSubmit={(event) => {
           event.preventDefault();
           void publish(true);
         }}
       >
-        <label>
-          Mensaje
+        <div className="guardian-form-group">
+          <div className="guardian-field-label">
+            <label htmlFor="guardian-broadcast-message">Mensaje del anuncio</label>
+            <span className="text-[10px] text-slate-400 font-mono">{message.length}/240</span>
+          </div>
           <textarea
+            id="guardian-broadcast-message"
             required
             maxLength={240}
-            rows={4}
+            rows={3}
+            className="guardian-cyber-textarea"
+            placeholder="Mensaje global para todos los jugadores conectados..."
             value={message}
             onChange={(event) => setMessage(event.target.value)}
           />
-        </label>
-        <small>{message.length}/240</small>
-        <label>
-          Categoría
+        </div>
+
+        <div className="guardian-form-group">
+          <label className="guardian-field-label" htmlFor="guardian-broadcast-category">
+            Categoría y estilo visual
+          </label>
           <select
+            id="guardian-broadcast-category"
+            className="guardian-cyber-select"
             value={category}
             onChange={(event) => setCategory(event.target.value as typeof category)}
           >
-            <option value="info">Información · Cian</option>
-            <option value="warning">Advertencia · Ámbar</option>
-            <option value="event">Evento · Púrpura</option>
+            <option value="info">Información · Cian (#00f0ff)</option>
+            <option value="warning">Advertencia · Ámbar (#f59e0b)</option>
+            <option value="event">Evento Especial · Púrpura (#c084fc)</option>
           </select>
-        </label>
-        <label className="guardian-check">
+        </div>
+
+        <div className="guardian-cyber-check">
           <input
+            id="guardian-broadcast-discord"
             type="checkbox"
             checked={discord}
             onChange={(event) => setDiscord(event.target.checked)}
           />
-          Enviar también a #anuncios-savestate
-        </label>
-        <button type="submit" className="button" disabled={busy || !message.trim()}>
-          {busy ? 'Procesando…' : '🚨 Lanzar alerta'}
-        </button>
-        <button
-          type="button"
-          className="button outline"
-          disabled={busy || !active}
-          onClick={() => void publish(false)}
-        >
-          Apagar alerta web
-        </button>
+          <label htmlFor="guardian-broadcast-discord" className="text-xs text-slate-300">
+            Enviar también a{' '}
+            <strong className="text-cyan-400 font-mono">#anuncios-savestate</strong>
+          </label>
+        </div>
+
+        <div className="cloud-btn-grid mt-2">
+          <button type="submit" className="btn-cloud-primary" disabled={busy || !message.trim()}>
+            {busy ? 'Transmitiendo…' : '🚨 Lanzar alerta'}
+          </button>
+          <button
+            type="button"
+            className="btn-cloud-danger"
+            disabled={busy || !active}
+            onClick={() => void publish(false)}
+          >
+            ✕ Apagar alerta
+          </button>
+        </div>
       </form>
-      <p role="status">{notice}</p>
+
+      {notice && (
+        <p className="notice mt-2" role="status">
+          {notice}
+        </p>
+      )}
     </section>
   );
 }
+
 export function GuardianSwitchPanel() {
   const [switches, setSwitches] = useState<SystemSwitches | null>(null);
   const [busy, setBusy] = useState(false),
@@ -154,85 +202,178 @@ export function GuardianSwitchPanel() {
     }
   }
   return (
-    <section className="guardian-operator-panel">
-      <h2>🎛️ Interruptores maestros</h2>
+    <section className="guardian-cloud-card" aria-label="Interruptores maestros">
+      <div className="guardian-cloud-header">
+        <div className="guardian-cloud-title-group">
+          <span className="provider-badge">🎛️ MASTER CONTROLS</span>
+          <span className="provider-sub">Interruptores de sistema en tiempo real</span>
+        </div>
+        <div className="status-pill status-ready">
+          <span className="pulse-dot dot-green"></span>
+          <span>SINCRONIZADO</span>
+        </div>
+      </div>
+
       {switches ? (
-        <>
-          <button
-            type="button"
-            className="guardian-switch"
-            role="switch"
-            aria-checked={switches.gatekeeper_enabled}
-            disabled={busy}
-            onClick={() =>
-              switches.gatekeeper_enabled ? void update('gatekeeper_enabled', false) : setArm(true)
-            }
-          >
-            🛡️ Web Gatekeeper{' '}
-            <strong>{switches.gatekeeper_enabled ? 'ACTIVO' : 'DESACTIVADO'}</strong>
-          </button>
-          {arm && (
-            <div className="notice">
-              <p>
-                El bloqueo exigirá el código del teléfono a los visitantes. Comprueba que puedes
-                generarlo antes de activarlo.
-              </p>
-              <button
-                className="button"
-                type="button"
-                disabled={busy}
-                onClick={() => void update('gatekeeper_enabled', true)}
-              >
-                Confirmar activación del bloqueo
-              </button>
-              <button className="button outline" type="button" onClick={() => setArm(false)}>
-                Cancelar
-              </button>
-            </div>
-          )}
-          <button
-            type="button"
-            className="guardian-switch"
-            role="switch"
-            aria-checked={switches.registrations_open}
-            disabled={busy}
-            onClick={() => void update('registrations_open', !switches.registrations_open)}
-          >
-            📝 Registro de nuevos usuarios{' '}
-            <strong>{switches.registrations_open ? 'ABIERTOS' : 'CERRADOS'}</strong>
-          </button>
-          <button
-            type="button"
-            className="guardian-switch"
-            role="switch"
-            aria-checked={switches.double_xp}
-            disabled={busy}
-            onClick={() => void update('double_xp', !switches.double_xp)}
-          >
-            ⚡ Evento Doble XP (Multiplicador x2){' '}
-            <strong>{switches.double_xp ? 'ACTIVO (x2 XP)' : 'NORMAL (x1)'}</strong>
-          </button>
-          <button
-            type="button"
-            className="guardian-switch"
-            role="switch"
-            aria-checked={switches.seasonal_theme === 'halloween'}
-            disabled={busy}
-            onClick={() =>
-              void update(
-                'seasonal_theme',
-                switches.seasonal_theme === 'halloween' ? 'classic' : 'halloween',
-              )
-            }
-          >
-            🎃 Tema estacional{' '}
-            <strong>{switches.seasonal_theme === 'halloween' ? 'HALLOWEEN' : 'CLÁSICO'}</strong>
-          </button>
-        </>
+        <div className="guardian-switches-list">
+          {/* 1. Gatekeeper switch */}
+          <div className="guardian-switch-wrapper">
+            <button
+              type="button"
+              className={`guardian-switch-btn ${switches.gatekeeper_enabled ? 'is-on' : 'is-off'}`}
+              role="switch"
+              aria-checked={switches.gatekeeper_enabled}
+              disabled={busy}
+              onClick={() =>
+                switches.gatekeeper_enabled
+                  ? void update('gatekeeper_enabled', false)
+                  : setArm(true)
+              }
+            >
+              <div className="guardian-switch-info">
+                <div className="guardian-switch-title">
+                  <span className="switch-icon">🛡️</span>
+                  <span>Web Gatekeeper Lock</span>
+                </div>
+                <small className="guardian-switch-desc">
+                  Bloqueo 2FA de acceso total a visitantes no autenticados
+                </small>
+              </div>
+              <div className="guardian-toggle-track">
+                <span className="toggle-thumb" />
+                <span className="toggle-label">
+                  {switches.gatekeeper_enabled ? 'ACTIVO' : 'OFF'}
+                </span>
+              </div>
+            </button>
+
+            {arm && (
+              <div className="guardian-arm-box">
+                <p className="text-xs text-amber-200 mb-2 font-medium">
+                  ⚠️ Advertencia: El bloqueo exigirá el código de seguridad móvil a todos los
+                  visitantes. Verifica que tengas tu TOTP activo antes de confirmar.
+                </p>
+                <div className="cloud-btn-grid">
+                  <button
+                    className="btn-cloud-primary"
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void update('gatekeeper_enabled', true)}
+                  >
+                    Confirmar bloqueo
+                  </button>
+                  <button
+                    className="btn-cloud-secondary"
+                    type="button"
+                    onClick={() => setArm(false)}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 2. Registrations */}
+          <div className="guardian-switch-wrapper">
+            <button
+              type="button"
+              className={`guardian-switch-btn ${switches.registrations_open ? 'is-on' : 'is-off'}`}
+              role="switch"
+              aria-checked={switches.registrations_open}
+              disabled={busy}
+              onClick={() => void update('registrations_open', !switches.registrations_open)}
+            >
+              <div className="guardian-switch-info">
+                <div className="guardian-switch-title">
+                  <span className="switch-icon">📝</span>
+                  <span>Registro de Nuevos Usuarios</span>
+                </div>
+                <small className="guardian-switch-desc">
+                  Permite o cierra la creación de nuevas cuentas
+                </small>
+              </div>
+              <div className="guardian-toggle-track">
+                <span className="toggle-thumb" />
+                <span className="toggle-label">
+                  {switches.registrations_open ? 'ABIERTOS' : 'CERRADOS'}
+                </span>
+              </div>
+            </button>
+          </div>
+
+          {/* 3. Double XP */}
+          <div className="guardian-switch-wrapper">
+            <button
+              type="button"
+              className={`guardian-switch-btn ${switches.double_xp ? 'is-on' : 'is-off'}`}
+              role="switch"
+              aria-checked={switches.double_xp}
+              disabled={busy}
+              onClick={() => void update('double_xp', !switches.double_xp)}
+            >
+              <div className="guardian-switch-info">
+                <div className="guardian-switch-title">
+                  <span className="switch-icon">⚡</span>
+                  <span>Evento Doble XP (Multiplicador x2)</span>
+                </div>
+                <small className="guardian-switch-desc">
+                  Duplica la ganancia de experiencia en misiones y logros
+                </small>
+              </div>
+              <div className="guardian-toggle-track">
+                <span className="toggle-thumb" />
+                <span className="toggle-label">
+                  {switches.double_xp ? 'ACTIVO (x2)' : 'NORMAL'}
+                </span>
+              </div>
+            </button>
+          </div>
+
+          {/* 4. Seasonal Theme */}
+          <div className="guardian-switch-wrapper">
+            <button
+              type="button"
+              className={`guardian-switch-btn ${switches.seasonal_theme === 'halloween' ? 'is-on theme-halloween' : 'is-off'}`}
+              role="switch"
+              aria-checked={switches.seasonal_theme === 'halloween'}
+              disabled={busy}
+              onClick={() =>
+                void update(
+                  'seasonal_theme',
+                  switches.seasonal_theme === 'halloween' ? 'classic' : 'halloween',
+                )
+              }
+            >
+              <div className="guardian-switch-info">
+                <div className="guardian-switch-title">
+                  <span className="switch-icon">🎃</span>
+                  <span>Atmósfera Estacional Halloween</span>
+                </div>
+                <small className="guardian-switch-desc">
+                  Efectos de murciélagos, partículas y paleta de noche de brujas
+                </small>
+              </div>
+              <div className="guardian-toggle-track">
+                <span className="toggle-thumb" />
+                <span className="toggle-label">
+                  {switches.seasonal_theme === 'halloween' ? 'HALLOWEEN' : 'CLÁSICO'}
+                </span>
+              </div>
+            </button>
+          </div>
+        </div>
       ) : (
-        <p>Cargando interruptores…</p>
+        <div className="cloud-details-box text-center py-4 text-xs text-slate-400">
+          Cargando interruptores maestros…
+        </div>
       )}
-      <p role="status">{notice}</p>
+
+      {notice && (
+        <p className="notice mt-3" role="status">
+          {notice}
+        </p>
+      )}
     </section>
   );
 }
@@ -287,174 +428,273 @@ export function GuardianHudPanel({ adminId }: { adminId: string }) {
     };
   }, []);
   return (
-    <section className="guardian-operator-panel">
-      <h2>📊 Telemetría del nodo</h2>
-      {error && <p role="alert">{error} Las últimas métricas pueden estar desactualizadas.</p>}
+    <section className="guardian-operator-panel" aria-label="Telemetría del nodo">
+      {error && (
+        <p className="notice mb-3" role="alert">
+          {error} Las últimas métricas pueden estar desactualizadas.
+        </p>
+      )}
       {telemetry ? (
-        <>
-          <article className="guardian-hardware-card" aria-label="Hardware de Supabase">
-            <header className="guardian-hw-header">
-              <span className="guardian-hw-icon" aria-hidden="true">
-                <Database size={22} />
-              </span>
-              <div className="guardian-hw-titles">
-                <h3>Primary Database</h3>
-                <small>
+        <div className="space-y-3">
+          {/* Card 1: Primary Database */}
+          <div className="guardian-cloud-card" aria-label="Hardware de Supabase">
+            <div className="guardian-cloud-header">
+              <div className="guardian-cloud-title-group">
+                <span className="provider-badge inline-flex items-center gap-1.5">
+                  <Database size={13} className="text-emerald-400" /> SUPABASE POSTGRESQL
+                </span>
+                <span className="provider-sub">
                   {[telemetry.database.region, telemetry.database.host]
                     .filter(Boolean)
-                    .join(' · ') || 'Supabase · PostgreSQL'}
-                </small>
+                    .join(' · ') || 'Primary Database'}
+                </span>
               </div>
-            </header>
-            <div className="guardian-hw-metrics">
-              <span>
-                CPU <strong>{metric(telemetry.database.cpuPercent, '%')}</strong>
-              </span>
-              <span>
-                Disk <strong>{metric(telemetry.database.diskPercent, '%')}</strong>
-              </span>
-              <span>
-                RAM <strong>{metric(telemetry.database.ramPercent, '%')}</strong>
-              </span>
-              <span>
-                <strong>
+              <div className="status-pill status-ready">
+                <span className="pulse-dot dot-green"></span>
+                <span>ONLINE</span>
+              </div>
+            </div>
+
+            <div className="hud-metric-chips-grid">
+              <div className="hud-chip">
+                <span className="hud-chip-label">CPU</span>
+                <strong className="hud-chip-val">
+                  {metric(telemetry.database.cpuPercent, '%')}
+                </strong>
+              </div>
+              <div className="hud-chip">
+                <span className="hud-chip-label">DISK</span>
+                <strong className="hud-chip-val">
+                  {metric(telemetry.database.diskPercent, '%')}
+                </strong>
+              </div>
+              <div className="hud-chip">
+                <span className="hud-chip-label">RAM</span>
+                <strong className="hud-chip-val">
+                  {metric(telemetry.database.ramPercent, '%')}
+                </strong>
+              </div>
+              <div className="hud-chip">
+                <span className="hud-chip-label">CONNS</span>
+                <strong className="hud-chip-val text-emerald-400">
                   {metric(telemetry.database.connections.active)} /{' '}
                   {metric(telemetry.database.connections.max)}
-                </strong>{' '}
-                conns
-              </span>
-            </div>
-            <p className="guardian-hw-footer">
-              Consulta SQL {telemetry.database.latencyMs} ms · Buffer cache{' '}
-              {metric(telemetry.database.cacheHitRatio, '%')}
-              <br />
-              Base de datos{' '}
-              {metric(
-                telemetry.database.diskSizeBytes === null
-                  ? null
-                  : Math.round(telemetry.database.diskSizeBytes / 1048576),
-                ' MB',
-              )}{' '}
-              · Disco /data{' '}
-              {metric(
-                telemetry.database.diskUsedBytes === null
-                  ? null
-                  : Math.round(telemetry.database.diskUsedBytes / 1048576),
-                ' MB',
-              )}{' '}
-              /{' '}
-              {metric(
-                telemetry.database.diskTotalBytes === null
-                  ? null
-                  : Math.round(telemetry.database.diskTotalBytes / 1048576),
-                ' MB',
-              )}
-              <br />
-              {telemetry.database.measuredAt
-                ? `Hardware: ${new Date(telemetry.database.measuredAt).toLocaleTimeString('es-CL')} · caché 60 s`
-                : 'Hardware no disponible; se mantienen las métricas SQL.'}
-              {telemetry.database.cpuPercent === null &&
-                ' CPU requiere dos muestras del mismo proceso.'}
-            </p>
-          </article>
-          <article className="guardian-hardware-card vercel" aria-label="Hardware de Vercel">
-            <header className="guardian-hw-header">
-              <span className="guardian-hw-icon vercel" aria-hidden="true">
-                ▲
-              </span>
-              <div className="guardian-hw-titles">
-                <h3>Vercel Serverless Network</h3>
-                <small>
-                  {telemetry.vercel.regionLabel.flag} {telemetry.vercel.regionLabel.label}
-                </small>
+                </strong>
               </div>
-            </header>
-            <div className="guardian-hw-metrics">
-              <span>
-                CPU <strong>{telemetry.vercel.computeMs} ms</strong>
-              </span>
-              <span>
-                RAM{' '}
-                <strong>
-                  {telemetry.vercel.memory.rssMB} MB ({metric(telemetry.vercel.memory.percent, '%')}
-                  )
-                </strong>
-              </span>
-              <span>
-                <strong>
-                  {telemetry.vercel.env.toUpperCase()} ·{' '}
-                  {telemetry.vercel.commit ? `#${telemetry.vercel.commit}` : 'SHA no disponible'}
-                </strong>
-              </span>
-              <span>
-                <strong>{telemetry.vercel.warm ? 'Warm' : 'Primera medición'}</strong>
-              </span>
             </div>
-            <p className="guardian-hw-footer">
-              Solicitud {telemetry.vercel.elapsedMs} ms · Heap {telemetry.vercel.memory.heapUsedMB}{' '}
-              MB · Límite {metric(telemetry.vercel.memory.limitMB, ' MB')}
-              <br />
-              Proceso activo {telemetry.vercel.uptimeSec} s · Medición de esta instancia; no
-              representa toda la red.
-            </p>
-          </article>
+
+            <div className="cloud-details-box text-xs">
+              <div className="cloud-detail-row">
+                <span className="cloud-detail-label">Latencia SQL:</span>
+                <span className="cloud-detail-value text-emerald-400">
+                  {telemetry.database.latencyMs} ms
+                </span>
+              </div>
+              <div className="cloud-detail-row">
+                <span className="cloud-detail-label">Buffer Cache:</span>
+                <span className="cloud-detail-value">
+                  {metric(telemetry.database.cacheHitRatio, '%')}
+                </span>
+              </div>
+              <div className="cloud-detail-row">
+                <span className="cloud-detail-label">Base de datos /data:</span>
+                <span className="cloud-detail-value">
+                  {metric(
+                    telemetry.database.diskSizeBytes === null
+                      ? null
+                      : Math.round(telemetry.database.diskSizeBytes / 1048576),
+                    ' MB',
+                  )}
+                  {' · '}
+                  {metric(
+                    telemetry.database.diskUsedBytes === null
+                      ? null
+                      : Math.round(telemetry.database.diskUsedBytes / 1048576),
+                    ' MB',
+                  )}
+                  {' / '}
+                  {metric(
+                    telemetry.database.diskTotalBytes === null
+                      ? null
+                      : Math.round(telemetry.database.diskTotalBytes / 1048576),
+                    ' MB',
+                  )}
+                </span>
+              </div>
+              {telemetry.database.measuredAt && (
+                <div className="cloud-detail-row">
+                  <span className="cloud-detail-label">Muestreo:</span>
+                  <span className="cloud-detail-value text-slate-400">
+                    {new Date(telemetry.database.measuredAt).toLocaleTimeString('es-CL')} (caché
+                    60s)
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Card 2: Vercel Serverless Network */}
+          <div className="guardian-cloud-card" aria-label="Hardware de Vercel">
+            <div className="guardian-cloud-header">
+              <div className="guardian-cloud-title-group">
+                <span className="provider-badge">▲ VERCEL SERVERLESS</span>
+                <span className="provider-sub">
+                  {telemetry.vercel.regionLabel.flag} {telemetry.vercel.regionLabel.label}
+                </span>
+              </div>
+              <div className="status-pill status-ready">
+                <span className="pulse-dot dot-green"></span>
+                <span>{telemetry.vercel.warm ? 'WARM' : 'READY'}</span>
+              </div>
+            </div>
+
+            <div className="hud-metric-chips-grid">
+              <div className="hud-chip">
+                <span className="hud-chip-label">COMPUTE</span>
+                <strong className="hud-chip-val">{telemetry.vercel.computeMs} ms</strong>
+              </div>
+              <div className="hud-chip">
+                <span className="hud-chip-label">RAM RSS</span>
+                <strong className="hud-chip-val">{telemetry.vercel.memory.rssMB} MB</strong>
+              </div>
+              <div className="hud-chip">
+                <span className="hud-chip-label">ENTORNO</span>
+                <strong className="hud-chip-val text-white">
+                  {telemetry.vercel.env.toUpperCase()}
+                </strong>
+              </div>
+              <div className="hud-chip">
+                <span className="hud-chip-label">COMMIT</span>
+                <strong className="hud-chip-val text-cyan-300">
+                  {telemetry.vercel.commit ? `#${telemetry.vercel.commit.slice(0, 7)}` : 'main'}
+                </strong>
+              </div>
+            </div>
+
+            <div className="cloud-details-box text-xs">
+              <div className="cloud-detail-row">
+                <span className="cloud-detail-label">Tiempo solicitud:</span>
+                <span className="cloud-detail-value text-emerald-400">
+                  {telemetry.vercel.elapsedMs} ms
+                </span>
+              </div>
+              <div className="cloud-detail-row">
+                <span className="cloud-detail-label">Heap utilizado:</span>
+                <span className="cloud-detail-value">
+                  {telemetry.vercel.memory.heapUsedMB} MB /{' '}
+                  {metric(telemetry.vercel.memory.limitMB, ' MB')}
+                </span>
+              </div>
+              <div className="cloud-detail-row">
+                <span className="cloud-detail-label">Uptime proceso:</span>
+                <span className="cloud-detail-value">{telemetry.vercel.uptimeSec} s</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: Grid de Telemetría */}
           <div className="guardian-hud-grid">
             <article>
-              <small>R2 · archivos registrados</small>
+              <small>📦 R2 · Archivos Bóveda</small>
               <strong>{(telemetry.storage.bytes / 1048576).toFixed(2)} MB</strong>
             </article>
             <article>
-              <small>Jugadores registrados</small>
+              <small>👥 Jugadores Registrados</small>
               <strong>{telemetry.users.total}</strong>
             </article>
             <article>
-              <small>En línea · Realtime Presence</small>
-              <strong>{online.size}</strong>
+              <small>🟢 Realtime Presence</small>
+              <strong className="text-emerald-400">{online.size} en línea</strong>
             </article>
             <article>
-              <small>Actividad de biblioteca · 15 min</small>
+              <small>⚡ Biblioteca (15 min)</small>
               <strong>{telemetry.users.recent}</strong>
             </article>
-            <article>
-              <small>Discord · API del bot</small>
-              <strong>
+            <article className="col-span-2">
+              <small>🤖 Discord · Bot Gateway</small>
+              <strong
+                className={telemetry.discord.available ? 'text-emerald-400' : 'text-amber-400'}
+              >
                 {telemetry.discord.available
-                  ? 'DISPONIBLE'
+                  ? '● DISPONIBLE Y CONECTADO'
                   : telemetry.discord.configured
-                    ? 'SIN RESPUESTA'
-                    : 'SIN CONFIGURAR'}
+                    ? '○ SIN RESPUESTA'
+                    : '○ SIN CONFIGURAR'}
               </strong>
             </article>
           </div>
-          <p className="muted">
+
+          <p className="text-[11px] text-slate-500 font-mono">
             Medido: {new Date(telemetry.measuredAt).toLocaleTimeString('es-CL')}. Los MB
-            corresponden a la suma registrada de la bóveda; no incluyen objetos huérfanos.
+            corresponden a la bóveda registrada.
           </p>
-        </>
+
+          {/* Card 4: Seguridad y Auditoría */}
+          <div className="guardian-cloud-card">
+            <div className="guardian-cloud-header">
+              <div className="guardian-cloud-title-group">
+                <span className="provider-badge">🛡️ SECURITY AUDIT</span>
+                <span className="provider-sub">Eventos y huellas de acceso</span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-mono">{logs.length} eventos</span>
+            </div>
+
+            <ul className="guardian-audit-list">
+              {logs.map((log) => (
+                <li key={log.id} className="guardian-audit-item">
+                  <div className="flex items-center justify-between gap-2">
+                    <strong className="text-xs text-cyan-300 font-mono">{log.event}</strong>
+                    <time className="text-[10px] text-slate-500 font-mono">
+                      {new Date(log.created_at).toLocaleTimeString('es-CL')}
+                    </time>
+                  </div>
+                  {log.key_hash && (
+                    <code className="text-[10px] text-slate-400 font-mono">
+                      Huella: {log.key_hash.slice(0, 12)}…
+                    </code>
+                  )}
+                  {log.metadata && Object.keys(log.metadata).length > 0 && (
+                    <small className="text-[10px] text-slate-500 font-mono truncate">
+                      {JSON.stringify(log.metadata)}
+                    </small>
+                  )}
+                </li>
+              ))}
+              {!logs.length && (
+                <li className="text-center text-xs text-slate-500 py-3">
+                  Sin eventos registrados.
+                </li>
+              )}
+            </ul>
+
+            {attempts.length > 0 && (
+              <details className="text-xs text-slate-400 mt-2">
+                <summary className="cursor-pointer hover:text-cyan-300 font-medium">
+                  Ventanas recientes del limitador ({attempts.length})
+                </summary>
+                <div className="space-y-1 mt-2 p-2 bg-black/50 rounded-lg">
+                  {attempts.map((attempt) => (
+                    <div
+                      key={attempt.key_hash}
+                      className="text-[10px] font-mono flex justify-between"
+                    >
+                      <code className="text-slate-300">{attempt.key_hash.slice(0, 12)}…</code>
+                      <span className="text-amber-400">{attempt.attempts} intentos</span>
+                      <span className="text-slate-500">
+                        {new Date(attempt.window_start).toLocaleTimeString('es-CL')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            )}
+          </div>
+        </div>
       ) : (
-        <p>Cargando salud del sistema…</p>
+        <div className="cloud-details-box text-center py-6 text-xs text-slate-400">
+          Cargando telemetría del nodo…
+        </div>
       )}
-      <h3>🛡️ Bitácora de seguridad</h3>
-      <ul className="guardian-audit-list">
-        {logs.map((log) => (
-          <li key={log.id}>
-            <strong>{log.event}</strong>
-            <time>{new Date(log.created_at).toLocaleString('es-CL')}</time>
-            {log.key_hash && <code>Huella: {log.key_hash.slice(0, 12)}…</code>}
-            <small>{JSON.stringify(log.metadata)}</small>
-          </li>
-        ))}
-      </ul>
-      {!logs.length && <p className="muted">Sin eventos registrados.</p>}
-      <details>
-        <summary>Ventanas recientes del limitador ({attempts.length})</summary>
-        {attempts.map((attempt) => (
-          <p key={attempt.key_hash}>
-            <code>{attempt.key_hash.slice(0, 12)}…</code> · {attempt.attempts} intentos ·{' '}
-            {new Date(attempt.window_start).toLocaleTimeString('es-CL')}
-          </p>
-        ))}
-      </details>
     </section>
   );
 }
