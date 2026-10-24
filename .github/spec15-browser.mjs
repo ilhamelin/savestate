@@ -1,3 +1,4 @@
+/* global document, window, getComputedStyle */
 import assert from 'node:assert/strict';
 import { pathToFileURL } from 'node:url';
 const { chromium } = await import(pathToFileURL(process.env.RUNNER_TEMP + '/spec15-tools/node_modules/playwright/index.mjs'));
@@ -44,6 +45,7 @@ try {
   await page.getByRole('img',{name:'Captura 1 de Gallery Fixture',exact:true}).waitFor();
   await page.getByRole('button',{name:'Ver captura 2',exact:true}).click();
   await page.getByRole('img',{name:'Captura 2 de Gallery Fixture',exact:true}).waitFor();
+  console.log('SPEC15_DESKTOP_JPEG:' + (await page.screenshot({type:'jpeg',quality:45})).toString('base64'));
   await page.keyboard.press('Tab');
   for(let i=0;i<14;i++){
     await page.keyboard.press('Tab');
@@ -70,6 +72,7 @@ try {
   const mobile=await setup({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
   await mobile.page.getByRole('button',{name:'Ver 3 capturas de Gallery Fixture',exact:true}).tap();
   await mobile.page.getByRole('dialog').waitFor();
+  console.log('SPEC15_MOBILE_JPEG:' + (await mobile.page.screenshot({type:'jpeg',quality:45})).toString('base64'));
   assert.equal(await mobile.page.locator('.game-card.is-peeking').count(),0,'Touch does not peek');
   assert.equal(await mobile.page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,'No horizontal overflow');
   await mobile.page.getByRole('button',{name:'Siguiente captura',exact:true}).tap();

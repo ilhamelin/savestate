@@ -26,6 +26,7 @@ export function GameCard({
   const [loadedUrl, setLoadedUrl] = useState('');
   const screenshot = screenshots[index] ?? screenshots[0];
   function peek(nextIndex = 0) {
+    if (!screenshots.length) return;
     if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
     setIndex(nextIndex);
     setPeeking(true);

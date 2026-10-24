@@ -41,6 +41,7 @@ export function GameScreenshotsModal({
     setSelection({ gameId: game!.id, index: (next + screenshots.length) % screenshots.length });
   }
   return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Native modal owns keyboard navigation and backdrop dismissal; its children remain interactive.
     <dialog
       ref={dialog}
       className="screenshots-lightbox"
