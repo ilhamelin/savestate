@@ -37,3 +37,5 @@ Las URLs R2 de subida emitidas antes de DEFCON 2 siguen siendo utilizables hasta
 ## Verificación
 
 `tests/unit/threat-shield.test.ts` ejecuta dominio, servicio real con reloj/almacén inyectados, rutas reales y Proxy con límites externos simulados. `tests/integration/guardian-soc.sql` verifica RPC, expiración, auditoría inmutable, restauración de interruptores, rechazo DML y permisos SQL. Se ejecuta sobre PostgreSQL 16 desechable después de aplicar la migración dos veces. Ninguna prueba escala DEFCON en producción.
+
+La procedencia de la cabecera se basa en la [documentación oficial de cabeceras de Vercel](https://vercel.com/docs/headers/request-headers#x-vercel-forwarded-for).

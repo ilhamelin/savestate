@@ -92,7 +92,7 @@ export function defconLevel(value: unknown): DefconLevel {
   return value as DefconLevel;
 }
 export function normalizeThreatIp(raw: unknown): string | null {
-  if (typeof raw !== 'string' || raw.length > 45 || raw !== raw.trim() || /[\s/%?#@\[\]]/.test(raw))
+  if (typeof raw !== 'string' || raw.length > 45 || raw !== raw.trim() || /[\s/%?#@[\]]/.test(raw))
     return null;
   if (/^(?:\d{1,3}\.){3}\d{1,3}$/.test(raw)) {
     const parts = raw.split('.');
