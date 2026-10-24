@@ -33,7 +33,10 @@ export function HeaderNav() {
   return (
     <nav aria-label="Navegación principal">
       {links.map(({ href, label, icon: Icon }) => {
-        const active = pathname === href || pathname.startsWith(href + '/') || (href === '/tavern' && pathname.startsWith('/forum/'));
+        const active =
+          pathname === href ||
+          pathname.startsWith(href + '/') ||
+          (href === '/tavern' && pathname.startsWith('/forum/'));
         return (
           <Link
             key={href}

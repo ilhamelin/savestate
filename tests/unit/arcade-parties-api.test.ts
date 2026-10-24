@@ -256,13 +256,19 @@ test('LFG POST deletes only the author row; unknown, foreign and malformed IDs a
   assert.ok(operation);
 });
 test('LFG and Arcade keep canonical Taberna entry points', () => {
-  for (const path of ['src/app/parties/page.tsx','src/app/arcade/page.tsx']) {
-    assert.match(readFileSync(path,'utf8'),/permanentRedirect/);
-    assert.match(readFileSync(path,'utf8'),/'arcade'/);
+  for (const path of ['src/app/parties/page.tsx', 'src/app/arcade/page.tsx']) {
+    assert.match(readFileSync(path, 'utf8'), /permanentRedirect/);
+    assert.match(readFileSync(path, 'utf8'), /'arcade'/);
   }
-  const nav=readFileSync('src/components/header-nav.tsx','utf8');
-  assert.match(nav,/href: '\/tavern'/);
-  assert.doesNotMatch(nav,/href: '\/arcade'/);
-  assert.match(readFileSync('src/components/command-menu.tsx','utf8'),/La Taberna: Sala Arcade & LFG/);
-  assert.match(readFileSync('src/components/arcade/party-board.tsx','utf8'),/next=%2Ftavern%3Ftab%3Darcade/);
+  const nav = readFileSync('src/components/header-nav.tsx', 'utf8');
+  assert.match(nav, /href: '\/tavern'/);
+  assert.doesNotMatch(nav, /href: '\/arcade'/);
+  assert.match(
+    readFileSync('src/components/command-menu.tsx', 'utf8'),
+    /La Taberna: Sala Arcade & LFG/,
+  );
+  assert.match(
+    readFileSync('src/components/arcade/party-board.tsx', 'utf8'),
+    /next=%2Ftavern%3Ftab%3Darcade/,
+  );
 });

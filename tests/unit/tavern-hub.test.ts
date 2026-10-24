@@ -37,7 +37,9 @@ export default function Link({scroll,...props}){return h('a',props,props.childre
 const hooks = registerHooks({
   resolve(specifier, context, next) {
     if (
-      (context.parentURL?.includes('/app/tavern/page.tsx') || context.parentURL?.includes('/components/header-nav.tsx') || /\/app\/(forum|highlights|arcade|parties)\/page\.tsx$/.test(context.parentURL ?? '')) &&
+      (context.parentURL?.includes('/app/tavern/page.tsx') ||
+        context.parentURL?.includes('/components/header-nav.tsx') ||
+        /\/app\/(forum|highlights|arcade|parties)\/page\.tsx$/.test(context.parentURL ?? '')) &&
       [
         'next/link',
         'next/navigation',
@@ -235,67 +237,165 @@ test('Next routing sends both legacy entries directly to the Forum with permanen
   );
 });
 
-test('Momentos queries only highlights and user concurrently, preserving drafts, title and viewer',async()=>{
- reset();state.posts=[{id:'post-one',title:'Epic play'}];state.total=25;
- const id='11111111-1111-4111-8111-111111111111';
- const html=renderToStaticMarkup(await TavernPage({searchParams:Promise.resolve({tab:'momentos',category:'speedrun',page:'2',player:id,game:id,post:id,draft:'Borrador **épico**',draftTitle:'Mi título'})}));
- assert.deepEqual(names(),['highlights','user']);assert.equal(state.maxActive,2);
- assert.deepEqual(state.highlightFilters,{category:'speedrun',page:2,player:id,game:id,post:id});
- assert.equal(state.postProps.initialDraft,'Borrador **épico**');assert.equal(state.postProps.initialTitle,'Mi título');assert.equal(state.postProps.userId,'viewer');
- const $=load(html);assert.equal($('[data-post-card]').length,1);
- assert.equal($('.tavern-view-tabs a[aria-current="page"]').attr('href'),'/tavern?tab=momentos');
- for(const anchor of $('.highlight-filters a.tag,.highlight-carousel a').toArray()){
-  const url=new URL($(anchor).attr('href')!,'https://savestate.test');
-  assert.equal(url.pathname,'/tavern');assert.equal(url.searchParams.get('tab'),'momentos');
-  for(const field of ['player','game','post'])assert.equal(url.searchParams.get(field),id);
- }
- const next=new URL($('.highlight-carousel a').last().attr('href')!,'https://savestate.test');
- assert.equal(next.searchParams.get('category'),'speedrun');assert.equal(next.searchParams.get('page'),'3');
- assert.equal(names().includes('duel'),false);assert.equal(names().includes('forum'),false);
-});
-test('Momentos rejects invalid pages/categories/identifiers before making queries',async()=>{
- for(const bad of [{page:'0'},{page:'1001'},{page:'1.5'},{page:['2']},{category:'invalid'},{player:'not-a-uuid'},{game:'//evil.test'},{post:'1'}]){
+test('Momentos queries only highlights and user concurrently, preserving drafts, title and viewer', async () => {
   reset();
-  await assert.rejects(TavernPage({searchParams:Promise.resolve({tab:'momentos',...bad})}),/NOT_FOUND/);
-  assert.equal(state.calls.length,0);
- }
+  state.posts = [{ id: 'post-one', title: 'Epic play' }];
+  state.total = 25;
+  const id = '11111111-1111-4111-8111-111111111111';
+  const html = renderToStaticMarkup(
+    await TavernPage({
+      searchParams: Promise.resolve({
+        tab: 'momentos',
+        category: 'speedrun',
+        page: '2',
+        player: id,
+        game: id,
+        post: id,
+        draft: 'Borrador **épico**',
+        draftTitle: 'Mi título',
+      }),
+    }),
+  );
+  assert.deepEqual(names(), ['highlights', 'user']);
+  assert.equal(state.maxActive, 2);
+  assert.deepEqual(state.highlightFilters, {
+    category: 'speedrun',
+    page: 2,
+    player: id,
+    game: id,
+    post: id,
+  });
+  assert.equal(state.postProps.initialDraft, 'Borrador **épico**');
+  assert.equal(state.postProps.initialTitle, 'Mi título');
+  assert.equal(state.postProps.userId, 'viewer');
+  const $ = load(html);
+  assert.equal($('[data-post-card]').length, 1);
+  assert.equal($('.tavern-view-tabs a[aria-current="page"]').attr('href'), '/tavern?tab=momentos');
+  for (const anchor of $('.highlight-filters a.tag,.highlight-carousel a').toArray()) {
+    const url = new URL($(anchor).attr('href')!, 'https://savestate.test');
+    assert.equal(url.pathname, '/tavern');
+    assert.equal(url.searchParams.get('tab'), 'momentos');
+    for (const field of ['player', 'game', 'post']) assert.equal(url.searchParams.get(field), id);
+  }
+  const next = new URL($('.highlight-carousel a').last().attr('href')!, 'https://savestate.test');
+  assert.equal(next.searchParams.get('category'), 'speedrun');
+  assert.equal(next.searchParams.get('page'), '3');
+  assert.equal(names().includes('duel'), false);
+  assert.equal(names().includes('forum'), false);
 });
-test('Momentos anonymous login keeps its canonical tab, filters and prefilled draft',async()=>{
- reset();state.user=null;
- const draft='Hazaña & trofeos #1',html=renderToStaticMarkup(await TavernPage({searchParams:Promise.resolve({tab:'momentos',category:'speedrun',draft,draftTitle:'Mi victoria'})}));
- const $=load(html),login=new URL($('a').filter((_,el)=>$(el).text()==='Conecta para publicar').attr('href')!,'https://savestate.test');
- const next=new URL(login.searchParams.get('next')!,'https://savestate.test');
- assert.equal(next.pathname,'/tavern');assert.equal(next.searchParams.get('tab'),'momentos');assert.equal(next.searchParams.get('draft'),draft);assert.equal(next.searchParams.get('category'),'speedrun');
- assert.equal(state.postProps,null);assert.match(html,/Todavía no hay momentos visibles/);
+test('Momentos rejects invalid pages/categories/identifiers before making queries', async () => {
+  for (const bad of [
+    { page: '0' },
+    { page: '1001' },
+    { page: '1.5' },
+    { page: ['2'] },
+    { category: 'invalid' },
+    { player: 'not-a-uuid' },
+    { game: '//evil.test' },
+    { post: '1' },
+  ]) {
+    reset();
+    await assert.rejects(
+      TavernPage({ searchParams: Promise.resolve({ tab: 'momentos', ...bad }) }),
+      /NOT_FOUND/,
+    );
+    assert.equal(state.calls.length, 0);
+  }
 });
-test('All three canonical tabs remain reachable with exactly one active link',async()=>{
- for(const tab of ['debates','momentos','arcade']){
-  reset();const $=load(renderToStaticMarkup(await TavernPage({searchParams:Promise.resolve({tab})})));
-  assert.equal($('.tavern-view-tabs a').length,3);assert.equal($('.tavern-view-tabs a[aria-current="page"]').length,1);
- }
- for(const tab of [undefined,'other',['arcade'],['momentos','arcade']])assert.equal(tavernTab(tab),'debates');
+test('Momentos anonymous login keeps its canonical tab, filters and prefilled draft', async () => {
+  reset();
+  state.user = null;
+  const draft = 'Hazaña & trofeos #1',
+    html = renderToStaticMarkup(
+      await TavernPage({
+        searchParams: Promise.resolve({
+          tab: 'momentos',
+          category: 'speedrun',
+          draft,
+          draftTitle: 'Mi victoria',
+        }),
+      }),
+    );
+  const $ = load(html),
+    login = new URL(
+      $('a')
+        .filter((_, el) => $(el).text() === 'Conecta para publicar')
+        .attr('href')!,
+      'https://savestate.test',
+    );
+  const next = new URL(login.searchParams.get('next')!, 'https://savestate.test');
+  assert.equal(next.pathname, '/tavern');
+  assert.equal(next.searchParams.get('tab'), 'momentos');
+  assert.equal(next.searchParams.get('draft'), draft);
+  assert.equal(next.searchParams.get('category'), 'speedrun');
+  assert.equal(state.postProps, null);
+  assert.match(html, /Todavía no hay momentos visibles/);
 });
-test('Legacy server redirects preserve repeated parameters, drafts and forced section tabs',async()=>{
- const search={tab:'arcade',player:'11111111-1111-4111-8111-111111111111',category:'speedrun',page:'2',draft:'á & #',draftTitle:'Victoria',q:['one','two']};
- for(const [section,tab] of [['forum','arcade'],['highlights','momentos'],['arcade','arcade'],['parties','arcade']]){
-  const route=await import('../../src/app/'+section+'/page.tsx');
-  let location='';
-  try{await route.default({searchParams:Promise.resolve(search)});}catch(error){assert.ok(error instanceof Error);assert.ok(error.message.startsWith('REDIRECT:'));location=error.message.slice('REDIRECT:'.length);}
-  const url=new URL(location,'https://savestate.test');
-  assert.equal(url.pathname,'/tavern');assert.equal(url.searchParams.get('tab'),tab);assert.equal(url.searchParams.get('draft'),search.draft);assert.deepEqual(url.searchParams.getAll('q'),['one','two']);
- }
- assert.equal(legacyTavernHref({}),'/tavern');
- const config=(await import('../../next.config.ts')).default;
- const rules=await config.redirects!();
- for(const [source,destination] of [['/forum','/tavern'],['/taberna','/tavern'],['/highlights','/tavern?tab=momentos'],['/arcade','/tavern?tab=arcade'],['/parties','/tavern?tab=arcade']]){
-  const rule=rules.find(r=>r.source===source);assert.equal(rule?.destination,destination);assert.equal(rule?.permanent,true);
- }
+test('All three canonical tabs remain reachable with exactly one active link', async () => {
+  for (const tab of ['debates', 'momentos', 'arcade']) {
+    reset();
+    const $ = load(
+      renderToStaticMarkup(await TavernPage({ searchParams: Promise.resolve({ tab }) })),
+    );
+    assert.equal($('.tavern-view-tabs a').length, 3);
+    assert.equal($('.tavern-view-tabs a[aria-current="page"]').length, 1);
+  }
+  for (const tab of [undefined, 'other', ['arcade'], ['momentos', 'arcade']])
+    assert.equal(tavernTab(tab), 'debates');
 });
-test('Navbar has a single Taberna entry and stays active on preserved forum detail routes',async()=>{
- const {HeaderNav}=await import('../../src/components/header-nav.tsx');
- for(const pathname of ['/tavern','/forum/retro-corner/thread-id']){
-  state.pathname=pathname;const $=load(renderToStaticMarkup(HeaderNav()));
-  assert.equal($('a[href="/tavern"]').length,1);assert.equal($('a[href="/forum"],a[href="/highlights"]').length,0);
-  assert.equal($('a[aria-current="page"]').attr('href'),'/tavern');
- }
+test('Legacy server redirects preserve repeated parameters, drafts and forced section tabs', async () => {
+  const search = {
+    tab: 'arcade',
+    player: '11111111-1111-4111-8111-111111111111',
+    category: 'speedrun',
+    page: '2',
+    draft: 'á & #',
+    draftTitle: 'Victoria',
+    q: ['one', 'two'],
+  };
+  for (const [section, tab] of [
+    ['forum', 'arcade'],
+    ['highlights', 'momentos'],
+    ['arcade', 'arcade'],
+    ['parties', 'arcade'],
+  ]) {
+    const route = await import('../../src/app/' + section + '/page.tsx');
+    let location = '';
+    try {
+      await route.default({ searchParams: Promise.resolve(search) });
+    } catch (error) {
+      assert.ok(error instanceof Error);
+      assert.ok(error.message.startsWith('REDIRECT:'));
+      location = error.message.slice('REDIRECT:'.length);
+    }
+    const url = new URL(location, 'https://savestate.test');
+    assert.equal(url.pathname, '/tavern');
+    assert.equal(url.searchParams.get('tab'), tab);
+    assert.equal(url.searchParams.get('draft'), search.draft);
+    assert.deepEqual(url.searchParams.getAll('q'), ['one', 'two']);
+  }
+  assert.equal(legacyTavernHref({}), '/tavern');
+  const config = (await import('../../next.config.ts')).default;
+  const rules = await config.redirects!();
+  for (const [source, destination] of [
+    ['/forum', '/tavern'],
+    ['/taberna', '/tavern'],
+    ['/highlights', '/tavern?tab=momentos'],
+    ['/arcade', '/tavern?tab=arcade'],
+    ['/parties', '/tavern?tab=arcade'],
+  ]) {
+    const rule = rules.find((r) => r.source === source);
+    assert.equal(rule?.destination, destination);
+    assert.equal(rule?.permanent, true);
+  }
+});
+test('Navbar has a single Taberna entry and stays active on preserved forum detail routes', async () => {
+  const { HeaderNav } = await import('../../src/components/header-nav.tsx');
+  for (const pathname of ['/tavern', '/forum/retro-corner/thread-id']) {
+    state.pathname = pathname;
+    const $ = load(renderToStaticMarkup(HeaderNav()));
+    assert.equal($('a[href="/tavern"]').length, 1);
+    assert.equal($('a[href="/forum"],a[href="/highlights"]').length, 0);
+    assert.equal($('a[aria-current="page"]').attr('href'), '/tavern');
+  }
 });
