@@ -87,7 +87,13 @@ test('Forum creation returns to the canonical Debates view while channel editors
     await (form.props.onSubmit as (event: unknown) => Promise<void>)({ preventDefault() {} });
     assert.deepEqual(state.pushes, [returnHref ?? '/forum/retro-corner/thread-id']);
     assert.equal(state.refreshes, 1);
-    if (returnHref) assert.ok(state.stateWrites.some((write: {initial: unknown; value: unknown}) => write.initial === true && write.value === false));
+    if (returnHref)
+      assert.ok(
+        state.stateWrites.some(
+          (write: { initial: unknown; value: unknown }) =>
+            write.initial === true && write.value === false,
+        ),
+      );
     assert.equal(state.calls.at(-1).path, 'forum');
   }
 });
