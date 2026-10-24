@@ -70,7 +70,7 @@ create or replace function public.guardian_soc_fail(p_ip inet,p_reason text)
 returns jsonb language plpgsql security definer set search_path='' as $$
 declare v public.guardian_threat_ips; v_attempts timestamptz[];
 begin
-  if p_ip is null or masklen(p_ip)<>case family(p_ip) when 4 then 32 else 128 end then raise exception 'IP no válida'; end if;
+  if p_ip is null or masklen(p_ip)<>(case family(p_ip) when 4 then 32 else 128 end) then raise exception 'IP no válida'; end if;
   perform pg_advisory_xact_lock(hashtextextended(host(p_ip),41001));
   delete from public.guardian_threat_ips where last_seen_at<now()-interval '1 day' and (expires_at is null or expires_at<=now());
   insert into public.guardian_threat_ips(ip) values(p_ip) on conflict do nothing;
@@ -98,7 +98,7 @@ create or replace function public.guardian_soc_quarantine(p_ip inet,p_action tex
 returns boolean language plpgsql security definer set search_path='' as $$
 begin
   if p_actor is null or p_action is null or p_action not in ('block','unblock') or length(btrim(coalesce(p_reason,''))) not between 5 and 240
-     or p_ip is null or masklen(p_ip)<>case family(p_ip) when 4 then 32 else 128 end then raise exception 'Acción no válida'; end if;
+     or p_ip is null or masklen(p_ip)<>(case family(p_ip) when 4 then 32 else 128 end) then raise exception 'Acción no válida'; end if;
   perform pg_advisory_xact_lock(hashtextextended(host(p_ip),41001));
   if p_action='block' then
     insert into public.guardian_threat_ips(ip,reason,quarantined_at,expires_at,last_seen_at)
