@@ -87,7 +87,7 @@ export function FeedActivityCard({
         {moment && typeof event.event_data.post_id === 'string' ? (
           <Link
             className="accent feed-moment-link"
-            href={`/highlights?post=${encodeURIComponent(event.event_data.post_id)}`}
+            href={`/tavern?tab=momentos&post=${encodeURIComponent(event.event_data.post_id)}`}
           >
             {typeof event.event_data.title === 'string' ? event.event_data.title : 'Ver momento ↗'}
           </Link>

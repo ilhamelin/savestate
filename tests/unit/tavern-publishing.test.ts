@@ -17,7 +17,7 @@ const fixture =
   'data:text/javascript,' +
   encodeURIComponent(`
  export const state={pushes:[],refreshes:0,calls:[]};
- export const jsx=(type,props)=>({type,props});export const jsxs=jsx;
+ export const jsx=(type,props)=>({type,props});export const jsxs=jsx;export const Fragment=Symbol.for("react.fragment");
  export const useState=(initial)=>[initial,()=>{}];export const useRef=(value)=>({current:value});export const useEffect=()=>{};
  export const useRouter=()=>({push:(href)=>state.pushes.push(href),refresh:()=>state.refreshes++});
  export async function api(path,input){state.calls.push({path,input});return{id:'thread-id',category_id:'retro-corner'};}

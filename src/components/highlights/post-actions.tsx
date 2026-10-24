@@ -176,7 +176,7 @@ export function PostActions({
               </label>
             </MutationForm>
           ) : (
-            <Link className="accent" href="/login?next=/highlights">
+            <Link className="accent" href={'/login?next=' + encodeURIComponent('/tavern?tab=momentos&post=' + postId)}>
               Inicia sesión para comentar o reaccionar.
             </Link>
           )}
