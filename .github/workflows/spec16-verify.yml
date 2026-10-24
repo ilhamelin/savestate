@@ -16,8 +16,19 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Read installed Next guides
+      - name: Format feature files
         run: |
-          find node_modules/next/dist/docs -iname '*unstable-cache*' -o -iname '*loading*' -o -iname '*server-components*'
-          cat node_modules/next/dist/docs/01-app/03-api-reference/04-functions/unstable_cache.md
-          cat node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/loading.md
+          npx prettier --write 'src/domain/game-meta.ts' 'src/services/game-meta-service.ts' 'src/components/game-meta-hub.tsx' 'src/styles/game-meta-hub.css' 'src/app/games/[slug]/page.tsx' 'tests/unit/game-meta.test.ts'
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- 'src/domain/game-meta.ts' 'src/services/game-meta-service.ts' 'src/components/game-meta-hub.tsx' 'src/styles/game-meta-hub.css' 'src/app/games/[slug]/page.tsx' 'tests/unit/game-meta.test.ts'
+          if ! git diff --cached --quiet; then git commit -m "style: format game meta intelligence"; git push; fi
+      - run: npm test
+      - run: npm run typecheck
+        env:
+          NODE_OPTIONS: --max-old-space-size=1536
+      - run: npm run lint
+        env:
+          NODE_OPTIONS: --max-old-space-size=1536
+      - run: npm run format:check
+      - run: npm run build

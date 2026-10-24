@@ -1,3 +1,4 @@
+import { GameMetaHub } from '@/components/game-meta-hub';
 import { cache, Suspense } from 'react';
 import { GameLiveRadar } from '@/components/game-live-radar';
 import { GameForum } from '@/components/game-forum';
@@ -185,6 +186,9 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
         }
       >
         <GameLiveRadar title={game.title} />
+      </Suspense>
+      <Suspense fallback={<section className="panel skeleton muted" aria-busy="true">Consultando duración, compatibilidad y récords…</section>}>
+        <GameMetaHub title={game.title} />
       </Suspense>
       <section className="panel">
         <h2>Estadísticas públicas</h2>

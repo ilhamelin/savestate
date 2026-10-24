@@ -1,0 +1,73 @@
+import { fetchGameMeta } from '@/services/game-meta-service';
+import { formatGameHours, sanitizeVideoUrl, type GameMetaReport } from '@/domain/game-meta';
+import '@/styles/game-meta-hub.css';
+
+export function GameMetaView({ title, data }: { title: string; data: GameMetaReport }) {
+  const { duration, proton, speedrun } = data;
+  if (!duration && !proton && !speedrun) return null;
+  const durations = [
+    ['Historia principal', duration?.mainStoryHours, 'story'],
+    ['Historia + extras', duration?.mainExtraHours, 'extras'],
+    ['Completista · 100%', duration?.completionistHours, 'complete'],
+  ] as const;
+  const maximum = Math.max(1, ...durations.map(([, hours]) => hours ?? 0));
+  const videoUrl = sanitizeVideoUrl(speedrun?.videoUrl);
+  return (
+    <section className="game-meta-hub" aria-label={`Inteligencia de juego de ${title}`}>
+      <header className="game-meta-header">
+        <div><p className="eyebrow">GAME META INTELLIGENCE // ARCHIVO TÁCTICO</p>
+          <h2>Conoce tu próxima misión.</h2></div>
+        <span className="game-meta-cache">ACTUALIZACIÓN · 24 H</span>
+      </header>
+      <div className="game-meta-grid">
+        {duration && (
+          <article className="game-meta-card game-meta-duration">
+            <p className="game-meta-eyebrow">⏳ DURÓMETRO // IGDB</p>
+            <h3>Tu tiempo, tu aventura.</h3>
+            <dl>
+              {durations.map(([label, hours, kind]) => (
+                <div key={kind} className="game-meta-duration-row" data-duration={kind}>
+                  <div><dt>{label}</dt><dd>{hours != null ? formatGameHours(hours * 3600) : 'Sin registros'}</dd></div>
+                  <div className="game-meta-duration-track" aria-hidden="true">
+                    <span style={{ width: `${hours != null ? Math.min(100, hours / maximum * 100) : 0}%` }} />
+                  </div>
+                </div>
+              ))}
+            </dl>
+            <p className="muted">Estimaciones comunitarias de IGDB. El tiempo varía según tu estilo.</p>
+            <a href="https://howlongtobeat.com/" target="_blank" rel="noopener noreferrer" className="game-meta-link">Comparar en HowLongToBeat ↗</a>
+          </article>
+        )}
+        {proton && (
+          <article className="game-meta-card game-meta-proton">
+            <p className="game-meta-eyebrow">🎮 PROTONDB // LINUX & DECK</p>
+            <h3>Compatibilidad comunitaria</h3>
+            <div className="game-meta-tier" data-tier={proton.tier}><span aria-hidden="true">◆</span> {proton.tier.toUpperCase()}</div>
+            {proton.steamDeckVerified && <span className="game-meta-deck">🎮 Steam Deck Ready*</span>}
+            <p className="game-meta-reports">{proton.totalReports.toLocaleString('es-CL')} reportes</p>
+            <p className="muted">{proton.steamDeckVerified ? '*Orientación por tier Gold/Platinum. No equivale a la certificación de Valve ni garantiza FPS.' : 'Reportes de Linux/Proton; consulta los requisitos y experiencias del juego.'}</p>
+            <a href={proton.protonUrl} target="_blank" rel="noopener noreferrer" className="game-meta-link">Ver reporte en ProtonDB ↗</a>
+          </article>
+        )}
+        {speedrun && (
+          <article className="game-meta-card game-meta-speedrun">
+            <p className="game-meta-eyebrow">🏆 SPEEDRUN.COM // WORLD RECORD</p>
+            <h3>{speedrun.categoryName}</h3>
+            <strong className="game-meta-record">{speedrun.timeFormatted}</strong>
+            <p className="game-meta-runner">por {speedrun.runnerName}</p>
+            {speedrun.dateIso && <time dateTime={speedrun.dateIso}>{new Date(speedrun.dateIso).toLocaleDateString('es-CL', { timeZone: 'UTC' })}</time>}
+            <div className="game-meta-actions">
+              {videoUrl && <a href={videoUrl} target="_blank" rel="noopener noreferrer" className="button outline small">▶ Ver carrera en video ↗</a>}
+              <a href={speedrun.speedrunUrl} target="_blank" rel="noopener noreferrer" className="game-meta-link">Consultar clasificación ↗</a>
+            </div>
+          </article>
+        )}
+      </div>
+    </section>
+  );
+}
+export async function GameMetaHub({ title }: { title: string }) {
+  let data: GameMetaReport;
+  try { data = await fetchGameMeta(title); } catch { return null; }
+  return <GameMetaView title={title} data={data} />;
+}
