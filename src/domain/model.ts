@@ -47,6 +47,7 @@ export interface Profile {
   created_at: string;
 }
 export interface Game {
+  screenshots?: string[];
   id: string;
   igdb_id: number;
   title: string;

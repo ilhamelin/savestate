@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search } from 'lucide-react';
 import { resolveCanonicalPlatform } from '@/integrations/igdb/query';
+import { GameScreenshotsModal } from '@/components/game-screenshots-modal';
 import { GameCard } from '@/components/game-card';
 import type { Game } from '@/domain/model';
 import { readJsonResponse } from '@/lib/api-response';
@@ -38,6 +39,7 @@ export function Explore({
   }));
   const { q, platform, genre, year, rating, sort, offset } = filters;
   const effectiveYear = /^(19[5-9]\d|20\d\d|2100)$/.test(year.trim()) ? year.trim() : '';
+  const [galleryGame, setGalleryGame] = useState<Game | null>(null);
   const [attempt, setAttempt] = useState(0);
   const cacheRef = useRef<Map<string, Result>>(new Map());
   const delayRef = useRef(0);
@@ -298,6 +300,7 @@ export function Explore({
           <article key={game.id}>
             <GameCard
               game={game}
+              onOpenGallery={setGalleryGame}
               score={game.community_rating}
               daysUntil={game.days_until_release}
             />
@@ -335,6 +338,7 @@ export function Explore({
           </p>
         </div>
       ) : null}
+      <GameScreenshotsModal game={galleryGame} onClose={() => setGalleryGame(null)} />
     </>
   );
 }

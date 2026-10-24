@@ -77,6 +77,6 @@ export const fetchCatalogue = unstable_cache(
           : null,
     }));
   },
-  ['igdb-catalogue-v3'],
+  ['igdb-catalogue-v4'],
   { revalidate: 86400 },
 );
