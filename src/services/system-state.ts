@@ -1,3 +1,4 @@
+import { defconLevel } from '@/domain/threat-shield';
 import 'server-only';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/database.types';
@@ -37,6 +38,7 @@ export async function getSystemSwitches(): Promise<SystemSwitches> {
       throw new AppError('No se pudieron consultar los interruptores del sistema.', 503);
     const value = { ...fallback };
     for (const row of result.data ?? []) {
+      if (row.key === 'defcon_level') value.defcon_level = defconLevel(row.value);
       if (
         (row.key === 'gatekeeper_enabled' ||
           row.key === 'registrations_open' ||
