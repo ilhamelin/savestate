@@ -17,4 +17,38 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Read installed Next CSS guide
-        run: find node_modules/next/dist/docs -type f -name '*css*' -print -exec cat {} \;
+        run: cat node_modules/next/dist/docs/01-app/01-getting-started/11-css.md
+      - name: Format SPEC-13 files
+        run: |
+          npx prettier --write src/components/game-live-telemetry-view.tsx src/styles/game-live-radar.css src/app/globals.css tests/unit/game-live-telemetry-view.test.ts src/app/radar-qa/page.tsx scripts/spec13-browser.mjs
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src tests scripts/spec13-browser.mjs
+            git commit -m "style: format SPEC-13 radar"
+            git push origin HEAD:feature/game-live-radar-redesign
+          fi
+      - run: npm test
+      - run: npm run typecheck
+        env:
+          NODE_OPTIONS: --max-old-space-size=1536
+      - run: npm run lint
+        env:
+          NODE_OPTIONS: --max-old-space-size=1536
+      - run: npm run format:check
+      - run: npm run build
+      - name: Browser QA with isolated tooling
+        run: |
+          npm install --prefix "$RUNNER_TEMP/spec13-tools" --no-save --package-lock=false playwright
+          npm start > "$RUNNER_TEMP/spec13-next.log" 2>&1 &
+          for i in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:3000/status > /dev/null; then break; fi
+            sleep 1
+          done
+          node scripts/spec13-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: spec13-visual-qa
+          path: ${{ runner.temp }}/spec13-images
+          if-no-files-found: ignore
