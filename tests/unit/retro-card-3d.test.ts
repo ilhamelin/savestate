@@ -258,6 +258,14 @@ test('CSS disables dynamic motion and uses separate tilt/flip planes without blo
   assert.match(css, /transform: none !important/);
   assert.match(css, /visibility: hidden/);
   assert.match(css, /transition: none/);
+  assert.match(
+    css,
+    /\.retro-card-front,\s*\.retro-card-back\s*\{[\s\S]*var\(--card-plastic\)[\s\S]*border:\s*3px solid #626674/,
+  );
+  assert.match(
+    css,
+    /\.retro-card\[data-skin='gameboy_cartridge'\]\s+\.retro-card-back[\s\S]*border-radius:\s*28px 16px 6px 6px/,
+  );
   const page = readFileSync('src/app/players/[username]/page.tsx', 'utf8');
   assert.match(page, /qrCode: createMemoryCardQr\(profile.username, appUrl\(\)\)/);
 });
