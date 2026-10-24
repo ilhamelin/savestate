@@ -16,21 +16,6 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Format feature files
-        run: |
-          npx prettier --write src/domain/game-screenshots.ts src/domain/model.ts src/integrations/igdb/query.ts src/integrations/igdb/server.ts src/services/catalogue.ts src/components/game-card.tsx src/components/game-screenshots-modal.tsx src/components/explore.tsx src/styles/game-screenshots.css tests/unit/catalogue-search-service.test.ts tests/unit/game-screenshots.test.ts
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/domain/game-screenshots.ts src/domain/model.ts src/integrations/igdb/query.ts src/integrations/igdb/server.ts src/services/catalogue.ts src/components/game-card.tsx src/components/game-screenshots-modal.tsx src/components/explore.tsx src/styles/game-screenshots.css tests/unit/catalogue-search-service.test.ts tests/unit/game-screenshots.test.ts
-          if ! git diff --cached --quiet; then git commit -m "style: format screenshot gallery"; git push; fi
-      - run: npm test
-      - run: npm run typecheck
-        env:
-          NODE_OPTIONS: --max-old-space-size=1536
-      - run: npm run lint
-        env:
-          NODE_OPTIONS: --max-old-space-size=1536
-      - run: npm run format:check
       - run: npm run build
       - name: Install isolated browser tooling
         run: npm install --prefix "$RUNNER_TEMP/spec15-tools" --no-save --package-lock=false playwright

@@ -59,16 +59,22 @@ try {
   await page.mouse.click(2,2);
   await modal.waitFor({state:'hidden'});
   assert.equal(await trigger.evaluate(el=>el===document.activeElement),true);
-  // A failed preview never hides the original cover.
-  await page.unroute('https://images.igdb.com/**');
-  await page.route('https://images.igdb.com/**',route=>route.abort());
-  await page.getByRole('button',{name:'Vista previa 3 de Gallery Fixture',exact:true}).focus();
-  await page.keyboard.press('Enter');
-  await page.waitForTimeout(150);
-  assert.equal(await card.evaluate(el=>el.classList.contains('is-peeking')),false);
   assert.deepEqual(errors,[]);
-  console.log('PASS desktop: lazy peek, indicators, sibling buttons, arrows, thumbnails, Escape/backdrop, focus trap/return, scroll and failed-image fallback');
+  console.log('PASS desktop: lazy peek, indicators, sibling buttons, arrows, thumbnails, Escape/backdrop, focus trap/return and scroll');
   await context.close();
+  // Use a fresh browser cache: gallery thumbnails already loaded all three images above.
+  const failed=await setup();
+  await failed.page.unroute('https://images.igdb.com/**');
+  await failed.page.route('https://images.igdb.com/**',route=>route.abort());
+  await failed.page.locator('.game-card').first().hover();
+  await failed.page.waitForFunction(()=>{
+    const img=document.querySelector('.game-card-peek img');
+    return img?.complete && img.naturalWidth===0;
+  });
+  assert.equal(await failed.page.locator('.game-card').first().evaluate(el=>el.classList.contains('is-peeking')),false);
+  assert.deepEqual(failed.errors,[]);
+  console.log('PASS failed image: original cover stays visible');
+  await failed.context.close();
   const mobile=await setup({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
   await mobile.page.getByRole('button',{name:'Ver 3 capturas de Gallery Fixture',exact:true}).tap();
   await mobile.page.getByRole('dialog').waitFor();
