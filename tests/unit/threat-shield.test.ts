@@ -25,6 +25,10 @@ const fixture =
  export const state={admin:false,user:null,authError:null,authCalls:0,signouts:0,shield:null,configured:false};
  export const threatShieldStore={};
  export const clearSystemSwitchCache=()=>{};
+ export const currentUser=async()=>state.user;
+ export async function claimGatekeeperAttempt(){}
+ export async function auditGatekeeperFailure(){}
+ export async function acknowledgePlayerGate(){}
  export const configuredGateSecret=()=> 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
  export const isConfigured=()=>state.configured;
  export const publicEnv=()=>({url:'https://example.supabase.co',key:'anon'});
@@ -59,6 +63,7 @@ const hooks = registerHooks({
         '@/services/threat-shield-store',
         '@/services/system-state',
         '@/services/gatekeeper',
+          '@/services/player-moderation',
         '@/lib/session',
         '@/integrations/supabase/server',
         '@/lib/env',
@@ -568,4 +573,24 @@ test('Proxy blocks cached IPs before session work and enforces critical read/wri
     if (prior === undefined) delete process.env.VERCEL;
     else process.env.VERCEL = prior;
   }
+});
+
+test('Gatekeeper route shares the failure counter, rejects cross-origin and preserves operator authorization',async()=>{
+ const b=backend();state.shield=b.create();state.admin=false;state.user=null;
+ const prior=process.env.VERCEL;process.env.VERCEL='1';
+ const route=await import('../../src/app/api/gatekeeper/verify/route.ts');
+ const {validGateCode}=await import('../../src/domain/gatekeeper.ts');
+ const seed='JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
+ let code='000000';while(await validGateCode(seed,code))code=String(Number(code)+1).padStart(6,'0');
+ const request=(origin='https://example.test')=>new Request('https://example.test/api/gatekeeper/verify',{method:'POST',headers:{origin,'content-type':'application/json','x-vercel-forwarded-for':'192.0.2.10'},body:JSON.stringify({code})});
+ try{
+  assert.equal((await route.POST(request('https://evil.test'))).status,403);
+  assert.equal(b.counts().failures,0);
+  for(let i=0;i<4;i++)assert.equal((await route.POST(request())).status,401);
+  assert.equal((await route.POST(request())).status,429);
+  assert.equal((await route.POST(request())).status,429);assert.equal(b.counts().failures,5);
+  await state.shield.changeQuarantine('192.0.2.10','unblock','Operator recovery','operator');
+  await state.shield.setDefconLevel(1,'operator','Emergency response');
+  assert.equal((await route.POST(request())).status,403);assert.equal(b.counts().failures,5);
+ }finally{if(prior===undefined)delete process.env.VERCEL;else process.env.VERCEL=prior;}
 });

@@ -1,3 +1,4 @@
+/* global document, innerWidth */
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
