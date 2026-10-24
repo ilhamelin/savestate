@@ -6,7 +6,7 @@
 - Guardian → Uptime permite `POST /api/guardian/dependencies/probe`, con administrador verificado, origen propio y un intervalo mínimo de cinco segundos por instancia.
 - La caché dura treinta segundos desde el cierre de las sondas y comparte solicitudes simultáneas. Es memoria por instancia, no un límite global distribuido.
 - Steam comprueba GetServerInfo; Supabase una consulta HEAD; Discord el gateway HTTP; Jira el portal. No se prueban escrituras, permisos del bot ni creación de tickets.
-- Twitch valida el token ya compartido por el catálogo, sin generar OAuth adicional ni consumir consultas IGDB. Hasta que exista ese token, figura “Sin comprobar”. La respuesta OAuth no certifica consultas IGDB.
+- Twitch valida el token compartido por el catálogo. En un arranque frío obtiene una credencial con el mismo helper OAuth, su caché y deduplicación existentes, dentro del deadline de 3,5 s. Esto funciona aunque Vercel aísle las funciones de catálogo y estado. No consume consultas IGDB; la respuesta OAuth no certifica consultas del catálogo.
 - Vercel mide procesamiento local del runtime, sin afirmar disponibilidad de CDN, Edge u otras regiones.
 - “Sin comprobar” usa el estado `maintenance` para configuración ausente o sondas no ejecutadas; no anuncia mantenimiento programado del proveedor.
 - La latencia media excluye las sondas sin medir. No se calcula un porcentaje histórico de uptime a partir de una lectura efímera.
