@@ -25,7 +25,11 @@ const hooks = registerHooks({
     if (
       specifier === '@/lib/session' ||
       (context.parentURL?.includes('/route.ts') &&
-        ['@/services/support-store', '@/services/jira-support-service', '@/services/dependency-monitor-service'].includes(specifier))
+        [
+          '@/services/support-store',
+          '@/services/jira-support-service',
+          '@/services/dependency-monitor-service',
+        ].includes(specifier))
     )
       return { url: fixture, shortCircuit: true };
     if (specifier.startsWith('@/')) {

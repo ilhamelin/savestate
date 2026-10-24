@@ -106,7 +106,10 @@ export function createDependencyMonitor(options: MonitorOptions = {}) {
                   config.NEXT_PUBLIC_SUPABASE_ANON_KEY,
                   {
                     auth: { persistSession: false, autoRefreshToken: false },
-                    global: { fetch: (input, init) => fetcher(input, { ...init, cache: 'no-store', redirect: 'error' }) },
+                    global: {
+                      fetch: (input, init) =>
+                        fetcher(input, { ...init, cache: 'no-store', redirect: 'error' }),
+                    },
                   },
                 );
                 const result = await client
