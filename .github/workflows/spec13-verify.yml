@@ -18,6 +18,11 @@ jobs:
       - run: npm ci
       - name: Read installed Next CSS guide
         run: cat node_modules/next/dist/docs/01-app/01-getting-started/11-css.md
+      - name: Inspect remaining legacy class references
+        run: |
+          if rg -n 'live-pill|steam-pill|twitch-pill|low-pill|live-deals|live-stream-grid|instant-gaming-deal' src; then
+            echo "Review legacy references above"
+          fi
       - name: Format SPEC-13 files
         run: |
           npx prettier --write src/components/game-live-telemetry-view.tsx src/styles/game-live-radar.css src/app/globals.css tests/unit/game-live-telemetry-view.test.ts src/app/radar-qa/page.tsx scripts/spec13-browser.mjs

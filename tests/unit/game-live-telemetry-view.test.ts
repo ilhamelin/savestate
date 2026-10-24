@@ -13,7 +13,7 @@ import type { GameLiveTelemetry, GameDealItem } from '../../src/domain/game-live
 const imageFixture =
   'data:text/javascript,' +
   encodeURIComponent(`
- import {createElement} from 'react';
+ import {createElement} from '${import.meta.resolve('react')}';
  export default function Image({unoptimized,...props}){return createElement('img',props);}
 `);
 const hooks = registerHooks({
