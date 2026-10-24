@@ -118,13 +118,13 @@ export function CommandMenu({
   }
   const links: [string, string][] = [
     ['Explorar catálogo', '/explore'],
-    ['Foro: Sala Arcade & LFG', '/forum?tab=arcade'],
+    ['La Taberna: Sala Arcade & LFG', '/tavern?tab=arcade'],
     ['Listas de la comunidad', '/lists'],
     ['Transmisión', '/feed'],
     ['Chat Global · Centro de Mando Comunitario', '/chat'],
     ['Screen · Cine, series y adaptaciones gamer', '/screen'],
-    ['Momentos Gamer', '/highlights'],
-    ['Foro · SaveState Boards', '/forum'],
+    ['La Taberna: Momentos Épicos', '/tavern?tab=momentos'],
+    ['La Taberna: Debates Comunitarios', '/tavern'],
     ['Rift Tracker (League of Legends)', '/rift'],
     ['HoYo Hub · Directos y Códigos (Genshin & HSR)', '/hoyo'],
     [

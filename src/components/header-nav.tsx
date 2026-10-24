@@ -5,8 +5,7 @@ import {
   Compass,
   Library,
   Radio,
-  Sparkles,
-  MessageSquare,
+  Beer,
   MessageCircle,
   Layers,
   UserCheck,
@@ -21,8 +20,7 @@ const links = [
   { href: '/screen', label: 'Screen', icon: Film },
   { href: '/library', label: 'Biblioteca', icon: Library },
   { href: '/feed', label: 'Transmisión', icon: Radio },
-  { href: '/highlights', label: 'Momentos', icon: Sparkles },
-  { href: '/forum', label: 'Foro', icon: MessageSquare },
+  { href: '/tavern', label: 'La Taberna', icon: Beer },
   { href: '/chat', label: 'Chat Global', icon: MessageCircle },
   { href: '/lists', label: 'Listas', icon: Layers },
   { href: '/players', label: 'Jugadores', icon: UserCheck },
@@ -35,7 +33,7 @@ export function HeaderNav() {
   return (
     <nav aria-label="Navegación principal">
       {links.map(({ href, label, icon: Icon }) => {
-        const active = pathname === href || pathname.startsWith(href + '/');
+        const active = pathname === href || pathname.startsWith(href + '/') || (href === '/tavern' && pathname.startsWith('/forum/'));
         return (
           <Link
             key={href}

@@ -82,7 +82,7 @@ export async function highlightMutation(input: unknown) {
           .remove(removed.filter((path) => path.startsWith(`${user.id}/${id}/`)));
         if (cleanup.error) console.error('Highlight storage cleanup failed');
       }
-      revalidatePath('/highlights');
+      revalidatePath('/tavern');
       return { id };
     }
     // can_view_post is STABLE and looks up the row; RETURNING can evaluate

@@ -20,3 +20,26 @@ jobs:
         run: |
           find node_modules/next/dist/docs/01-app -name '*redirect*' -type f -print -exec cat {} \;
           cat node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/page.md
+      - name: Inspect canonical-link and CSS references
+        run: |
+          rg -n '/highlights|/forum\?|href="/forum"|revalidatePath' src tests/unit || true
+          rg -n 'forum.css|highlights.css' src/app/globals.css
+      - name: Format SPEC-14 files
+        run: |
+          npx prettier --write 'src/domain/tavern.ts' 'src/app/tavern/page.tsx' 'src/app/forum/page.tsx' 'src/app/highlights/page.tsx' 'src/app/arcade/page.tsx' 'src/app/parties/page.tsx' 'next.config.ts' 'src/components/header-nav.tsx' 'src/components/command-menu.tsx' 'src/app/players/[username]/page.tsx' 'src/components/wrapped-view.tsx' 'src/app/layout.tsx' 'src/components/arcade/party-board.tsx' 'src/components/forum-create.tsx' 'src/app/forum/[category]/page.tsx' 'src/services/forum.ts' 'src/services/highlights.ts' 'tests/unit/tavern-hub.test.ts' 'tests/unit/arcade-parties-api.test.ts' 'tests/unit/tavern-publishing.test.ts'
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src tests next.config.ts
+            git commit -m "style: format SPEC-14 community fusion"
+            git push origin HEAD:feature/la-taberna-community-fusion
+          fi
+      - run: npm test
+      - run: npm run typecheck
+        env:
+          NODE_OPTIONS: --max-old-space-size=1536
+      - run: npm run lint
+        env:
+          NODE_OPTIONS: --max-old-space-size=1536
+      - run: npm run format:check
+      - run: npm run build

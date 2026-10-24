@@ -110,7 +110,7 @@ export function WrappedView({
               <>
                 <h3>{summary.moment.title}</h3>
                 <p className="accent">{summary.moment.reactions} reacciones</p>
-                <Link href={`/highlights?player=${userId}`}>Ver Momentos del jugador →</Link>
+                <Link href={`/tavern?tab=momentos&player=${userId}`}>Ver Momentos del jugador →</Link>
               </>
             ) : (
               <p>El siguiente momento épico está por llegar.</p>

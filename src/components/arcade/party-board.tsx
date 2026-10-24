@@ -105,7 +105,7 @@ export function PartyBoard({
             }}
           />
         ) : (
-          <Link className="button" href="/login?next=/forum?tab=arcade">
+          <Link className="button" href="/login?next=%2Ftavern%3Ftab%3Darcade">
             Conecta para publicar
           </Link>
         )}
