@@ -10,7 +10,6 @@ import { notFound } from 'next/navigation';
 import { serverClient } from '@/integrations/supabase/server';
 import { isConfigured } from '@/lib/env';
 import { currentUser } from '@/lib/session';
-import { dbCheck } from '@/lib/http';
 import { sanitizeHtml } from '@/services/markdown';
 import { LibraryForm, DeleteReview } from '@/components/library-forms';
 import { ReviewForm } from '@/components/review-form';
@@ -19,15 +18,33 @@ import { SetupNotice } from '@/components/setup-notice';
 import { gameAdaptations } from '@/domain/game-adaptations';
 const gameBySlug = cache(async (slug: string) => {
   if (!isConfigured() || !/^[a-z0-9-]+$/.test(slug)) return null;
-  const db = await serverClient();
-  const { data, error } = await db.from('games').select('*').eq('slug', slug).maybeSingle();
-  dbCheck(error);
-  return data;
+  try {
+    const db = await serverClient();
+    const { data, error } = await db.from('games').select('*').eq('slug', slug).maybeSingle();
+    if (error) {
+      console.warn('gameBySlug database warning:', error.message);
+      return null;
+    }
+    return data;
+  } catch (err) {
+    console.warn(
+      'gameBySlug unexpected exception:',
+      err instanceof Error ? err.message : 'unknown',
+    );
+    return null;
+  }
 });
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  const game = await gameBySlug(slug);
-  return { title: game?.title ?? 'Ficha de juego', description: game?.synopsis?.slice(0, 160) };
+  try {
+    const { slug } = await params;
+    const game = await gameBySlug(slug);
+    return {
+      title: game?.title ?? 'Ficha de juego',
+      description: game?.synopsis?.slice(0, 160) ?? '',
+    };
+  } catch {
+    return { title: 'Ficha de juego' };
+  }
 }
 export default async function GamePage({ params }: { params: Promise<{ slug: string }> }) {
   if (!isConfigured()) return <SetupNotice />;
@@ -48,12 +65,9 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
   ]);
-  dbCheck(libraryResult.error);
-  dbCheck(scoreResult.error);
-  dbCheck(ownResult.error);
   const entries = libraryResult.data ?? [],
     own = ownResult.data ?? undefined;
-  const { data: reviewRows, error: reviewError } = entries.length
+  const { data: reviewRows } = entries.length
     ? await db
         .from('reviews')
         .select('*')
@@ -63,8 +77,7 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
         )
         .order('created_at', { ascending: false })
         .limit(50)
-    : { data: [], error: null };
-  dbCheck(reviewError);
+    : { data: [] };
   const reviews = reviewRows ?? [],
     ids = reviews.map((r) => r.id);
   const [reactionRows, commentRows, profileRows, ownReviewResult] = await Promise.all([
@@ -87,10 +100,7 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
       ? db.from('reviews').select('*').eq('user_game_id', own.id).maybeSingle()
       : Promise.resolve({ data: null, error: null }),
   ]);
-  [reactionRows, commentRows, profileRows, ownReviewResult].forEach((result) =>
-    dbCheck(result.error),
-  );
-  const { data: commentAuthors, error: authorsError } = commentRows.data?.length
+  const { data: commentAuthors } = commentRows.data?.length
     ? await db
         .from('profiles')
         .select('id,username')
@@ -98,8 +108,7 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
           'id',
           commentRows.data.map((comment) => comment.user_id),
         )
-    : { data: [], error: null };
-  dbCheck(authorsError);
+    : { data: [] };
   const names = Object.fromEntries(
     [...(profileRows.data ?? []), ...(commentAuthors ?? [])].map((p) => [p.id, p.username]),
   );
@@ -224,13 +233,17 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
           rejugadas.
         </p>
         <div className="tags">
-          {Object.entries(score?.distribution ?? {})
-            .sort((a, b) => Number(a[0]) - Number(b[0]))
-            .map(([rating, count]) => (
-              <span className="tag" key={rating}>
-                ★ {rating}/10 · {count} votos
-              </span>
-            ))}
+          {score?.distribution &&
+          typeof score.distribution === 'object' &&
+          !Array.isArray(score.distribution)
+            ? Object.entries(score.distribution)
+                .sort((a, b) => Number(a[0]) - Number(b[0]))
+                .map(([rating, count]) => (
+                  <span className="tag" key={rating}>
+                    ★ {rating}/10 · {String(count)} votos
+                  </span>
+                ))
+            : null}
         </div>
         <p className="muted">Las bibliotecas privadas se excluyen de estos cálculos.</p>
       </section>
@@ -248,13 +261,13 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
         {user ? (
           <>
             <ReviewForm
-              key={`${user.id}-${own?.updated_at ?? 'new'}-${ownReviewResult.data?.updated_at ?? 'new'}`}
+              key={`${user.id}-${own?.updated_at ?? 'new'}-${ownReviewResult?.data?.updated_at ?? 'new'}`}
               userId={user.id}
               gameId={game.id}
               entry={own}
-              review={ownReviewResult.data ?? undefined}
+              review={ownReviewResult?.data ?? undefined}
             />
-            {ownReviewResult.data ? <DeleteReview id={ownReviewResult.data.id} /> : null}
+            {ownReviewResult?.data ? <DeleteReview id={ownReviewResult.data.id} /> : null}
           </>
         ) : (
           <Link className="accent" href="/login">
@@ -275,12 +288,12 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
           <ReviewCard
             key={`${review.id}-${review.updated_at}`}
             review={review}
-            html={sanitizeHtml(review.content)}
+            html={sanitizeHtml(review.content ?? '')}
             username={names[entry.user_id] ?? 'Jugador'}
             rating={entry.rating}
             userId={user?.id ?? null}
-            reactions={(reactionRows.data ?? []).filter((r) => r.review_id === review.id)}
-            comments={(commentRows.data ?? []).filter((c) => c.review_id === review.id)}
+            reactions={(reactionRows?.data ?? []).filter((r) => r.review_id === review.id)}
+            comments={(commentRows?.data ?? []).filter((c) => c.review_id === review.id)}
             names={names}
           />
         );

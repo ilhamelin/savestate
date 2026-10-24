@@ -97,27 +97,27 @@ export function GameAchievementsView({ report }: { report: GameAchievementsRepor
       {/* Resumen Estadístico */}
       <div className="achievements-summary-grid">
         <div className="achievement-stat-card">
-          <span className="stat-card-value">{report.totalAchievements}</span>
+          <span className="stat-card-value">{report.totalAchievements ?? 0}</span>
           <span className="stat-card-label">Total Logros</span>
         </div>
         <div className="achievement-stat-card stat-platino">
-          <span className="stat-card-value">{summary.platinoCount}</span>
+          <span className="stat-card-value">{summary.platinoCount ?? 0}</span>
           <span className="stat-card-label">💎 Platino</span>
         </div>
         <div className="achievement-stat-card stat-oro">
-          <span className="stat-card-value">{summary.oroCount}</span>
+          <span className="stat-card-value">{summary.oroCount ?? 0}</span>
           <span className="stat-card-label">🥇 Oro</span>
         </div>
         <div className="achievement-stat-card stat-plata">
-          <span className="stat-card-value">{summary.plataCount}</span>
+          <span className="stat-card-value">{summary.plataCount ?? 0}</span>
           <span className="stat-card-label">🥈 Plata</span>
         </div>
         <div className="achievement-stat-card stat-bronce">
-          <span className="stat-card-value">{summary.bronceCount}</span>
+          <span className="stat-card-value">{summary.bronceCount ?? 0}</span>
           <span className="stat-card-label">🥉 Bronce</span>
         </div>
         <div className="achievement-stat-card">
-          <span className="stat-card-value">{summary.averageUnlockRate}%</span>
+          <span className="stat-card-value">{summary.averageUnlockRate ?? 0}%</span>
           <span className="stat-card-label">Media Global</span>
         </div>
       </div>

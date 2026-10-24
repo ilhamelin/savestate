@@ -63,7 +63,7 @@ export function GameSpecsView({ title, data }: { title: string; data: GameCritic
     }
   };
 
-  const safeId = title.toLowerCase().replace(/[^a-z0-9]/g, '-');
+  const safeId = (title || 'game').toLowerCase().replace(/[^a-z0-9]/g, '-');
 
   return (
     <section className="game-specs-hub" aria-label={`Crítica y especificaciones de ${title}`}>
