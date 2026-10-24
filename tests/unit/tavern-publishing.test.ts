@@ -16,9 +16,9 @@ function nodes(value: unknown): View[] {
 const fixture =
   'data:text/javascript,' +
   encodeURIComponent(`
- export const state={pushes:[],refreshes:0,calls:[]};
+ export const state={pushes:[],refreshes:0,calls:[],stateWrites:[]};
  export const jsx=(type,props)=>({type,props});export const jsxs=jsx;export const Fragment=Symbol.for("react.fragment");
- export const useState=(initial)=>[initial,()=>{}];export const useRef=(value)=>({current:value});export const useEffect=()=>{};
+ export const useState=(initial)=>[initial,value=>state.stateWrites.push({initial,value})];export const useRef=(value)=>({current:value});export const useEffect=()=>{};
  export const useRouter=()=>({push:(href)=>state.pushes.push(href),refresh:()=>state.refreshes++});
  export async function api(path,input){state.calls.push({path,input});return{id:'thread-id',category_id:'retro-corner'};}
  export const browserClient=()=>({storage:{from(){throw new Error('Unexpected upload');}}});
@@ -73,6 +73,7 @@ test('Forum creation returns to the canonical Debates view while channel editors
   const { ForumCreate } = await import('../../src/components/forum-create.tsx');
   for (const returnHref of ['/tavern?sort=recent', undefined]) {
     state.pushes = [];
+    state.stateWrites = [];
     state.refreshes = 0;
     // initialGame opens the real editor; this test exercises the submit handler with external persistence mocked.
     const view = ForumCreate({
@@ -86,6 +87,7 @@ test('Forum creation returns to the canonical Debates view while channel editors
     await (form.props.onSubmit as (event: unknown) => Promise<void>)({ preventDefault() {} });
     assert.deepEqual(state.pushes, [returnHref ?? '/forum/retro-corner/thread-id']);
     assert.equal(state.refreshes, 1);
+    if (returnHref) assert.ok(state.stateWrites.some((write: {initial: unknown; value: unknown}) => write.initial === true && write.value === false));
     assert.equal(state.calls.at(-1).path, 'forum');
   }
 });

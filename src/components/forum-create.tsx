@@ -78,6 +78,14 @@ export function ForumCreate({
                 content,
                 game_id: selected?.id ?? null,
               });
+              if (returnHref) {
+                setOpen(false);
+                setTitle('');
+                setContent('');
+                setSelected(null);
+                setQuery('');
+                setGames([]);
+              }
               router.push(returnHref ?? `/forum/${result.category_id}/${result.id}`);
               router.refresh();
             } catch (err) {

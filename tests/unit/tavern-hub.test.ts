@@ -32,7 +32,7 @@ export function PartyBoard(props){state.partyProps=props;return h('section',{'da
 export function SetupNotice(){return state.configured?null:h('aside',null,'Configuración pendiente');}
 export function ForumCreate(props){state.createProps=props;return h('section',{'data-create':'true'},props.toolbar,'Crear hilo');}
 export function ForumThreadList(){return h('section',{'data-threads':'true'},'Hilos');}
-export default function Link({scroll,...props}){return h('a',props,props.children);}
+export default function Link({scroll,prefetch,...props}){return h('a',props,props.children);}
 `);
 const hooks = registerHooks({
   resolve(specifier, context, next) {

@@ -91,6 +91,7 @@ try {
   const active = page
     .getByRole('navigation', { name: 'Secciones de La Taberna' })
     .locator('[aria-current="page"]');
+  await page.keyboard.press('Tab');
   await active.focus();
   assert.equal(await active.evaluate((el) => el.matches(':focus-visible')), true);
   assert.deepEqual(errors, []);
