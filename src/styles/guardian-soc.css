@@ -73,3 +73,33 @@
     grid-template-columns: 1fr;
   }
 }
+
+.guardian-soc-panel {
+  display: grid;
+  gap: 0.75rem;
+}
+.guardian-soc-panel .guardian-cloud-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+.guardian-soc-panel .guardian-cloud-entry {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.75rem;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  min-width: 0;
+}
+.guardian-soc-panel .guardian-cloud-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.guardian-soc-panel .guardian-management-dialog form {
+  display: grid;
+  gap: 1rem;
+}

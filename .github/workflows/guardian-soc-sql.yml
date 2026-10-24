@@ -1,0 +1,39 @@
+name: Guardian SOC SQL
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/202610240041_guardian_soc.sql'
+      - 'tests/fixtures/guardian-soc-schema.sql'
+      - 'tests/integration/guardian-soc*'
+      - '.github/workflows/guardian-soc-sql.yml'
+  push:
+    branches: [main, implementation/chatgpt]
+    paths:
+      - 'supabase/migrations/202610240041_guardian_soc.sql'
+      - 'tests/fixtures/guardian-soc-schema.sql'
+      - 'tests/integration/guardian-soc*'
+      - '.github/workflows/guardian-soc-sql.yml'
+permissions:
+  contents: read
+jobs:
+  postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: fixture-only-soc
+          POSTGRES_DB: soc_test
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGPASSWORD: fixture-only-soc
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify migration, idempotence, permissions and concurrent failures
+        run: |
+          psql -h 127.0.0.1 -U postgres -d soc_test -v ON_ERROR_STOP=1 -f tests/fixtures/guardian-soc-schema.sql
+          psql -h 127.0.0.1 -U postgres -d soc_test -v ON_ERROR_STOP=1 -f supabase/migrations/202610240041_guardian_soc.sql
+          psql -h 127.0.0.1 -U postgres -d soc_test -v ON_ERROR_STOP=1 -f supabase/migrations/202610240041_guardian_soc.sql
+          psql -h 127.0.0.1 -U postgres -d soc_test -v ON_ERROR_STOP=1 -f tests/integration/guardian-soc.sql
+          bash tests/integration/guardian-soc-concurrency.sh
