@@ -12,9 +12,10 @@ export interface ResilientWidgetBoundaryState {
   hasError: boolean;
   error?: Error;
 }
-function reportWidgetFailure(error: Error) {
+function reportWidgetFailure(error: unknown) {
+  const issue = error instanceof Error ? error : new Error("Optional game widget unavailable");
   try {
-    reportClientError(error, window.location.pathname);
+    reportClientError(issue, window.location.pathname);
   } catch {
     /* Reporting is optional. */
   }

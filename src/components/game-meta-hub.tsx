@@ -114,7 +114,7 @@ export function GameMetaView({ title, data }: { title: string; data: GameMetaRep
                 ? speedrun.runnerName
                 : 'Corredor no disponible'}
             </p>
-            {speedrunDate && <time dateTime={speedrun.dateIso}>{speedrunDate}</time>}
+            {speedrunDate && <time dateTime={speedrun.dateIso ?? undefined}>{speedrunDate}</time>}
             <div className="game-meta-actions">
               {videoUrl && (
                 <a
