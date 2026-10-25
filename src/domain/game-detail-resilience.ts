@@ -6,12 +6,20 @@ export function safeFormatIsoDate(value: string | null | undefined): string | nu
   return new Date(timestamp).toLocaleDateString('es-CL', { timeZone: 'UTC' });
 }
 export function safeGameDomId(title: unknown): string {
-  return (typeof title === 'string' ? title : 'game')
-    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'game';
+  return (
+    (typeof title === 'string' ? title : 'game')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || 'game'
+  );
 }
 export function normalizeUnlockPercentage(value: unknown): number {
-  const number = typeof value === 'number' ? value :
-    typeof value === 'string' && value.trim() ? Number(value) : NaN;
+  const number =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string' && value.trim()
+        ? Number(value)
+        : NaN;
   if (!Number.isFinite(number)) return 0;
   return Math.round(Math.min(100, Math.max(0, number)) * 10) / 10;
 }
@@ -20,6 +28,8 @@ export function achievementPercentageForKey(map: unknown, key: unknown): number 
   if (typeof key !== 'string' && (typeof key !== 'number' || !Number.isFinite(key))) return 0;
   const internalKey = String(key);
   // JSON object keys are strings even when Steam supplies a numeric internal_key.
-  const raw = Object.hasOwn(map, internalKey) ? (map as Record<string, unknown>)[internalKey] : undefined;
+  const raw = Object.hasOwn(map, internalKey)
+    ? (map as Record<string, unknown>)[internalKey]
+    : undefined;
   return normalizeUnlockPercentage(raw);
 }

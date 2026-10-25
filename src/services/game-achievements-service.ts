@@ -1,5 +1,8 @@
 import 'server-only';
-import { achievementPercentageForKey, normalizeUnlockPercentage } from '@/domain/game-detail-resilience';
+import {
+  achievementPercentageForKey,
+  normalizeUnlockPercentage,
+} from '@/domain/game-detail-resilience';
 import { unstable_cache } from 'next/cache';
 import { metaRecord, normalizedMetaTitle } from '@/domain/game-meta';
 import {
@@ -91,7 +94,9 @@ interface RawValveSsr {
   };
 }
 
-export async function fetchCommunityAchievements(appId: number): Promise<GameAchievementItem[] | null> {
+export async function fetchCommunityAchievements(
+  appId: number,
+): Promise<GameAchievementItem[] | null> {
   try {
     const res = await fetch(`https://steamcommunity.com/stats/${appId}/achievements/?l=spanish`, {
       headers: {

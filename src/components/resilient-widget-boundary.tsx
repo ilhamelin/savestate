@@ -13,16 +13,28 @@ export interface ResilientWidgetBoundaryState {
   error?: Error;
 }
 function reportWidgetFailure(error: Error) {
-  try { reportClientError(error, window.location.pathname); } catch { /* Reporting is optional. */ }
+  try {
+    reportClientError(error, window.location.pathname);
+  } catch {
+    /* Reporting is optional. */
+  }
 }
-function WidgetFailure({ fallback }: Omit<ResilientWidgetBoundaryProps, 'children'>, { error }: ErrorInfo) {
-  useEffect(() => { reportWidgetFailure(error); }, [error]);
+function WidgetFailure(
+  { fallback }: Omit<ResilientWidgetBoundaryProps, 'children'>,
+  { error }: ErrorInfo,
+) {
+  useEffect(() => {
+    reportWidgetFailure(error);
+  }, [error]);
   return fallback ?? null;
 }
 // Framework-aware isolation also catches rejected RSC children during streaming.
 const StreamBoundary = catchError(WidgetFailure);
 
-export class ResilientWidgetBoundary extends React.Component<ResilientWidgetBoundaryProps, ResilientWidgetBoundaryState> {
+export class ResilientWidgetBoundary extends React.Component<
+  ResilientWidgetBoundaryProps,
+  ResilientWidgetBoundaryState
+> {
   state: ResilientWidgetBoundaryState = { hasError: false };
   static getDerivedStateFromError(error: Error): ResilientWidgetBoundaryState {
     return { hasError: true, error };
@@ -32,6 +44,10 @@ export class ResilientWidgetBoundary extends React.Component<ResilientWidgetBoun
   }
   render() {
     if (this.state.hasError) return this.props.fallback ?? null;
-    return <StreamBoundary fallback={this.props.fallback} widgetName={this.props.widgetName}>{this.props.children}</StreamBoundary>;
+    return (
+      <StreamBoundary fallback={this.props.fallback} widgetName={this.props.widgetName}>
+        {this.props.children}
+      </StreamBoundary>
+    );
   }
 }

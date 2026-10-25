@@ -20,9 +20,7 @@ function AchievementCard({ item }: { item: GameAchievementItem }) {
         <div className="achievement-icon-fallback" aria-hidden="true">
           🏆
         </div>
-        {item.iconUrl ? (
-          <AchievementIcon src={item.iconUrl} />
-        ) : null}
+        {item.iconUrl ? <AchievementIcon src={item.iconUrl} /> : null}
       </div>
 
       <div className="achievement-content">

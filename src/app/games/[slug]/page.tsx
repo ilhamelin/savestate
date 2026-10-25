@@ -192,49 +192,67 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
           </div>
         </section>
       )}
-      <ResilientWidgetBoundary key={game.id + ":GameLiveRadar"} widgetName="GameLiveRadar">
-      <Suspense
-        fallback={
-          <section className="panel muted" aria-busy="true">
-            Cargando telemetría en vivo, ofertas y streams de Twitch…
-          </section>
-        }
-      >
-        <ResilientServerWidget widgetName="GameLiveRadar" load={() => GameLiveRadar({ title: game.title })} />
-      </Suspense>
+      <ResilientWidgetBoundary key={game.id + ':GameLiveRadar'} widgetName="GameLiveRadar">
+        <Suspense
+          fallback={
+            <section className="panel muted" aria-busy="true">
+              Cargando telemetría en vivo, ofertas y streams de Twitch…
+            </section>
+          }
+        >
+          <ResilientServerWidget
+            widgetName="GameLiveRadar"
+            load={() => GameLiveRadar({ title: game.title })}
+          />
+        </Suspense>
       </ResilientWidgetBoundary>
-      <ResilientWidgetBoundary key={game.id + ":GameMetaHub"} widgetName="GameMetaHub">
-      <Suspense
-        fallback={
-          <section className="panel skeleton muted" aria-busy="true">
-            Consultando duración, compatibilidad y récords…
-          </section>
-        }
-      >
-        <ResilientServerWidget widgetName="GameMetaHub" load={() => GameMetaHub({ title: game.title, igdbId: game.igdb_id })} />
-      </Suspense>
+      <ResilientWidgetBoundary key={game.id + ':GameMetaHub'} widgetName="GameMetaHub">
+        <Suspense
+          fallback={
+            <section className="panel skeleton muted" aria-busy="true">
+              Consultando duración, compatibilidad y récords…
+            </section>
+          }
+        >
+          <ResilientServerWidget
+            widgetName="GameMetaHub"
+            load={() => GameMetaHub({ title: game.title, igdbId: game.igdb_id })}
+          />
+        </Suspense>
       </ResilientWidgetBoundary>
-      <ResilientWidgetBoundary key={game.id + ":GameCriticAndSpecsHub"} widgetName="GameCriticAndSpecsHub">
-      <Suspense
-        fallback={
-          <section className="panel skeleton muted" aria-busy="true">
-            Consultando crítica y requisitos de hardware…
-          </section>
-        }
+      <ResilientWidgetBoundary
+        key={game.id + ':GameCriticAndSpecsHub'}
+        widgetName="GameCriticAndSpecsHub"
       >
-        <ResilientServerWidget widgetName="GameCriticAndSpecsHub" load={() => GameCriticAndSpecsHub({ title: game.title, igdbId: game.igdb_id })} />
-      </Suspense>
+        <Suspense
+          fallback={
+            <section className="panel skeleton muted" aria-busy="true">
+              Consultando crítica y requisitos de hardware…
+            </section>
+          }
+        >
+          <ResilientServerWidget
+            widgetName="GameCriticAndSpecsHub"
+            load={() => GameCriticAndSpecsHub({ title: game.title, igdbId: game.igdb_id })}
+          />
+        </Suspense>
       </ResilientWidgetBoundary>
-      <ResilientWidgetBoundary key={game.id + ":GameAchievementsHub"} widgetName="GameAchievementsHub">
-      <Suspense
-        fallback={
-          <section className="panel skeleton muted" aria-busy="true">
-            Consultando salón de trofeos y logros de Steam…
-          </section>
-        }
+      <ResilientWidgetBoundary
+        key={game.id + ':GameAchievementsHub'}
+        widgetName="GameAchievementsHub"
       >
-        <ResilientServerWidget widgetName="GameAchievementsHub" load={() => GameAchievementsHub({ title: game.title })} />
-      </Suspense>
+        <Suspense
+          fallback={
+            <section className="panel skeleton muted" aria-busy="true">
+              Consultando salón de trofeos y logros de Steam…
+            </section>
+          }
+        >
+          <ResilientServerWidget
+            widgetName="GameAchievementsHub"
+            load={() => GameAchievementsHub({ title: game.title })}
+          />
+        </Suspense>
       </ResilientWidgetBoundary>
       <section className="panel">
         <h2>Estadísticas públicas</h2>
@@ -257,16 +275,19 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
         </div>
         <p className="muted">Las bibliotecas privadas se excluyen de estos cálculos.</p>
       </section>
-      <ResilientWidgetBoundary key={game.id + ":GameForum"} widgetName="GameForum">
-      <Suspense
-        fallback={
-          <section className="panel muted" aria-busy="true">
-            Cargando debates y momentos de la comunidad…
-          </section>
-        }
-      >
-        <ResilientServerWidget widgetName="GameForum" load={() => GameForum({ gameId: game.id })} />
-      </Suspense>
+      <ResilientWidgetBoundary key={game.id + ':GameForum'} widgetName="GameForum">
+        <Suspense
+          fallback={
+            <section className="panel muted" aria-busy="true">
+              Cargando debates y momentos de la comunidad…
+            </section>
+          }
+        >
+          <ResilientServerWidget
+            widgetName="GameForum"
+            load={() => GameForum({ gameId: game.id })}
+          />
+        </Suspense>
       </ResilientWidgetBoundary>
       <section id="write-review" className="panel">
         <h2>Tu reseña, tu perspectiva.</h2>
