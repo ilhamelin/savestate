@@ -1,0 +1,23 @@
+name: SPEC-20 verification
+on:
+  push:
+    branches: [feature/global-chat-design-rework]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/global-chat-design-rework
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Read installed client component and image guides
+        run: |
+          cat node_modules/next/dist/docs/01-app/03-api-reference/01-directives/use-client.md
+          cat node_modules/next/dist/docs/01-app/03-api-reference/02-components/image.md
+          git grep -n -E 'discord-chat|discord-composer|discordNearBottom' -- tests/unit
