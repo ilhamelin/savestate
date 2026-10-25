@@ -16,8 +16,25 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Read installed client component and image guides
+      - name: Format changed files
         run: |
-          cat node_modules/next/dist/docs/01-app/03-api-reference/01-directives/use-client.md
-          cat node_modules/next/dist/docs/01-app/03-api-reference/02-components/image.md
-          git grep -n -E 'discord-chat|discord-composer|discordNearBottom' -- tests/unit
+          npx prettier --write src/app/chat/page.tsx src/components/discord-chat.tsx src/app/globals.css src/domain/discord-client.ts tests/unit/discord-chat-ui.test.ts src/app/chat-design-qa/page.tsx scripts/spec20-browser.mjs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src tests scripts
+          git diff --cached --quiet || (git commit -m "style: format community terminal rework" && git push)
+      - run: npm test
+      - run: npm run typecheck
+        env:
+          NODE_OPTIONS: --max-old-space-size=1536
+      - run: npm run lint -- --max-warnings=0
+        env:
+          NODE_OPTIONS: --max-old-space-size=1536
+      - run: npm run format:check
+      - run: npx next build --webpack
+      - name: Browser validation
+        run: |
+          npm install --prefix "$RUNNER_TEMP/spec20-tools" --no-save --package-lock=false playwright
+          npm run start -- --port 3000 > /tmp/spec20-server.log 2>&1 &
+          for i in $(seq 1 60); do curl -s http://localhost:3000/chat-design-qa > /dev/null && break; sleep 1; done
+          node scripts/spec20-browser.mjs

@@ -12,6 +12,7 @@ import type {
 } from '@/domain/discord-client';
 import {
   discordMessageOrigin,
+  discordSharedGame,
   discordImageAttachment,
   discordInlineMedia,
   sameDiscordMessages,
@@ -226,6 +227,7 @@ const DiscordMessageCard = memo(function DiscordMessageCard({
 }) {
   const origin = discordMessageOrigin(message.content);
   const media = discordInlineMedia(origin.content);
+  const sharedGame = typeof window === 'undefined' ? null : discordSharedGame(origin.content, window.location.origin);
   return (
     <article
       key={message.id}
@@ -246,7 +248,7 @@ const DiscordMessageCard = memo(function DiscordMessageCard({
           </p>
         )}
         <span className={origin.web ? 'badge-savestate' : 'badge-discord'}>
-          {origin.web ? '[SAVESTATE_WEB]' : '[DISCORD]'}
+          {origin.web ? '[SAVESTATE]' : '[DISCORD]'}
         </span>{' '}
         {origin.web && origin.author ? (
           <Link className="accent" href={`/players/${encodeURIComponent(origin.author)}`}>
@@ -265,6 +267,7 @@ const DiscordMessageCard = memo(function DiscordMessageCard({
         ) : !media.urls.length && !message.attachments.length ? (
           <p>Mensaje sin texto disponible.</p>
         ) : null}
+        {sharedGame && <Link className="discord-game-card-embed" href={sharedGame.href}><small>🎮 Juego</small><strong>{sharedGame.title}</strong><small>Ver ficha ↗</small></Link>}
         {media.urls.map((url) => (
           <InlineMedia key={url} url={url} onOpen={onOpen} />
         ))}
@@ -488,7 +491,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
     if (!pendingScroll.current) return;
     pendingScroll.current = false;
     const list = listRef.current;
-    list?.scrollTo({ top: list.scrollHeight, behavior: 'instant' });
+    list?.scrollTo({ top: list.scrollHeight, behavior: messagesRef.current.length > 1 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'smooth' : 'instant' });
   }, [lastVisibleId, frequency]);
   useEffect(() => {
     const timer = setInterval(() => {
@@ -590,6 +593,8 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
   }, [revision, frequency]);
   async function send() {
     if (
+      !node.online ||
+      loading ||
       !writableFrequency ||
       (attachment && !canAttach) ||
       busy.current ||
@@ -684,53 +689,24 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
         />
       )}
       <section className="panel discord-chat">
-        <div className="discord-terminal-bar">
-          <span className="discord-terminal-leds" aria-hidden="true">
-            <i />
-            <i />
-            <i />
-          </span>
-          <span>TERMINAL://RELAY_DISCORD_V1.0</span>
-        </div>
-        <div className="discord-chat-heading">
-          <h2>Chat Global · Terminal comunitaria</h2>
-          <span className="discord-live" role="status">
-            <span className={node.online ? 'live-pulse' : ''} aria-hidden="true">
-              {node.online ? '🟢' : '◌'}
-            </span>{' '}
-            {loading ? 'CONECTANDO' : node.online ? 'LIVE SYNC' : 'SYNC EN PAUSA'} // #
-            {frequency === 'announcements'
-              ? 'anuncios-savestate'
-              : frequency === 'chat-privado'
-                ? '〘🕵〙chat-privado'
-                : frequency}
-          </span>
-          <button
-            type="button"
-            className="button outline small"
-            onClick={() => setRevision((n) => n + 1)}
-          >
-            ↺ Sincronizar
-          </button>
-        </div>
-        <p className="muted discord-chat-description">
-          Canal compartido con Discord · se actualiza cada 10 segundos mientras esta pestaña está
-          visible.
-        </p>
-        <div className="filter-buttons discord-chat-links">
-          {inviteUrl ? (
-            <a
-              className="button outline small"
-              href={inviteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Unirse al servidor de Discord ↗
-            </a>
-          ) : (
-            <span className="muted">Invitación al servidor pendiente de configuración.</span>
-          )}
-        </div>
+        <header className="discord-chat-heading">
+          <div className="discord-terminal-identity">
+            <div className="discord-terminal-bar">
+              <span className="discord-terminal-leds" aria-hidden="true"><i /><i /><i /></span>
+              <span>TERMINAL://COMMUNITY_RELAY</span>
+            </div>
+            <h2><span className="discord-channel-hash">#</span>{frequency === 'announcements' ? '📢-anuncios-savestate' : frequency === 'checkpoints' ? '💾-checkpoints' : frequency === 'chat-privado' ? '〘🕵〙chat-privado' : '💬-web-chat'}</h2>
+          </div>
+          <div className="discord-heading-actions">
+            <span className="discord-live" role="status">
+              {loading ? 'CONECTANDO' : node.online ? 'LIVE SYNC' : 'SYNC EN PAUSA'} // {node.latency === null ? '—' : `${node.latency}ms`}
+            </span>
+            <button type="button" className="button outline small" disabled={loading || sending} aria-label="Sincronizar mensajes del canal" onClick={() => { setLoading(true); setRevision((n) => n + 1); }}>
+              ↺ Sincronizar
+            </button>
+          </div>
+        </header>
+        <p className="muted discord-chat-description">Relay en vivo · actualización cada 10 s con la pestaña visible.</p>
         <div className="discord-history-wrap">
           <div
             ref={listRef}
@@ -742,7 +718,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                 setNewMessages(false);
             }}
           >
-            {loading ? <p role="status">[ Conectando con Discord… ]</p> : null}
+            {loading && !visibleMessages.length ? <p role="status">[ Conectando con Discord… ]</p> : null}
             {!loading && !visibleMessages.length && !error ? (
               <p>No hay mensajes en esta frecuencia.</p>
             ) : null}
@@ -778,7 +754,8 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
           </p>
         ) : null}
         {writableFrequency ? (
-          <>
+          <div className="discord-composer-container">
+            <div className="discord-composer-extras">
             {replyTo && (
               <div className="discord-reply-bar">
                 <span>↩ Respondiendo a @{messageAuthor(replyTo)}</span>
@@ -880,6 +857,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                 </button>
               </div>
             )}
+            </div>
             <form
               className="discord-chat-form discord-advanced-composer"
               onSubmit={(event) => {
@@ -952,9 +930,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                   placeholder="Enter para enviar · Shift+Enter para salto de línea…"
                   aria-describedby="discord-message-count"
                 />
-                <span id="discord-message-count" className="muted discord-character-count">
-                  {content.length}/500
-                </span>
+
                 {mentionsOpen && (
                   <ul
                     id="discord-mention-options"
@@ -990,6 +966,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                 )}
               </label>
               <div className="discord-composer-toolbar">
+<div className="discord-tools-group" role="group" aria-label="Adjuntos y herramientas">
                 <input
                   type="file"
                   className="chat-file-input"
@@ -1022,31 +999,9 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                   aria-expanded={urlOpen}
                   onClick={() => setUrlOpen((open) => !open)}
                 >
-                  🔗 Pegar URL/GIF
+                  🔗 Pegar URL
                 </button>
-                <div
-                  className="discord-emoji-buttons"
-                  role="group"
-                  aria-label="Insertar emoji gamer"
-                >
-                  {(['👾', '💾', '🏆', '🔥'] as const).map((emoji) => (
-                    <button
-                      type="button"
-                      className="button outline small"
-                      key={emoji}
-                      aria-label={`Insertar ${emoji}`}
-                      disabled={sending || content.length + emoji.length > 500}
-                      onClick={() => {
-                        setContent((current) =>
-                          current.length + emoji.length <= 500 ? current + emoji : current,
-                        );
-                        inputRef.current?.focus();
-                      }}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
+
                 <button
                   type="button"
                   className="button outline small discord-compose-tool"
@@ -1070,24 +1025,49 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                 >
                   🎮 Juego
                 </button>
-                <button
+</div>
+                <div
+                  className="discord-emoji-palette"
+                  role="group"
+                  aria-label="Insertar emoji gamer"
+                >
+                  {(['👾', '💾', '🏆', '🔥'] as const).map((emoji) => (
+                    <button
+                      type="button"
+                      className="button outline small"
+                      key={emoji}
+                      aria-label={`Insertar ${emoji}`}
+                      disabled={sending || content.length + emoji.length > 500}
+                      onClick={() => {
+                        setContent((current) =>
+                          current.length + emoji.length <= 500 ? current + emoji : current,
+                        );
+                        inputRef.current?.focus();
+                      }}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+<div className="discord-send-action"><span id="discord-message-count" className="muted discord-char-counter">{content.length}/500</span>                <button
                   className="button"
                   disabled={
-                    sending ||
+                    !node.online || loading || sending ||
                     cooldown > 0 ||
                     (!content.trim() && !attachment) ||
                     Boolean(attachment && !canAttach)
                   }
                 >
-                  {sending ? 'Enviando…' : cooldown > 0 ? `Espera ${cooldown}s…` : 'Enviar →'}
+                  {sending ? 'Enviando…' : cooldown > 0 ? `Espera ${cooldown}s…` : 'ENVIAR ↗'}
                 </button>
+</div>
               </div>
             </form>
-            <p className="muted">
+            <p className="muted discord-composer-note">
               Lo que envíes se publicará en el canal de Discord con tu nombre de usuario de
               SaveState.
             </p>
-          </>
+          </div>
         ) : (
           <p className="notice discord-readonly">
             [ MODO LECTURA //{' '}
@@ -1137,12 +1117,12 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
               ))}
           </ul>
         </section>
-        <DiscordLinkedRoleCard />
         <section className="panel discord-presence" aria-labelledby="discord-presence-heading">
           <h2 id="discord-presence-heading">MIEMBROS EN LÍNEA</h2>
           <p className="discord-presence-count" role="status">
             {loading ? 'Consultando presencia…' : `🟢 ${presence.onlineCount} conectados`}
           </p>
+          <div className="discord-presence-scroll" role="region" aria-label="Lista de miembros conectados" tabIndex={0}>
           <ul className="discord-presence-list">
             {presence.members.map((member) => (
               <li key={member.id} className="discord-presence-member">
@@ -1171,6 +1151,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
               </li>
             ))}
           </ul>
+          </div>
           {!loading && !presence.members.length ? (
             <p className="muted">Sin miembros visibles en el widget.</p>
           ) : null}
@@ -1196,12 +1177,13 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
               target="_blank"
               rel="noopener noreferrer"
             >
-              Unirse al servidor ↗
+              UNIRSE AL SERVIDOR ↗
             </a>
           ) : (
             <p className="muted">Invitación pendiente de configuración.</p>
           )}
         </section>
+        <DiscordLinkedRoleCard />
       </aside>
     </div>
   );

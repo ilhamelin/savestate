@@ -561,3 +561,17 @@ export function normalizedDiscordMessages(input: unknown): DiscordMessage[] {
     })
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
 }
+
+/** Resolve only game links shared by this app; never turn external URLs into trusted cards. */
+export function discordSharedGame(text: string, origin: string): { title: string; href: string } | null {
+  const match = text.match(/🎮 (.{1,180}?) \((https?:\/\/[^\s<>]+)\)/u);
+  if (!match) return null;
+  try {
+    const url = new URL(match[2]!);
+    if (url.origin !== new URL(origin).origin || url.username || url.password) return null;
+    if (!/^\/games\/[a-z0-9-]+$/.test(url.pathname) || url.search || url.hash) return null;
+    return { title: match[1]!.trim(), href: url.pathname };
+  } catch {
+    return null;
+  }
+}
