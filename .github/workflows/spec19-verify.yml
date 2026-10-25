@@ -1,0 +1,24 @@
+name: SPEC-19 verification
+on:
+  push:
+    branches: [fix/game-detail-rsc-resilience]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/game-detail-rsc-resilience
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Read installed Next error and RSC guides
+        run: |
+          cat node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/error.md
+          cat node_modules/next/dist/docs/01-app/02-guides/production-checklist.md
+          find node_modules/next/dist/docs -iname '*server-and-client*'
+          git grep -n 'onError=' -- src/components/game-achievements.tsx
