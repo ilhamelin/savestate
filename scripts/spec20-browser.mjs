@@ -123,7 +123,7 @@ await page.route('**/api/**', async (route) => {
     return json({ games: [{ id: '1', title: 'Portal', slug: 'portal' }] });
   return json({ data: {} });
 });
-await page.goto('http://localhost:3000/chat-design-qa', { waitUntil: 'domcontentloaded' });
+await page.goto('http://localhost:3000/guardian-assets/spec20', { waitUntil: 'domcontentloaded' });
 await page
   .getByText(/LIVE SYNC/)
   .waitFor()
