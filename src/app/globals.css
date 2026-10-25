@@ -9178,4 +9178,9 @@ html[data-double-xp='true'] .level-progress {
   }
 }
 
-.discord-heading-actions .button, .discord-tools-group .button, .discord-emoji-palette .button, .discord-send-action .button { border-radius: 6px; }
+.discord-heading-actions .button,
+.discord-tools-group .button,
+.discord-emoji-palette .button,
+.discord-send-action .button {
+  border-radius: 6px;
+}
