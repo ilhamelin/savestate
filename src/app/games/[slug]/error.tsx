@@ -9,6 +9,7 @@ export interface GameSegmentErrorProps {
   retry?: () => void;
 }
 export default function GameSegmentError({ error, reset, retry }: GameSegmentErrorProps) {
+  const digest = typeof error?.digest === 'string' ? error.digest : undefined;
   useEffect(() => {
     try {
       reportClientError(error, window.location.pathname);
@@ -28,13 +29,13 @@ export default function GameSegmentError({ error, reset, retry }: GameSegmentErr
         padding: '2rem',
       }}
     >
-      <p className="eyebrow">SEÑAL DEL JUEGO INTERRUMPIDA // RECONEXIÓN</p>
-      <h1>La ficha necesita reconectarse.</h1>
+      <p className="eyebrow">GAME DATA TERMINAL // RECUPERACIÓN</p>
+      <h1 style={{ fontSize: "clamp(1.1rem, 3vw, 1.65rem)", lineHeight: 1.3 }}>SEÑAL DEL JUEGO INTERRUMPIDA // RECONEXIÓN</h1>
       <p className="muted checkpoint-error-description">
         No se pudieron cargar todos los datos de esta ficha técnica. Puedes reintentar la conexión o
         volver al catálogo.
       </p>
-      {error.digest && <p className="muted">Código de error: [{error.digest}]</p>}
+      {digest && <p className="muted">Código de error: [{digest}]</p>}
       <div className="checkpoint-error-actions">
         <button type="button" className="button" onClick={() => (retry ?? reset)()}>
           Reintentar sincronización
