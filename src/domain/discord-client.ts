@@ -563,7 +563,10 @@ export function normalizedDiscordMessages(input: unknown): DiscordMessage[] {
 }
 
 /** Resolve only game links shared by this app; never turn external URLs into trusted cards. */
-export function discordSharedGame(text: string, origin: string): { title: string; href: string } | null {
+export function discordSharedGame(
+  text: string,
+  origin: string,
+): { title: string; href: string } | null {
   const match = text.match(/🎮 (.{1,180}?) \((https?:\/\/[^\s<>]+)\)/u);
   if (!match) return null;
   try {
