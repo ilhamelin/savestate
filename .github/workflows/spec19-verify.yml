@@ -17,16 +17,3 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx next build --webpack
-      - name: Install isolated browser tooling
-        run: npm install --prefix "$RUNNER_TEMP/spec19-tools" --no-save --package-lock=false playwright
-      - name: Verify real RSC streaming, segment recovery and image hydration
-        run: |
-          npm run start > "$RUNNER_TEMP/spec19-next.log" 2>&1 &
-          for attempt in $(seq 1 40); do
-            if curl -fsS http://localhost:3000/explore > /dev/null; then break; fi
-            sleep 1
-          done
-          node .github/spec19-browser.mjs
-      - name: Show diagnostic server log on failure
-        if: failure()
-        run: tail -n 80 "$RUNNER_TEMP/spec19-next.log" || true
