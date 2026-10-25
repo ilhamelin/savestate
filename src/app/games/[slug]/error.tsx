@@ -30,7 +30,9 @@ export default function GameSegmentError({ error, reset, retry }: GameSegmentErr
       }}
     >
       <p className="eyebrow">GAME DATA TERMINAL // RECUPERACIÓN</p>
-      <h1 style={{ fontSize: "clamp(1.1rem, 3vw, 1.65rem)", lineHeight: 1.3 }}>SEÑAL DEL JUEGO INTERRUMPIDA // RECONEXIÓN</h1>
+      <h1 style={{ fontSize: 'clamp(1.1rem, 3vw, 1.65rem)', lineHeight: 1.3 }}>
+        SEÑAL DEL JUEGO INTERRUMPIDA // RECONEXIÓN
+      </h1>
       <p className="muted checkpoint-error-description">
         No se pudieron cargar todos los datos de esta ficha técnica. Puedes reintentar la conexión o
         volver al catálogo.
