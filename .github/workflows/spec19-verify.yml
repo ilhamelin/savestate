@@ -42,3 +42,6 @@ jobs:
             sleep 1
           done
           node .github/spec19-browser.mjs
+      - name: Show diagnostic server log on failure
+        if: failure()
+        run: tail -n 80 "$RUNNER_TEMP/spec19-next.log" || true

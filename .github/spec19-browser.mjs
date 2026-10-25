@@ -8,6 +8,7 @@ try{
  const context=await browser.newContext({viewport:{width:1280,height:900}});
  const page=await context.newPage();
  await page.route('**/fixture-achievement.png',route=>route.abort());
+ page.on('pageerror',error=>console.log('BROWSER_ERROR: '+error.message));
  const core=async()=>{
    await page.getByRole('heading',{name:'God of War',exact:true}).waitFor();
    await page.getByRole('textbox',{name:'Reseña',exact:true}).fill('Still usable');
