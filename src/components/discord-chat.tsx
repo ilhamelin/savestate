@@ -460,6 +460,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
   const frequencyRef = useRef<DiscordFrequency>('web-chat');
   const [newMessages, setNewMessages] = useState(false);
   const pendingScroll = useRef(true);
+  const smoothScroll = useRef(false);
   const messagesRef = useRef<DiscordMessage[]>([]);
   const visibleMessages = messages;
   const lastVisibleId = visibleMessages.at(-1)?.id;
@@ -477,6 +478,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
     if (next === 'chat-privado' && !privateChatAccess.canRead) return;
     frequencyRef.current = next;
     pendingScroll.current = true;
+    smoothScroll.current = false;
     setNewMessages(false);
     messagesRef.current = [];
     setMessages([]);
@@ -503,11 +505,12 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
     list?.scrollTo({
       top: list.scrollHeight,
       behavior:
-        messagesRef.current.length > 1 &&
+        smoothScroll.current &&
         !window.matchMedia('(prefers-reduced-motion: reduce)').matches
           ? 'smooth'
           : 'instant',
     });
+    smoothScroll.current = false;
   }, [lastVisibleId, frequency]);
   useEffect(() => {
     const timer = setInterval(() => {
@@ -571,6 +574,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
               !list || discordNearBottom(list.scrollTop, list.clientHeight, list.scrollHeight);
             if (hasNew) {
               pendingScroll.current = !previous.length || nearBottom;
+              smoothScroll.current = Boolean(previous.length && nearBottom);
               if (previous.length && !nearBottom) setNewMessages(true);
             }
             messagesRef.current = data.messages;
@@ -674,6 +678,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
           result.message,
         ].slice(-30);
         pendingScroll.current = true;
+        smoothScroll.current = true;
         setNewMessages(false);
         messagesRef.current = next;
         setMessages(next);
@@ -746,7 +751,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
           </div>
         </header>
         <p className="muted discord-chat-description">
-          Relay en vivo · actualización cada 10 s con la pestaña visible.
+          {visibleMessages.length} mensajes · actualización cada 10 s con la pestaña visible.
         </p>
         <div className="discord-history-wrap">
           <div
@@ -1027,6 +1032,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                     type="button"
                     className="button outline small"
                     disabled={sending || !canAttach}
+                    aria-label="Adjuntar archivo de imagen o GIF"
                     onClick={() => fileRef.current?.click()}
                   >
                     📎 Adjuntar archivo
@@ -1035,6 +1041,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                     type="button"
                     className="button outline small"
                     disabled={sending || !canAttach}
+                    aria-label="Seleccionar archivo de la bóveda"
                     onClick={() => setVaultPicker(true)}
                   >
                     💾 Bóveda
@@ -1043,6 +1050,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                     type="button"
                     className="button outline small"
                     disabled={sending || !canAttach}
+                    aria-label="Pegar URL de imagen o GIF"
                     aria-expanded={urlOpen}
                     onClick={() => setUrlOpen((open) => !open)}
                   >
@@ -1067,6 +1075,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                     type="button"
                     className="button outline small discord-compose-tool"
                     disabled={sending}
+                    aria-label="Compartir juego del catálogo"
                     aria-expanded={gamePicker}
                     onClick={() => setGamePicker((open) => !open)}
                   >
@@ -1101,7 +1110,9 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                     {content.length}/500
                   </span>{' '}
                   <button
-                    className="button"
+                    className="button discord-send-button"
+                    aria-label={sending ? 'Enviando mensaje' : cooldown > 0 ? `Espera ${cooldown} segundos para enviar` : 'Enviar mensaje'}
+                    aria-busy={sending}
                     disabled={
                       !node.online ||
                       loading ||
@@ -1159,6 +1170,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                   <button
                     type="button"
                     className={`discord-channel-pill${frequency === value ? ' active' : ''}`}
+                    aria-label={`Abrir ${label}`}
                     aria-pressed={frequency === value}
                     disabled={sending}
                     onClick={() => selectFrequency(value)}
@@ -1169,6 +1181,33 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                 </li>
               ))}
           </ul>
+        </section>
+        <section className="panel">
+          <h2>ESTADO DEL NODO</h2>
+          <p className="discord-node-status" role="status">
+            <span className={node.online ? 'live-pulse' : ''} aria-hidden="true">
+              {node.online ? '🟢' : '◌'}
+            </span>{' '}
+            {loading ? 'CONECTANDO' : node.online ? 'ONLINE' : 'SIN CONEXIÓN'}
+          </p>
+          <p className="muted">
+            Latencia del relay: {node.latency === null ? '—' : `${node.latency} ms`}
+          </p>
+          <p className="muted">
+            Estado de la última consulta al canal mediante el bot · refresco cada 10 s.
+          </p>
+          {inviteUrl ? (
+            <a
+              className="button discord-join"
+              href={inviteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              UNIRSE AL SERVIDOR ↗
+            </a>
+          ) : (
+            <p className="muted">Invitación pendiente de configuración.</p>
+          )}
         </section>
         <section className="panel discord-presence" aria-labelledby="discord-presence-heading">
           <h2 id="discord-presence-heading">MIEMBROS EN LÍNEA</h2>
@@ -1213,33 +1252,6 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
           {!loading && !presence.members.length ? (
             <p className="muted">Sin miembros visibles en el widget.</p>
           ) : null}
-        </section>
-        <section className="panel">
-          <h2>ESTADO DEL NODO</h2>
-          <p className="discord-node-status" role="status">
-            <span className={node.online ? 'live-pulse' : ''} aria-hidden="true">
-              {node.online ? '🟢' : '◌'}
-            </span>{' '}
-            {loading ? 'CONECTANDO' : node.online ? 'ONLINE' : 'SIN CONEXIÓN'}
-          </p>
-          <p className="muted">
-            Latencia del relay: {node.latency === null ? '—' : `${node.latency} ms`}
-          </p>
-          <p className="muted">
-            Estado de la última consulta al canal mediante el bot · refresco cada 10 s.
-          </p>
-          {inviteUrl ? (
-            <a
-              className="button discord-join"
-              href={inviteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              UNIRSE AL SERVIDOR ↗
-            </a>
-          ) : (
-            <p className="muted">Invitación pendiente de configuración.</p>
-          )}
         </section>
         <DiscordLinkedRoleCard />
       </aside>

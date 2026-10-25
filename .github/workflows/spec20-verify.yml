@@ -32,6 +32,9 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=1536
       - run: npm run format:check
       - run: npx next build --webpack
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://spec20.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: spec20-test-anon-key
       - name: Browser validation
         run: |
           npm install --prefix "$RUNNER_TEMP/spec20-tools" --no-save --package-lock=false playwright
