@@ -22,3 +22,7 @@ jobs:
           cat node_modules/next/dist/docs/01-app/02-guides/production-checklist.md
           find node_modules/next/dist/docs -iname '*server-and-client*'
           git grep -n 'onError=' -- src/components/game-achievements.tsx
+      - name: Read installed component error isolation API
+        run: |
+          find node_modules/next/dist/docs -iname '*catch*error*' -exec cat {} \;
+          find node_modules/next -maxdepth 3 -iname '*catch*error*'
