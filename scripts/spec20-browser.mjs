@@ -124,7 +124,7 @@ await page.route('**/api/**', async (route) => {
   return json({ data: {} });
 });
 await page.goto('http://localhost:3000/chat-design-qa', { waitUntil: 'domcontentloaded' });
-await page.getByText(/LIVE SYNC/).waitFor();
+await page.getByText(/LIVE SYNC/).waitFor().catch(async error => { console.log('SPEC20_INITIAL_DIAGNOSTIC', JSON.stringify({url:page.url(),body:await page.locator('body').innerText(),failures})); throw error; });
 assert.equal(await page.locator('.discord-tools-group button').count(), 5);
 assert.equal(await page.locator('.discord-emoji-palette button').count(), 4);
 assert.equal(await page.locator('.discord-channel-pill').count(), 3);

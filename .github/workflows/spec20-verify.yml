@@ -41,3 +41,6 @@ jobs:
           npm run start -- --port 3000 > /tmp/spec20-server.log 2>&1 &
           for i in $(seq 1 60); do curl -s http://localhost:3000/chat-design-qa > /dev/null && break; sleep 1; done
           node scripts/spec20-browser.mjs
+      - name: Server diagnostics
+        if: failure()
+        run: cat /tmp/spec20-server.log || true
