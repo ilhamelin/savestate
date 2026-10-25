@@ -49,7 +49,7 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/spec20-tools" --no-save --package-lock=false playwright
           npm run start -- --port 3000 > /tmp/spec20-server.log 2>&1 &
-          for i in $(seq 1 60); do curl --max-time 5 -s http://localhost:3000/guardian-assets/spec20 > /dev/null && break; sleep 1; done
+          for i in $(seq 1 60); do (echo > /dev/tcp/127.0.0.1/3000) 2>/dev/null && break; sleep 1; done
           node tests/browser/discord-chat.mjs
       - name: Server diagnostics
         if: failure()
