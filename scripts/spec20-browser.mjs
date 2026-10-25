@@ -18,22 +18,10 @@ let allowed = false,
   offline = false,
   sequence = 0;
 const sent = [];
-let uploadPrepared = false,
-  uploaded = false;
-const png = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=',
-  'base64',
-);
-await page.route('https://spec20.supabase.co/**', async (route) => {
-  if (route.request().url().includes('/storage/')) {
-    uploaded = true;
-    return route.fulfill({ json: { Key: 'chat-media/test.png' } });
-  }
-  return route.fulfill({ status: 401, json: { message: 'No session' } });
-});
-await page.route('https://i.imgur.com/**', (route) =>
-  route.fulfill({ contentType: 'image/png', body: png }),
-);
+let uploadPrepared = false, uploaded = false;
+const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', 'base64');
+await page.route('https://spec20.supabase.co/**', async route => { if(route.request().url().includes('/storage/')) { uploaded=true; return route.fulfill({json:{Key:'chat-media/test.png'}}); } return route.fulfill({status:401,json:{message:'No session'}}); });
+await page.route('https://i.imgur.com/**', route=>route.fulfill({contentType:'image/png',body:png}));
 const makeMessage = (n, content = 'Mensaje comunitario de prueba ' + n) => ({
   id: String(111111111111111100n + BigInt(n)),
   author: 'player' + n,
@@ -84,32 +72,8 @@ await page.route('**/api/**', async (route) => {
       privateChatAccess: { canRead: allowed, canSend: allowed, canAttach: allowed },
     });
   }
-  if (url.pathname === '/api/chat/upload') {
-    uploadPrepared = true;
-    return json({
-      path: 'test.png',
-      token: 'signed-test-token',
-      url: 'https://spec20.supabase.co/storage/v1/object/public/chat-media/test.png',
-    });
-  }
-  if (url.pathname === '/api/vault')
-    return json({
-      items: [
-        {
-          id: 'vault-test',
-          user_id: 'user-test',
-          r2_key: 'test',
-          file_name: 'captura.png',
-          file_size: 100,
-          mime_type: 'image/png',
-          status: 'ready',
-          created_at: '2026-10-24T00:00:00Z',
-          publicUrl: 'https://i.imgur.com/test.png',
-        },
-      ],
-      pending: [],
-      storage: { used_bytes: 100, reserved_bytes: 0, quota_bytes: 104857600 },
-    });
+  if (url.pathname === '/api/chat/upload') { uploadPrepared=true; return json({path:'test.png',token:'signed-test-token',url:'https://spec20.supabase.co/storage/v1/object/public/chat-media/test.png'}); }
+  if (url.pathname === '/api/vault') return json({items:[{id:'vault-test',user_id:'user-test',r2_key:'test',file_name:'captura.png',file_size:100,mime_type:'image/png',status:'ready',created_at:'2026-10-24T00:00:00Z',publicUrl:'https://i.imgur.com/test.png'}],pending:[],storage:{used_bytes:100,reserved_bytes:0,quota_bytes:104857600}});
   if (url.pathname === '/api/discord/role-connection')
     return json({
       data: {
@@ -166,25 +130,20 @@ await page.getByRole('button', { name: 'Adjuntar URL', exact: true }).click();
 await page.getByText('🔗 Enlace de GIF listo para enviar ↗').waitFor();
 await page.getByRole('button', { name: '✕ Quitar', exact: true }).click();
 
-await page.locator('.discord-tools-group button').filter({ hasText: 'Bóveda' }).click();
-await page.getByRole('button', { name: 'Enviar al composer', exact: true }).click();
-await page.getByRole('button', { name: '✕ Quitar', exact: true }).click();
-await page
-  .locator('input[type=file]')
-  .setInputFiles({ name: 'captura.png', mimeType: 'image/png', buffer: png });
+await page.locator('.discord-tools-group button').filter({hasText:'Bóveda'}).click();
+await page.getByRole('button',{name:'Enviar al composer',exact:true}).click();
+await page.getByRole('button',{name:'✕ Quitar',exact:true}).click();
+await page.locator('input[type=file]').setInputFiles({name:'captura.png',mimeType:'image/png',buffer:png});
 await page.getByAltText('Vista previa de imagen o GIF adjunto').waitFor();
 await input.press('Enter');
-await page.waitForFunction(() => !document.querySelector('.discord-attachment-preview'));
-assert.equal(uploadPrepared, true);
-assert.equal(uploaded, true);
-assert.match(sent.at(-1).mediaUrl, /storage\/v1\/object\/public\/chat-media/);
+await page.waitForFunction(()=>!document.querySelector('.discord-attachment-preview'));
+assert.equal(uploadPrepared,true);
+assert.equal(uploaded,true);
+assert.match(sent.at(-1).mediaUrl,/storage\/v1\/object\/public\/chat-media/);
 await page.waitForTimeout(3200);
-messages = [
-  ...messages,
-  { ...makeMessage(58), attachments: [{ name: 'test.png', url: 'https://i.imgur.com/test.png' }] },
-];
-await page.getByRole('button', { name: 'Sincronizar mensajes del canal' }).click();
-await page.locator('.discord-message-list .discord-inline-media button').first().click();
+messages=[...messages,{...makeMessage(58),attachments:[{name:'test.png',url:'https://i.imgur.com/test.png'}]}];
+await page.getByRole('button',{name:'Sincronizar mensajes del canal'}).click();
+await page.locator('.discord-message-list .discord-media-button').first().click();
 await page.locator('dialog[open]').waitFor();
 await page.keyboard.press('Escape');
 const list = page.locator('.discord-message-list');
