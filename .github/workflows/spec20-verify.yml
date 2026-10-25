@@ -1,46 +1,56 @@
-name: SPEC-20 verification
+name: Chat terminal verification
 on:
   push:
     branches: [feature/global-chat-design-rework]
+  pull_request:
+    branches: [main, implementation/chatgpt]
+    paths:
+      - src/app/chat/**
+      - src/components/discord-chat.tsx
+      - src/app/globals.css
+      - src/domain/discord-client.ts
+      - tests/unit/discord-chat-ui.test.ts
+      - tests/browser/discord-chat.mjs
+      - tests/fixtures/discord-chat-page.tsx
+      - .github/workflows/spec20-verify.yml
 permissions:
-  contents: write
+  contents: read
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: feature/global-chat-design-rework
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Format changed files
+      - name: Lint, types, unit tests and formatting
+        run: npm run check
+        env:
+          NODE_OPTIONS: --max-old-space-size=1536
+      - name: Reject lint warnings
+        run: npm run lint -- --max-warnings=0
+        env:
+          NODE_OPTIONS: --max-old-space-size=1536
+      - name: Production build without the test fixture
+        run: npx next build --webpack
+      - name: Prepare isolated browser fixture
         run: |
-          npx prettier --write src/app/chat/page.tsx src/components/discord-chat.tsx src/app/globals.css src/domain/discord-client.ts tests/unit/discord-chat-ui.test.ts src/app/guardian-assets/spec20/page.tsx scripts/spec20-browser.mjs
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src tests scripts
-          git diff --cached --quiet || (git commit -m "style: format community terminal rework" && git push)
-      - run: npm test
-      - run: npm run typecheck
-        env:
-          NODE_OPTIONS: --max-old-space-size=1536
-      - run: npm run lint -- --max-warnings=0
-        env:
-          NODE_OPTIONS: --max-old-space-size=1536
-      - run: npm run format:check
-      - run: npx next build --webpack
+          mkdir -p src/app/guardian-assets/spec20
+          cp tests/fixtures/discord-chat-page.tsx src/app/guardian-assets/spec20/page.tsx
+      - name: Build isolated browser fixture
+        run: npx next build --webpack
         env:
           NEXT_PUBLIC_SUPABASE_URL: https://spec20.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: spec20-test-anon-key
-      - name: Browser validation
+      - name: Browser regression checks
         run: |
           npm install --prefix "$RUNNER_TEMP/spec20-tools" --no-save --package-lock=false playwright
           npm run start -- --port 3000 > /tmp/spec20-server.log 2>&1 &
-          for i in $(seq 1 60); do curl -s http://localhost:3000/guardian-assets/spec20 > /dev/null && break; sleep 1; done
-          node scripts/spec20-browser.mjs
+          for i in $(seq 1 60); do curl --max-time 5 -s http://localhost:3000/guardian-assets/spec20 > /dev/null && break; sleep 1; done
+          node tests/browser/discord-chat.mjs
       - name: Server diagnostics
         if: failure()
         run: cat /tmp/spec20-server.log || true

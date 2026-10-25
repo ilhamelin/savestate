@@ -1,3 +1,4 @@
+// CI-only fixture copied into the disposable runner; never a production route.
 import { DiscordChat } from '@/components/discord-chat';
 export default function ChatDesignQa() {
   return (
