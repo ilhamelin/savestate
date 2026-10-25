@@ -9154,7 +9154,7 @@ html[data-double-xp='true'] .level-progress {
     padding: 0;
   }
   .discord-chat {
-    height: min(840px, max(600px, calc(100dvh - 150px)));
+    height: min(840px, max(680px, calc(100dvh - 150px)));
     padding: 0.75rem;
   }
   .discord-composer-toolbar {
