@@ -176,7 +176,7 @@ test('Hardware radio labels and names remain paired for punctuation-heavy titles
 test('Steam SSR maps mixed achievement keys and produces finite clamped rarity with deterministic missing IDs', async () => {
   const { GameAchievementsView } = await import('../../src/components/game-achievements.tsx');
   const { fetchCommunityAchievements } =
-  await import('../../src/services/game-achievements-service.ts');
+    await import('../../src/services/game-achievements-service.ts');
 
   const previous = globalThis.fetch;
   const ssr = {
@@ -239,7 +239,8 @@ test('Steam SSR maps mixed achievement keys and produces finite clamped rarity w
   }
 });
 test('Optional server loader failures are contained and successful siblings remain renderable', async () => {
-  const { ResilientServerWidget } = await import('../../src/components/resilient-server-widget.tsx');
+  const { ResilientServerWidget } =
+    await import('../../src/components/resilient-server-widget.tsx');
 
   const warn = console.warn;
   console.warn = () => {};
@@ -264,7 +265,7 @@ test('Optional server loader failures are contained and successful siblings rema
 });
 test('Runtime boundary derives failure state and renders only its explicit fallback or null', async () => {
   const { ResilientWidgetBoundary } =
-  await import('../../src/components/resilient-widget-boundary.tsx');
+    await import('../../src/components/resilient-widget-boundary.tsx');
 
   const error = Error('private debug message');
   const boundary = new ResilientWidgetBoundary({
