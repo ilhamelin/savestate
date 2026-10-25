@@ -123,17 +123,10 @@ const hooks = registerHooks({
   },
 });
 after(() => hooks.deregister());
-const { GameMetaView } = await import('../../src/components/game-meta-hub.tsx');
-const { GameSpecsView } = await import('../../src/components/game-critic-and-specs.tsx');
-const { GameAchievementsView } = await import('../../src/components/game-achievements.tsx');
-const { fetchCommunityAchievements } =
-  await import('../../src/services/game-achievements-service.ts');
-const { ResilientWidgetBoundary } =
-  await import('../../src/components/resilient-widget-boundary.tsx');
-const { ResilientServerWidget } = await import('../../src/components/resilient-server-widget.tsx');
-const { default: GameSegmentError } = await import('../../src/app/games/[slug]/error.tsx');
 
-test('Meta rendering omits invalid time elements and accepts malformed optional category/tier values safely', () => {
+test('Meta rendering omits invalid time elements and accepts malformed optional category/tier values safely', async () => {
+  const { GameMetaView } = await import('../../src/components/game-meta-hub.tsx');
+
   for (const date of [null, '', 'not-a-date']) {
     const data = {
       duration: null,
@@ -155,7 +148,9 @@ test('Meta rendering omits invalid time elements and accepts malformed optional 
     assert.doesNotMatch(html, /Invalid Date|NaN|undefined/);
   }
 });
-test('Hardware radio labels and names remain paired for punctuation-heavy titles', () => {
+test('Hardware radio labels and names remain paired for punctuation-heavy titles', async () => {
+  const { GameSpecsView } = await import('../../src/components/game-critic-and-specs.tsx');
+
   const data = {
     critic: null,
     hardware: {
@@ -179,6 +174,10 @@ test('Hardware radio labels and names remain paired for punctuation-heavy titles
 });
 
 test('Steam SSR maps mixed achievement keys and produces finite clamped rarity with deterministic missing IDs', async () => {
+  const { GameAchievementsView } = await import('../../src/components/game-achievements.tsx');
+  const { fetchCommunityAchievements } =
+  await import('../../src/services/game-achievements-service.ts');
+
   const previous = globalThis.fetch;
   const ssr = {
     renderContext: {
@@ -240,6 +239,8 @@ test('Steam SSR maps mixed achievement keys and produces finite clamped rarity w
   }
 });
 test('Optional server loader failures are contained and successful siblings remain renderable', async () => {
+  const { ResilientServerWidget } = await import('../../src/components/resilient-server-widget.tsx');
+
   const warn = console.warn;
   console.warn = () => {};
   try {
@@ -261,7 +262,10 @@ test('Optional server loader failures are contained and successful siblings rema
     console.warn = warn;
   }
 });
-test('Runtime boundary derives failure state and renders only its explicit fallback or null', () => {
+test('Runtime boundary derives failure state and renders only its explicit fallback or null', async () => {
+  const { ResilientWidgetBoundary } =
+  await import('../../src/components/resilient-widget-boundary.tsx');
+
   const error = Error('private debug message');
   const boundary = new ResilientWidgetBoundary({
     children: 'healthy',
@@ -286,7 +290,9 @@ function nodes(value: unknown): Node[] {
   const node = value as Node;
   return [node, ...nodes(node.props.children)];
 }
-test('Segment fallback confines its message, displays only digest and supports reset plus RSC retry', () => {
+test('Segment fallback confines its message, displays only digest and supports reset plus RSC retry', async () => {
+  const { default: GameSegmentError } = await import('../../src/app/games/[slug]/error.tsx');
+
   let reset = 0,
     retry = 0;
   const error = Object.assign(Error('secret upstream failure'), { digest: '3411904829' });
