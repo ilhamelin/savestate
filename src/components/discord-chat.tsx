@@ -505,8 +505,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
     list?.scrollTo({
       top: list.scrollHeight,
       behavior:
-        smoothScroll.current &&
-        !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        smoothScroll.current && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
           ? 'smooth'
           : 'instant',
     });
@@ -1111,7 +1110,13 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                   </span>{' '}
                   <button
                     className="button discord-send-button"
-                    aria-label={sending ? 'Enviando mensaje' : cooldown > 0 ? `Espera ${cooldown} segundos para enviar` : 'Enviar mensaje'}
+                    aria-label={
+                      sending
+                        ? 'Enviando mensaje'
+                        : cooldown > 0
+                          ? `Espera ${cooldown} segundos para enviar`
+                          : 'Enviar mensaje'
+                    }
                     aria-busy={sending}
                     disabled={
                       !node.online ||
