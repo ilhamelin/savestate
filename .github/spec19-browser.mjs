@@ -37,9 +37,9 @@ try{
  assert.equal(await page.locator('.site-header').count(),1);
  assert.equal(await page.locator('.site-footer').count(),1);
  assert.equal(await page.getByText('ERROR CRÍTICO // CHECKPOINT CORRUPT',{exact:true}).count(),0);
- assert.ok((await page.locator('[role="alert"]').innerText()).includes('Código de error:'));
+ assert.ok((await page.locator('section.checkpoint-error[role="alert"]').innerText()).includes('Código de error:'));
  assert.equal(await page.getByRole('link',{name:'Regresar al catálogo',exact:true}).getAttribute('href'),'/explore');
- console.log('SPEC19_ERROR_JPEG:'+(await page.locator('[role="alert"]').screenshot({type:'jpeg',quality:60})).toString('base64'));
+ console.log('SPEC19_ERROR_JPEG:'+(await page.locator('section.checkpoint-error[role="alert"]').screenshot({type:'jpeg',quality:60})).toString('base64'));
  await context.addCookies([{name:'s19_recovered',value:'1',url:'http://localhost:3000'}]);
  await page.getByRole('button',{name:'Reintentar sincronización',exact:true}).click();
  await core();
