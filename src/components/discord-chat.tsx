@@ -231,6 +231,9 @@ const DiscordMessageCard = memo(function DiscordMessageCard({
     typeof window === 'undefined'
       ? null
       : discordSharedGame(origin.content, window.location.origin);
+  const messageText = sharedGame
+    ? media.text.replace(/🎮 (.{1,180}?) \((https?:\/\/[^\s<>]+)\)/u, '').trim()
+    : media.text;
   return (
     <article
       key={message.id}
@@ -263,11 +266,11 @@ const DiscordMessageCard = memo(function DiscordMessageCard({
         <time dateTime={message.createdAt} title="Hora de Chile · America/Santiago">
           {formatMessageDate(message.createdAt)}
         </time>
-        {media.text ? (
+        {messageText ? (
           <p>
-            <DiscordText text={media.text} names={mentionNames} />
+            <DiscordText text={messageText} names={mentionNames} />
           </p>
-        ) : !media.urls.length && !message.attachments.length ? (
+        ) : !sharedGame && !media.urls.length && !message.attachments.length ? (
           <p>Mensaje sin texto disponible.</p>
         ) : null}
         {sharedGame && (
