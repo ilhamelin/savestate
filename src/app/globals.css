@@ -7704,7 +7704,6 @@ body:has(.worlds-hub) {
   overflow-wrap: anywhere;
 }
 
-
 .discord-account-link {
   border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
 }
