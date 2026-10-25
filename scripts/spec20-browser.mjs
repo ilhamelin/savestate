@@ -13,6 +13,7 @@ const page = await browser.newPage({
   reducedMotion: 'reduce',
 });
 const failures = [];
+process.on('uncaughtException', async error => { console.log('SPEC20_FAILURE', String(error)); console.log('SPEC20_FAILURE_DOM', (await page.locator('body').innerText()).slice(-12000)); console.log('SPEC20_FAIL_JPEG:'+(await page.screenshot({type:'jpeg',quality:60})).toString('base64')); await browser.close(); process.exit(1); });
 page.on('pageerror', (error) => failures.push(error.message));
 let allowed = false,
   offline = false,
@@ -134,6 +135,7 @@ await page
     );
     throw error;
   });
+console.log('SPEC20_INITIAL_JPEG:'+(await page.locator('.discord-layout-grid').screenshot({type:'jpeg',quality:65})).toString('base64'));
 assert.equal(await page.locator('.discord-tools-group button').count(), 5);
 assert.equal(await page.locator('.discord-emoji-palette button').count(), 4);
 assert.equal(await page.locator('.discord-channel-pill').count(), 3);
@@ -163,7 +165,7 @@ await page.getByLabel('Buscar en el catálogo local').fill('Portal');
 await page.getByRole('button', { name: 'Portal ↗', exact: true }).click();
 assert.match(await input.inputValue(), /🎮 Portal/);
 await input.fill('');
-await page.getByRole('button', { name: '@ Mencionar', exact: true }).first().click();
+await page.getByRole('button', { name: 'Mencionar usuario', exact: true }).click();
 await page.locator('#discord-mention-options button').first().click();
 assert.match(await input.inputValue(), /@/);
 await input.fill('');
