@@ -1,0 +1,56 @@
+name: Chat terminal verification
+on:
+  push:
+    branches: [feature/global-chat-design-rework]
+  pull_request:
+    branches: [main, implementation/chatgpt]
+    paths:
+      - src/app/chat/**
+      - src/components/discord-chat.tsx
+      - src/app/globals.css
+      - src/domain/discord-client.ts
+      - tests/unit/discord-chat-ui.test.ts
+      - tests/browser/discord-chat.mjs
+      - tests/fixtures/discord-chat-page.tsx
+      - .github/workflows/spec20-verify.yml
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Lint, types, unit tests and formatting
+        run: npm run check
+        env:
+          NODE_OPTIONS: --max-old-space-size=1536
+      - name: Reject lint warnings
+        run: npm run lint -- --max-warnings=0
+        env:
+          NODE_OPTIONS: --max-old-space-size=1536
+      - name: Production build without the test fixture
+        run: npx next build --webpack
+      - name: Prepare isolated browser fixture
+        run: |
+          mkdir -p src/app/guardian-assets/spec20
+          cp tests/fixtures/discord-chat-page.tsx src/app/guardian-assets/spec20/page.tsx
+      - name: Build isolated browser fixture
+        run: npx next build --webpack
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://spec20.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: spec20-test-anon-key
+      - name: Browser regression checks
+        run: |
+          npm install --prefix "$RUNNER_TEMP/spec20-tools" --no-save --package-lock=false playwright
+          npm run start -- --port 3000 > /tmp/spec20-server.log 2>&1 &
+          for i in $(seq 1 60); do (echo > /dev/tcp/127.0.0.1/3000) 2>/dev/null && break; sleep 1; done
+          node tests/browser/discord-chat.mjs
+      - name: Server diagnostics
+        if: failure()
+        run: cat /tmp/spec20-server.log || true

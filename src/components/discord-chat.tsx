@@ -12,6 +12,7 @@ import type {
 } from '@/domain/discord-client';
 import {
   discordMessageOrigin,
+  discordSharedGame,
   discordImageAttachment,
   discordInlineMedia,
   sameDiscordMessages,
@@ -226,6 +227,13 @@ const DiscordMessageCard = memo(function DiscordMessageCard({
 }) {
   const origin = discordMessageOrigin(message.content);
   const media = discordInlineMedia(origin.content);
+  const sharedGame =
+    typeof window === 'undefined'
+      ? null
+      : discordSharedGame(origin.content, window.location.origin);
+  const messageText = sharedGame
+    ? media.text.replace(/🎮 (.{1,180}?) \((https?:\/\/[^\s<>]+)\)/u, '').trim()
+    : media.text;
   return (
     <article
       key={message.id}
@@ -246,7 +254,7 @@ const DiscordMessageCard = memo(function DiscordMessageCard({
           </p>
         )}
         <span className={origin.web ? 'badge-savestate' : 'badge-discord'}>
-          {origin.web ? '[SAVESTATE_WEB]' : '[DISCORD]'}
+          {origin.web ? '[SAVESTATE]' : '[DISCORD]'}
         </span>{' '}
         {origin.web && origin.author ? (
           <Link className="accent" href={`/players/${encodeURIComponent(origin.author)}`}>
@@ -258,13 +266,20 @@ const DiscordMessageCard = memo(function DiscordMessageCard({
         <time dateTime={message.createdAt} title="Hora de Chile · America/Santiago">
           {formatMessageDate(message.createdAt)}
         </time>
-        {media.text ? (
+        {messageText ? (
           <p>
-            <DiscordText text={media.text} names={mentionNames} />
+            <DiscordText text={messageText} names={mentionNames} />
           </p>
-        ) : !media.urls.length && !message.attachments.length ? (
+        ) : !sharedGame && !media.urls.length && !message.attachments.length ? (
           <p>Mensaje sin texto disponible.</p>
         ) : null}
+        {sharedGame && (
+          <Link className="discord-game-card-embed" href={sharedGame.href}>
+            <small>🎮 Juego</small>
+            <strong>{sharedGame.title}</strong>
+            <small>Ver ficha ↗</small>
+          </Link>
+        )}
         {media.urls.map((url) => (
           <InlineMedia key={url} url={url} onOpen={onOpen} />
         ))}
@@ -448,6 +463,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
   const frequencyRef = useRef<DiscordFrequency>('web-chat');
   const [newMessages, setNewMessages] = useState(false);
   const pendingScroll = useRef(true);
+  const smoothScroll = useRef(false);
   const messagesRef = useRef<DiscordMessage[]>([]);
   const visibleMessages = messages;
   const lastVisibleId = visibleMessages.at(-1)?.id;
@@ -465,6 +481,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
     if (next === 'chat-privado' && !privateChatAccess.canRead) return;
     frequencyRef.current = next;
     pendingScroll.current = true;
+    smoothScroll.current = false;
     setNewMessages(false);
     messagesRef.current = [];
     setMessages([]);
@@ -488,7 +505,14 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
     if (!pendingScroll.current) return;
     pendingScroll.current = false;
     const list = listRef.current;
-    list?.scrollTo({ top: list.scrollHeight, behavior: 'instant' });
+    list?.scrollTo({
+      top: list.scrollHeight,
+      behavior:
+        smoothScroll.current && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+          ? 'smooth'
+          : 'instant',
+    });
+    smoothScroll.current = false;
   }, [lastVisibleId, frequency]);
   useEffect(() => {
     const timer = setInterval(() => {
@@ -552,6 +576,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
               !list || discordNearBottom(list.scrollTop, list.clientHeight, list.scrollHeight);
             if (hasNew) {
               pendingScroll.current = !previous.length || nearBottom;
+              smoothScroll.current = Boolean(previous.length && nearBottom);
               if (previous.length && !nearBottom) setNewMessages(true);
             }
             messagesRef.current = data.messages;
@@ -590,6 +615,8 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
   }, [revision, frequency]);
   async function send() {
     if (
+      !node.online ||
+      loading ||
       !writableFrequency ||
       (attachment && !canAttach) ||
       busy.current ||
@@ -653,6 +680,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
           result.message,
         ].slice(-30);
         pendingScroll.current = true;
+        smoothScroll.current = true;
         setNewMessages(false);
         messagesRef.current = next;
         setMessages(next);
@@ -684,53 +712,49 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
         />
       )}
       <section className="panel discord-chat">
-        <div className="discord-terminal-bar">
-          <span className="discord-terminal-leds" aria-hidden="true">
-            <i />
-            <i />
-            <i />
-          </span>
-          <span>TERMINAL://RELAY_DISCORD_V1.0</span>
-        </div>
-        <div className="discord-chat-heading">
-          <h2>Chat Global · Terminal comunitaria</h2>
-          <span className="discord-live" role="status">
-            <span className={node.online ? 'live-pulse' : ''} aria-hidden="true">
-              {node.online ? '🟢' : '◌'}
-            </span>{' '}
-            {loading ? 'CONECTANDO' : node.online ? 'LIVE SYNC' : 'SYNC EN PAUSA'} // #
-            {frequency === 'announcements'
-              ? 'anuncios-savestate'
-              : frequency === 'chat-privado'
-                ? '〘🕵〙chat-privado'
-                : frequency}
-          </span>
-          <button
-            type="button"
-            className="button outline small"
-            onClick={() => setRevision((n) => n + 1)}
-          >
-            ↺ Sincronizar
-          </button>
-        </div>
-        <p className="muted discord-chat-description">
-          Canal compartido con Discord · se actualiza cada 10 segundos mientras esta pestaña está
-          visible.
-        </p>
-        <div className="filter-buttons discord-chat-links">
-          {inviteUrl ? (
-            <a
+        <header className="discord-chat-heading">
+          <div className="discord-terminal-identity">
+            <div className="discord-terminal-bar">
+              <span className="discord-terminal-leds" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
+              <span>TERMINAL://COMMUNITY_RELAY</span>
+            </div>
+            <h2>
+              <span className="discord-channel-hash">#</span>
+              {frequency === 'announcements'
+                ? '📢-anuncios-savestate'
+                : frequency === 'checkpoints'
+                  ? '💾-checkpoints'
+                  : frequency === 'chat-privado'
+                    ? '〘🕵〙chat-privado'
+                    : '💬-web-chat'}
+            </h2>
+          </div>
+          <div className="discord-heading-actions">
+            <span className="discord-live" role="status">
+              {loading ? 'CONECTANDO' : node.online ? 'LIVE SYNC' : 'SYNC EN PAUSA'} //{' '}
+              {node.latency === null ? '—' : `${node.latency}ms`}
+            </span>
+            <button
+              type="button"
               className="button outline small"
-              href={inviteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+              disabled={loading || sending}
+              aria-label="Sincronizar mensajes del canal"
+              onClick={() => {
+                setLoading(true);
+                setRevision((n) => n + 1);
+              }}
             >
-              Unirse al servidor de Discord ↗
-            </a>
-          ) : (
-            <span className="muted">Invitación al servidor pendiente de configuración.</span>
-          )}
-        </div>
+              ↺ Sincronizar
+            </button>
+          </div>
+        </header>
+        <p className="muted discord-chat-description">
+          {visibleMessages.length} mensajes · actualización cada 10 s con la pestaña visible.
+        </p>
         <div className="discord-history-wrap">
           <div
             ref={listRef}
@@ -742,7 +766,9 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                 setNewMessages(false);
             }}
           >
-            {loading ? <p role="status">[ Conectando con Discord… ]</p> : null}
+            {loading && !visibleMessages.length ? (
+              <p role="status">[ Conectando con Discord… ]</p>
+            ) : null}
             {!loading && !visibleMessages.length && !error ? (
               <p>No hay mensajes en esta frecuencia.</p>
             ) : null}
@@ -778,108 +804,110 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
           </p>
         ) : null}
         {writableFrequency ? (
-          <>
-            {replyTo && (
-              <div className="discord-reply-bar">
-                <span>↩ Respondiendo a @{messageAuthor(replyTo)}</span>
-                <button
-                  type="button"
-                  className="button outline small"
-                  disabled={sending}
-                  onClick={() => setReplyTo(null)}
-                >
-                  ✕ Cancelar
-                </button>
-              </div>
-            )}
-            {gamePicker && !sending && (
-              <DiscordGamePicker
-                onClose={() => {
-                  setGamePicker(false);
-                  inputRef.current?.focus();
-                }}
-                onSelect={(game) => {
-                  const insert = `🎮 ${game.title} (${window.location.origin}/games/${encodeURIComponent(game.slug)})`;
-                  const next = `${content}${content && !content.endsWith(' ') ? ' ' : ''}${insert}`;
-                  if (next.length > 500) {
-                    setError(
-                      'El juego supera el límite de 500 caracteres; acorta el mensaje primero.',
-                    );
-                    return;
-                  }
-                  setContent(next);
-                  setGamePicker(false);
-                  inputRef.current?.focus();
-                }}
-              />
-            )}
-            {attachment && (
-              <div className="chat-media-preview discord-attachment-preview">
-                {attachment.mimeType?.startsWith('video/') ? (
-                  <VaultVideo
-                    src={attachment.url}
-                    controls
-                    preload="metadata"
-                    playsInline
-                    aria-label="Clip adjunto de la bóveda"
-                  />
-                ) : chatMediaPageUrl(attachment.url) ? (
-                  <a href={attachment.url} target="_blank" rel="noopener noreferrer">
-                    🔗 Enlace de GIF listo para enviar ↗
-                  </a>
-                ) : (
-                  <Image
-                    src={attachment.url}
-                    alt="Vista previa de imagen o GIF adjunto"
-                    width={200}
-                    height={150}
-                    unoptimized
-                    referrerPolicy="no-referrer"
-                  />
-                )}
-                <span>{attachment.file?.name ?? 'Imagen / GIF enlazado'}</span>
-                <button
-                  type="button"
-                  className="button outline small"
-                  disabled={sending}
-                  onClick={() => setAttachment(null)}
-                >
-                  ✕ Quitar
-                </button>
-              </div>
-            )}
-            {urlOpen && (
-              <div className="chat-url-editor">
-                <label htmlFor="discord-media-url">
-                  URL de imagen/GIF o página de Tenor, Giphy o Imgur
-                </label>
-                <input
-                  id="discord-media-url"
-                  type="url"
-                  value={urlDraft}
-                  maxLength={2000}
-                  disabled={sending}
-                  placeholder="https://i.imgur.com/imagen.gif"
-                  onChange={(event) => setUrlDraft(event.target.value)}
+          <div className="discord-composer-container">
+            <div className="discord-composer-extras">
+              {replyTo && (
+                <div className="discord-reply-bar">
+                  <span>↩ Respondiendo a @{messageAuthor(replyTo)}</span>
+                  <button
+                    type="button"
+                    className="button outline small"
+                    disabled={sending}
+                    onClick={() => setReplyTo(null)}
+                  >
+                    ✕ Cancelar
+                  </button>
+                </div>
+              )}
+              {gamePicker && !sending && (
+                <DiscordGamePicker
+                  onClose={() => {
+                    setGamePicker(false);
+                    inputRef.current?.focus();
+                  }}
+                  onSelect={(game) => {
+                    const insert = `🎮 ${game.title} (${window.location.origin}/games/${encodeURIComponent(game.slug)})`;
+                    const next = `${content}${content && !content.endsWith(' ') ? ' ' : ''}${insert}`;
+                    if (next.length > 500) {
+                      setError(
+                        'El juego supera el límite de 500 caracteres; acorta el mensaje primero.',
+                      );
+                      return;
+                    }
+                    setContent(next);
+                    setGamePicker(false);
+                    inputRef.current?.focus();
+                  }}
                 />
-                <button
-                  type="button"
-                  className="button small"
-                  disabled={sending}
-                  onClick={attachUrl}
-                >
-                  Adjuntar URL
-                </button>
-                <button
-                  type="button"
-                  className="button outline small"
-                  disabled={sending}
-                  onClick={() => setUrlOpen(false)}
-                >
-                  Cancelar
-                </button>
-              </div>
-            )}
+              )}
+              {attachment && (
+                <div className="chat-media-preview discord-attachment-preview">
+                  {attachment.mimeType?.startsWith('video/') ? (
+                    <VaultVideo
+                      src={attachment.url}
+                      controls
+                      preload="metadata"
+                      playsInline
+                      aria-label="Clip adjunto de la bóveda"
+                    />
+                  ) : chatMediaPageUrl(attachment.url) ? (
+                    <a href={attachment.url} target="_blank" rel="noopener noreferrer">
+                      🔗 Enlace de GIF listo para enviar ↗
+                    </a>
+                  ) : (
+                    <Image
+                      src={attachment.url}
+                      alt="Vista previa de imagen o GIF adjunto"
+                      width={200}
+                      height={150}
+                      unoptimized
+                      referrerPolicy="no-referrer"
+                    />
+                  )}
+                  <span>{attachment.file?.name ?? 'Imagen / GIF enlazado'}</span>
+                  <button
+                    type="button"
+                    className="button outline small"
+                    disabled={sending}
+                    onClick={() => setAttachment(null)}
+                  >
+                    ✕ Quitar
+                  </button>
+                </div>
+              )}
+              {urlOpen && (
+                <div className="chat-url-editor">
+                  <label htmlFor="discord-media-url">
+                    URL de imagen/GIF o página de Tenor, Giphy o Imgur
+                  </label>
+                  <input
+                    id="discord-media-url"
+                    type="url"
+                    value={urlDraft}
+                    maxLength={2000}
+                    disabled={sending}
+                    placeholder="https://i.imgur.com/imagen.gif"
+                    onChange={(event) => setUrlDraft(event.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="button small"
+                    disabled={sending}
+                    onClick={attachUrl}
+                  >
+                    Adjuntar URL
+                  </button>
+                  <button
+                    type="button"
+                    className="button outline small"
+                    disabled={sending}
+                    onClick={() => setUrlOpen(false)}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              )}
+            </div>
             <form
               className="discord-chat-form discord-advanced-composer"
               onSubmit={(event) => {
@@ -952,9 +980,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                   placeholder="Enter para enviar · Shift+Enter para salto de línea…"
                   aria-describedby="discord-message-count"
                 />
-                <span id="discord-message-count" className="muted discord-character-count">
-                  {content.length}/500
-                </span>
+
                 {mentionsOpen && (
                   <ul
                     id="discord-mention-options"
@@ -990,42 +1016,76 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                 )}
               </label>
               <div className="discord-composer-toolbar">
-                <input
-                  type="file"
-                  className="chat-file-input"
-                  ref={fileRef}
-                  aria-label="Adjuntar imagen o GIF"
-                  accept="image/png,image/jpeg,image/webp,image/gif"
-                  disabled={sending || !canAttach}
-                  onChange={(event) => void attachFile(event.target.files?.[0])}
-                />
-                <button
-                  type="button"
-                  className="button outline small"
-                  disabled={sending || !canAttach}
-                  onClick={() => fileRef.current?.click()}
-                >
-                  📎 Adjuntar archivo
-                </button>
-                <button
-                  type="button"
-                  className="button outline small"
-                  disabled={sending || !canAttach}
-                  onClick={() => setVaultPicker(true)}
-                >
-                  💾 Bóveda
-                </button>
-                <button
-                  type="button"
-                  className="button outline small"
-                  disabled={sending || !canAttach}
-                  aria-expanded={urlOpen}
-                  onClick={() => setUrlOpen((open) => !open)}
-                >
-                  🔗 Pegar URL/GIF
-                </button>
                 <div
-                  className="discord-emoji-buttons"
+                  className="discord-tools-group"
+                  role="group"
+                  aria-label="Adjuntos y herramientas"
+                >
+                  <input
+                    type="file"
+                    className="chat-file-input"
+                    ref={fileRef}
+                    aria-label="Adjuntar imagen o GIF"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    disabled={sending || !canAttach}
+                    onChange={(event) => void attachFile(event.target.files?.[0])}
+                  />
+                  <button
+                    type="button"
+                    className="button outline small"
+                    disabled={sending || !canAttach}
+                    aria-label="Adjuntar archivo de imagen o GIF"
+                    onClick={() => fileRef.current?.click()}
+                  >
+                    📎 Adjuntar archivo
+                  </button>
+                  <button
+                    type="button"
+                    className="button outline small"
+                    disabled={sending || !canAttach}
+                    aria-label="Seleccionar archivo de la bóveda"
+                    onClick={() => setVaultPicker(true)}
+                  >
+                    💾 Bóveda
+                  </button>
+                  <button
+                    type="button"
+                    className="button outline small"
+                    disabled={sending || !canAttach}
+                    aria-label="Pegar URL de imagen o GIF"
+                    aria-expanded={urlOpen}
+                    onClick={() => setUrlOpen((open) => !open)}
+                  >
+                    🔗 Pegar URL
+                  </button>
+
+                  <button
+                    type="button"
+                    className="button outline small discord-compose-tool"
+                    disabled={sending}
+                    aria-label="Mencionar usuario"
+                    onClick={() => {
+                      setMentionsOpen((open) => !open);
+                      setMentionIndex(0);
+                      setCaret(inputRef.current?.selectionStart ?? content.length);
+                      inputRef.current?.focus();
+                    }}
+                  >
+                    @ Mencionar
+                  </button>
+                  <button
+                    type="button"
+                    className="button outline small discord-compose-tool"
+                    disabled={sending}
+                    aria-label="Compartir juego del catálogo"
+                    aria-expanded={gamePicker}
+                    onClick={() => setGamePicker((open) => !open)}
+                  >
+                    🎮 Juego
+                  </button>
+                </div>
+                <div
+                  className="discord-emoji-palette"
                   role="group"
                   aria-label="Insertar emoji gamer"
                 >
@@ -1047,47 +1107,39 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                     </button>
                   ))}
                 </div>
-                <button
-                  type="button"
-                  className="button outline small discord-compose-tool"
-                  disabled={sending}
-                  aria-label="Mencionar usuario"
-                  onClick={() => {
-                    setMentionsOpen((open) => !open);
-                    setMentionIndex(0);
-                    setCaret(inputRef.current?.selectionStart ?? content.length);
-                    inputRef.current?.focus();
-                  }}
-                >
-                  @ Mencionar
-                </button>
-                <button
-                  type="button"
-                  className="button outline small discord-compose-tool"
-                  disabled={sending}
-                  aria-expanded={gamePicker}
-                  onClick={() => setGamePicker((open) => !open)}
-                >
-                  🎮 Juego
-                </button>
-                <button
-                  className="button"
-                  disabled={
-                    sending ||
-                    cooldown > 0 ||
-                    (!content.trim() && !attachment) ||
-                    Boolean(attachment && !canAttach)
-                  }
-                >
-                  {sending ? 'Enviando…' : cooldown > 0 ? `Espera ${cooldown}s…` : 'Enviar →'}
-                </button>
+                <div className="discord-send-action">
+                  <span id="discord-message-count" className="muted discord-char-counter">
+                    {content.length}/500
+                  </span>{' '}
+                  <button
+                    className="button discord-send-button"
+                    aria-label={
+                      sending
+                        ? 'Enviando mensaje'
+                        : cooldown > 0
+                          ? `Espera ${cooldown} segundos para enviar`
+                          : 'Enviar mensaje'
+                    }
+                    aria-busy={sending}
+                    disabled={
+                      !node.online ||
+                      loading ||
+                      sending ||
+                      cooldown > 0 ||
+                      (!content.trim() && !attachment) ||
+                      Boolean(attachment && !canAttach)
+                    }
+                  >
+                    {sending ? 'Enviando…' : cooldown > 0 ? `Espera ${cooldown}s…` : 'ENVIAR ↗'}
+                  </button>
+                </div>
               </div>
             </form>
-            <p className="muted">
+            <p className="muted discord-composer-note">
               Lo que envíes se publicará en el canal de Discord con tu nombre de usuario de
               SaveState.
             </p>
-          </>
+          </div>
         ) : (
           <p className="notice discord-readonly">
             [ MODO LECTURA //{' '}
@@ -1126,6 +1178,7 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                   <button
                     type="button"
                     className={`discord-channel-pill${frequency === value ? ' active' : ''}`}
+                    aria-label={`Abrir ${label}`}
                     aria-pressed={frequency === value}
                     disabled={sending}
                     onClick={() => selectFrequency(value)}
@@ -1136,44 +1189,6 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
                 </li>
               ))}
           </ul>
-        </section>
-        <DiscordLinkedRoleCard />
-        <section className="panel discord-presence" aria-labelledby="discord-presence-heading">
-          <h2 id="discord-presence-heading">MIEMBROS EN LÍNEA</h2>
-          <p className="discord-presence-count" role="status">
-            {loading ? 'Consultando presencia…' : `🟢 ${presence.onlineCount} conectados`}
-          </p>
-          <ul className="discord-presence-list">
-            {presence.members.map((member) => (
-              <li key={member.id} className="discord-presence-member">
-                <span className="discord-presence-avatar">
-                  {member.avatar ? (
-                    <Image src={member.avatar} alt="" width={28} height={28} unoptimized />
-                  ) : (
-                    <span aria-hidden="true">▣</span>
-                  )}
-                  <span
-                    className={`discord-presence-dot status-${member.status}`}
-                    role="img"
-                    aria-label={
-                      member.status === 'online'
-                        ? 'En línea'
-                        : member.status === 'idle'
-                          ? 'Ausente'
-                          : 'No molestar'
-                    }
-                  />
-                </span>
-                <span className="discord-presence-copy">
-                  <strong>{member.username}</strong>
-                  {member.game ? <small>🕹️ Jugando a {member.game}</small> : null}
-                </span>
-              </li>
-            ))}
-          </ul>
-          {!loading && !presence.members.length ? (
-            <p className="muted">Sin miembros visibles en el widget.</p>
-          ) : null}
         </section>
         <section className="panel">
           <h2>ESTADO DEL NODO</h2>
@@ -1196,12 +1211,56 @@ export function DiscordChat({ inviteUrl }: { inviteUrl: string | null }) {
               target="_blank"
               rel="noopener noreferrer"
             >
-              Unirse al servidor ↗
+              UNIRSE AL SERVIDOR ↗
             </a>
           ) : (
             <p className="muted">Invitación pendiente de configuración.</p>
           )}
         </section>
+        <section className="panel discord-presence" aria-labelledby="discord-presence-heading">
+          <h2 id="discord-presence-heading">MIEMBROS EN LÍNEA</h2>
+          <p className="discord-presence-count" role="status">
+            {loading ? 'Consultando presencia…' : `🟢 ${presence.onlineCount} conectados`}
+          </p>
+          <div
+            className="discord-presence-scroll"
+            role="region"
+            aria-label="Lista de miembros conectados"
+          >
+            <ul className="discord-presence-list">
+              {presence.members.map((member) => (
+                <li key={member.id} className="discord-presence-member">
+                  <span className="discord-presence-avatar">
+                    {member.avatar ? (
+                      <Image src={member.avatar} alt="" width={28} height={28} unoptimized />
+                    ) : (
+                      <span aria-hidden="true">▣</span>
+                    )}
+                    <span
+                      className={`discord-presence-dot status-${member.status}`}
+                      role="img"
+                      aria-label={
+                        member.status === 'online'
+                          ? 'En línea'
+                          : member.status === 'idle'
+                            ? 'Ausente'
+                            : 'No molestar'
+                      }
+                    />
+                  </span>
+                  <span className="discord-presence-copy">
+                    <strong>{member.username}</strong>
+                    {member.game ? <small>🕹️ Jugando a {member.game}</small> : null}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          {!loading && !presence.members.length ? (
+            <p className="muted">Sin miembros visibles en el widget.</p>
+          ) : null}
+        </section>
+        <DiscordLinkedRoleCard />
       </aside>
     </div>
   );
