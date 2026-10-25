@@ -1,3 +1,4 @@
+import { safeGameDomId } from '@/domain/game-detail-resilience';
 import { fetchGameCriticAndSpecs } from '@/services/game-specs-service';
 import type { GameCriticAndSpecsReport, PcRequirementSet } from '@/domain/game-specs';
 import '@/styles/game-critic-and-specs.css';
@@ -6,37 +7,37 @@ function RequirementList({ specs }: { specs: PcRequirementSet | null }) {
   if (!specs) return null;
   return (
     <div className="specs-component-list">
-      {specs.os && (
+      {typeof specs.os === 'string' && specs.os && (
         <div className="specs-component-row">
           <span className="specs-component-label">🖥️ Sistema Operativo</span>
           <span className="specs-component-value">{specs.os}</span>
         </div>
       )}
-      {specs.cpu && (
+      {typeof specs.cpu === 'string' && specs.cpu && (
         <div className="specs-component-row">
           <span className="specs-component-label">⚡ Procesador (CPU)</span>
           <span className="specs-component-value">{specs.cpu}</span>
         </div>
       )}
-      {specs.ram && (
+      {typeof specs.ram === 'string' && specs.ram && (
         <div className="specs-component-row">
           <span className="specs-component-label">💾 Memoria RAM</span>
           <span className="specs-component-value">{specs.ram}</span>
         </div>
       )}
-      {specs.gpu && (
+      {typeof specs.gpu === 'string' && specs.gpu && (
         <div className="specs-component-row">
           <span className="specs-component-label">🎮 Tarjeta Gráfica (GPU)</span>
           <span className="specs-component-value">{specs.gpu}</span>
         </div>
       )}
-      {specs.directx && (
+      {typeof specs.directx === 'string' && specs.directx && (
         <div className="specs-component-row">
           <span className="specs-component-label">⚙️ DirectX</span>
           <span className="specs-component-value">{specs.directx}</span>
         </div>
       )}
-      {specs.storage && (
+      {typeof specs.storage === 'string' && specs.storage && (
         <div className="specs-component-row">
           <span className="specs-component-label">💽 Almacenamiento</span>
           <span className="specs-component-value">{specs.storage}</span>
@@ -63,7 +64,7 @@ export function GameSpecsView({ title, data }: { title: string; data: GameCritic
     }
   };
 
-  const safeId = (title || 'game').toLowerCase().replace(/[^a-z0-9]/g, '-');
+  const safeId = safeGameDomId(title);
 
   return (
     <section className="game-specs-hub" aria-label={`Crítica y especificaciones de ${title}`}>
@@ -106,7 +107,7 @@ export function GameSpecsView({ title, data }: { title: string; data: GameCritic
               <p className="muted">Puntuación numérica no disponible para este título.</p>
             )}
 
-            {critic.reviewQuotes.length > 0 && (
+            {Array.isArray(critic.reviewQuotes) && critic.reviewQuotes.length > 0 && (
               <div className="critic-quotes-list">
                 {critic.reviewQuotes.map((quoteItem, idx) => (
                   <div key={idx} className="critic-quote-item">

@@ -1,3 +1,5 @@
+import 'server-only';
+import { achievementPercentageForKey, normalizeUnlockPercentage } from '@/domain/game-detail-resilience';
 import { unstable_cache } from 'next/cache';
 import { metaRecord, normalizedMetaTitle } from '@/domain/game-meta';
 import {
@@ -89,7 +91,7 @@ interface RawValveSsr {
   };
 }
 
-async function fetchCommunityAchievements(appId: number): Promise<GameAchievementItem[] | null> {
+export async function fetchCommunityAchievements(appId: number): Promise<GameAchievementItem[] | null> {
   try {
     const res = await fetch(`https://steamcommunity.com/stats/${appId}/achievements/?l=spanish`, {
       headers: {
@@ -129,7 +131,8 @@ async function fetchCommunityAchievements(appId: number): Promise<GameAchievemen
       : [];
 
     const rawAchievements: Array<Record<string, unknown>> = [];
-    for (const group of groups) {
+    for (const rawGroup of groups) {
+      const group = metaRecord(rawGroup);
       if (Array.isArray(group.achievements)) {
         for (const item of group.achievements) {
           rawAchievements.push(metaRecord(item));
@@ -141,11 +144,9 @@ async function fetchCommunityAchievements(appId: number): Promise<GameAchievemen
 
     const percentagesMap = metaRecord(percentQuery?.state?.data?.percentages);
 
-    const items: GameAchievementItem[] = rawAchievements.map((a) => {
+    const items: GameAchievementItem[] = rawAchievements.map((a, index) => {
       const internalKey = String(a.internal_key ?? a.api_name ?? '');
-      const rawPct = percentagesMap[internalKey];
-      const parsedPct =
-        typeof rawPct === 'number' && Number.isFinite(rawPct) ? Math.round(rawPct * 10) / 10 : 0;
+      const parsedPct = achievementPercentageForKey(percentagesMap, internalKey);
 
       const name = cleanText(a.name) || cleanText(a.api_name) || 'Logro';
       const description = cleanText(a.description);
@@ -157,7 +158,7 @@ async function fetchCommunityAchievements(appId: number): Promise<GameAchievemen
       const tier = getAchievementTier(parsedPct, isMaster);
 
       return {
-        id: internalKey || String(Math.random()),
+        id: internalKey || `achievement-${index + 1}`,
         apiName: cleanText(a.api_name),
         name,
         description,
@@ -211,7 +212,7 @@ async function fetchStoreDetailsFallback(appId: number): Promise<GameAchievement
       for (const item of pctList) {
         const row = metaRecord(item);
         if (typeof row.name === 'string' && typeof row.percent === 'number') {
-          apiPercentages[row.name] = Math.round(row.percent * 10) / 10;
+          apiPercentages[row.name] = normalizeUnlockPercentage(row.percent);
         }
       }
     } catch {
@@ -221,7 +222,7 @@ async function fetchStoreDetailsFallback(appId: number): Promise<GameAchievement
     const items: GameAchievementItem[] = highlighted.map((item, idx) => {
       const rec = metaRecord(item);
       const name = cleanText(rec.name) || cleanText(rec.localized_name) || `Logro ${idx + 1}`;
-      const percent = apiPercentages[name] ?? 25.0;
+      const percent = normalizeUnlockPercentage(apiPercentages[name]);
       const isMaster = name.toLowerCase().includes('todos los logros');
 
       return {
@@ -285,6 +286,6 @@ export const getCachedGameAchievements = unstable_cache(
   async (title: string): Promise<GameAchievementsReport> => {
     return fetchGameAchievements(title);
   },
-  ['game-achievements-v1'],
+  ['game-achievements-v2'],
   { revalidate: 86400 },
 );

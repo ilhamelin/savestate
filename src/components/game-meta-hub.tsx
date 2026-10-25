@@ -1,3 +1,4 @@
+import { safeFormatIsoDate } from '@/domain/game-detail-resilience';
 import { fetchGameMeta } from '@/services/game-meta-service';
 import { formatGameHours, sanitizeVideoUrl, type GameMetaReport } from '@/domain/game-meta';
 import '@/styles/game-meta-hub.css';
@@ -11,7 +12,8 @@ export function GameMetaView({ title, data }: { title: string; data: GameMetaRep
     ['Historia + extras', duration?.mainExtraHours, 'extras'],
     ['Completista · 100%', duration?.completionistHours, 'complete'],
   ] as const;
-  const maximum = Math.max(1, ...durations.map(([, hours]) => hours ?? 0));
+  const maximum = Math.max(1, ...durations.map(([, hours]) => typeof hours === 'number' && Number.isFinite(hours) ? Math.max(0, hours) : 0));
+  const speedrunDate = safeFormatIsoDate(speedrun?.dateIso);
   const videoUrl = sanitizeVideoUrl(speedrun?.videoUrl);
   return (
     <section className="game-meta-hub" aria-label={`Inteligencia de juego de ${title}`}>
@@ -37,7 +39,7 @@ export function GameMetaView({ title, data }: { title: string; data: GameMetaRep
                   <div className="game-meta-duration-track" aria-hidden="true">
                     <span
                       style={{
-                        width: `${hours != null ? Math.min(100, (hours / maximum) * 100) : 0}%`,
+                        width: `${typeof hours === 'number' && Number.isFinite(hours) ? Math.min(100, Math.max(0, (hours / maximum) * 100)) : 0}%`,
                       }}
                     />
                   </div>
@@ -62,13 +64,13 @@ export function GameMetaView({ title, data }: { title: string; data: GameMetaRep
             <p className="game-meta-eyebrow">🎮 PROTONDB // LINUX & DECK</p>
             <h3>Compatibilidad comunitaria</h3>
             <div className="game-meta-tier" data-tier={proton.tier}>
-              <span aria-hidden="true">◆</span> {proton.tier.toUpperCase()}
+              <span aria-hidden="true">◆</span> {typeof proton.tier === 'string' ? proton.tier.toUpperCase() : 'PENDING'}
             </div>
             {proton.steamDeckVerified && (
               <span className="game-meta-deck">🎮 Steam Deck Ready*</span>
             )}
             <p className="game-meta-reports">
-              {proton.totalReports.toLocaleString('es-CL')} reportes
+              {(typeof proton.totalReports === 'number' && Number.isFinite(proton.totalReports) ? Math.max(0, proton.totalReports) : 0).toLocaleString('es-CL')} reportes
             </p>
             <p className="muted">
               {proton.steamDeckVerified
@@ -88,12 +90,12 @@ export function GameMetaView({ title, data }: { title: string; data: GameMetaRep
         {speedrun && (
           <article className="game-meta-card game-meta-speedrun">
             <p className="game-meta-eyebrow">🏆 SPEEDRUN.COM // WORLD RECORD</p>
-            <h3>{speedrun.categoryName}</h3>
-            <strong className="game-meta-record">{speedrun.timeFormatted}</strong>
-            <p className="game-meta-runner">por {speedrun.runnerName}</p>
-            {speedrun.dateIso && (
+            <h3>{typeof speedrun.categoryName === 'string' ? speedrun.categoryName : 'Categoría no disponible'}</h3>
+            <strong className="game-meta-record">{typeof speedrun.timeFormatted === 'string' ? speedrun.timeFormatted : '—'}</strong>
+            <p className="game-meta-runner">por {typeof speedrun.runnerName === 'string' ? speedrun.runnerName : 'Corredor no disponible'}</p>
+            {speedrunDate && (
               <time dateTime={speedrun.dateIso}>
-                {new Date(speedrun.dateIso).toLocaleDateString('es-CL', { timeZone: 'UTC' })}
+                {speedrunDate}
               </time>
             )}
             <div className="game-meta-actions">

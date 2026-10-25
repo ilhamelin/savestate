@@ -1,3 +1,5 @@
+import { normalizeUnlockPercentage } from '@/domain/game-detail-resilience';
+import { AchievementIcon } from '@/components/achievement-icon';
 import React from 'react';
 import '@/styles/game-achievements.css';
 import {
@@ -8,8 +10,9 @@ import {
 import { getCachedGameAchievements } from '@/services/game-achievements-service';
 
 function AchievementCard({ item }: { item: GameAchievementItem }) {
+  const unlockedPercentage = normalizeUnlockPercentage(item.unlockedPercentage);
   const tierLabel = getTierLabel(item.tier);
-  const fillWidth = `${Math.min(100, Math.max(4, item.unlockedPercentage))}%`;
+  const fillWidth = `${Math.min(100, Math.max(4, unlockedPercentage))}%`;
 
   return (
     <div className={`achievement-card tier-${item.tier}`}>
@@ -18,17 +21,7 @@ function AchievementCard({ item }: { item: GameAchievementItem }) {
           🏆
         </div>
         {item.iconUrl ? (
-          <img
-            src={item.iconUrl}
-            alt=""
-            aria-hidden="true"
-            className="achievement-img"
-            loading="lazy"
-            decoding="async"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-            }}
-          />
+          <AchievementIcon src={item.iconUrl} />
         ) : null}
       </div>
 
@@ -38,7 +31,7 @@ function AchievementCard({ item }: { item: GameAchievementItem }) {
             {item.name}
           </h4>
           <span className={`achievement-badge badge-${item.tier}`} title={`Rareza: ${tierLabel}`}>
-            {item.unlockedPercentage}%
+            {unlockedPercentage}%
           </span>
         </div>
 
@@ -56,7 +49,7 @@ function AchievementCard({ item }: { item: GameAchievementItem }) {
 
         <div
           className="achievement-bar-bg"
-          title={`Desbloqueado por el ${item.unlockedPercentage}% de los jugadores`}
+          title={`Desbloqueado por el ${unlockedPercentage}% de los jugadores`}
         >
           <div className={`achievement-bar-fill bar-${item.tier}`} style={{ width: fillWidth }} />
         </div>

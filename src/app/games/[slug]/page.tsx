@@ -1,3 +1,5 @@
+import { ResilientWidgetBoundary } from '@/components/resilient-widget-boundary';
+import { ResilientServerWidget } from '@/components/resilient-server-widget';
 import { GameMetaHub } from '@/components/game-meta-hub';
 import { GameCriticAndSpecsHub } from '@/components/game-critic-and-specs';
 import { GameAchievementsHub } from '@/components/game-achievements';
@@ -190,6 +192,7 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
           </div>
         </section>
       )}
+      <ResilientWidgetBoundary key={game.id + ":GameLiveRadar"} widgetName="GameLiveRadar">
       <Suspense
         fallback={
           <section className="panel muted" aria-busy="true">
@@ -197,8 +200,10 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
           </section>
         }
       >
-        <GameLiveRadar title={game.title} />
+        <ResilientServerWidget widgetName="GameLiveRadar" load={() => GameLiveRadar({ title: game.title })} />
       </Suspense>
+      </ResilientWidgetBoundary>
+      <ResilientWidgetBoundary key={game.id + ":GameMetaHub"} widgetName="GameMetaHub">
       <Suspense
         fallback={
           <section className="panel skeleton muted" aria-busy="true">
@@ -206,8 +211,10 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
           </section>
         }
       >
-        <GameMetaHub title={game.title} igdbId={game.igdb_id} />
+        <ResilientServerWidget widgetName="GameMetaHub" load={() => GameMetaHub({ title: game.title, igdbId: game.igdb_id })} />
       </Suspense>
+      </ResilientWidgetBoundary>
+      <ResilientWidgetBoundary key={game.id + ":GameCriticAndSpecsHub"} widgetName="GameCriticAndSpecsHub">
       <Suspense
         fallback={
           <section className="panel skeleton muted" aria-busy="true">
@@ -215,8 +222,10 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
           </section>
         }
       >
-        <GameCriticAndSpecsHub title={game.title} igdbId={game.igdb_id} />
+        <ResilientServerWidget widgetName="GameCriticAndSpecsHub" load={() => GameCriticAndSpecsHub({ title: game.title, igdbId: game.igdb_id })} />
       </Suspense>
+      </ResilientWidgetBoundary>
+      <ResilientWidgetBoundary key={game.id + ":GameAchievementsHub"} widgetName="GameAchievementsHub">
       <Suspense
         fallback={
           <section className="panel skeleton muted" aria-busy="true">
@@ -224,8 +233,9 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
           </section>
         }
       >
-        <GameAchievementsHub title={game.title} />
+        <ResilientServerWidget widgetName="GameAchievementsHub" load={() => GameAchievementsHub({ title: game.title })} />
       </Suspense>
+      </ResilientWidgetBoundary>
       <section className="panel">
         <h2>Estadísticas públicas</h2>
         <p className="muted">
@@ -247,6 +257,7 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
         </div>
         <p className="muted">Las bibliotecas privadas se excluyen de estos cálculos.</p>
       </section>
+      <ResilientWidgetBoundary key={game.id + ":GameForum"} widgetName="GameForum">
       <Suspense
         fallback={
           <section className="panel muted" aria-busy="true">
@@ -254,8 +265,9 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
           </section>
         }
       >
-        <GameForum gameId={game.id} />
+        <ResilientServerWidget widgetName="GameForum" load={() => GameForum({ gameId: game.id })} />
       </Suspense>
+      </ResilientWidgetBoundary>
       <section id="write-review" className="panel">
         <h2>Tu reseña, tu perspectiva.</h2>
         {user ? (

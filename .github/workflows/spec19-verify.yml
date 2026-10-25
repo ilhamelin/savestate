@@ -16,13 +16,19 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Read installed Next error and RSC guides
+      - name: Format feature files
         run: |
-          cat node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/error.md
-          cat node_modules/next/dist/docs/01-app/02-guides/production-checklist.md
-          find node_modules/next/dist/docs -iname '*server-and-client*'
-          git grep -n 'onError=' -- src/components/game-achievements.tsx
-      - name: Read installed component error isolation API
-        run: |
-          find node_modules/next/dist/docs -iname '*catch*error*' -exec cat {} \;
-          find node_modules/next -maxdepth 3 -iname '*catch*error*'
+          npx prettier --write 'src/domain/game-detail-resilience.ts' 'src/components/game-meta-hub.tsx' 'src/components/game-critic-and-specs.tsx' 'src/services/game-achievements-service.ts' 'src/components/game-achievements.tsx' 'src/components/achievement-icon.tsx' 'src/components/resilient-widget-boundary.tsx' 'src/components/resilient-server-widget.tsx' 'src/app/games/[slug]/error.tsx' 'src/app/games/[slug]/page.tsx' 'tests/unit/game-detail-resilience.test.ts'
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- 'src/domain/game-detail-resilience.ts' 'src/components/game-meta-hub.tsx' 'src/components/game-critic-and-specs.tsx' 'src/services/game-achievements-service.ts' 'src/components/game-achievements.tsx' 'src/components/achievement-icon.tsx' 'src/components/resilient-widget-boundary.tsx' 'src/components/resilient-server-widget.tsx' 'src/app/games/[slug]/error.tsx' 'src/app/games/[slug]/page.tsx' 'tests/unit/game-detail-resilience.test.ts'
+          if ! git diff --cached --quiet; then git commit -m "style: format game detail resilience"; git push; fi
+      - run: npm test
+      - run: npm run typecheck
+        env:
+          NODE_OPTIONS: --max-old-space-size=1536
+      - run: npm run lint -- --max-warnings=0
+        env:
+          NODE_OPTIONS: --max-old-space-size=1536
+      - run: npm run format:check
+      - run: npx next build --webpack
