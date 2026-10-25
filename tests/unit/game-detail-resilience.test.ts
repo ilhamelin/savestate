@@ -80,7 +80,7 @@ const linkFixture =
 const hooks = registerHooks({
   resolve(specifier, context, next) {
     if (
-      specifier === 'react' ||
+      (specifier === 'react' && context.parentURL?.includes('/src/')) ||
       specifier === 'next/error' ||
       specifier === 'next/cache' ||
       specifier === '@/lib/client-error-report'
