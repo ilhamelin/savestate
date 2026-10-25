@@ -194,7 +194,7 @@ await page.locator('.discord-tools-group button').filter({ hasText: 'Bóveda' })
 await page.getByRole('button', { name: 'Enviar al composer', exact: true }).click();
 await page.getByRole('button', { name: '✕ Quitar', exact: true }).click();
 await page
-  .locator('input[type=file]')
+  .locator('.discord-advanced-composer input[type=file]')
   .setInputFiles({ name: 'captura.png', mimeType: 'image/png', buffer: png });
 await page.getByAltText('Vista previa de imagen o GIF adjunto').waitFor();
 await input.press('Enter');
